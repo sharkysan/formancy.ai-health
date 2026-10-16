@@ -1,0 +1,21 @@
+Formancy Health
+Copyright 2026 Daniel Bacher
+
+This product is distributed under the Formancy Health Source-Available
+Licence (LICENSE.md). It is not open source.
+
+This product includes software developed by the formancy project
+(https://github.com/sharkysan/formancy.ai), licensed under the Apache License,
+Version 2.0. Those packages keep their licence; nothing here changes it.
+
+This product implements the HL7® FHIR® standard. HL7, FHIR and the FHIR
+[FLAME DESIGN] are the registered trademarks of Health Level Seven
+International and their use does not constitute endorsement by HL7. That
+sentence is HL7's own, as https://hl7.org/fhir/R4/license.html asks every
+non-trademark use of its marks to state (read on 16 October 2026).
+
+The FHIR specification is copyright HL7 2011+, and HL7 licenses it under
+Creative Commons "No Rights Reserved" (CC0 1.0), at the same address. Any
+content of the specification this product includes is under those terms. A
+national implementation guide keeps the licence its publisher gives it, and a
+terminology a resource uses keeps its own.
