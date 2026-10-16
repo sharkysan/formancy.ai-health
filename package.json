@@ -1,0 +1,26 @@
+{
+  "name": "formancy-health",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Formancy Health: formancy forms, their answers and Formancy Report's PDFs, exported to the HL7® FHIR® standard in the formats each country specifies.",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "packageManager": "pnpm@12.4.2",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "build": "turbo run build && node scripts/sync-licenses.mjs",
+    "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
+    "test:repo": "vitest run --config vitest.repo.config.mts",
+    "test:e2e:install": "node scripts/install-test.mjs",
+    "typecheck": "turbo run typecheck",
+    "check:pkg": "turbo run check:pkg"
+  },
+  "devDependencies": {
+    "turbo": "2.11.2",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "yaml": "catalog:"
+  }
+}

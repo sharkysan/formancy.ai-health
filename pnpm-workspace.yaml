@@ -1,0 +1,33 @@
+packages:
+  - "packages/*"
+
+# Packages whose install scripts may run: none. Nothing this workspace
+# installs today has one -- formancy.ai-report's esbuild arrives there with
+# Angular's build, which this repository does not have -- and pnpm runs no
+# install script a package is not named here for. An entry arrives with the
+# package that needs it, and says why.
+allowBuilds: {}
+
+# Shared dependency versions live here so the packages cannot drift apart.
+# They are formancy.ai-report's, which are formancy.ai-data's, so one machine
+# serves every repository. What only Report's builders, Studio and browser
+# gate need -- axe-core, Playwright, marked -- is not here: this repository
+# has no page.
+catalog:
+  # The TypeScript line formancy.ai compiles under: its Angular 22 declares
+  # `typescript: ">=6.0 <6.1"`. The declarations this repository will consume
+  # from @formancy/* were emitted by 6.0.x, so there is one version across
+  # the repositories.
+  typescript: ~6.0.3
+
+  vitest: ^5.0.1
+  "@vitest/coverage-v8": ^5.0.1
+
+  tsdown: ^0.23.0
+  publint: ^0.3.24
+  "@arethetypeswrong/cli": ^0.18.5
+  "@types/node": ^22.10.0
+
+  # The repository's guards read YAML: the workflows' jobs and matrices, and
+  # this file's packages.
+  yaml: ^2.9.1
