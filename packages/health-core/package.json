@@ -1,7 +1,7 @@
 {
   "name": "@formancy/health-core",
   "version": "0.1.0",
-  "description": "Formancy Health's core: the release of the HL7® FHIR® standard its resources are written for, R4 4.0.1, and nothing else yet. No framework, no Node, no network.",
+  "description": "Formancy Health's core: FHIR R4 JSON written and read without losing a digit, and R4's primitives held to their types, for the release of the HL7® FHIR® standard its resources are written for, R4 4.0.1. No framework, no Node, no network.",
   "license": "SEE LICENSE IN LICENSE.md",
   "type": "module",
   "sideEffects": false,
