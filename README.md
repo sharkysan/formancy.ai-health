@@ -14,11 +14,13 @@ leaves out.
 
 > **Status: started 16 October 2026. Nothing exports a resource yet, and nothing is released.**
 >
-> What exists is the licence, the pipeline that will prove the packages, as
-> Formancy Report's proves its own, and one package: `@formancy/health-core`,
-> which names the FHIR version it emits. Next is that core itself, FHIR R4
-> JSON that keeps every digit of a decimal, and then the first export, to
-> CH Core and CH ORF.
+> What exists on 17 October 2026 is the licence, the pipeline that will
+> prove the packages, as Formancy Report's proves its own, and one package:
+> `@formancy/health-core`, which names the FHIR version it emits, holds FHIR
+> R4's primitives to their types -- a decimal as its digits, never a
+> JavaScript number -- and writes and reads FHIR JSON that keeps every
+> digit. Next are the corpus and the gate that runs the HL7 FHIR validator,
+> and then the first export, to CH Core and CH ORF.
 
 ## Licence, in one table
 
@@ -70,12 +72,17 @@ comes with it.
 
 | Package | What it is |
 | --- | --- |
-| `@formancy/health-core` | The FHIR version the module emits, R4 4.0.1, and nothing else yet. No framework, no Node, no network. |
+| `@formancy/health-core` | The FHIR version the module emits, R4 4.0.1; FHIR R4's primitives, each checked against its type when made, a number held as its digits; and a writer and a reader of FHIR JSON that keep every digit, give the same bytes for the same input, and refuse an empty value, a null outside an array, a name given twice and a JavaScript number, naming where and never quoting the value ([0004](./docs/decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)). No framework, no Node, no network. |
 
-Planned and not here: FHIR R4 JSON with exact decimals, the SDC
-Questionnaire and QuestionnaireResponse of a formancy form, the document
-Bundle that carries a Report PDF, and the Swiss profiles; then Germany's,
-Austria's and HL7 Europe's.
+Planned and not here: resources, the SDC Questionnaire and
+QuestionnaireResponse of a formancy form, the document Bundle that carries
+a Report PDF, and the Swiss profiles; then Germany's, Austria's and HL7
+Europe's.
+
+A decimal travels as its text. Build one with `decimal('70.50', path)`
+from the text a form or a database gave you, never from a JavaScript
+number: 0.10 cannot be recovered from 0.1, and health-core refuses a
+number rather than guess.
 
 ## How it relates to formancy.ai, Formancy Data and Formancy Report
 
@@ -119,7 +126,8 @@ pnpm test
 The gates CI runs, from `.github/workflows/gates.yml`: `pnpm build`,
 `pnpm typecheck`, `pnpm check:pkg`, `node scripts/verify-licenses.mjs`,
 `node scripts/dependency-licences.mjs` and `pnpm test:repo`, which holds the
-repository's guards, HL7's notice among them; each package's
+repository's guards, HL7's notice among them and the rule that no package
+converts a value through a JavaScript number or reads a clock; each package's
 `test:coverage` in a job of its own; and `pnpm test:e2e:install`, which
 packs the packages, installs them into a plain npm project, type-checks it
 with `skipLibCheck` off and runs it under Node.

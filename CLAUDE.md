@@ -67,7 +67,11 @@ what a licence identifier cannot say about a licence's terms.
 ## How the pieces fit
 
 Almost nothing is built. `@formancy/health-core` names the FHIR version it
-emits; that is all the product code there is. The package path the plan
+emits, holds R4's primitives as checked text -- a number as its digits,
+never a JavaScript number -- and writes and reads FHIR JSON exactly, by a
+writer and a parser of its own
+([0004](docs/decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md));
+that is all the product code there is. The package path the plan
 proposes, each package depending only on those before it, and split further
 only where a part has its own reason to change:
 
@@ -134,9 +138,11 @@ and the document says what. Three shapes, in order of preference:
    file is not what the generator produces; `scripts/check-cla.test.mjs` fails
    when `CLA.md` changes under a signature; `scripts/upstream-deps.test.mjs`
    fails on an inexact upstream version; `scripts/trademark.test.mjs` fails
-   when HL7's notice goes missing or a name takes its mark. All of them run
-   as `pnpm test:repo`, and CI runs that — **a guard that is not a gate is a
-   comment.**
+   when HL7's notice goes missing or a name takes its mark;
+   `scripts/exact-and-reproducible.test.mjs` fails when a package's source
+   converts a value through a JavaScript number or reads a clock or a random
+   source. All of them run as `pnpm test:repo`, and CI runs that — **a guard
+   that is not a gate is a comment.**
 3. **Measure it.** Below.
 
 Counts written into prose go stale. **Prefer wording without a number.** Where a
@@ -161,7 +167,7 @@ guide is said to require comes with where the guide says so.
 
 The rule this repository will hold once there is a resource to prove, as
 Formancy Report holds its rule about PDFs (formancy.ai-report 0003). It
-becomes decision 0004 with the validator gate.
+becomes a decision record of its own with the validator gate.
 
 - A claim that an export conforms is checked by the official **HL7 FHIR
   validator**, against **pinned implementation guide packages**, on the JSON
@@ -182,7 +188,10 @@ becomes decision 0004 with the validator gate.
   type and are never converted through JavaScript `Number`, as in Formancy
   Data and Report (formancy.ai-data 0008, formancy.ai-report 0010). FHIR
   JSON writes a decimal as a number whose digits matter, a trailing zero
-  included.
+  included. Here a number is a `FhirNumber`, made from its text by
+  health-core's `decimal()` and its integer types, and written and read by
+  its `writeJson` and `readJson`, never by `JSON.stringify` or `JSON.parse`
+  (0004).
 
 ## Secrets, health data and untrusted input
 

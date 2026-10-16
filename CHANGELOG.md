@@ -70,8 +70,33 @@ formancy.ai's admin colour stylesheet and the palette guard that would hold
 it, which Data and Report keep. Version 1 has no page, so there is no
 browser gate, no README picture and no demo either.
 
-**`@formancy/health-core` names the FHIR version it emits, and nothing
-else yet.** `FHIR_VERSION` is `'4.0.1'`, R4, independent of every package
-version. It is the package that proves the pipeline: build, packaging
-checks, the licence in the tarball and the install gate all run on it.
-Nothing exports a resource yet.
+**`@formancy/health-core` names the FHIR version it emits.**
+`FHIR_VERSION` is `'4.0.1'`, R4, independent of every package version. It
+is the package that proves the pipeline: build, packaging checks, the
+licence in the tarball and the install gate all run on it. Nothing exports
+a resource yet.
+
+**`@formancy/health-core` writes and reads FHIR JSON exactly, and holds
+R4's primitives to their types**
+([0004](docs/decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)).
+FHIR says a decimal's precision is part of its value -- 0.010 is not 0.01
+-- and a JavaScript number keeps neither a trailing zero nor more than
+about seventeen digits. So a number is its text: `decimal()`, `integer()`,
+`positiveInt()` and `unsignedInt()` take a string or a bigint, check it
+against R4's grammar and, for the integers, their 32-bit range, and refuse
+a JavaScript number. `date()`, `dateTime()`, `instant()`, `time()`, `id()`,
+`code()`, `uri()` and `uuid()` check the rest; a date and time without its
+zone is refused, not guessed, and a day the calendar lacks is refused.
+`writeJson()` writes a number's digits unquoted, the names in the order
+given, the same bytes for the same input; `readJson()` is a parser of the
+package's own, because `JSON.parse` reads every number into a double and
+keeps the last of two properties of one name without a word. Both refuse
+breaks of FHIR JSON's rules -- an empty value, a null outside an array, a
+name given twice, a JavaScript number -- with a `Refusal` that names the path
+and the rule and never quotes the value, which may be a person's. The
+types are the package's own: `@types/fhir` and `@medplum/fhirtypes` both
+type a decimal as a JavaScript number. And a new guard,
+`scripts/exact-and-reproducible.test.mjs`, fails when a package's source
+converts a value through a number or reads a clock or a random source,
+which would make the same input give other bytes or an identity nobody
+supplied.
