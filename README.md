@@ -12,11 +12,13 @@ profiles a country publishes rather than to FHIR's base resources alone.
 What an export cannot say in the profile it targets, it refuses rather than
 leaves out.
 
-> **Status: in planning, 16 October 2026. Nothing is built and nothing is released.**
+> **Status: started 16 October 2026. Nothing exports a resource yet, and nothing is released.**
 >
-> What exists is the licence and this repository. Next comes the pipeline
-> that will prove the packages, as Formancy Report's proves its own, and then
-> the first export, to CH Core and CH ORF.
+> What exists is the licence, the pipeline that will prove the packages, as
+> Formancy Report's proves its own, and one package: `@formancy/health-core`,
+> which names the FHIR version it emits. Next is that core itself, FHIR R4
+> JSON that keeps every digit of a decimal, and then the first export, to
+> CH Core and CH ORF.
 
 ## Licence, in one table
 
@@ -37,6 +39,11 @@ Data's and Formancy Report's.
 [`LICENSE.md`](./LICENSE.md) has the terms. It is Version 1, in force from 16 October 2026, and says at the top that no lawyer has reviewed it. A production licence is requested from [info@formancy.ai](mailto:info@formancy.ai), as its section 9 says.
 
 <!-- end generated -->
+
+Why a paid module exists beside an Apache-2.0 project, in a repository of its
+own, on Formancy Data's and Formancy Report's terms and before a lawyer has
+read them, is decision
+[0001](./docs/decisions/0001-a-paid-module-in-its-own-repository.md).
 
 Where a package here depends on Formancy Report's or Formancy Data's
 packages, those keep their own licence, on the same terms: a host that runs
@@ -59,14 +66,26 @@ The order is the order of the work. Which version of a guide a package
 targets is decided when the package arrives, in the decision record that
 comes with it.
 
+## Packages
+
+| Package | What it is |
+| --- | --- |
+| `@formancy/health-core` | The FHIR version the module emits, R4 4.0.1, and nothing else yet. No framework, no Node, no network. |
+
+Planned and not here: FHIR R4 JSON with exact decimals, the SDC
+Questionnaire and QuestionnaireResponse of a formancy form, the document
+Bundle that carries a Report PDF, and the Swiss profiles; then Germany's,
+Austria's and HL7 Europe's.
+
 ## How it relates to formancy.ai, Formancy Data and Formancy Report
 
 This module **depends on** the released `@formancy/*` packages, at exact
-versions, and copies none of their code, stylesheets included. A form is
-formancy's form, read as formancy defines it; a report is Formancy Report's
-definition and the PDF Report rendered from it. Neither the form spec nor the
-report definition grows to hold what a profile asks for: that mapping is this
-module's.
+versions, and copies none of their code, stylesheets included
+([0002](./docs/decisions/0002-depend-on-upstream-never-copy-it.md)). A guard
+refuses a range or a path. A form is formancy's form, read as formancy
+defines it; a report is Formancy Report's definition and the PDF Report
+rendered from it. Neither the form spec nor the report definition grows to
+hold what a profile asks for: that mapping is this module's.
 
 Formancy Report and Formancy Data are both optional. A host that exports only
 forms needs neither, and without Data a host hands over the form and its
@@ -79,10 +98,46 @@ Level Seven International and their use does not constitute endorsement by
 HL7. [`NOTICE`](./NOTICE) says where that sentence comes from, and under what
 terms HL7 publishes the specification.
 
-The product's name carries none of those marks. FHIR is named here only to
-say which standard this module implements and which resources it produces.
+The product's name carries none of those marks
+([0003](./docs/decisions/0003-the-product-name-carries-no-hl7-mark.md)).
+FHIR is named here only to say which standard this module implements and
+which resources it produces. `scripts/trademark.test.mjs` fails when the
+sentence above goes missing from this file or from `NOTICE`, or when a
+package's name takes one of the marks.
 
 ## Development
 
-To come with the pipeline: how to build and test the packages, and the gates
-a change passes before it merges and a release before it publishes.
+Node 22.13 or later, and pnpm through corepack.
+
+```bash
+corepack enable pnpm
+pnpm install
+pnpm build
+pnpm test
+```
+
+The gates CI runs, from `.github/workflows/gates.yml`: `pnpm build`,
+`pnpm typecheck`, `pnpm check:pkg`, `node scripts/verify-licenses.mjs`,
+`node scripts/dependency-licences.mjs` and `pnpm test:repo`, which holds the
+repository's guards, HL7's notice among them; each package's
+`test:coverage` in a job of its own; and `pnpm test:e2e:install`, which
+packs the packages, installs them into a plain npm project, type-checks it
+with `skipLibCheck` off and runs it under Node.
+Beside them, every pull request's commit authors are checked against the
+CLA, and CodeQL and dependency review run. A release runs the same gates and
+publishes only the tarballs the install gate ran, with provenance and a
+signed SBOM. [`CLAUDE.md`](./CLAUDE.md) says what each is for and what the
+bar is.
+
+Not here yet, each with the first thing it proves: the gate that runs the
+HL7 FHIR validator over what the packages produce, the licence check of the
+implementation guide packages it loads, and the release report of the run
+that gates a release.
+
+## Documents
+
+- [`docs/decisions/`](./docs/decisions/README.md) — every decision somebody could helpfully undo, with what verifies it.
+- [`CHANGELOG.md`](./CHANGELOG.md) — what changed and why.
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`CLA.md`](./CLA.md) — contributions are taken under a CLA, checked on every pull request.
+- [`SECURITY.md`](./SECURITY.md) — how to report a vulnerability, and what this product considers highest risk.
+- [`RELEASING.md`](./RELEASING.md) — releases are cut by the workflow, with provenance and a signed SBOM.
