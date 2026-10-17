@@ -142,6 +142,16 @@ describe('the exactness and reproducibility guard', () => {
     // The answers' export reads a person's numbers and writes them (0007).
     expect(paths).toContain('packages/health-questionnaire/src/answers.ts')
     expect(paths).toContain('packages/health-questionnaire/src/enablement.ts')
+    // The documents' bytes, their size and their hash, and the Bundle's
+    // identity, which are the host's and never a clock's (0008).
+    expect(paths).toContain('packages/health-document/src/sha1.ts')
+    expect(paths).toContain('packages/health-document/src/document-reference.ts')
+    expect(paths).toContain('packages/health-document/src/bundle.ts')
+    expect(paths).toContain('packages/health-document/src/attachments.ts')
+    expect(paths).toContain('packages/health-core/src/base64.ts')
+    // health-corpus is private, never published: it renders with Report
+    // and reads Node's Buffer and crypto, and nobody installs it.
+    expect(paths.filter((path) => path.startsWith('packages/health-corpus/'))).toEqual([])
     expect(paths.filter((path) => TEST.test(path))).toEqual([])
   })
 

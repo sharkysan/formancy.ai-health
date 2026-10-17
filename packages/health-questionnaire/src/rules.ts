@@ -21,11 +21,12 @@
  * scope; the Questionnaire has no such scope, so a visibility rule there
  * is refused, and a computed one is still read-only.
  */
+import { item, member, type Refusals } from '@formancy/health-core'
 import type { FieldDef, FormSchema } from '@formancy/spec'
 import { readCondition } from './cel.js'
 import { enablingOf, type ConditionScope, type Enabling } from './conditions.js'
 import type { Place, Places } from './places.js'
-import { FORM, item, member, type Refusals } from './refusals.js'
+import { FORM } from './refusals.js'
 
 export interface RuleEffects {
   /** What enables each item a visible or skip rule targets. */

@@ -4,10 +4,10 @@
  * they are. None of it is in the submission, and none of it is made here:
  * no clock, no identifier (CLAUDE.md, "Identity comes from the host").
  */
-import { code, dateTime, reference, type FhirCode, type FhirDateTime } from '@formancy/health-core'
+import { code, dateTime, member, reference, type FhirCode, type FhirDateTime, type Refusals } from '@formancy/health-core'
 import { checkContext, type CheckedContext, type QuestionnaireContext } from './context.js'
 import type { Reference } from './response-resource.js'
-import { CONTEXT, member, type Refusals } from './refusals.js'
+import { CONTEXT } from './refusals.js'
 
 /** R4's QuestionnaireResponseStatus, the codes `QuestionnaireResponse.status` is bound to, required. */
 export const RESPONSE_STATUSES = ['in-progress', 'completed', 'amended', 'entered-in-error', 'stopped'] as const

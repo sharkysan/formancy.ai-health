@@ -98,6 +98,27 @@ Nothing here makes an identifier, an id or a timestamp: identity is the
 host's to supply, and no source in the package reads a clock or a random
 source.
 
+## Bytes are base64Binary
+
+R4's `base64Binary` is "a stream of bytes, base64 encoded (RFC 4648)": an
+attachment's data, a Binary's, a hash. Bytes are a `Uint8Array`, the type
+every engine has, without Node's Buffer or the DOM's atob.
+
+- `toBase64Binary(bytes, path)` writes them in RFC 4648's one canonical
+  spelling, standard alphabet and `=` padding, as a `FhirBase64Binary`. A
+  value that is no Uint8Array is refused as `not-bytes`, a string of a
+  PDF's text included, and no bytes at all as `empty`, since FHIR JSON
+  carries no empty string.
+- `base64Binary(value, path)` checks a text is that spelling: whole
+  quanta, padding at the end and nowhere else, the bits it leaves zero, no
+  whitespace. R4's regex is informative and leaves `/` out of the
+  alphabet; it is not the rule here.
+- `fromBase64Binary(value, path)` reads the bytes back, after the same
+  check: a reader lenient about a spelling would read bytes nobody wrote.
+
+Health-document writes a PDF's bytes and its SHA-1 with it
+([0008](../../docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
+
 ## writeJson and readJson
 
 `writeJson(value)` writes FHIR JSON: numbers from their digits, unquoted;
@@ -145,9 +166,27 @@ its form gives no answer, whose refusal names the object holding it and
 never the name, which is the submission's and not the form's; `disabled`,
 an answer to an item the other answers disable; `required`, a required
 item a completed response leaves unanswered; and `reference`
-([0007](../../docs/decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)). A path repeats the names of the
+([0007](../../docs/decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)).
+A document is refused with eight of its own: `not-bytes` and `not-pdf`,
+bytes that are not bytes or not a PDF by its first and last lines;
+`unproved`, a PDF profile no gate here has proved; `absent`, something the
+resource needs from the host and was not given; `dangling`, a reference
+to a resource the Bundle does not hold; `unreferenced`, an entry the
+Composition does not reach; `duplicate-entry`, a second entry of one
+name; and `mismatch`, an attachment whose size, hash or media type is not
+that of the bytes it carries or names
+([0008](../../docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
+A path repeats the names of the
 document it passed through, element names in FHIR JSON; text that is not
 FHIR JSON may use anything as a name, and the path carries it.
+
+`Refusals` collects the refusals of one export, so that every package
+answers with all of them at once or with the resource: `add(rule, path)`
+records one, `take(make)` records what a primitive refuses inside `make`
+and throws on anything else, which is a bug. `member(path, name)` and
+`item(path, index)` write a path as `writeJson` writes one --
+`context.entries[2].resource.subject`, a name that is not plain quoted in
+brackets -- so that every package's refusals name where in one form.
 
 ## What it does not do
 

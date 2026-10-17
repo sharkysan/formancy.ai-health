@@ -82,11 +82,17 @@ parser of its own, and holds the one `Refusal` every package refuses with
 and a submission of it as a QuestionnaireResponse walked from that
 Questionnaire's own mapping
 ([0007](docs/decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)).
+`@formancy/health-document` attaches a PDF's bytes to a DocumentReference,
+in the attachment or a Binary, and assembles a document Bundle of what its
+Composition refers to, every reference resolved, refusing a PDF/A
+declaration nothing has proved ([0008](docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
 That is all the product code there is. Beside them, and not product code,
 the validator gate judges what the packages write
 ([0005](docs/decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md)):
 `scripts/validator.mjs`, its modules, corpus and synthetic forms in
-`scripts/validator/`, and the registers of what it runs in `docs/release/`. The package path the
+`scripts/validator/`, and the registers of what it runs in `docs/release/`;
+and `@formancy/health-corpus`, private test support, renders the PDF the
+documents carry with Formancy Report 0.1.0 (0008). The package path the
 plan proposes, each package depending only on those before it, and split
 further only where a part has its own reason to change:
 
@@ -98,9 +104,10 @@ further only where a part has its own reason to change:
    (0006), and answers to a QuestionnaireResponse (0007); extraction later. It
    reads forms through `@formancy/spec` at an exact version, and depends on
    nothing else but health-core.
-3. `health-document` -- the document Bundle and its Composition; a
-   DocumentReference and a Binary for a PDF's bytes; the MHD provide Bundle,
-   built and never sent.
+3. `health-document` -- the document Bundle and its Composition, and a
+   DocumentReference and a Binary for a PDF's bytes (0008); later the MHD
+   provide Bundle, built and never sent. It depends on health-core alone,
+   and on no renderer: the PDF is the host's.
 4. `health-ch` -- CH Core and CH ORF, later CH EPR: profiles, identifier
    systems, codes and the CH ORF document.
 5. `health-de`, `health-uk`, `health-at`, `health-eu` -- the same for
@@ -113,12 +120,14 @@ further only where a part has its own reason to change:
    take a production dependency on Formancy Report, at an exact released
    version, as `report-data-provider` alone may take Data's
    (formancy.ai-report 0016).
-7. `health-corpus` -- test support, never published: synthetic forms and
-   answers, the exact-value and identity fixtures, and PDFs Report
-   rendered. Until it needs a dependency of its own -- Report's renderer,
-   for H06's PDFs -- the validator's runner, corpus and synthetic forms live
-   in `scripts/validator/` and the guide package register in
-   `docs/release/` (0005, 0006).
+7. `health-corpus` -- test support, private and never published: the
+   referral letter it renders with Formancy Report's released packages at
+   exactly 0.1.0, the only place Report is a dependency, and the documents
+   health-document makes of it, which the validator gate judges (0008).
+   The validator's runner, corpus and synthetic forms stay in
+   `scripts/validator/` and the registers in `docs/release/`: the forms
+   need `@formancy/spec` and health-questionnaire, which it does not depend
+   on, and the runner is the gate the workflow runs by its path (0008).
 
 A package arrives with the decision record that says what it may import. When
 this map goes stale, the rename is the edit to make here.
@@ -168,7 +177,9 @@ and the document says what. Three shapes, in order of preference:
    source; `scripts/compatibility.test.mjs` fails when the compatibility
    table is stale; `scripts/validator/corpus.test.mjs` fails when the
    questionnaire package maps or writes something no corpus form or
-   submission holds;
+   submission holds, or a package writes a resource type -- or
+   health-document a PDF's bytes in a place -- that no resource the gate
+   accepts holds;
    `scripts/validator/registers.test.mjs` fails when a
    register is malformed or, where the validator job has run, says other
    than the bytes and the validator's own load. All of them run as
@@ -208,10 +219,12 @@ is the tool for it.
   (`scripts/validator/corpus.mjs`) holds what health-questionnaire, as
   built, makes of the synthetic forms and submissions in
   `scripts/validator/forms.mjs`, each response judged against its
-  Questionnaire, and builds by hand only what no package builds yet,
+  Questionnaire, and what health-document makes of the PDF health-corpus
+  renders with Report, and builds by hand only what no package builds,
   written by health-core's `writeJson`; `scripts/validator/corpus.test.mjs`
   fails when a field type, item type or rule the package maps is in no
-  corpus form, or an answer type it writes in no corpus response. A
+  corpus form, an answer type it writes in no corpus response, or a
+  resource type a package writes in no resource the gate accepts. A
   conformance claim is about those resources and no other.
 - The validator and every guide package are fetched by exact version,
   refused unless their hash is the one `docs/release/validator.json` or

@@ -53,6 +53,20 @@ const RULES = {
   disabled: 'it answers an item the other answers disable, and R4 gives a disabled item no answer',
   required: 'its item is required, and a completed response holds no answer to it that R4 counts',
   reference: 'it is not a reference by name that R4 allows here: a resource type it allows and an id, or a urn:uuid, and never an address',
+  // What a document's host hands over and a Bundle cannot carry (0008).
+  // A refusal of bytes says what is wrong with them as a whole and never
+  // quotes one: a PDF's bytes are a person's record.
+  'not-bytes': 'it is not bytes: they are handed over as a Uint8Array, and nothing here converts anything else into them',
+  'not-pdf':
+    'its bytes do not begin with a PDF header, %PDF-1.0 to %PDF-1.7 or %PDF-2.0, and end with %%EOF on a line of its own, so nothing says they are a PDF; nothing here reads a PDF further',
+  unproved:
+    'it declares a PDF profile that no gate here has proved its producer makes, and a declaration is never taken on trust: until one is proved, only a plain PDF is attached',
+  absent: 'it is absent, and the resource needs it from the host: nothing here makes one up',
+  dangling: 'it refers to a resource the Bundle does not hold, and a document holds every resource it refers to',
+  unreferenced: 'the Composition does not refer to it, directly or through another entry, and a document holds only what its Composition refers to',
+  'duplicate-entry': 'it names a Bundle entry by a fullUrl another entry has, and a document names each entry once',
+  mismatch:
+    'it says of an attachment what the bytes the attachment carries or names do not have -- their size, their hash, or the media type their Binary says -- so a receiver would be told of one PDF and given another',
 } as const
 
 /** What was wrong with a value. */
@@ -72,6 +86,7 @@ export type PrimitiveType =
   | 'code'
   | 'uri'
   | 'uuid'
+  | 'base64Binary'
 
 /** What a refusal knows beside its rule and path. */
 export interface RefusalContext {

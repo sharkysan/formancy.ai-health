@@ -13,9 +13,10 @@
 //    its SHA-256 is the registered one (scripts/validator/cache.mjs), and
 //    lays out the validator's package cache with those packages and no
 //    others.
-// 3. Makes the corpus -- health-questionnaire's Questionnaires of the
-//    synthetic forms, and the resources built by hand -- and writes it with
-//    health-core's writeJson.
+// 3. Makes the corpus -- health-questionnaire's Questionnaires and
+//    responses of the synthetic forms, health-document's Bundles of the
+//    referral letter health-corpus renders with Formancy Report, and the
+//    resources built by hand -- and writes it with health-core's writeJson.
 // 4. Runs the validator once over every file, offline: `-tx n/a` (no
 //    terminology server), `-txCache n/a`, and `-no-http-access`, which
 //    refuses every request the validator would make, for a package, a
@@ -45,6 +46,7 @@ export const RESULTS = 'test-results/validator.json'
 const WORK = 'test-results/validator'
 const HEALTH_CORE = 'packages/health-core/dist/index.mjs'
 const HEALTH_QUESTIONNAIRE = 'packages/health-questionnaire/dist/index.mjs'
+const HEALTH_CORPUS = 'packages/health-corpus/dist/index.mjs'
 
 /**
  * The validator's command line, all of it but `java` itself: the one place
@@ -148,7 +150,10 @@ async function main(argv) {
     return import(pathToFileURL(join(repo, path)).href)
   }
   const core = await built(HEALTH_CORE)
-  const entries = buildCorpus({ core, questionnaire: await built(HEALTH_QUESTIONNAIRE) })
+  // The documents' PDF, rendered by Report's renderer as health-corpus
+  // depends on it, once per run: the same report and data give the same bytes.
+  const documents = await built(HEALTH_CORPUS)
+  const entries = buildCorpus({ core, questionnaire: await built(HEALTH_QUESTIONNAIRE), documents, pdf: await documents.renderReferral() })
   const corpusWrong = corpusProblems(entries)
   if (corpusWrong.length > 0) throw new Error(`the corpus does not hold:\n  - ${corpusWrong.join('\n  - ')}`)
   const work = join(repo, WORK)

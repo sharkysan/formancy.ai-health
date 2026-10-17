@@ -6,19 +6,30 @@
  * is on trial is that the published entry points resolve, with the types that
  * shipped.
  */
+import { createHash } from 'node:crypto'
 import {
   FHIR_VERSION,
   Refusal,
   dateTime,
   decimal,
+  fromBase64Binary,
   integer,
   language,
   readJson,
+  toBase64Binary,
   writeJson,
   type FhirDecimal,
   type FhirInteger,
   type FhirJson,
 } from '@formancy/health-core'
+import {
+  PROVED_PDF_PROFILES,
+  toDocumentBundle,
+  toDocumentReference,
+  type Bundle,
+  type DocumentContext,
+  type DocumentReferenceContext,
+} from '@formancy/health-document'
 import {
   SDC_QUESTIONNAIRE,
   SDC_QUESTIONNAIRE_RESPONSE,
@@ -145,6 +156,72 @@ if (!(stepRefusal instanceof Refusal) || stepRefusal.rule !== 'grammar' || stepR
   throw new Error('a fraction on an integer item was not refused by a Refusal at its path')
 }
 
+// A host attaches a PDF's bytes to a DocumentReference through the
+// published entry, and health-core's writeJson writes it: a dist that
+// encoded a byte wrongly, counted the bytes otherwise, or hashed anything
+// but the bytes -- held here to Node's own base64 and SHA-1 -- fails here.
+// The PDF is the smallest one health-document attaches, and synthetic.
+const pdfBytes = new Uint8Array(Buffer.from('%PDF-1.4\n%synthetic\n%%EOF\n', 'latin1'))
+const names = { composition: 'urn:uuid:00000000-0000-4000-8000-000000000001', patient: 'urn:uuid:00000000-0000-4000-8000-000000000002', documentReference: 'urn:uuid:00000000-0000-4000-8000-000000000003' }
+const consultation = { system: 'http://terminology.hl7.org/CodeSystem/v2-0270', code: 'CN', display: 'Consultation' }
+const referenceContext: DocumentReferenceContext = { status: 'current', type: consultation, subject: { reference: names.patient }, date: '2026-10-17T10:00:00+02:00', title: 'Zuweisung' }
+const attached = toDocumentReference({ bytes: pdfBytes, profile: 'PDF' }, referenceContext)
+if (!attached.ok) throw new Error(`toDocumentReference refused a plain PDF: ${attached.refusals.map((refusal) => refusal.message).join('; ')}`)
+const written_reference = writeJson(attached.documentReference)
+const sha1 = createHash('sha1').update(pdfBytes).digest('base64')
+const attachment = `"attachment":{"contentType":"application/pdf","data":"${Buffer.from(pdfBytes).toString('base64')}","size":${String(pdfBytes.length)},"hash":"${sha1}","title":"Zuweisung"}`
+if (!written_reference.includes(attachment)) throw new Error(`the DocumentReference lacks ${attachment}: ${written_reference}`)
+if (!Buffer.from(fromBase64Binary(toBase64Binary(pdfBytes, 'data'), 'data')).equals(Buffer.from(pdfBytes))) throw new Error('health-core did not read back the bytes it encoded')
+if (PROVED_PDF_PROFILES.join() !== 'PDF') throw new Error(`the published package attaches ${PROVED_PDF_PROFILES.join()}, not a plain PDF alone`)
+
+// The document Bundle through the published entry: the Composition first,
+// the timestamp written as meta.lastUpdated too, the host's entries after.
+const document: DocumentContext = {
+  identifier: { system: 'urn:ietf:rfc:3986', value: 'urn:uuid:00000000-0000-4000-8000-000000000009' },
+  timestamp: '2026-10-17T10:05:00+02:00',
+  composition: {
+    fullUrl: names.composition,
+    status: 'final',
+    type: consultation,
+    subject: { reference: names.patient },
+    date: '2026-10-17T10:00:00+02:00',
+    author: [{ reference: names.patient }],
+    title: 'Zuweisung',
+    section: [{ title: 'Zuweisung', entry: [{ reference: names.documentReference }] }],
+  },
+  entries: [
+    { fullUrl: names.patient, resource: { resourceType: 'Patient', name: [{ family: 'Beispiel' }] } },
+    { fullUrl: names.documentReference, resource: attached.documentReference },
+  ],
+}
+const assembled = toDocumentBundle(document)
+if (!assembled.ok) throw new Error(`toDocumentBundle refused a document it assembles: ${assembled.refusals.map((refusal) => refusal.message).join('; ')}`)
+const bundle: Bundle = assembled.bundle
+const written_bundle = writeJson(bundle)
+const head = `{"resourceType":"Bundle","meta":{"lastUpdated":"2026-10-17T10:05:00+02:00"},"identifier":{"system":"urn:ietf:rfc:3986","value":"urn:uuid:00000000-0000-4000-8000-000000000009"},"type":"document","timestamp":"2026-10-17T10:05:00+02:00","entry":[{"fullUrl":"${names.composition}","resource":{"resourceType":"Composition"`
+if (!written_bundle.startsWith(head) || !written_bundle.includes(attachment)) throw new Error(`the Bundle is not the document: ${written_bundle.slice(0, 400)}`)
+
+// A PDF declared PDF/A, which nothing has proved, and a reference to an
+// entry the document does not hold, are refused by health-core's Refusal,
+// the class a host already branches on: a dist with a second copy of
+// health-core would fail the instanceof.
+const declared = toDocumentReference({ bytes: pdfBytes, profile: 'PDF/A-2b' }, referenceContext)
+const [unproved] = declared.ok ? [] : declared.refusals
+if (!(unproved instanceof Refusal) || unproved.rule !== 'unproved' || unproved.path !== 'pdf.profile') throw new Error('a PDF/A declaration was not refused as unproved')
+const dangling = toDocumentBundle({ ...document, entries: document.entries.slice(1) })
+const [unresolved] = dangling.ok ? [] : dangling.refusals
+if (!(unresolved instanceof Refusal) || unresolved.rule !== 'dangling' || unresolved.path !== 'context.composition.subject.reference') throw new Error('a dangling reference was not refused')
+
+// The declarations hold a host to bytes and to the profiles named: a
+// string is not bytes, and a profile that is none does not compile.
+export function refusedByTheDocumentTypes(): void {
+  // @ts-expect-error a PDF's bytes are a Uint8Array, not its text
+  toDocumentReference({ bytes: '%PDF-1.4', profile: 'PDF' }, referenceContext)
+  // @ts-expect-error PDF/A without its conformance level names no profile
+  toDocumentReference({ bytes: pdfBytes, profile: 'PDF/A' }, referenceContext)
+}
+
 console.log(`ok: @formancy/health-core emits FHIR ${FHIR_VERSION}, and wrote ${written}`)
 console.log(`ok: @formancy/health-questionnaire wrote a Questionnaire of ${String(written_questionnaire.length)} characters and refused a signature`)
 console.log(`ok: @formancy/health-questionnaire wrote a QuestionnaireResponse of ${String(written_response.length)} characters and refused a fraction on an integer item`)
+console.log(`ok: @formancy/health-document wrote a document Bundle of ${String(written_bundle.length)} characters carrying a PDF, and refused a PDF/A declaration and a dangling reference`)

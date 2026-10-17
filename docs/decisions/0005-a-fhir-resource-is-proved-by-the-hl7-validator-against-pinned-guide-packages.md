@@ -1,6 +1,6 @@
 # 0005 — Prove a FHIR resource with the HL7 FHIR validator, against pinned guide packages, offline, on the JSON a package wrote
 
-- **Status:** accepted
+- **Status:** accepted; its corpus and registers stay in `scripts/validator/` and `docs/release/` beside the `health-corpus` it expected to hold them, by [0008](0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)
 - **Date:** 2026-10-17
 - **Deciders:** Daniel Bacher
 - **Verified by:** the `validator` job of `gates.yml`, which CI runs on every

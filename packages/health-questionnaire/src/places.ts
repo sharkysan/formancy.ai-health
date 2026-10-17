@@ -9,8 +9,9 @@
  * data path it would have without it. A rule names its target by data
  * path, and a skip rule names a page by its key.
  */
+import { item, member } from '@formancy/health-core'
 import type { FieldDef, FormSchema } from '@formancy/spec'
-import { FORM, item, member } from './refusals.js'
+import { FORM } from './refusals.js'
 
 export interface Place {
   readonly field: FieldDef

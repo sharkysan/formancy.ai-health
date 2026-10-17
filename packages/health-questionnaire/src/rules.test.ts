@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
+import { Refusals } from '@formancy/health-core'
 import type { FormSchema } from '@formancy/spec'
 import { placesOf } from './places.js'
-import { Refusals } from './refusals.js'
 import { ruleEffects } from './rules.js'
 import { URL, form } from './test-support.js'
 

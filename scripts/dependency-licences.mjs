@@ -13,9 +13,12 @@
 // Formancy Report's own packages are source-available, on these terms from
 // the same rightsholder, and are refused like anybody's: Report admits
 // Formancy Data's by a reviewed reading of their licence file, for the one
-// package allowed to depend on them (formancy.ai-report 0016), and a package
-// here that attaches a Report PDF brings such an admission with the decision
-// that allows it. None does yet.
+// package allowed to depend on them (formancy.ai-report 0016), and a
+// published package here that takes Report -- `health-report`, the plan's
+// one call from a report to a document -- brings such an admission with the
+// decision that allows it. None does yet: health-document attaches a PDF's
+// bytes and depends on no renderer, and health-corpus, which renders the
+// corpus's PDFs with Report 0.1.0, is private and never walked (0008).
 //
 // FHIRPath is refused today. `fhirpath`, the TypeScript engine, and
 // `@lhncbc/ucum-lhc`, which it depends on, declare "SEE LICENSE IN

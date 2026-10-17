@@ -34,7 +34,9 @@ export {
   type FhirUuid,
   type StringType,
 } from './strings.js'
+export { base64Binary, fromBase64Binary, toBase64Binary, type FhirBase64Binary } from './base64.js'
 export { reference, type FhirReference } from './references.js'
-export type { FhirJson, FhirJsonObject } from './json.js'
+export { Refusals } from './refusals.js'
+export { item, member, type FhirJson, type FhirJsonObject } from './json.js'
 export { readJson } from './json-read.js'
 export { writeJson } from './json-write.js'

@@ -39,5 +39,9 @@ describe('the CI test jobs', () => {
   test('is reading the workspace at all', () => {
     expect(packagesWithSuites()).toContain('@formancy/health-core')
     expect(packagesWithSuites()).toContain('@formancy/health-questionnaire')
+    expect(packagesWithSuites()).toContain('@formancy/health-document')
+    // Private and never published, and tested all the same: its suite
+    // proves the PDFs Report renders are attached unchanged (0008).
+    expect(packagesWithSuites()).toContain('@formancy/health-corpus')
   })
 })

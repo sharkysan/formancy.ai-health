@@ -84,6 +84,30 @@ describe('a refusal', () => {
     expect(refusal.message).not.toContain('undefined')
   })
 
+  // A document refuses what its host hands over and a Bundle cannot carry:
+  // bytes that are not bytes, or not a PDF; a PDF profile nothing here has
+  // proved; something the document needs and was not given; a reference
+  // to a resource the Bundle does not hold, an entry the Composition does
+  // not reach and two entries of one name; and an attachment that says a
+  // size, a hash or a media type its bytes do not have. A host branches on
+  // each by its rule; one with no words of its own would print "undefined"
+  // where the reason belongs (0008).
+  test.each([
+    ['not-bytes', 'pdf.bytes'],
+    ['not-pdf', 'pdf.bytes'],
+    ['unproved', 'pdf.profile'],
+    ['absent', 'context.identifier'],
+    ['dangling', 'context.entries[1].resource.subject.reference'],
+    ['unreferenced', 'context.entries[3]'],
+    ['duplicate-entry', 'context.entries[2].fullUrl'],
+    ['mismatch', 'context.entries[2].resource.content[0].attachment.hash'],
+  ] as const)('for documents, %s, has words of its own and names its path', (rule, path) => {
+    const refusal = new Refusal(rule, path)
+    expect(refusal).toMatchObject({ rule, path })
+    expect(refusal.message.startsWith(`${path}: `)).toBe(true)
+    expect(refusal.message).not.toContain('undefined')
+  })
+
   // A text missing in one language is not the same refusal as the same
   // text missing in another: without the language, a host that asked for
   // fr and it would get two refusals it cannot tell apart, and fix one.

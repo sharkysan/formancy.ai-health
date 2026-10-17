@@ -527,11 +527,16 @@ describe('this workspace', () => {
   // checking nothing. health-core has no production dependency;
   // health-questionnaire reads forms through @formancy/spec, which brings
   // ajv and @noble/hashes, and a walk that did not reach them would pass
-  // by never judging a third party.
-  test('passes, and found @formancy/health-core, @formancy/health-questionnaire and what they bring', () => {
+  // by never judging a third party. health-document depends on health-core
+  // alone; health-corpus, which takes Formancy Report and pdfmake for its
+  // PDFs, is private, never published and never walked (0008).
+  test('passes, and found @formancy/health-core, @formancy/health-questionnaire, @formancy/health-document and what they bring', () => {
     const { published, entries } = workspaceClosure()
     expect(published).toContain('@formancy/health-core')
     expect(published).toContain('@formancy/health-questionnaire')
+    expect(published).toContain('@formancy/health-document')
+    expect(published).not.toContain('@formancy/health-corpus')
+    expect(entries.map((entry) => entry.name)).not.toContain('@formancy/report-render-pdf')
     const judged = new Set(entries.filter((entry) => !entry.sibling).map((entry) => entry.name))
     for (const name of ['@formancy/spec', 'ajv', '@noble/hashes']) expect(judged).toContain(name)
     expect(problems(entries)).toEqual([])

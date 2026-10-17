@@ -37,7 +37,7 @@
  * or a random source: the same form, answers and context give the same
  * resource.
  */
-import { uri, type Refusal } from '@formancy/health-core'
+import { item as indexed, member, Refusals, uri, type Refusal } from '@formancy/health-core'
 import { ROW_ID, type FormSchema } from '@formancy/spec'
 import { answersOf, unanswered } from './answers.js'
 import { isEnabled } from './enablement.js'
@@ -45,7 +45,6 @@ import { mapForm, type Pair } from './questionnaire.js'
 import type { Questionnaire, QuestionnaireItem } from './resource.js'
 import { checkResponseContext, type ResponseContext, type ResponseElements } from './response-context.js'
 import { SDC_QUESTIONNAIRE_RESPONSE, type QuestionnaireResponse, type QuestionnaireResponseAnswer, type QuestionnaireResponseItem } from './response-resource.js'
-import { item as indexed, member, Refusals } from './refusals.js'
 
 export type QuestionnaireResponseExport =
   | { readonly ok: true; readonly questionnaireResponse: QuestionnaireResponse }
