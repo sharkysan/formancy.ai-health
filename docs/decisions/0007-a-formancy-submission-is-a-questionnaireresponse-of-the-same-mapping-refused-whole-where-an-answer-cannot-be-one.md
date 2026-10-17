@@ -1,6 +1,6 @@
 # 0007 — Export a formancy submission as a QuestionnaireResponse walked from the Questionnaire's own mapping, its numbers exactly the doubles formancy holds, and refuse it whole where an answer cannot be one
 
-- **Status:** accepted
+- **Status:** accepted; a response claims the profiles the host names beside SDC's, and a member its context or a reference there does not name, and a context that is no object, is refused, by [0009](0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)
 - **Date:** 2026-10-17
 - **Deciders:** Daniel Bacher
 - **Verified by:** the tests of `@formancy/health-questionnaire` and

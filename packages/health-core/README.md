@@ -119,6 +119,42 @@ every engine has, without Node's Buffer or the DOM's atob.
 Health-document writes a PDF's bytes and its SHA-1 with it
 ([0008](../../docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
 
+## A host's context, read
+
+What a host hands over is read the same way by every package
+([0009](../../docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)):
+`valueAt(holder, name)` is an object's own property and never one it
+inherits; `needed(holder, name, path, refusals, make)` is `make` of it, or
+`absent` when there is none, a null handed to `make`, which refuses it;
+`optional(...)` is undefined when the host gives none; `text(value, path)`
+is a string with something in it but whitespace, refused as `absent`
+otherwise, and with no character a resource cannot carry -- the same
+ones a narrative refuses, below -- refused as a string's `grammar`;
+`codeOf(allowed)` is a code of R4's required binding, refused as
+`unmapped` when it is not one of `allowed`. `known(holder, names, path,
+refusals)` reads an object for `names` and no others: refused as
+`absent` when it is no object, an array included, and once as `unmapped`
+when it holds a member `names` does not name, which is not repeated;
+`objectAt(...)` is the object a holder holds under a name, read so.
+`readItems(list, path, read)` reads every index of a list, a hole's
+too, which `map` walks past: a host's array may have one, and JSON never
+does. health-document reads a document's context with them,
+health-questionnaire a Questionnaire's and a response's, and health-ch a
+CH ORF document's.
+
+## Text in a narrative
+
+`xhtmlText(value, path)` is a host's text as the content of an XHTML
+element, as a narrative R4 calls "Limited xhtml content" carries it: `&`,
+`<` and `>` written as `&amp;`, `&lt;` and `&gt;`, and nothing else
+changed. What XML 1.0 cannot carry at all -- a control character but the
+tab, the line feed and the carriage return, a surrogate alone, U+FFFE and
+U+FFFF -- is refused as `grammar` of the type `xhtml`, by the one rule
+`text` holds a host's string to. R4 says only that a string "SHOULD not"
+hold the control characters; a surrogate alone UTF-8 cannot encode. It
+writes and never reads: no markup is ever taken from a host.
+health-document writes a Composition's narrative with it (0009).
+
 ## writeJson and readJson
 
 `writeJson(value)` writes FHIR JSON: numbers from their digits, unquoted;
@@ -176,6 +212,16 @@ Composition does not reach; `duplicate-entry`, a second entry of one
 name; and `mismatch`, an attachment whose size, hash or media type is not
 that of the bytes it carries or names
 ([0008](../../docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
+A country's profiles refuse with four more: `identifier`, an identifier
+not of the form its system gives it, or one under a system whose
+identifiers are taken only by their own name; `check-digit`, one whose
+check digit its other digits do not give; `profile`, a resource the
+document carries that is not of the type, or does not claim the profile,
+its place asks for; and `unversioned`, a definition named by its
+canonical without the version it was answered against
+([0009](../../docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)).
+`reference` covers a type the guide a resource is written for does not
+allow, as well as R4.
 A path repeats the names of the
 document it passed through, element names in FHIR JSON; text that is not
 FHIR JSON may use anything as a name, and the path carries it.

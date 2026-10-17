@@ -162,14 +162,20 @@ function itemOf(pair: Pair, holder: Holder | undefined, at: string, walk: Walk):
   return [{ linkId: item.linkId, answer: answers }]
 }
 
-/** The response's own elements, around its items, in R4's order. */
+/**
+ * The response's own elements, around its items, in R4's order. SDC's
+ * profile is claimed where it validates, and the host's claims after it,
+ * each once: the one place a response's meta is written.
+ */
 function responseOf(questionnaire: Questionnaire, elements: ResponseElements, items: readonly QuestionnaireResponseItem[]): QuestionnaireResponse {
   const { status, authored, subject, author, source } = elements
   const versioned = questionnaire.version !== undefined
   const canonical = versioned ? uri(`${questionnaire.url}|${questionnaire.version as string}`, 'QuestionnaireResponse.questionnaire') : questionnaire.url
+  const sdc: readonly string[] = subject !== undefined && versioned ? [SDC_QUESTIONNAIRE_RESPONSE] : []
+  const profile = [...sdc, ...elements.profiles.filter((claim) => !sdc.includes(claim))]
   return {
     resourceType: 'QuestionnaireResponse',
-    ...(subject !== undefined && versioned ? { meta: { profile: [SDC_QUESTIONNAIRE_RESPONSE] } } : {}),
+    ...(profile.length === 0 ? {} : { meta: { profile } }),
     questionnaire: canonical,
     status,
     ...(subject === undefined ? {} : { subject }),

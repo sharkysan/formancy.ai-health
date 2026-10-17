@@ -40,6 +40,7 @@ describe('the CI test jobs', () => {
     expect(packagesWithSuites()).toContain('@formancy/health-core')
     expect(packagesWithSuites()).toContain('@formancy/health-questionnaire')
     expect(packagesWithSuites()).toContain('@formancy/health-document')
+    expect(packagesWithSuites()).toContain('@formancy/health-ch')
     // Private and never published, and tested all the same: its suite
     // proves the PDFs Report renders are attached unchanged (0008).
     expect(packagesWithSuites()).toContain('@formancy/health-corpus')

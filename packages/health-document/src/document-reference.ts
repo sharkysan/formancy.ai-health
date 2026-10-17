@@ -14,8 +14,8 @@
  * made, an instant from the host's clock. None of it is made here, and
  * the same PDF and context give the same resource.
  */
-import { code, id, instant, member, Refusals, toBase64Binary, unsignedInt, uuid, type FhirCode, type FhirId, type FhirInstant, type FhirUuid, type Refusal } from '@formancy/health-core'
-import { codeOf, conceptAt, conceptsAt, CONTEXT, needed, optional, referenceAt, referencesAt, text, valueAt, type ByName, type Coded } from './context.js'
+import { code, codeOf, id, instant, known, member, needed, optional, Refusals, text, toBase64Binary, unsignedInt, uuid, valueAt, type FhirCode, type FhirId, type FhirInstant, type FhirUuid, type Refusal } from '@formancy/health-core'
+import { conceptAt, conceptsAt, CONTEXT, referenceAt, referencesAt, type ByName, type Coded } from './context.js'
 import { checkPdf, PDF, type Pdf } from './pdf.js'
 import type { Attachment, Binary, CodeableConcept, DocumentReference, Reference } from './resource.js'
 import { sha1 } from './sha1.js'
@@ -72,13 +72,20 @@ function binaryAt(context: DocumentReferenceContext, refusals: Refusals): Elemen
   const given = valueAt(context, 'binary')
   if (given === undefined) return undefined
   const at = member(CONTEXT, 'binary')
-  if (typeof given !== 'object' || given === null) return refusals.add('absent', at)
+  if (!known(given, ['fullUrl', 'id'], at, refusals)) return undefined
   const fullUrl = needed(given, 'fullUrl', member(at, 'fullUrl'), refusals, uuid)
   const binaryId = optional(given, 'id', member(at, 'id'), refusals, id)
   return fullUrl === undefined ? undefined : { fullUrl, id: binaryId }
 }
 
+/** The members of what the host says of the PDF it attaches, and no others. */
+const CONTEXT_MEMBERS = ['id', 'status', 'type', 'category', 'subject', 'date', 'author', 'title', 'binary']
+
+/** Nothing read, for a context that is no object. */
+const UNREAD: Elements = { id: undefined, status: undefined, type: undefined, category: undefined, subject: undefined, date: undefined, author: undefined, title: undefined, binary: undefined }
+
 function elementsOf(context: DocumentReferenceContext, refusals: Refusals): Elements {
+  if (!known(context, CONTEXT_MEMBERS, CONTEXT, refusals)) return UNREAD
   const at = (name: string) => member(CONTEXT, name)
   return {
     id: optional(context, 'id', at('id'), refusals, id),

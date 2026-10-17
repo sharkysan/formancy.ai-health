@@ -34,10 +34,10 @@
  * Nothing here reads a clock or a random source, and the Bundle is
  * written by health-core's `writeJson`, which the host calls.
  */
-import { id, instant, member, Refusals, reference, code, type FhirJsonObject, type Refusal } from '@formancy/health-core'
+import { code, id, instant, known, member, needed, optional, Refusals, reference, uri, valueAt, type FhirJsonObject, type Refusal } from '@formancy/health-core'
 import { checkAttachments } from './attachments.js'
 import { compositionOf, type Composed, type CompositionContext } from './composition.js'
-import { CONTEXT, identifierAt, needed, optional, valueAt } from './context.js'
+import { CONTEXT, identifierAt } from './context.js'
 import { entriesOf, type DocumentEntry, type Entry } from './entries.js'
 import { linksOf, type Link } from './links.js'
 import type { Bundle, BundleEntry } from './resource.js'
@@ -47,6 +47,12 @@ import { targetsOf } from './targets.js'
 export interface DocumentContext {
   /** The Bundle's id, when the host names it: R4's id. */
   readonly id?: string
+  /**
+   * The profile the document claims, a canonical the host names -- a
+   * guide's document profile, as that guide asks the Bundle to claim it --
+   * written in its meta beside lastUpdated: never fetched.
+   */
+  readonly profile?: string
   /** The document's identifier, globally unique and never re-used: the host's, with its system and its value. */
   readonly identifier: { readonly system: string; readonly value: string }
   /** When the document was assembled, an instant with its zone: written as its timestamp and its meta.lastUpdated. */
@@ -121,14 +127,19 @@ function checkLinks(composed: Composed, entries: readonly Entry[], refusals: Ref
   for (const entry of entries) if (entry.fullUrl !== undefined && !reached.has(entry.fullUrl)) refusals.add('unreferenced', entry.path)
 }
 
+/** The members of what the host says of a document, and no others. */
+const DOCUMENT_MEMBERS = ['id', 'profile', 'identifier', 'timestamp', 'composition', 'entries']
+
 /**
  * The document `context` says, as a Bundle; or every reason it cannot be
  * one, each naming where in the context, and never a value.
  */
 export function toDocumentBundle(context: DocumentContext): DocumentBundleExport {
   const refusals = new Refusals()
+  if (!known(context, DOCUMENT_MEMBERS, CONTEXT, refusals)) return { ok: false, refusals: refusals.list }
   const at = (name: string) => member(CONTEXT, name)
   const bundleId = optional(context, 'id', at('id'), refusals, id)
+  const profile = optional(context, 'profile', at('profile'), refusals, uri)
   const identifier = identifierAt(context, 'identifier', at('identifier'), refusals)
   const timestamp = needed(context, 'timestamp', at('timestamp'), refusals, instant)
   const composed = compositionOf(valueAt(context, 'composition') as CompositionContext | undefined, refusals)
@@ -146,7 +157,7 @@ export function toDocumentBundle(context: DocumentContext): DocumentBundleExport
   const bundle: Bundle = {
     resourceType: 'Bundle',
     ...(bundleId === undefined ? {} : { id: bundleId }),
-    meta: { lastUpdated: timestamp },
+    meta: { lastUpdated: timestamp, ...(profile === undefined ? {} : { profile: [profile] }) },
     identifier,
     type: code('document', 'Bundle.type'),
     timestamp,

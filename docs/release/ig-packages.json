@@ -1,20 +1,27 @@
 {
-  "$comment": "Every FHIR package the HL7 FHIR validator loads in the gate (0005), each fetched from `url`, on packages.fhir.org, by exact version, and refused unless its SHA-256 is `sha256`. `loadedAs` says why: `core` is FHIR itself, which the gate names with -version; `ig` is a guide the gate asks for with -ig; `dependency` is one the validator loaded of its own accord. Which packages those are was read from the validator’s own load, its `Package Summary` line, never typed from a guide’s page. `declaredBy` is every registered package whose package.json declares this one at this version, `licence` and `canonical` what this one’s own package.json says, and `note` why a package no manifest declares is loaded. Read by scripts/validator.mjs and scripts/compatibility.mjs. Held by scripts/validator/registers.test.mjs, against the downloaded packages where they are present, and by scripts/validator.mjs in the validator job, which refuses a run that loaded a package this list does not name or did not load one it names. Read on 17 October 2026 from the bytes packages.fhir.org served, whose SHA-1 matched that registry’s own `dist.shasum` for every package.",
+  "$comment": "Every FHIR package the HL7 FHIR validator loads in the gate (0005), each fetched from `url`, on packages.fhir.org, by exact version, and refused unless its SHA-256 is `sha256`. `loadedAs` says why: `core` is FHIR itself, which the gate names with -version; `ig` is a guide the gate asks for with -ig; `dependency` is one the validator loaded of its own accord. Which packages those are was read from the validator’s own load, its `Package Summary` line, never typed from a guide’s page. `declaredBy` is every registered package whose package.json declares this one at this version, `licence` and `canonical` what this one’s own package.json says, and `note` why a package no manifest declares is loaded. `licence` is one the dependency policy allows, or one a decision admits for that entry alone (scripts/validator/registers.mjs, `ADMITTED_LICENCES`). Read by scripts/validator.mjs and scripts/compatibility.mjs. Held by scripts/validator/registers.test.mjs, against the downloaded packages where they are present, and by scripts/validator.mjs in the validator job, which refuses a run that loaded a package this list does not name or did not load one it names. Read on 17 October 2026 from the bytes packages.fhir.org served, whose SHA-1 matched that registry’s own `dist.shasum` for every package.",
   "packages": [
     {
       "id": "hl7.fhir.r4.core",
       "version": "4.0.1",
       "loadedAs": "core",
       "declaredBy": [
+        "ch.fhir.ig.ch-core#6.0.0",
+        "ch.fhir.ig.ch-orf#3.0.2",
+        "ch.fhir.ig.ch-term#3.3.0",
         "hl7.fhir.uv.extensions.r4#5.2.0",
         "hl7.fhir.uv.extensions.r4#5.3.0-ballot-tc1",
+        "hl7.fhir.uv.sdc#3.0.0",
         "hl7.fhir.uv.sdc#4.0.0",
         "hl7.fhir.uv.tools.r4#1.1.2",
         "hl7.fhir.uv.xver-r5.r4#0.1.0",
         "hl7.fhir.xver-extensions#0.1.0",
         "hl7.terminology.r4#6.2.0",
+        "hl7.terminology.r4#6.3.0",
         "hl7.terminology.r4#6.5.0",
-        "hl7.terminology.r4#7.1.0"
+        "hl7.terminology.r4#7.0.1",
+        "hl7.terminology.r4#7.1.0",
+        "ihe.formatcode.fhir#1.4.0"
       ],
       "note": "FHIR R4 itself, which -version names",
       "canonical": "http://hl7.org/fhir",
@@ -64,10 +71,15 @@
       "version": "5.2.0",
       "loadedAs": "dependency",
       "declaredBy": [
+        "ch.fhir.ig.ch-orf#3.0.2",
+        "ch.fhir.ig.ch-term#3.3.0",
         "hl7.fhir.uv.tools.r4#1.1.2",
         "hl7.fhir.uv.xver-r5.r4#0.1.0",
+        "hl7.terminology.r4#6.3.0",
         "hl7.terminology.r4#6.5.0",
-        "hl7.terminology.r4#7.1.0"
+        "hl7.terminology.r4#7.0.1",
+        "hl7.terminology.r4#7.1.0",
+        "ihe.formatcode.fhir#1.4.0"
       ],
       "note": "loaded by the validator with R4, before any guide, and declared as well",
       "canonical": "http://hl7.org/fhir/extensions",
@@ -172,6 +184,7 @@
       "version": "4.0.1",
       "loadedAs": "dependency",
       "declaredBy": [
+        "hl7.fhir.uv.sdc#3.0.0",
         "hl7.fhir.uv.sdc#4.0.0"
       ],
       "canonical": "http://hl7.org/fhir",
@@ -185,9 +198,10 @@
       "version": "5.3.0-ballot-tc1",
       "loadedAs": "dependency",
       "declaredBy": [
+        "ch.fhir.ig.ch-core#6.0.0",
         "hl7.fhir.uv.sdc#4.0.0"
       ],
-      "note": "a ballot, which this repository would never pin by its own choice, pinned because the released SDC 4.0.0 declares it",
+      "note": "a ballot, which this repository would never pin by its own choice, pinned because the released SDC 4.0.0 and CH Core 6.0.0 declare it",
       "canonical": "http://hl7.org/fhir/extensions",
       "licence": "CC0-1.0",
       "url": "https://packages.fhir.org/hl7.fhir.uv.extensions.r4/5.3.0-ballot-tc1",
@@ -206,6 +220,100 @@
       "url": "https://packages.fhir.org/hl7.terminology.r4/6.5.0",
       "sha256": "a28b638483a11df696ed92198276236d759e41c7a3a8960c9e7e7d0a1185bd06",
       "bytes": 5018208
+    },
+    {
+      "id": "hl7.terminology.r4",
+      "version": "7.0.1",
+      "loadedAs": "dependency",
+      "declaredBy": [
+        "ch.fhir.ig.ch-core#6.0.0",
+        "ch.fhir.ig.ch-orf#3.0.2",
+        "ch.fhir.ig.ch-term#3.3.0"
+      ],
+      "canonical": "http://terminology.hl7.org",
+      "licence": "CC0-1.0",
+      "url": "https://packages.fhir.org/hl7.terminology.r4/7.0.1",
+      "sha256": "7e88619af8d6ec06f0f521a64800da7d8197ceb1c451c293ec1b796efce3840e",
+      "bytes": 4775886
+    },
+    {
+      "id": "hl7.terminology.r4",
+      "version": "6.3.0",
+      "loadedAs": "dependency",
+      "declaredBy": [
+        "ihe.formatcode.fhir#1.4.0"
+      ],
+      "canonical": "http://terminology.hl7.org",
+      "licence": "CC0-1.0",
+      "url": "https://packages.fhir.org/hl7.terminology.r4/6.3.0",
+      "sha256": "5e080e5343406f964022b086da713df374e410245c518166c5b1b93a800cdd71",
+      "bytes": 5044762
+    },
+    {
+      "id": "ihe.formatcode.fhir",
+      "version": "1.4.0",
+      "loadedAs": "dependency",
+      "declaredBy": [
+        "ch.fhir.ig.ch-term#3.3.0"
+      ],
+      "note": "IHE’s formatCode code system, value set and guide, under CC-BY-4.0, which the dependency policy does not allow a consumer to install and 0009 admits for this register entry alone: the gate downloads it in CI, and no package of this product carries it",
+      "canonical": "https://profiles.ihe.net/fhir/ihe.formatcode.fhir",
+      "licence": "CC-BY-4.0",
+      "url": "https://packages.fhir.org/ihe.formatcode.fhir/1.4.0",
+      "sha256": "d803d12f3b51940ae44f8a72372918cc409052e072d7e22bc968de58e301a34c",
+      "bytes": 14495
+    },
+    {
+      "id": "ch.fhir.ig.ch-term",
+      "version": "3.3.0",
+      "loadedAs": "dependency",
+      "declaredBy": [],
+      "note": "CH Core 6.0.0 declares ch.fhir.ig.ch-term#3.3.x, a range, which the validator resolves to the newest 3.3 release it can find, offline the one the cache holds; 3.3.0 is the only 3.3 release packages.fhir.org listed on 17 October 2026",
+      "canonical": "http://fhir.ch/ig/ch-term",
+      "licence": "CC0-1.0",
+      "url": "https://packages.fhir.org/ch.fhir.ig.ch-term/3.3.0",
+      "sha256": "6ea89184cdb3bae702a146a9233eca980f4bb66fe776c103d13d12f5b265a586",
+      "bytes": 921561
+    },
+    {
+      "id": "ch.fhir.ig.ch-core",
+      "version": "6.0.0",
+      "loadedAs": "dependency",
+      "declaredBy": [
+        "ch.fhir.ig.ch-orf#3.0.2"
+      ],
+      "note": "the guide the CH ORF document’s patient, practitioner, organisation and role declare their profiles from, loaded as CH ORF 3.0.2 declares it",
+      "canonical": "http://fhir.ch/ig/ch-core",
+      "licence": "CC0-1.0",
+      "url": "https://packages.fhir.org/ch.fhir.ig.ch-core/6.0.0",
+      "sha256": "890b7d6d7eac286ba3ce28b5a8e88913a444bdccbfd163809a64337be6db21ca",
+      "bytes": 800118
+    },
+    {
+      "id": "hl7.fhir.uv.sdc",
+      "version": "3.0.0",
+      "loadedAs": "dependency",
+      "declaredBy": [
+        "ch.fhir.ig.ch-orf#3.0.2"
+      ],
+      "note": "the SDC release CH ORF 3.0.2 is built on, beside the 4.0.0 the corpus’s Questionnaires claim; both load, and neither changed what the gate said of the corpus (measured 17 October 2026, 0009)",
+      "canonical": "http://hl7.org/fhir/uv/sdc",
+      "licence": "CC0-1.0",
+      "url": "https://packages.fhir.org/hl7.fhir.uv.sdc/3.0.0",
+      "sha256": "be5c3f0a7f82e072b40739e05fb68f3e58e44c9bd040cd901b1b55c62f23dca2",
+      "bytes": 798211
+    },
+    {
+      "id": "ch.fhir.ig.ch-orf",
+      "version": "3.0.2",
+      "loadedAs": "ig",
+      "declaredBy": [],
+      "note": "the guide the CH ORF document health-ch writes declares its profiles from",
+      "canonical": "http://fhir.ch/ig/ch-orf",
+      "licence": "CC0-1.0",
+      "url": "https://packages.fhir.org/ch.fhir.ig.ch-orf/3.0.2",
+      "sha256": "0d03ab61a852022d9b1b3a7765b166fb335937e58ae5e02868b87850ff2c7c6e",
+      "bytes": 658945
     }
   ]
 }

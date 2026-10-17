@@ -152,6 +152,22 @@ describe('the package register', () => {
     expect(packageProblems([CORE, entry(), declared])).toEqual([])
   })
 
+  // CH Term, which CH Core 6.0.0 declares, declares IHE's formatCode
+  // package, whose package.json says CC-BY-4.0: attribution, which the
+  // dependency policy does not allow a consumer to install. Everybody who
+  // runs the gate downloads it, and no package of this product carries it;
+  // 0009 admits it for the register, for that package at that version
+  // alone, so that another CC-BY package, or this one moved, is a decision
+  // again and never a field's to admit.
+  test('admits a licence the policy refuses only for the package and version a decision names', () => {
+    const formatCode = (fields) =>
+      entry({ id: 'ihe.formatcode.fhir', version: '1.4.0', url: 'https://packages.fhir.org/ihe.formatcode.fhir/1.4.0', loadedAs: 'dependency', declaredBy: [], note: 'declared by CH Term', licence: 'CC-BY-4.0', ...fields })
+    expect(packageProblems([CORE, formatCode()])).toEqual([])
+    expect(packageProblems([CORE, formatCode({ version: '1.5.0', url: 'https://packages.fhir.org/ihe.formatcode.fhir/1.5.0' })])).toEqual(['docs/release/ig-packages.json: ihe.formatcode.fhir#1.5.0: licence is not one dependency-licences.mjs allows'])
+    expect(packageProblems([CORE, formatCode({ licence: 'CC-BY-SA-4.0' })])).toEqual(['docs/release/ig-packages.json: ihe.formatcode.fhir#1.4.0: licence is not one dependency-licences.mjs allows'])
+    expect(packageProblems([CORE, entry({ licence: 'CC-BY-4.0' })])).toEqual(['docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0: licence is not one dependency-licences.mjs allows'])
+  })
+
   // The bytes the gate unpacked are the bytes registered.
   test.skipIf(!cached)('is every package in the cache, byte for byte', async () => {
     for (const item of packages) {
@@ -171,6 +187,28 @@ describe('the package register', () => {
       expect({ id: manifest.name, version: manifest.version, canonical: manifest.canonical, licence: manifest.license }, packageKey(item)).toEqual({ id: item.id, version: item.version, canonical: item.canonical, licence: item.licence })
       const declaring = [...manifests].filter(([, other]) => other.dependencies?.[item.id] === item.version).map(([key]) => key).sort()
       expect(item.declaredBy, packageKey(item)).toEqual(declaring)
+    }
+  })
+
+  // A manifest may declare a range where the register pins a version: CH
+  // Core 6.0.0 declares ch.fhir.ig.ch-term 3.3.x, which the validator
+  // resolves to the newest 3.3 release it can find, offline the one the
+  // cache holds. So the register holds exactly one release the range
+  // admits, which no manifest declares exactly, and a note says why it is
+  // loaded; a second would leave which one runs to the validator. A range
+  // of another shape fails until this reads it.
+  test.skipIf(!unpacked)('pins one release, with a note, for every range a manifest declares', () => {
+    const exact = /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/
+    const ranges = packages.flatMap((item) => {
+      const manifest = JSON.parse(readFileSync(join(where.packages, packageKey(item), 'package', 'package.json'), 'utf8'))
+      return Object.entries(manifest.dependencies ?? {}).filter(([, version]) => !exact.test(version)).map(([id, range]) => ({ by: packageKey(item), id, range }))
+    })
+    for (const { by, id, range } of ranges) {
+      const minor = /^(\d+\.\d+)\.x$/.exec(range)
+      expect(minor, `${by} declares ${id} ${range}, a range this test does not read`).not.toBeNull()
+      const admitted = packages.filter((item) => item.id === id && item.version.startsWith(`${minor[1]}.`))
+      expect(admitted.map(packageKey), `${by} declares ${id} ${range}`).toHaveLength(1)
+      expect(admitted[0].note, `${packageKey(admitted[0])} is loaded for a range, and no note says so`).toMatch(new RegExp(range.replaceAll('.', String.raw`\.`)))
     }
   })
 

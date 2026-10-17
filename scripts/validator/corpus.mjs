@@ -12,9 +12,11 @@
 // of the referral letter `@formancy/health-corpus` renders with Formancy
 // Report 0.1.0 (0008): the PDF in the DocumentReference's attachment, the
 // PDF in a Binary beside it, and the PDF beside a QuestionnaireResponse of
-// the intake; and, each broken for one thing, the package's output with
-// what a decision of 0006, 0007 or 0008 left out or refuses put back, so
-// the gate shows why. A response is judged against its Questionnaire,
+// the intake; the CH ORF document `@formancy/health-ch`, as built, makes of
+// a synthetic referral, against CH ORF 3.0.2 on CH Core 6.0.0 (0009,
+// scripts/validator/ch-orf.mjs); and, each broken for one thing, the
+// package's output with what a decision of 0006, 0007, 0008 or 0009 left
+// out or refuses put back, so the gate shows why. A response is judged against its Questionnaire,
 // which the gate loads as a definition. **Built by hand** from
 // health-core's primitives and written by its `writeJson`: a collection
 // Bundle, which no package builds, the Questionnaire and the
@@ -47,6 +49,7 @@
 // are HL7's own, from code systems the registered packages hold, which the
 // validator checks offline.
 
+import { chOrfOutput } from './ch-orf.mjs'
 import { intake, intakeContext, intakeResponseContext, intakeRoutine, intakeUrgent, minimal, minimalAnswers, minimalContext, minimalResponseContext } from './forms.mjs'
 
 /** The canonical base of the hand-built corpus: IANA's example domain, never fetched. */
@@ -346,10 +349,11 @@ function documentOutput(core, { toQuestionnaireResponse }, { NAMES, referralDocu
 /**
  * The corpus, built with `core`, health-core's exports; `questionnaire`,
  * health-questionnaire's; `documents`, health-corpus's, which make
- * health-document's Bundles; and `pdf`, the PDF health-corpus rendered with
- * Report: `{ file, expect, why?, definition?, resource }` each.
+ * health-document's Bundles; `pdf`, the PDF health-corpus rendered with
+ * Report; and `ch`, health-ch's: `{ file, expect, why?, definition?,
+ * resource }` each.
  */
-export function corpus({ core, questionnaire: questionnairePackage, documents, pdf }) {
+export function corpus({ core, questionnaire: questionnairePackage, documents, pdf, ch }) {
   const { code, dateTime, decimal, id, uri } = core
 
   // SDC 4.0.0's sdc-2: "If version is present, versionAlgorithm must be
@@ -413,6 +417,7 @@ export function corpus({ core, questionnaire: questionnairePackage, documents, p
     ...packageOutput(core, questionnairePackage),
     ...responseOutput(core, questionnairePackage),
     ...documentOutput(core, questionnairePackage, documents, pdf),
+    ...chOrfOutput(core, questionnairePackage, ch, copy),
     { file: 'questionnaire.json', expect: 'accepted', definition: true, resource: questionnaire() },
     { file: 'questionnaireresponse.json', expect: 'accepted', resource: questionnaireResponse() },
     { file: 'bundle.json', expect: 'accepted', resource: bundle() },

@@ -82,6 +82,21 @@ export type Binary = {
   readonly data: FhirBase64Binary
 }
 
+/**
+ * A narrative made here: `generated`, R4's "entirely generated from the
+ * core elements in the content", and its div, R4's xhtml, of those
+ * elements' texts alone (0009).
+ */
+export type Narrative = {
+  readonly status: FhirCode
+  readonly div: string
+}
+
+/** The profiles a resource claims, as the host names them: canonicals, never fetched. */
+export type Claims = {
+  readonly profile: readonly [FhirUri]
+}
+
 /** A section: its title, its code when the host gives one, and the entries it holds. No narrative (0008). */
 export type CompositionSection = {
   readonly title: string
@@ -92,6 +107,8 @@ export type CompositionSection = {
 export type Composition = {
   readonly resourceType: 'Composition'
   readonly id?: FhirId
+  readonly meta?: Claims
+  readonly text: Narrative
   readonly identifier?: Identifier
   readonly status: FhirCode
   readonly type: CodeableConcept
@@ -117,7 +134,7 @@ export type BundleEntry<R> = {
 export type Bundle = {
   readonly resourceType: 'Bundle'
   readonly id?: FhirId
-  readonly meta: { readonly lastUpdated: FhirInstant }
+  readonly meta: { readonly lastUpdated: FhirInstant; readonly profile?: readonly [FhirUri] }
   readonly identifier: Identifier
   readonly type: FhirCode
   readonly timestamp: FhirInstant

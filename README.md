@@ -12,10 +12,10 @@ profiles a country publishes rather than to FHIR's base resources alone.
 What an export cannot say in the profile it targets, it refuses rather than
 leaves out.
 
-> **Status: started 16 October 2026. A formancy form exports as an SDC Questionnaire, a submission of it as a QuestionnaireResponse, and a PDF as a document Bundle; nothing is released.**
+> **Status: started 16 October 2026. A formancy form exports as an SDC Questionnaire, a submission of it as a QuestionnaireResponse, a PDF as a document Bundle, and a referral as a CH ORF document; nothing is released.**
 >
 > What exists on 17 October 2026 is the licence, the pipeline that proves
-> the packages, as Formancy Report's proves its own, and three packages.
+> the packages, as Formancy Report's proves its own, and four packages.
 > `@formancy/health-core` names the FHIR version it emits, holds FHIR R4's
 > primitives to their types -- a decimal as its digits, never a JavaScript
 > number, bytes as canonical base64 -- and writes and reads FHIR JSON that
@@ -25,12 +25,17 @@ leaves out.
 > Questionnaire, or refuses either whole. `@formancy/health-document`
 > attaches a PDF's bytes to a DocumentReference and assembles a document
 > Bundle of what its Composition refers to, every reference resolved, and
-> refuses a PDF/A declaration, which nothing here proves yet. Beside them,
-> the gate that runs the HL7 FHIR validator, offline, against pinned guide
-> packages, over what the packages make of synthetic forms, submissions
-> and a referral letter Formancy Report 0.1.0 renders, in the private
-> `@formancy/health-corpus`, and resources built by hand. Next are CH
-> Core and CH ORF.
+> refuses a PDF/A declaration, which nothing here proves yet.
+> `@formancy/health-ch` writes a CH ORF 3.0.2 document of a referral, its
+> patient, author and orders in CH Core 6.0.0's profiles and the answers
+> health-questionnaire wrote, the Questionnaire named by its canonical,
+> and holds a GLN and an AHV number to their check digits, which the
+> validator only warns of. Beside them, the gate that runs the HL7 FHIR
+> validator, offline, against pinned guide packages, over what the
+> packages make of synthetic forms, submissions, a referral letter
+> Formancy Report 0.1.0 renders, in the private `@formancy/health-corpus`,
+> and a referral, and resources built by hand. Next is the readiness of a
+> first developer preview.
 
 ## Licence, in one table
 
@@ -69,7 +74,7 @@ Switzerland:
 
 | Where | Implementation guides | Published by |
 | --- | --- | --- |
-| Switzerland | CH Core; CH ORF, Order & Referral by Form | HL7 Switzerland |
+| Switzerland | CH Core 6.0.0; CH ORF 3.0.2, Order & Referral by Form; later CH EPR | HL7 Switzerland |
 | Germany | the Basisprofile DE; the ISiK Formularmodul | HL7 Deutschland; gematik |
 | United Kingdom | UK Core; the NHS Booking and Referral Standard (BaRS) | HL7 UK; NHS England |
 | Austria | AT Core, the HL7® Austria FHIR® Core Implementation Guide | HL7 Austria |
@@ -77,15 +82,17 @@ Switzerland:
 
 The order is the order of the work. Which version of a guide a package
 targets is decided when the package arrives, in the decision record that
-comes with it.
+comes with it: CH ORF 3.0.2 on CH Core 6.0.0, with the CH Term 3.3.0 CH
+Core declares, in [0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md).
 
 ## Packages
 
 | Package | What it is |
 | --- | --- |
-| `@formancy/health-core` | The FHIR version the module emits, R4 4.0.1; FHIR R4's primitives, each checked against its type when made, a number held as its digits and bytes as canonical base64; and a writer and a reader of FHIR JSON that keep every digit, give the same bytes for the same input, and refuse an empty value, a null outside an array, a name given twice and a JavaScript number, naming where and never quoting the value ([0004](./docs/decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)). No framework, no Node, no network. |
-| `@formancy/health-questionnaire` | A formancy form, read through `@formancy/spec` 0.5.0, as an SDC 4.0.0 Questionnaire: one item per field with its key as the linkId, under the host's canonical base and formancy's published version, its texts translated into each language the host asks for; a visibility rule as `enableWhen` where it is a simple comparison, a computed field read-only, and no FHIRPath. What an item cannot say as the field says it refuses the whole export, every refusal at once, naming where ([0006](./docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)). And a formancy submission of the form as a QuestionnaireResponse to that Questionnaire, walked from its own items: each answer of its item's type, a number answer exactly the double formancy holds, no answer where formancy holds none, a value on a page a skip rule walks past left out, the subject and the author by name from the host; a value of another type, an option not offered, a value past a bound, a name the form does not have or an answer to an item the other answers disable refuses it whole ([0007](./docs/decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)). No framework, no Node, no network. |
-| `@formancy/health-document` | A PDF as an R4 DocumentReference by its own bytes, in the attachment or in a Binary beside it, with their size and SHA-1; declared a plain PDF and checked by its first and last lines, or refused declared PDF/A, which no gate here proves yet. And a document Bundle of the host's resources, its identifier and timestamp the host's, the Composition first and then only what it refers to, every reference resolved before output: a dangling one, an entry nothing reaches, two of one name or an attachment whose size, hash or media type are not its bytes' refuse it whole, every refusal at once, naming where ([0008](./docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)). Depends on health-core alone. No framework, no Node, no network. |
+| `@formancy/health-core` | The FHIR version the module emits, R4 4.0.1; FHIR R4's primitives, each checked against its type when made, a number held as its digits and bytes as canonical base64; and a writer and a reader of FHIR JSON that keep every digit, give the same bytes for the same input, and refuse an empty value, a null outside an array, a name given twice and a JavaScript number, naming where and never quoting the value ([0004](./docs/decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)). And the readers every package reads a host's context with: each value its own, an object for the members it names and no others, a list at every index, a text with nothing a resource cannot carry ([0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)). No framework, no Node, no network. |
+| `@formancy/health-questionnaire` | A formancy form, read through `@formancy/spec` 0.5.0, as an SDC 4.0.0 Questionnaire: one item per field with its key as the linkId, under the host's canonical base and formancy's published version, its texts translated into each language the host asks for; a visibility rule as `enableWhen` where it is a simple comparison, a computed field read-only, and no FHIRPath. What an item cannot say as the field says it refuses the whole export, every refusal at once, naming where ([0006](./docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)). And a formancy submission of the form as a QuestionnaireResponse to that Questionnaire, walked from its own items: each answer of its item's type, a number answer exactly the double formancy holds, no answer where formancy holds none, a value on a page a skip rule walks past left out, the subject and the author by name from the host; a value of another type, an option not offered, a value past a bound, a name the form does not have, an answer to an item the other answers disable or a member the context does not name refuses it whole ([0007](./docs/decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)). No framework, no Node, no network. |
+| `@formancy/health-document` | A PDF as an R4 DocumentReference by its own bytes, in the attachment or in a Binary beside it, with their size and SHA-1; declared a plain PDF and checked by its first and last lines, or refused declared PDF/A, which no gate here proves yet. And a document Bundle of the host's resources, its identifier and timestamp the host's, the Composition first and then only what it refers to, every reference resolved before output: a dangling one, an entry nothing reaches, two of one name, an attachment whose size, hash or media type are not its bytes', a member of the context it does not name or a hole in a list refuse it whole, every refusal at once, naming where ([0008](./docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)). Depends on health-core alone. No framework, no Node, no network. |
+| `@formancy/health-ch` | Switzerland: a CH ORF 3.0.2 document of a referral, the Bundle claiming CH ORF's document profile, the Composition with a narrative of its titles, one category and the order-referral section coded LOINC 93037-0, with its LOINC name; the host's patient, author, organisation and orders as CH Core 6.0.0's Patient, PractitionerRole, Practitioner and Organization and CH ORF's ServiceRequest; the host's answers, claiming CH ORF's response profile, about the patient, the Questionnaire by its versioned canonical, copied once and carried as checked. A GLN and an AHV number held to their forms and GS1's check digit, which CH Core only warns of, and a host's own identifier under none of CH Core's systems, in any case; a member the context does not name, a member of the answers health-questionnaire does not write, a status, a gender or a name CH Core does not take refuses it whole, every refusal at once, naming where ([0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)). Built on health-document, health-questionnaire and health-core. Nothing is sent. No framework, no Node, no network. |
 
 `@formancy/health-corpus` is test support, private and never published:
 the referral letter it renders with Formancy Report 0.1.0's released
@@ -93,9 +100,10 @@ packages, the only place Report is a dependency, and the documents the
 validator gate judges.
 
 Planned and not here: extraction from a QuestionnaireResponse, PDF/A,
-which waits for a Report release that writes it, the MHD provide Bundle,
-and the Swiss profiles; then Germany's, the United Kingdom's, Austria's
-and HL7 Europe's.
+which waits for a Report release that writes it, the MHD provide Bundle
+and CH EPR, and of CH ORF the Questionnaire inside the Bundle, a PDF and
+the Composition's receivers, contacts and other extensions; then
+Germany's, the United Kingdom's, Austria's and HL7 Europe's.
 
 A decimal travels as its text. Build one with `decimal('70.50', path)`
 from the text a form or a database gave you, never from a JavaScript
@@ -178,9 +186,11 @@ the synthetic submissions there, which hold every answer type it writes,
 each judged against its Questionnaire; the document Bundles
 health-document makes of the referral letter health-corpus renders with
 Formancy Report 0.1.0, its PDF in the attachment, in a Binary, and beside
-a QuestionnaireResponse; and resources built by hand where no package
-builds one. Some are broken on purpose, each for one thing, and the gate
-fails unless the validator refuses each for exactly that.
+a QuestionnaireResponse; the CH ORF document health-ch makes of a
+synthetic referral, `scripts/validator/ch-orf.mjs`; and resources built by
+hand where no package builds one. Some are broken on purpose, each for
+one thing, and the gate fails unless the validator refuses each for
+exactly that.
 
 ```bash
 pnpm build                                      # the corpus is written by the package as built
@@ -210,7 +220,23 @@ bytes in an attachment recomputed by the validator, those of the bytes in
 a Binary not, and the media type unchecked. Not that a form, a submission
 or a document the corpus lacks would be; nothing about a response that is
 not complete, which the corpus has none of; and nothing about the PDF
-itself, which is no PDF/A and whose pages Report proves.
+itself, which is no PDF/A and whose pages Report proves. And that the CH
+ORF document health-ch makes of the corpus's referral is accepted against
+CH ORF 3.0.2 and CH Core 6.0.0, with CH Term 3.3.0, the same way, with no
+error and no warning but dom-6 and CH Core's `gln-startswith76`, which the
+corpus's GLNs under GS1's prefix 952 raise; offline, nothing checks its
+Composition's type and category against CH Term's SNOMED CT value sets, a
+made-up SNOMED CT code drawing nothing, nor its LOINC section code beyond
+the pattern that fixes it, and a GLN's or an AHV number's form and check
+digit only draw warnings, which is why health-ch refuses them; no AHV
+number the gate should accept is in the corpus, since a valid one may be
+a person's. The corpus's type and category are HL7's own codes, and it
+holds no SNOMED CT code: `scripts/terminology.test.mjs` holds every code
+system the corpus writes to the terms that admit it, LOINC with its
+recorded display name and its notice in [`NOTICE`](./NOTICE), and
+`scripts/synthetic-identifiers.test.mjs` fails on an AHV number that
+passes its check in any file and on a corpus GLN outside GS1's prefix
+for examples.
 
 ### What it is built and judged against
 
@@ -221,13 +247,14 @@ itself, which is no PDF/A and whose pages Report proves.
 | FHIR, the version every resource is written for | 4.0.1 | `FHIR_VERSION`, `packages/health-core/src/version.ts` |
 | `hl7.fhir.r4.core`, FHIR itself, for the validator | 4.0.1 | `docs/release/ig-packages.json` |
 | `hl7.fhir.uv.sdc`, a guide the corpus is judged against | 4.0.0 | `docs/release/ig-packages.json` |
-| What the validator loads with them | `hl7.fhir.xver-extensions#0.1.0`, `hl7.terminology.r4#6.2.0`, `hl7.fhir.uv.extensions.r4#5.2.0`, `hl7.terminology#7.4.0`, `hl7.fhir.uv.extensions#5.3.0`, `hl7.terminology.r5#7.1.0`, `hl7.fhir.uv.extensions.r5#5.2.0`, `hl7.terminology.r4#7.1.0`, `hl7.fhir.uv.xver-r5.r4#0.1.0`, `hl7.fhir.uv.tools.r4#1.1.2`, `hl7.fhir.r4.examples#4.0.1`, `hl7.fhir.uv.extensions.r4#5.3.0-ballot-tc1`, `hl7.terminology.r4#6.5.0` | `docs/release/ig-packages.json` |
+| `ch.fhir.ig.ch-orf`, a guide the corpus is judged against | 3.0.2 | `docs/release/ig-packages.json` |
+| What the validator loads with them | `hl7.fhir.xver-extensions#0.1.0`, `hl7.terminology.r4#6.2.0`, `hl7.fhir.uv.extensions.r4#5.2.0`, `hl7.terminology#7.4.0`, `hl7.fhir.uv.extensions#5.3.0`, `hl7.terminology.r5#7.1.0`, `hl7.fhir.uv.extensions.r5#5.2.0`, `hl7.terminology.r4#7.1.0`, `hl7.fhir.uv.xver-r5.r4#0.1.0`, `hl7.fhir.uv.tools.r4#1.1.2`, `hl7.fhir.r4.examples#4.0.1`, `hl7.fhir.uv.extensions.r4#5.3.0-ballot-tc1`, `hl7.terminology.r4#6.5.0`, `hl7.terminology.r4#7.0.1`, `hl7.terminology.r4#6.3.0`, `ihe.formatcode.fhir#1.4.0`, `ch.fhir.ig.ch-term#3.3.0`, `ch.fhir.ig.ch-core#6.0.0`, `hl7.fhir.uv.sdc#3.0.0` | `docs/release/ig-packages.json` |
 | The HL7 FHIR validator | 7.0.2, released 2026-10-15, SHA-256 `e3e50f06b806`… | `docs/release/validator.json` |
 | Java, for the validator | 17 or later | `docs/release/validator.json` |
 | `@formancy/report-render-pdf` | 0.1.0 | the manifest of `@formancy/health-corpus` |
 | `@formancy/report-runtime` | 0.1.0 | the manifest of `@formancy/health-corpus` |
 | `@formancy/report-spec` | 0.1.0 | the manifest of `@formancy/health-corpus` |
-| `@formancy/spec` | 0.5.0 | the manifest of `@formancy/health-questionnaire` |
+| `@formancy/spec` | 0.5.0 | the manifest of `@formancy/health-ch`, `@formancy/health-questionnaire` |
 | Node | `>=22.13.0`; CI runs 22 | the root `engines`; `.node-version` |
 | TypeScript | 6.0.3, declared `~6.0.3` | `pnpm-workspace.yaml` |
 | pnpm | 12.4.2, through corepack | the root `packageManager` |

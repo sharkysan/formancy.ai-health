@@ -10,6 +10,128 @@ later.
 
 ## Unreleased
 
+**A referral by form is a CH ORF document, in CH Core's and CH ORF's
+profiles** ([0009](docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)):
+`@formancy/health-ch`, new. `toChOrfDocument(context)` writes a CH ORF
+3.0.2 document Bundle of what the host says of a referral -- its patient,
+its author as a PractitionerRole of a Practitioner at an Organization,
+its orders as ServiceRequests, and the answers health-questionnaire wrote
+of the form -- each resource claiming its CH ORF or CH Core 6.0.0
+profile with the guide's version, and the Bundle claiming
+`ch-orf-document` unversioned, because CH ORF's Submit Bundle says the
+Bundle "shall include" that value and a receiver matching it would not
+find it with a version after it. The Questionnaire is named by its
+versioned canonical and not carried, as the plan's acceptance has it: the
+host publishes it, and a response that names it without a version is
+refused. That leaves two of CH ORF's SHALLs unmet -- its Submit Bundle's
+"one Questionnaire resource" and its document's "Other resources that
+these referenced resources refer to shall also be included" -- which the
+profile, `entry:Questionnaire` 0..1, does not hold, so a receiver that
+follows the prose resolves the canonical itself. The answers must claim CH ORF's response profile, which the
+host passes to `toQuestionnaireResponse` as `profiles`, because the
+validator holds a response to CH ORF only when it claims it -- measured,
+answers whose subject was the Practitioner were accepted unclaimed -- and
+they must be the patient's, written down and given by entries of the
+document, and hold nothing `toQuestionnaireResponse` does not write -- a
+`basedOn`, an `encounter`, a `partOf`, which CH ORF types and nothing
+here would check. The answers are copied once by health-core, and the
+copy is what is checked and carried, so that a host's object that reads
+one way and copies another cannot pass as one response and arrive as
+another. A member of the context it does not name -- an address, a
+telecom, a second category -- is refused rather than left out, and so is
+a hole in a list of it. Nothing is sent: CH ORF's Submit Bundle is the
+host's to make.
+
+**A GLN and an AHV number are held to their systems and check digits
+here**, because every one of CH Core's checks of them is a warning, which
+the validator raises and nothing else refuses: `gln()` takes thirteen
+digits and GS1's check digit, a GLN that does not start 76 included, and
+`ahvn13()` 756, nine digits and GS1's check digit, without points -- the
+printed form is refused, not read. Each writes its own system, and a
+host's own identifier under one of CH Core's seven Swiss systems, in
+any case -- `URN:OID:2.51.1.3` is the GLN's system to a receiver that
+normalises it, as RFC 8141 lets it -- is refused, so that an identifier
+checked here by name cannot pass unchecked under its system. A refusal
+of one never names a digit.
+
+**A document's Composition has a narrative, and a document and its
+Composition claim the profiles a host names**, because CH ORF requires
+`Composition.text` and the Bundle's claim: health-document writes a
+`generated` narrative of the Composition's title and its sections'
+titles, escaped by health-core, refusing a title XML cannot carry, and
+`DocumentContext.profile` and `CompositionContext.profile`. Every
+document's bytes change, H06's included. 0008 decided no narrative; 0009
+narrows it to every resource but the Composition. The narrative is
+headings: it meets CH ORF's 1..1 and not R4's definition, a narrative
+"clinically safe" for a human to read alone, which 0009 records.
+
+**health-document and health-questionnaire refuse a member of their
+context they do not name, and a hole in a list**, where they left the
+member out without a word or walked past the hole into a gap: a
+Composition's confidentiality, a coding's version, a section's mode, an
+entry's search, a reference's display, a PDF's file name, a response
+context's encounter or basedOn, each refused as `unmapped` at the
+object that holds it, its name not repeated; a hole in the authors, the
+categories, the sections or the entries refused at its index, where one
+among the entries threw a TypeError. A context that is no object is
+refused as `absent`, where health-questionnaire threw. A host that
+passed one of these and had it dropped is refused now (0006, 0007 and
+0008 narrowed by 0009).
+
+**A QuestionnaireResponse claims the profiles a host names beside SDC's**:
+`ResponseContext.profiles` in health-questionnaire, written once each in
+the one place a response's meta is written (0007 narrowed).
+
+**health-core reads a host's context for every package, and escapes a
+narrative's text**: `valueAt`, `needed`, `optional`, `text` and `codeOf`
+move from health-document, which reads its context with them as
+health-ch does, and `known`, `objectAt` and `readItems` are new, the one
+place an object is read for its members and a list at every index;
+`xhtmlText` escapes `&`, `<` and `>` and refuses what XML 1.0 cannot
+carry, and `text` now refuses the same characters -- a control character
+but the tab and the line breaks, a surrogate alone, U+FFFE, U+FFFF -- as
+a string's `grammar`, because a family name with a bell in it was
+written into a Patient while the same title was refused in a narrative.
+R4 says only that a string "SHOULD not" hold the control characters. Four rules are new -- `identifier`, `check-digit`,
+`profile`, `unversioned` -- and `reference` covers a type the guide does
+not allow, as well as R4.
+
+**The validator gate judges CH ORF documents, and loads seven more
+packages**: CH ORF 3.0.2, CH Core 6.0.0, SDC 3.0.0, which CH ORF is built
+on, HL7 Terminology 7.0.1 and 6.3.0, IHE's formatCode 1.4.0 and CH Term
+**3.3.0**, not the plan's 3.4.0, because CH Core declares `3.3.x` and the
+validator cannot load it with 3.4.0 alone. IHE's package says CC-BY-4.0,
+which the dependency policy refuses; the register admits it for that
+package at that version alone, because there is no CH Core without it,
+the gate only downloads it, and no package of this product carries it.
+The corpus's CH ORF document is accepted with no error and no warning but
+dom-6 and `gln-startswith76`, registered because the corpus's GLNs are
+under GS1's prefix 952, kept for examples; eleven documents broken from
+it are refused for their reasons, among them a GLN's and an AHV number's
+wrong check digits, whose warnings are not registered.
+
+**LOINC's notice stands in NOTICE, LOINC's name beside its code, and a
+guard holds the code systems the packages write**, because health-ch
+writes the repository's first code of a third party's terminology, LOINC
+93037-0, which CH ORF fixes. LOINC's licence asks a program that carries
+LOINC content to carry the code's display name with it, so 93037-0 is
+written with its long common name, "Portable medical order form", in the
+source and in the Bundle, as CH ORF's own StructureMap writes it.
+`scripts/terminology.test.mjs` fails on a code system that is not HL7's
+own or a host's under a domain reserved for examples, a LOINC code not
+recorded, without its recorded name or without the notice, and any
+SNOMED CT code, which none is.
+
+**No file holds an AHV number that passes its check, and a guard holds
+it**, because health-ch's tests, its README and the install fixture
+held the AHV number printed as an example in many places, whose check
+digit is valid -- as four older tests of health-core and
+health-questionnaire did -- while their texts said no valid AHV number
+was written. Each is now a number whose check digit is wrong. `scripts/synthetic-identifiers.test.mjs` fails on a valid AHV
+number in any file, however its digits are separated, and on a GLN of
+the validator's corpus that is under another prefix than GS1's 952 for
+examples.
+
 **A PDF is attached to a document Bundle by its own bytes, and a PDF/A
 declaration is refused** ([0008](docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)):
 `@formancy/health-document`, new. `toDocumentReference(pdf, context)`

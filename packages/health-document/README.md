@@ -7,7 +7,8 @@ resolved before anything is written. Every part of it is the host's --
 identifiers, names, dates, codes, the PDF -- and nothing is made up, sent
 or fetched. What a document cannot be is refused whole, every refusal at
 once, naming where and never a value. No framework, no Node, no network,
-and no dependency but health-core. Decision
+and no dependency but health-core, whose readers of a host's context it
+reads the context with. Decision
 [0008](../../docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)
 says why each part is as it is, and what it costs.
 
@@ -83,7 +84,20 @@ was assembled; the Composition first (bdl-11), under the
 Composition takes, in R4's names, its `status`, `type`, `category`,
 `subject`, `date`, `author`, `title` and `section`s, each a title, a code
 where given and its `entry` references; and its `identifier` where the host
-gives one. A section has no narrative.
+gives one. A section has no narrative. The Composition has one, written
+here and never taken from the host: `generated`, a `div` in the XHTML
+namespace of its title as a heading and each section's title as one below
+it, escaped by health-core's `xhtmlText`, and nothing else -- what R4
+calls "entirely generated from the core elements in the content". A title
+XML cannot carry is refused where it stands. A guide may ask for it, as CH
+ORF makes `Composition.text` 1..1; R4 presents a document by its
+Composition's narrative and its sections'. Headings alone meet a guide's
+1..1 and not R4's definition of a narrative "clinically safe" for a
+human to read alone, which 0009 records as a cost
+([0009](../../docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)).
+The host may name the profile the Bundle claims, `profile`, written in its
+`meta` after `lastUpdated`, and the one the Composition claims,
+`composition.profile`: canonicals, never fetched, each held to R4's uri.
 
 Every reference in every entry is resolved before output: to the
 `urn:uuid:` of an entry, or refused -- `dangling` when it names nothing
@@ -115,22 +129,33 @@ receiver's server is refused as dangling.
 Paths start at `pdf` or `context` and walk the host's names:
 `context.entries[2].resource.subject.reference`.
 
+Each part of the context, and the PDF, is read for the members it names
+and no others, by health-core's `known`: one more -- a Composition's
+confidentiality, a coding's version, a reference's display, an entry's
+search, a PDF's file name -- is something the host meant to say, and is
+refused as `unmapped` at the object that holds it, its name not
+repeated. A part that is no object is refused as `absent`, and a hole in
+a list, which a host's array may have and JSON never does, at its index
+(0009).
+
 ## What it does not prove, and does not do
 
 The validator gate judges what this package makes of health-corpus's
 referral letter against R4 4.0.1, with the HL7 FHIR validator 7.0.2,
 offline, and accepts it with no error and no warning but dom-6, which
-every resource without a narrative raises; it checks the attachment's
-size and SHA-1 against its data, and with the bytes in a Binary says it
-did not check them ("not a directly accessible link"), which
-`toDocumentBundle` does, and health-corpus's tests on its output. An attachment `url` that names no entry it accepts, with only
+every resource but the Composition raises, having no narrative; it
+checks the attachment's size and SHA-1 against its data, and with the
+bytes in a Binary says it did not check them ("not a directly accessible
+link"), which `toDocumentBundle` does, and health-corpus's tests on its
+output. An attachment `url` that names no entry it accepts, with only
 an information that it cannot find it (measured on 17 October 2026):
 this package's `dangling` is what refuses it. A media type is not checked
 offline.
 
-Not here: a narrative, a Provenance or a stylesheet, which R4 admits in a
+Not here: a narrative of any resource but the Composition, or one of more
+than its titles; a Provenance or a stylesheet, which R4 admits in a
 document and which are refused as unreferenced; Composition's encounter,
-attester, custodian, confidentiality and events; DocumentReference's
+attester, custodian, confidentiality and events, refused where given; DocumentReference's
 format code, context and security labels; a bound on the PDF's size,
 which nothing has measured; reading a document back; and the MHD provide
 Bundle, which comes with CH EPR. An Attachment's url is followed only in a

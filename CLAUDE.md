@@ -64,10 +64,17 @@ it there, and refuses what it cannot read; FHIRPath (`fhirpath` and the
 `@lhncbc/ucum-lhc` it brings) is refused by it today, and a case says so.
 Guide packages are no package's dependency: the validator gate loads them in
 CI, and their register records each one's licence as its package.json
-states it and refuses one the dependency policy would refuse (0005).
-Terminology joins a guard with the first code a package emits; until then
-review holds it, and what a licence identifier cannot say about a licence's
-terms.
+states it and refuses one the dependency policy would refuse (0005), unless
+a decision admits it for that one entry, as
+[0009](docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)
+admits IHE's CC-BY-4.0 formatCode package, which CH Core needs. Terminology
+is held by `scripts/terminology.test.mjs`: every code system the corpus
+writes is HL7's own, a host's under a domain reserved for examples, LOINC
+with each code recorded, written with the name it is recorded with, and its
+notice in `NOTICE`, or SNOMED CT with each
+code recorded in a decision, which none is (0009). Review holds a code no
+corpus resource holds, and what a licence identifier cannot say about a
+licence's terms.
 
 ## How the pieces fit
 
@@ -86,6 +93,12 @@ Questionnaire's own mapping
 in the attachment or a Binary, and assembles a document Bundle of what its
 Composition refers to, every reference resolved, refusing a PDF/A
 declaration nothing has proved ([0008](docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
+`@formancy/health-ch` writes a CH ORF 3.0.2 document of the host's
+referral, its patient, author and orders in CH Core 6.0.0's profiles and
+the answers health-questionnaire wrote, the Questionnaire by its
+canonical, assembled by health-document, and holds a GLN and an AHV
+number to their check digits, which the validator only warns of
+([0009](docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)).
 That is all the product code there is. Beside them, and not product code,
 the validator gate judges what the packages write
 ([0005](docs/decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md)):
@@ -109,7 +122,8 @@ further only where a part has its own reason to change:
    provide Bundle, built and never sent. It depends on health-core alone,
    and on no renderer: the PDF is the host's.
 4. `health-ch` -- CH Core and CH ORF, later CH EPR: profiles, identifier
-   systems, codes and the CH ORF document.
+   systems, codes and the CH ORF document (0009). It depends on the three
+   above, and on `@formancy/spec` only for its tests.
 5. `health-de`, `health-uk`, `health-at`, `health-eu` -- the same for
    Germany's Basisprofile DE and ISiK Formular; UK Core and, for England,
    the BaRS referral message, built and never sent; AT Core; and HL7 Europe
@@ -182,7 +196,13 @@ and the document says what. Three shapes, in order of preference:
    accepts holds;
    `scripts/validator/registers.test.mjs` fails when a
    register is malformed or, where the validator job has run, says other
-   than the bytes and the validator's own load. All of them run as
+   than the bytes and the validator's own load;
+   `scripts/terminology.test.mjs` fails when the corpus holds a code system
+   no register of its terms admits, a LOINC code unrecorded, written
+   without its recorded name or without LOINC's notice in `NOTICE`, or an
+   unrecorded SNOMED CT code; `scripts/synthetic-identifiers.test.mjs`
+   fails on a valid AHV number in any file git holds, however its digits
+   are separated. All of them run as
    `pnpm test:repo`, and CI runs that — **a guard that is not a gate is a
    comment.**
 3. **Measure it.** Below.
@@ -219,10 +239,12 @@ is the tool for it.
   (`scripts/validator/corpus.mjs`) holds what health-questionnaire, as
   built, makes of the synthetic forms and submissions in
   `scripts/validator/forms.mjs`, each response judged against its
-  Questionnaire, and what health-document makes of the PDF health-corpus
-  renders with Report, and builds by hand only what no package builds,
-  written by health-core's `writeJson`; `scripts/validator/corpus.test.mjs`
-  fails when a field type, item type or rule the package maps is in no
+  Questionnaire, what health-document makes of the PDF health-corpus
+  renders with Report, and the CH ORF document health-ch makes of a
+  synthetic referral (`scripts/validator/ch-orf.mjs`), and builds by hand
+  only what no package builds, written by health-core's `writeJson`;
+  `scripts/validator/corpus.test.mjs` fails when a field type, item type
+  or rule the package maps is in no
   corpus form, an answer type it writes in no corpus response, or a
   resource type a package writes in no resource the gate accepts. A
   conformance claim is about those resources and no other.
@@ -262,7 +284,8 @@ is the tool for it.
   diagnostic names the field and the rule, never the value. A name, an
   identifier, an answer or any other value of a person's in a log line, an
   error message, a diagnostic, a test fixture or a snapshot is a defect.
-  Fixtures are synthetic.
+  Fixtures are synthetic, and no AHV number in them passes its check
+  digit: a test that needs a valid one computes it in memory (0009).
 - **Forms, answers, questionnaires, profiles, guide packages, PDFs and the
   resources a host hands over are untrusted**, even when an administrator
   wrote them. Nothing a document carries runs as code, and parsing is

@@ -28,6 +28,23 @@ const readJson = (root, file) => JSON.parse(readFileSync(join(root, file), 'utf8
 /** `id#version`, as the validator and its package cache name a package. */
 export const packageKey = (entry) => `${entry.id}#${entry.version}`
 
+/**
+ * Licences the dependency policy refuses, admitted for one register entry
+ * each, by id and exact version, by the decision that read them. The gate
+ * downloads such a package in CI and no package of this product carries
+ * it, so its terms are the gate's to meet, not a consumer's; a version
+ * moved is a licence to read again. `dependency-licences.mjs`'s policy for
+ * what a consumer installs is not changed by this.
+ *
+ * - `ihe.formatcode.fhir#1.4.0`, CC-BY-4.0, IHE's formatCode code system,
+ *   value set and guide, which CH Term 3.3.0 declares and without which
+ *   the validator cannot load CH Core 6.0.0 (0009).
+ */
+export const ADMITTED_LICENCES = new Map([['ihe.formatcode.fhir#1.4.0', 'CC-BY-4.0']])
+
+/** Whether a register entry's licence is one the policy allows, or the one a decision admits for that entry. */
+const licenceAdmitted = (entry) => typeof entry?.licence === 'string' && (spdxAllows(entry.licence) || ADMITTED_LICENCES.get(packageKey(entry)) === entry.licence)
+
 /** The three registers, parsed: `{ pin, packages, warnings }`. */
 export function readRegisters(root = repo) {
   return { pin: readJson(root, VALIDATOR_PIN), packages: readJson(root, IG_PACKAGES).packages, warnings: readJson(root, WARNINGS).warnings }
@@ -49,7 +66,8 @@ export function pinProblems(pin) {
 /**
  * What is wrong with the package register, as sentences: a field missing
  * or malformed, a package twice, an address that is not packages.fhir.org's
- * for that exact version, a licence the dependency policy would refuse, a
+ * for that exact version, a licence the dependency policy would refuse and
+ * no decision admits for that package, a
  * `declaredBy` naming a package the register does not hold, a prerelease
  * the gate asks for or no registered package declares, and anything but
  * exactly one `core`.
@@ -76,8 +94,8 @@ export function packageProblems(packages) {
     }
     if (typeof entry?.canonical !== 'string' || !/^https?:\/\/\S+$/.test(entry.canonical)) say('canonical is not an http(s) URL')
     // Everybody who runs the gate downloads these; a licence the dependency
-    // policy refuses would be a decision record's to admit, not a field's.
-    if (typeof entry?.licence !== 'string' || !spdxAllows(entry.licence)) say('licence is not one dependency-licences.mjs allows')
+    // policy refuses is a decision record's to admit, not a field's.
+    if (!licenceAdmitted(entry)) say('licence is not one dependency-licences.mjs allows')
     if (entry?.url !== `https://packages.fhir.org/${String(entry?.id)}/${String(entry?.version)}`) say('url is not packages.fhir.org’s for this exact version')
     if (typeof entry?.sha256 !== 'string' || !SHA256.test(entry.sha256)) say('sha256 is not 64 lowercase hex digits')
     if (!Number.isSafeInteger(entry?.bytes) || entry.bytes <= 0) say('bytes is not a size')

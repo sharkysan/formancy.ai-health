@@ -19,3 +19,16 @@ Creative Commons "No Rights Reserved" (CC0 1.0), at the same address. Any
 content of the specification this product includes is under those terms. A
 national implementation guide keeps the licence its publisher gives it, and a
 terminology a resource uses keeps its own.
+
+This product writes LOINC's code 93037-0, which CH ORF fixes as the code of a
+CH ORF document's order-referral section, with its LOINC long common name,
+"Portable medical order form", and no other LOINC content. LOINC's licence
+(https://loinc.org/license/, section 10, read on 17 October 2026) asks
+software that carries LOINC content to carry each code with one of its LOINC
+display names, and to state:
+
+This material contains content from LOINC (http://loinc.org). LOINC is
+copyright © Regenstrief Institute, Inc. and the Logical Observation
+Identifiers Names and Codes (LOINC) Committee and is available at no cost
+under the license at http://loinc.org/license. LOINC® is a registered United
+States trademark of Regenstrief Institute, Inc.

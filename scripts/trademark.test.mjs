@@ -15,8 +15,9 @@ import YAML from 'yaml'
  * applied for. So it is Formancy Health, FHIR is named only as the standard,
  * and three things would undo that without a reviewer noticing:
  *
- * - NOTICE or README.md losing HL7's notice for use without permission, or a
- *   word of it, as HL7's licence page gives it;
+ * - NOTICE, README.md or a published package's README losing HL7's notice
+ *   for use without permission, or a word of it, as HL7's licence page
+ *   gives it;
  * - a file claiming HL7's permission, as a notice for a use HL7 has licensed
  *   does ("used with the permission of HL7", and the like), which would be a
  *   false statement about this product;
@@ -42,8 +43,20 @@ const repo = join(dirname(fileURLToPath(import.meta.url)), '..')
  */
 const HL7_NOTICE = 'HL7, FHIR and the FHIR [FLAME DESIGN] are the registered trademarks of Health Level Seven International and their use does not constitute endorsement by HL7.'
 
-/** Where the notice must stand. */
-const CARRYING = ['NOTICE', 'README.md']
+/**
+ * Where the notice must stand: NOTICE, which every tarball carries, the
+ * README, and the README of every package npm publishes, which is the page
+ * npm shows of it.
+ */
+function carrying() {
+  const packages = readdirSync(join(repo, 'packages'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .flatMap((entry) => {
+      const manifest = textOf(`packages/${entry.name}/package.json`)
+      return manifest === undefined || JSON.parse(manifest).private === true ? [] : [`packages/${entry.name}/README.md`]
+    })
+  return ['NOTICE', 'README.md', ...packages.sort()]
+}
 
 /** An HL7 mark in a name, in any case. */
 const MARK = /fhir|hl7/i
@@ -150,9 +163,17 @@ describe("HL7's notice", () => {
   // permission. NOTICE travels in every tarball and the README is the first
   // page a reader sees; either losing it, or a word of it, names the
   // standard on terms HL7 does not offer.
-  test('stands word for word in NOTICE and README.md', () => {
-    const missing = CARRYING.filter((file) => !carriesNotice(readFileSync(join(repo, file), 'utf8')))
+  test("stands word for word in NOTICE, README.md and every published package's README", () => {
+    const missing = carrying().filter((file) => !carriesNotice(textOf(file) ?? ''))
     expect(missing, `each must hold, word for word: ${HL7_NOTICE}`).toEqual([])
+  })
+
+  // A guard on the guard: a walk that found no published package would
+  // hold two files and pass. The packages published today, and not the
+  // private corpus.
+  test("is looked for in every published package's README", () => {
+    expect(carrying()).toEqual(expect.arrayContaining(['packages/health-core/README.md', 'packages/health-document/README.md', 'packages/health-ch/README.md']))
+    expect(carrying()).not.toContain('packages/health-corpus/README.md')
   })
 
   // Word for word is the requirement, and wrapped prose is how both files
@@ -264,6 +285,7 @@ describe('the names', () => {
     expect(names).toContain('@formancy/health-core')
     expect(names).toContain('@formancy/health-questionnaire')
     expect(names).toContain('@formancy/health-document')
+    expect(names).toContain('@formancy/health-ch')
     expect(names).toContain('@formancy/health-corpus')
     expect(firstHeading('LICENSE.md')).toBe('Formancy Health Source-Available Licence')
     expect(firstHeading('README.md')).toBe('Formancy Health')

@@ -3,6 +3,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { describe, expect, test } from 'vitest'
+import { chOrfContext, chOrfDocument } from './ch-orf.mjs'
 import { corpus, documentResponse } from './corpus.mjs'
 import { intake, intakeContext, intakeResponseContext, intakeRoutine, intakeUrgent, minimal, minimalAnswers, minimalContext, minimalResponseContext } from './forms.mjs'
 
@@ -21,8 +22,9 @@ import { intake, intakeContext, intakeResponseContext, intakeRoutine, intakeUrge
  * a corpus form uses it. And every resource type a package writes, each
  * export's resources derived from the export itself, and the two places
  * health-document puts a PDF's bytes, must stand in a resource the gate
- * accepts (0008). It reads `packages/*\/dist`, so it needs `pnpm build`,
- * which the `verify` job runs before `pnpm test:repo`.
+ * accepts (0008), the CH ORF document's among them (0009). It reads
+ * `packages/*\/dist`, so it needs `pnpm build`, which the `verify` job
+ * runs before `pnpm test:repo`.
  */
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 const built = (name) => join(repo, 'packages', name, 'dist', 'index.mjs')
@@ -30,13 +32,15 @@ const QUESTIONNAIRE = built('health-questionnaire')
 const CORE = built('health-core')
 const DOCUMENT = built('health-document')
 const CORPUS = built('health-corpus')
+const CH = built('health-ch')
 
-if (![QUESTIONNAIRE, CORE, DOCUMENT, CORPUS].every((path) => existsSync(path))) throw new Error('scripts/validator/corpus.test.mjs reads the packages as built: run pnpm build first')
+if (![QUESTIONNAIRE, CORE, DOCUMENT, CORPUS, CH].every((path) => existsSync(path))) throw new Error('scripts/validator/corpus.test.mjs reads the packages as built: run pnpm build first')
 const questionnairePackage = await import(pathToFileURL(QUESTIONNAIRE).href)
 const { toQuestionnaire, toQuestionnaireResponse } = questionnairePackage
 const core = await import(pathToFileURL(CORE).href)
 const documentPackage = await import(pathToFileURL(DOCUMENT).href)
 const documents = await import(pathToFileURL(CORPUS).href)
+const ch = await import(pathToFileURL(CH).href)
 const pdf = await documents.renderReferral()
 // @formancy/spec as health-questionnaire resolves it: the version it maps.
 const fromQuestionnaire = createRequire(join(repo, 'packages', 'health-questionnaire', 'package.json'))
@@ -196,7 +200,7 @@ describe('the corpus of the validator gate', () => {
   // the package's: made by toQuestionnaire and toQuestionnaireResponse,
   // never typed into the corpus.
   test('is made by the package, which accepts every form and submission of it', () => {
-    const entries = corpus({ core, questionnaire: questionnairePackage, documents, pdf })
+    const entries = corpus({ core, questionnaire: questionnairePackage, documents, pdf, ch })
     const resource = (file) => entries.filter((entry) => entry.file === file)[0]?.resource
     expect(resource('questionnaire-referral-intake.json')).toEqual(exported(intake, intakeContext).questionnaire)
     expect(resource('questionnaire-minimal-v1.json')).toEqual(exported(minimal, minimalContext).questionnaire)
@@ -206,7 +210,7 @@ describe('the corpus of the validator gate', () => {
   // Every document the gate is told is the package's is health-document's,
   // made of the PDF Report rendered: never typed into the corpus.
   test('holds documents health-document made of the PDF Report rendered', () => {
-    const entries = corpus({ core, questionnaire: questionnairePackage, documents, pdf })
+    const entries = corpus({ core, questionnaire: questionnairePackage, documents, pdf, ch })
     const resource = (file) => entries.filter((entry) => entry.file === file)[0]?.resource
     const made = (document) => {
       const result = documents.referralDocument(document)
@@ -216,6 +220,18 @@ describe('the corpus of the validator gate', () => {
     expect(resource('bundle-document-pdf-in-binary.json')).toEqual(made({ pdf, placement: 'binary' }))
     const response = documentResponse(toQuestionnaireResponse, documents.NAMES)
     expect(resource('bundle-document-with-questionnaireresponse.json')).toEqual(made({ pdf, placement: 'data', response }))
+  })
+
+  // The CH ORF document the gate is told is the package's is health-ch's,
+  // made of the synthetic referral, with the answers health-questionnaire
+  // made of the intake: never typed into the corpus.
+  test('holds the CH ORF document health-ch made of the synthetic referral', () => {
+    const entries = corpus({ core, questionnaire: questionnairePackage, documents, pdf, ch })
+    const resource = (file) => entries.filter((entry) => entry.file === file)[0]?.resource
+    const result = ch.toChOrfDocument(chOrfContext(questionnairePackage, ch))
+    expect(result.ok).toBe(true)
+    expect(resource('bundle-ch-orf-referral.json')).toEqual(result.bundle)
+    expect(resource('bundle-ch-orf-referral.json')).toEqual(chOrfDocument(questionnairePackage, ch))
   })
 
   // A response is judged by the validator as what it holds: an answer of
@@ -291,6 +307,12 @@ const PROBES = {
       const result = documentPackage.toDocumentBundle(documents.referralDocumentContext({ pdf: smallestPdf, placement }))
       return result.ok ? [{ ...result.bundle, entry: [result.bundle.entry[0]] }] : []
     }),
+  // The Bundle, its Composition and the people and orders it writes; the
+  // answers in it are the host's, and are not counted as its.
+  toChOrfDocument: () => {
+    const result = ch.toChOrfDocument(chOrfContext(questionnairePackage, ch))
+    return result.ok ? [{ ...result.bundle, entry: result.bundle.entry.filter((entry) => entry.resource.resourceType !== 'QuestionnaireResponse') }] : []
+  },
 }
 
 describe('the resources of the validator gate', () => {
@@ -300,7 +322,7 @@ describe('the resources of the validator gate', () => {
   // resources nobody derived, and a probe that names no export probes
   // nothing.
   test('probe every export of the packages that writes a resource', () => {
-    expect([...exportsOf(questionnairePackage), ...exportsOf(documentPackage)].sort()).toEqual(Object.keys(PROBES).sort())
+    expect([...exportsOf(questionnairePackage), ...exportsOf(documentPackage), ...exportsOf(ch)].sort()).toEqual(Object.keys(PROBES).sort())
   })
 
   // Every resource type a package writes stands in a resource the gate
@@ -309,8 +331,8 @@ describe('the resources of the validator gate', () => {
   // stopped holding fails here until it does again.
   test('hold every resource type the packages write, in resources the gate must accept', () => {
     const written = new Set(Object.values(PROBES).flatMap((probe) => [...resourceTypes(probe())]))
-    expect([...written].sort()).toEqual(['Binary', 'Bundle', 'Composition', 'DocumentReference', 'Questionnaire', 'QuestionnaireResponse'])
-    const accepted = corpus({ core, questionnaire: questionnairePackage, documents, pdf }).filter((entry) => entry.expect === 'accepted')
+    expect([...written].sort()).toEqual(['Binary', 'Bundle', 'Composition', 'DocumentReference', 'Organization', 'Patient', 'Practitioner', 'PractitionerRole', 'Questionnaire', 'QuestionnaireResponse', 'ServiceRequest'])
+    const accepted = corpus({ core, questionnaire: questionnairePackage, documents, pdf, ch }).filter((entry) => entry.expect === 'accepted')
     const held = new Set(accepted.flatMap((entry) => [...resourceTypes(entry.resource)]))
     expect([...written].filter((type) => !held.has(type)).sort()).toEqual([])
   })
@@ -320,7 +342,7 @@ describe('the resources of the validator gate', () => {
   test('hold the PDF in every place health-document puts it, in documents the gate must accept', () => {
     const written = placements(PROBES.toDocumentReference())
     expect([...written].sort()).toEqual(['data', 'url'])
-    const accepted = corpus({ core, questionnaire: questionnairePackage, documents, pdf }).filter((entry) => entry.expect === 'accepted')
+    const accepted = corpus({ core, questionnaire: questionnairePackage, documents, pdf, ch }).filter((entry) => entry.expect === 'accepted')
     const held = placements(accepted.map((entry) => entry.resource))
     expect([...written].filter((place) => !held.has(place))).toEqual([])
   })

@@ -149,6 +149,17 @@ describe('the exactness and reproducibility guard', () => {
     expect(paths).toContain('packages/health-document/src/bundle.ts')
     expect(paths).toContain('packages/health-document/src/attachments.ts')
     expect(paths).toContain('packages/health-core/src/base64.ts')
+    // The Swiss identifiers' check digits, read from their characters'
+    // codes and never by converting the identifier to a number, and the
+    // CH ORF document's identity, the host's (0009).
+    expect(paths).toContain('packages/health-ch/src/identifiers.ts')
+    expect(paths).toContain('packages/health-ch/src/document.ts')
+    expect(paths).toContain('packages/health-ch/src/people.ts')
+    expect(paths).toContain('packages/health-core/src/xhtml.ts')
+    // Which characters a text may hold, read by code point, and the
+    // readers of a host's context, which every package reads one with.
+    expect(paths).toContain('packages/health-core/src/characters.ts')
+    expect(paths).toContain('packages/health-core/src/host.ts')
     // health-corpus is private, never published: it renders with Report
     // and reads Node's Buffer and crypto, and nobody installs it.
     expect(paths.filter((path) => path.startsWith('packages/health-corpus/'))).toEqual([])

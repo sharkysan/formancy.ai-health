@@ -50,7 +50,7 @@ describe('reference', () => {
   // A refusal ends up in a host's log, and a reference names a person's
   // record: the id, synthetic here, is never quoted.
   test('never quotes the reference it refuses', () => {
-    const refusal = refusalOf(() => reference('https://ehr.synthetic.invalid/Patient/756.1234.5678.97', 'QuestionnaireResponse.subject.reference'))
+    const refusal = refusalOf(() => reference('https://ehr.synthetic.invalid/Patient/756.1234.5678.90', 'QuestionnaireResponse.subject.reference'))
     expect(refusal.message).not.toContain('756.1234')
     expect(refusal.message).not.toContain('synthetic.invalid')
   })

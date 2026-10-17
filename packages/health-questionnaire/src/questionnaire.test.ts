@@ -96,6 +96,17 @@ describe('toQuestionnaire', () => {
     expect(refused(form([name]), { ...HOST, languages: ['fr', 'french', 'de_CH', 'IT'] })).toEqual(['language-tag context.languages[1]', 'language-tag context.languages[2]', 'language-tag context.languages[3]'])
   })
 
+  // A member the context does not name -- a publisher, a copyright -- is
+  // something the host meant the Questionnaire to say, and it was left
+  // out without a word (found in H07's review, 0009). It is refused as
+  // unmapped at the context, by health-core's `known`, its name not
+  // repeated; and a context that is no object is refused as absent, where
+  // it was read into a TypeError.
+  test("refuses a member the host's context does not name, and a context that is none", () => {
+    expect(refused(form([name]), { ...HOST, publisher: 'Praxis Synthetica' } as never)).toEqual(['unmapped context'])
+    expect(refused(form([name]), null as never)).toEqual(['absent context'])
+  })
+
   // A refusal reaches a host's log. A form's texts are no person's, but an
   // answer-like value in one could be, and the rule is the same as
   // health-core's: the path and the rule, never the value.
@@ -116,14 +127,14 @@ describe('toQuestionnaire', () => {
   // name, a birth date, an identifier -- so finding one in a message or a
   // path means it was quoted.
   test('never quotes a value, in any refusal of any kind', () => {
-    const values = ['Erika', 'Muster', '1987-02-28', '1987-02-29', '1999-12-31', '756.1234.5678.97', '31415926535', '27182818284', '07:41', 'Hans', 'Meier']
+    const values = ['Erika', 'Muster', '1987-02-28', '1987-02-29', '1999-12-31', '756.1234.5678.90', '31415926535', '27182818284', '07:41', 'Hans', 'Meier']
     const invalid = form([{ key: 'born', type: 'date', earliest: '1999-12-31', latest: '1987-02-28' }, { key: 'arrival', type: 'time', latest: '07:41:00' }])
     const mapped = ruled(
       [
         { key: 'name', type: 'radio', label: { $t: 'name' }, options: [{ value: ' Erika Muster', label: 'Erika Muster' }] },
         { key: 'born', type: 'date', earliest: '1987-02-29' },
         { key: 'count', type: 'number', step: 1, max: 31415926535 },
-        { key: 'ahv', type: 'text', pattern: '756\\.1234\\.5678\\.97' },
+        { key: 'ahv', type: 'text', pattern: '756\\.1234\\.5678\\.90' },
         { key: 'follow_up', type: 'text' },
         { key: 'reason', type: 'text' },
       ],

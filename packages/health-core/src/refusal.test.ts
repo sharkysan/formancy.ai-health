@@ -15,7 +15,7 @@ describe('a refusal', () => {
   test.each([
     ['a birth date', () => date('1987-02-29', 'Patient.birthDate'), '1987-02-29'],
     ['a time without its zone', () => dateTime('1987-06-12T07:41:00', 'Observation.effectiveDateTime'), '1987-06-12T07:41:00'],
-    ['an identifier', () => id('756.1234.5678.97 ', 'Patient.id'), '756.1234.5678.97'],
+    ['an identifier', () => id('756.1234.5678.90 ', 'Patient.id'), '756.1234.5678.90'],
     ['a weight with a decimal comma', () => decimal('73,25', 'Observation.valueQuantity.value'), '73,25'],
     ['a count past the range', () => integer('31415926535', 'Observation.valueInteger'), '31415926535'],
     ['a JavaScript number', () => writeJson({ valueQuantity: { value: 73.25 } } as never), '73.25'],
@@ -102,6 +102,25 @@ describe('a refusal', () => {
     ['duplicate-entry', 'context.entries[2].fullUrl'],
     ['mismatch', 'context.entries[2].resource.content[0].attachment.hash'],
   ] as const)('for documents, %s, has words of its own and names its path', (rule, path) => {
+    const refusal = new Refusal(rule, path)
+    expect(refusal).toMatchObject({ rule, path })
+    expect(refusal.message.startsWith(`${path}: `)).toBe(true)
+    expect(refusal.message).not.toContain('undefined')
+  })
+
+  // A country's profiles refuse what its guide asks and a host's input does
+  // not hold: an identifier not of its system's form, one whose check
+  // digit its other digits do not give, a resource the document carries
+  // that is not of the type or the profile its place asks for, and a
+  // definition named without the version it was answered against. A host
+  // branches on each by its rule; one with no words of its own would print
+  // "undefined" where the reason belongs (0009).
+  test.each([
+    ['identifier', 'context.patient.ahvn13'],
+    ['check-digit', 'context.author.practitioner.gln'],
+    ['profile', 'context.response.questionnaireResponse.meta.profile'],
+    ['unversioned', 'context.response.questionnaireResponse.questionnaire'],
+  ] as const)("for a country's profiles, %s, has words of its own and names its path", (rule, path) => {
     const refusal = new Refusal(rule, path)
     expect(refusal).toMatchObject({ rule, path })
     expect(refusal.message.startsWith(`${path}: `)).toBe(true)
