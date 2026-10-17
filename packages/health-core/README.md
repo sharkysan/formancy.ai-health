@@ -72,6 +72,15 @@ was checked as (`FhirDateTime` and so on), or refuse it.
 - **uuid** as `urn:uuid:` and a lowercase UUID, as R4 requires; an
   uppercase one is refused, not lowercased.
 
+`language(value, path)` is a code that is also a BCP 47 language tag, as
+R4 binds every language to: a language of two or three letters, then a
+script, a region and variants, each in the case RFC 5646 gives it --
+`de-CH`, `gsw`, `zh-Hant-TW`. It is refused as `language-tag` otherwise:
+`de_CH`, `Deutsch`, an extension or a private use, and `de-ch`, which BCP
+47 would accept and the HL7 validator refuses as a resource's language
+([0006](../../docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)).
+Whether a subtag is registered is not checked: `zz` passes.
+
 Nothing here makes an identifier, an id or a timestamp: identity is the
 host's to supply, and no source in the package reads a clock or a random
 source.
@@ -105,9 +114,17 @@ never throws a RangeError.
 Every refusal is a `Refusal`, an `Error` with a `rule` to branch on
 (`grammar`, `range`, `calendar`, `zone`, `javascript-number`, `not-json`,
 `not-data`, `empty`, `null`, `digit-name`, `duplicate-name`, `cycle`,
-`syntax`), the `path`, the FHIR `type` for a primitive, and the `offset`
+`syntax`, `language-tag`), the `path`, the FHIR `type` for a primitive, and the `offset`
 for text. Its message is made of those and nothing else: it never quotes
-the value, which may be a person's. A path repeats the names of the
+the value, which may be a person's.
+
+The packages that map an input to a resource refuse with the same class,
+so a host branches on one: `version`, an input in a version of its format
+nothing reads; `invalid`, one its own format's validator refuses;
+`unmapped`, something the resource cannot say as the input says it; and
+`missing`, a text the resource needs and the input lacks, with the
+`language` it is missing in
+([0006](../../docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)). A path repeats the names of the
 document it passed through, element names in FHIR JSON; text that is not
 FHIR JSON may use anything as a name, and the path carries it.
 

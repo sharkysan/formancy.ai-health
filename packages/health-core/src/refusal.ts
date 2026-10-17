@@ -34,6 +34,15 @@ const RULES = {
   'duplicate-name': 'its name is given twice in one object, and FHIR JSON names each property once',
   cycle: 'it contains itself',
   syntax: 'not JSON',
+  'language-tag':
+    'it is not a BCP 47 language tag of the form written here: a language of two or three letters, then a script, a region and variants, each in its canonical case',
+  // What an input says and a resource cannot: the packages that map a
+  // form, its answers or a document refuse with these, so that a host
+  // branches on one class and one set of rules across every package.
+  version: 'it is written in a version of its format that nothing here reads',
+  invalid: 'the validator of its own format refuses it, so what it says is not known',
+  unmapped: 'nothing in the resource says what it says, and nothing here approximates it',
+  missing: 'a text the resource needs of it is absent, and nothing here supplies one or falls back to another language',
 } as const
 
 /** What was wrong with a value. */
@@ -60,6 +69,11 @@ export interface RefusalContext {
   readonly type?: PrimitiveType
   /** Where JSON text stopped being JSON, in UTF-16 code units, as JavaScript indexes a string. */
   readonly offset?: number
+  /**
+   * The language a text was needed in, as its BCP 47 tag. A tag names a
+   * language and never a person, so a message may say it.
+   */
+  readonly language?: string
 }
 
 export class Refusal extends Error {
@@ -71,15 +85,18 @@ export class Refusal extends Error {
   readonly path: string
   readonly type: PrimitiveType | undefined
   readonly offset: number | undefined
+  readonly language: string | undefined
 
   constructor(rule: Rule, path: string, context: RefusalContext = {}) {
     const what = context.type === undefined ? '' : `not a FHIR R4 ${context.type}: `
     const where = context.offset === undefined ? '' : ` at offset ${String(context.offset)}`
-    super(`${path}: ${what}${RULES[rule]}${where}`)
+    const language = context.language === undefined ? '' : `, in ${context.language}`
+    super(`${path}: ${what}${RULES[rule]}${where}${language}`)
     this.name = 'Refusal'
     this.rule = rule
     this.path = path
     this.type = context.type
     this.offset = context.offset
+    this.language = context.language
   }
 }

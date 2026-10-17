@@ -1,13 +1,19 @@
 // What the validator gate judges (0005): FHIR resources written by
 // `@formancy/health-core`, as built, with what each must make of the gate.
 //
-// No package builds a resource yet -- the Questionnaire of a form arrives
-// with H04 -- so these are built here, by hand, from health-core's
-// primitives and written by its `writeJson`, which is the part of the
-// pipeline that exists: a decimal goes in as `decimal('70.50')` and comes out
-// as the number token 70.50, and the validator reads that. When a package
-// builds a resource, its output replaces the hand-built one here, and this
-// file keeps only what no package would ever produce: the broken ones.
+// Two kinds. **Package output**: the Questionnaires
+// `@formancy/health-questionnaire`, as built, makes of the synthetic forms
+// in scripts/validator/forms.mjs (0006), which between them hold every
+// field type and rule version 1 maps -- scripts/validator/corpus.test.mjs
+// derives that set from the package and holds the forms to it -- and, each
+// broken for one thing, the package's output with what a decision of 0006
+// left out put back, so the gate shows why it is left out. **Built by
+// hand** from health-core's primitives and written by its `writeJson`: a
+// QuestionnaireResponse and a Bundle, which no package builds yet (H05,
+// H06), the Questionnaire they answer, and the resources broken to show
+// each of the gate's checks watching. A decimal goes in as
+// `decimal('70.50')` and comes out as the number token 70.50, and the
+// validator reads that.
 //
 // Every entry is one file the validator judges, with `expect`:
 //
@@ -31,13 +37,91 @@
 // '0000-0' in the CodeSystem 'http://loinc.org' version '2.82'" on
 // 17 October 2026, and it carries no LOINC content.
 
-/** The canonical base of the corpus: IANA's example domain, never fetched. */
+import { intake, intakeContext, minimal, minimalContext } from './forms.mjs'
+
+/** The canonical base of the hand-built corpus: IANA's example domain, never fetched. */
 const BASE = 'http://example.org'
 
 const SDC = 'http://hl7.org/fhir/uv/sdc/StructureDefinition'
 
-/** The corpus, built with `core`, health-core's exports: `{ file, expect, why?, definition?, resource }` each. */
-export function corpus(core) {
+/**
+ * The Questionnaire `toQuestionnaire` makes of `form` in `context`; the
+ * gate stops on a refusal, which is the package refusing a form the corpus
+ * says it maps.
+ */
+function exported(toQuestionnaire, form, context) {
+  const result = toQuestionnaire(form, context)
+  if (!result.ok) throw new Error(`the package refused a corpus form: ${result.refusals.map((refusal) => refusal.message).join('; ')}`)
+  return result.questionnaire
+}
+
+/** A deep copy of a package's Questionnaire, to break: FhirNumbers are kept as they are, frozen and shared. */
+function copy(value) {
+  if (Array.isArray(value)) return value.map(copy)
+  if (typeof value !== 'object' || value === null || Object.getPrototypeOf(value) !== Object.prototype) return value
+  return Object.fromEntries(Object.entries(value).map(([name, inner]) => [name, copy(inner)]))
+}
+
+/**
+ * The package's output, accepted and broken: what
+ * `@formancy/health-questionnaire` writes of the synthetic forms, and that
+ * output with one thing a decision of 0006 refuses to write put back.
+ */
+function packageOutput(core, { toQuestionnaire }) {
+  const { code, uri } = core
+  const made = exported(toQuestionnaire, intake, intakeContext)
+  const broken = (change) => {
+    const resource = copy(made)
+    change(resource)
+    return resource
+  }
+  return [
+    { file: 'questionnaire-referral-intake.json', expect: 'accepted', resource: made },
+    { file: 'questionnaire-minimal-v1.json', expect: 'accepted', resource: exported(toQuestionnaire, minimal, minimalContext) },
+    {
+      file: 'questionnaire-option-without-system.json',
+      why: "an option coded without a system, as formancy's options are: 'A code with no system has no defined meaning', which is why the package names one under the Questionnaire's url",
+      expect: [{ severity: 'warning', id: 'TERMINOLOGY_TX_SYSTEM_NO_CODE', expression: 'Questionnaire.item[0].item[8].answerOption[0].value.ofType(Coding)' }],
+      resource: broken((resource) => {
+        delete resource.item[0].item[8].answerOption[0].valueCoding.system
+      }),
+    },
+    {
+      file: 'questionnaire-version-without-algorithm.json',
+      why: "a version without its algorithm: SDC's sdc-2, which the package meets by writing formancy's version number with the integer algorithm",
+      expect: [{ severity: 'error', id: 'http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnairecommon#sdc-2', expression: 'Questionnaire' }],
+      resource: broken((resource) => {
+        delete resource.extension
+      }),
+    },
+    {
+      file: 'questionnaire-page-item-control.json',
+      why: "SDC's page item control on a page, which R4's code system of item controls does not have, and which the package therefore does not write",
+      expect: [
+        { severity: 'error', id: 'Unknown_Code_in_Version', expression: 'Questionnaire.item[0].extension[0].value.ofType(CodeableConcept).coding[0].code' },
+        { severity: 'warning', id: 'Terminology_TX_NoValid_2_CC', expression: 'Questionnaire.item[0].extension[0].value.ofType(CodeableConcept)' },
+      ],
+      resource: broken((resource) => {
+        const control = { coding: [{ system: uri('http://hl7.org/fhir/questionnaire-item-control', 'corpus'), code: code('page', 'corpus') }] }
+        resource.item[0].extension = [{ url: uri('http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl', 'corpus'), valueCodeableConcept: control }]
+      }),
+    },
+    {
+      file: 'questionnaire-min-occurs-not-required.json',
+      why: "a minimum of answers on an item that is not required, which R4 allows minOccurs only on, and which the package refuses rather than writes",
+      expect: [{ severity: 'error', id: 'Profile_EXT_Not_Here', expression: 'Questionnaire.item[0].item[12]' }],
+      resource: broken((resource) => {
+        delete resource.item[0].item[12].required
+      }),
+    },
+  ]
+}
+
+/**
+ * The corpus, built with `core`, health-core's exports, and `questionnaire`,
+ * health-questionnaire's: `{ file, expect, why?, definition?, resource }` each.
+ */
+export function corpus({ core, questionnaire: questionnairePackage }) {
   const { code, dateTime, decimal, id, uri } = core
 
   // SDC 4.0.0's sdc-2: "If version is present, versionAlgorithm must be
@@ -98,6 +182,7 @@ export function corpus(core) {
   }
 
   return [
+    ...packageOutput(core, questionnairePackage),
     { file: 'questionnaire.json', expect: 'accepted', definition: true, resource: questionnaire() },
     { file: 'questionnaireresponse.json', expect: 'accepted', resource: questionnaireResponse() },
     { file: 'bundle.json', expect: 'accepted', resource: bundle() },

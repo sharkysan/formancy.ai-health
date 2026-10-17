@@ -50,6 +50,10 @@ component_management:
       name: packages/health-core
       paths:
         - packages/health-core/**
+    - component_id: health-questionnaire
+      name: packages/health-questionnaire
+      paths:
+        - packages/health-questionnaire/**
 
 comment:
   # Components first, because "which package" is the question a reader has, and

@@ -118,7 +118,7 @@ jobs:
       # Every suite reports, rather than the first failure cancelling the rest.
       fail-fast: false
       matrix:
-        package: ['@formancy/health-core']
+        package: ['@formancy/health-core', '@formancy/health-questionnaire']
     steps:
       - uses: actions/checkout@v4
 

@@ -1,6 +1,7 @@
 /**
  * FHIR R4's primitives that JSON writes as a string, checked against their
- * type: date, dateTime, instant and time; id, code, uri and uuid.
+ * type: date, dateTime, instant and time; id, code, uri and uuid; and a
+ * code that is a language tag.
  *
  * Each is a string a host can print, compare and store as it is, branded
  * with the check it passed, so that a bare string, or a date where a
@@ -139,6 +140,28 @@ export function id(value: string, path: string): FhirId {
 /** A FHIR code: words separated by single spaces. Whether it is in a value set is not checked here. */
 export function code(value: string, path: string): FhirCode {
   return check('code', value, path)
+}
+
+/** RFC 5646's language, extlang, script, region and variant subtags, in their canonical case. */
+const LANGUAGE = /^[a-z]{2,3}(?:-[a-z]{3}){0,3}(?:-[A-Z][a-z]{3})?(?:-(?:[A-Z]{2}|[0-9]{3}))?(?:-(?:[a-z0-9]{5,8}|[0-9][a-z0-9]{3}))*$/
+
+/**
+ * A language: a code, as R4 types every one -- Resource.language, a
+ * translation's lang -- and a BCP 47 tag, which R4 binds them to. Written
+ * here only as the HL7 validator reads one (measured 17 October 2026,
+ * 0006): a language of two or three lowercase letters and up to three
+ * extended ones, a Titlecase script, an uppercase or numeric region and
+ * lowercase variants, in that order, which is RFC 5646's grammar of those
+ * subtags in the case its section 2.1.1 gives them. An extension, a private
+ * use and a grandfathered tag are refused; so is a case the validator
+ * refuses, `de-ch`, though BCP 47 itself ignores case. Whether a subtag is
+ * in the IANA registry is not checked: `zz` passes here, and the validator
+ * refuses it.
+ */
+export function language(value: string, path: string): FhirCode {
+  const tag = code(value, path)
+  if (!LANGUAGE.test(tag)) throw new Refusal('language-tag', path)
+  return tag
 }
 
 /** A FHIR uri: any text without whitespace. Never fetched: a uri is an identifier, not an address. */

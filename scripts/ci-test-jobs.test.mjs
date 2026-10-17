@@ -35,8 +35,9 @@ describe('the CI test jobs', () => {
   })
 
   // A guard on the guard: a walk that found no suites would compare an empty
-  // matrix with an empty list and pass. One package today.
+  // matrix with an empty list and pass. The packages there are today.
   test('is reading the workspace at all', () => {
     expect(packagesWithSuites()).toContain('@formancy/health-core')
+    expect(packagesWithSuites()).toContain('@formancy/health-questionnaire')
   })
 })

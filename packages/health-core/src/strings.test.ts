@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, test } from 'vitest'
-import { code, date, dateTime, id, instant, time, uri, uuid, type FhirDate, type FhirDateTime } from './strings.js'
+import { code, date, dateTime, id, instant, language, time, uri, uuid, type FhirDate, type FhirDateTime } from './strings.js'
 import { refusalOf } from './test-support.js'
 
 describe('date', () => {
@@ -121,6 +121,28 @@ describe('id, code, uri and uuid', () => {
     for (const text of ['', ' a', 'a ', 'a  b', 'a\tb', 'a b']) {
       expect(refusalOf(() => code(text, 'Observation.status'))).toMatchObject({ rule: 'grammar' })
     }
+  })
+
+  // R4 binds every language -- Resource.language, a translation's lang --
+  // to BCP 47, and a code alone admits `Deutsch`, `de_CH` and `de-ch`.
+  // The HL7 validator 7.0.2, offline, refuses each of those as a
+  // Questionnaire's language with errors, and a non-canonical case too,
+  // where it accepts these (measured 17 October 2026, 0006); an
+  // extension, a private use or a grandfathered tag it refuses as well,
+  // and so does this.
+  test.each(['de-CH', 'fr', 'it', 'rm', 'gsw', 'zh-Hant-TW', 'sr-Latn-RS', 'de-CH-1996', 'zh-yue', 'es-419'])('language keeps %s', (text) => {
+    expect(language(text, 'Questionnaire.language')).toBe(text)
+  })
+
+  test.each(['Deutsch', 'french', 'abcd', 'de_CH', 'de-ch', 'DE-CH', 'en-gb', 'zh-hant', 'en-US-u-ca-gregory', 'x-private', 'i-klingon', 'sgn-CH-DE', 'de-', 'd'])('language refuses %s as no language tag in its canonical case', (text) => {
+    expect(refusalOf(() => language(text, 'Questionnaire.language'))).toMatchObject({ rule: 'language-tag', path: 'Questionnaire.language' })
+  })
+
+  // A language is a code first: whitespace is refused as a code's, and
+  // what is not text never reaches a regex.
+  test('language refuses what is no code as a code', () => {
+    for (const text of ['de\tCH', ' fr', '', 4 as never]) expect(refusalOf(() => language(text, 'Questionnaire.language'))).toMatchObject({ rule: 'grammar', type: 'code' })
+    expect(refusalOf(() => language('de CH', 'Questionnaire.language'))).toMatchObject({ rule: 'language-tag' })
   })
 
   // R4 calls its uri regex very permissive, and this check is that regex

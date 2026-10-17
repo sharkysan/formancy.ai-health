@@ -10,6 +10,65 @@ later.
 
 ## Unreleased
 
+**A formancy form is exported as an SDC Questionnaire, or refused whole**
+([0006](docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)):
+`@formancy/health-questionnaire` and its `toQuestionnaire(form, context)`,
+the first package that writes a resource. One item per field, its key as
+the linkId, since formancy's key is the answer's identity, unique across
+the form and changed only by a declared rename; the url from the host's
+canonical base and the form's id; the version formancy published, with
+the `integer` version algorithm SDC's sdc-2 asks for, since formancy
+numbers its versions and semver would claim meanings they lack; texts in
+the form's default language with R4's translation extension for each
+language the host asks for. Because a Questionnaire that admits what the
+form refuses, or shows one German question to a reader who asked for
+French, would be wrong without saying so, the whole export is refused,
+with every reason at once, for a field type version 1 does not map
+(signature, ranking, matrix, richtext, file), a constraint SDC cannot
+state (a pattern, a format, a mask, a step other than one, a sourced
+option list, a required checkbox), a rule beyond a simple comparison, and
+a text missing in a language asked for. A visibility rule is `enableWhen`
+only where both say the same on an untouched form; a computed field is
+read-only, never a calculated item; no FHIRPath is written.
+
+**The first upstream dependency: `@formancy/spec` 0.5.0, exact**
+([0002](docs/decisions/0002-depend-on-upstream-never-copy-it.md)), for
+health-questionnaire alone: a form means what formancy's own types and
+validator say, so it is read through them and never re-implemented. It
+brings `ajv` and `@noble/hashes`, MIT both, which the dependency-licence
+guard now walks and admits.
+
+**health-core's `Refusal` refuses mappings too**: the rules `version`,
+`invalid`, `unmapped` and `missing`, and the `language` a text is missing
+in, so that a host branches on one class across every package rather than
+on a second diagnostic type with the same rule and path.
+
+**A language is a BCP 47 tag in its canonical case**: health-core's
+`language(value, path)`, refusing as `language-tag`, and every language
+the Questionnaire names -- the form's default locale, and each a host asks
+for -- is held by it. formancy names a catalogue with any text, and as
+`Questionnaire.language` the HL7 validator refuses `Deutsch`, `de_CH` and
+even `de-ch` with errors, while a translation's language it does not check
+offline at all; held only as a FHIR code, each was exported as if it
+conformed. Whether a subtag is registered is still not checked: `zz` has
+the form, is exported, and the validator refuses it.
+
+**A rule's decimal literal of more than fifteen significant digits is
+refused**, because CEL compares an answer with the double nearest it and
+R4 with its digits: `weight == 0.30000000000000001` shows its field for
+0.3 in formancy, and would hide it in a Questionnaire.
+
+**The validator gate judges package output.** Its corpus holds the
+Questionnaires health-questionnaire makes of synthetic forms, between them
+every field type, rule, enableWhen operator and answer type it maps --
+`scripts/validator/corpus.test.mjs` derives that set from the package and
+fails when a form lacks one -- and
+four of its Questionnaires each broken for one thing 0006 leaves out, so
+the gate shows why. Two warnings are registered, each with its reason:
+`TERMINOLOGY_TX_WARNING`, since offline the validator cannot validate
+`Questionnaire.language` in full, and SDC's sdc-3, which prefers semver. A registered warning is
+accepted wherever the corpus raises it, which 0006 counts as a cost.
+
 **The United Kingdom is among the formats it targets, after Germany and
 before Austria**: UK Core and, for England, the NHS Booking and Referral
 Standard (BaRS), on the same FHIR R4 4.0.1 as CH Core. After Germany

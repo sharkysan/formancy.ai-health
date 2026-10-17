@@ -149,8 +149,9 @@ let failure
 
 try {
   const packages = publishable()
-  // One today, @formancy/health-core. A walk that finds none has gone wrong,
-  // and a test over zero packages passes by having nothing to check.
+  // @formancy/health-core and @formancy/health-questionnaire today. A walk
+  // that finds none has gone wrong, and a test over zero packages passes by
+  // having nothing to check.
   if (packages.length < 1) {
     throw new Error(`only found ${String(packages.length)} publishable packages; the walk is wrong`)
   }

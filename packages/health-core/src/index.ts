@@ -19,6 +19,7 @@ export {
   dateTime,
   id,
   instant,
+  language,
   time,
   uri,
   uuid,

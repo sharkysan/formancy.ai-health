@@ -12,12 +12,14 @@ import {
   dateTime,
   decimal,
   integer,
+  language,
   readJson,
   writeJson,
   type FhirDecimal,
   type FhirInteger,
   type FhirJson,
 } from '@formancy/health-core'
+import { SDC_QUESTIONNAIRE, toQuestionnaire, type Questionnaire, type QuestionnaireContext } from '@formancy/health-questionnaire'
 
 // The published code carries the FHIR version the package emits, and its
 // declaration says exactly which: a dist that lost the constant fails the
@@ -56,6 +58,17 @@ try {
   if (!(error instanceof Refusal) || error.rule !== 'range' || error.path !== 'Observation.valueInteger') throw error
 }
 
+// A language is a tag in its canonical case, from outside too: a dist that
+// lost the check would let `de-ch` through, which the HL7 validator
+// refuses as a resource's language.
+if (language('de-CH', 'Questionnaire.language') !== 'de-CH') throw new Error('language() did not keep de-CH')
+try {
+  language('de-ch', 'Questionnaire.language')
+  throw new Error('language() accepted de-ch')
+} catch (error) {
+  if (!(error instanceof Refusal) || error.rule !== 'language-tag') throw error
+}
+
 // The declarations hold a host to exact values: a JavaScript number is not
 // FHIR JSON, and an integer is not a decimal. Each directive fails tsc if
 // the line after it compiles, so a declaration that loosened either would
@@ -69,4 +82,36 @@ export function refusedByTheTypes(): void {
   void asDecimal
 }
 
+// A formancy form becomes a Questionnaire through the published entry, and
+// health-core's writeJson writes it: a dist that wrote a bound through a
+// double, lost the translation or the version algorithm, or declared a
+// Questionnaire writeJson's types do not take, fails here. The form is
+// synthetic and read through @formancy/spec as npm installed it.
+const host: QuestionnaireContext = { base: 'https://forms.synthetic.invalid', version: '1', status: 'active', languages: ['fr'] }
+// Typed as the parameter is, @formancy/spec's FormSchema as npm installed
+// it, which a declaration that lost its import of the spec would fail.
+const form: Parameters<typeof toQuestionnaire>[0] = {
+  specVersion: '4',
+  id: 'intake',
+  title: 'Intake',
+  model: { fields: [{ key: 'weight', type: 'number', label: { $t: 'weight' }, min: 0.5 }] },
+  i18n: { defaultLocale: 'en', messages: { en: { weight: 'Weight' }, fr: { weight: 'Poids' } } },
+}
+const made = toQuestionnaire(form, host)
+if (!made.ok) throw new Error(`toQuestionnaire refused a form it maps: ${made.refusals.map((refusal) => refusal.message).join('; ')}`)
+const questionnaire: Questionnaire = made.questionnaire
+const written_questionnaire = writeJson(questionnaire)
+const translated = '"_text":{"extension":[{"url":"http://hl7.org/fhir/StructureDefinition/translation","extension":[{"url":"lang","valueCode":"fr"},{"url":"content","valueString":"Poids"}]}]}'
+for (const part of [`"profile":["${SDC_QUESTIONNAIRE}"]`, '"code":"integer"', '"version":"1"', '"valueDecimal":0.5', translated]) {
+  if (!written_questionnaire.includes(part)) throw new Error(`the Questionnaire lacks ${part}: ${written_questionnaire}`)
+}
+
+// A field version 1 does not map refuses the whole export with a Refusal
+// of health-core's, the class a host already branches on: a dist that
+// carried a second copy of health-core would fail the instanceof.
+const signed = toQuestionnaire({ ...form, model: { fields: [{ key: 'drawn', type: 'signature' }] } }, host)
+const [refusal] = signed.ok ? [] : signed.refusals
+if (!(refusal instanceof Refusal) || refusal.rule !== 'unmapped' || refusal.path !== 'form.model.fields[0].type') throw new Error('a signature field was not refused as unmapped, by a Refusal')
+
 console.log(`ok: @formancy/health-core emits FHIR ${FHIR_VERSION}, and wrote ${written}`)
+console.log(`ok: @formancy/health-questionnaire wrote a Questionnaire of ${String(written_questionnaire.length)} characters and refused a signature`)

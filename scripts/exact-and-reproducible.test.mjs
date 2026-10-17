@@ -137,6 +137,8 @@ describe('the exactness and reproducibility guard', () => {
     const paths = publishable().flatMap(sourcesOf)
     expect(paths).toContain('packages/health-core/src/numbers.ts')
     expect(paths).toContain('packages/health-core/src/json-read.ts')
+    expect(paths).toContain('packages/health-questionnaire/src/values.ts')
+    expect(paths).toContain('packages/health-questionnaire/src/conditions.ts')
     expect(paths.filter((path) => TEST.test(path))).toEqual([])
   })
 

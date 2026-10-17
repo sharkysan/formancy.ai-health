@@ -262,6 +262,7 @@ describe('the names', () => {
     const names = workspaceNames().map(({ name }) => name)
     expect(names[0]).toBe('formancy-health')
     expect(names).toContain('@formancy/health-core')
+    expect(names).toContain('@formancy/health-questionnaire')
     expect(firstHeading('LICENSE.md')).toBe('Formancy Health Source-Available Licence')
     expect(firstHeading('README.md')).toBe('Formancy Health')
   })
