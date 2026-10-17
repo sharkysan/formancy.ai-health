@@ -27,7 +27,7 @@
 // Run by the `validator` job in gates.yml, and by hand the same way.
 
 import { spawnSync } from 'node:child_process'
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { closeSync, existsSync, fstatSync, mkdirSync, openSync, readFileSync, readSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { fetchVerified, layout, prepareHome } from './validator/cache.mjs'
@@ -99,6 +99,27 @@ function options(argv) {
 const seconds = (since) => Math.round((performance.now() - since) / 100) / 10
 const local = (path) => relative(repo, path).replaceAll('\\', '/')
 
+/** Everything written to the open file `fd`, read from its start. */
+function written(fd) {
+  const bytes = Buffer.alloc(fstatSync(fd).size)
+  for (let at = 0; at < bytes.length; ) {
+    const read = readSync(fd, bytes, at, bytes.length - at, at)
+    if (read === 0) break
+    at += read
+  }
+  return bytes.toString('utf8')
+}
+
+/** The file at `path` as text, or undefined when there is none: read, not checked and then read. */
+function readIfThere(path) {
+  try {
+    return readFileSync(path, 'utf8')
+  } catch (error) {
+    if (error?.code === 'ENOENT') return undefined
+    throw error
+  }
+}
+
 async function main(argv) {
   const started = performance.now()
   const { java, cache, results, fresh } = options(argv)
@@ -134,20 +155,23 @@ async function main(argv) {
   const consoleFile = join(work, 'console.log')
   const files = entries.map((entry) => join(work, 'corpus', entry.file))
   const definitions = entries.filter((entry) => entry.definition === true).map((entry) => join(work, 'corpus', entry.file))
-  const log = openSync(consoleFile, 'w')
+  const log = openSync(consoleFile, 'w+')
   const ran = performance.now()
   const run = spawnSync(java, validatorArguments({ jar: where.jar(pin), home: where.home, files, packages, definitions, output }), { stdio: ['ignore', log, log] })
-  closeSync(log)
   const validatorSeconds = seconds(ran)
-  const said = readConsole(readFileSync(consoleFile, 'utf8'))
+  // Read back through the descriptor the validator wrote to, not by its
+  // path a second time, so what is judged is what it wrote.
+  const said = readConsole(written(log))
+  closeSync(log)
 
   const problems = []
   if (run.error !== undefined) problems.push(`the validator did not run: ${run.error.message}`)
   else if (run.status !== 0) problems.push(`the validator exited ${String(run.status)}; its console is ${local(consoleFile)}`)
   if (said.version !== pin.version) problems.push(`the validator says it is ${String(said.version)}, not ${pin.version}`)
   let verdict = { resources: [], problems: [] }
-  if (existsSync(output)) {
-    verdict = judge({ corpus: entries, outcomes: readOutcomes(readFileSync(output, 'utf8')), warnings, pinned: pin.version, registered: packages.map(packageKey), loaded: said.packages })
+  const outcome = readIfThere(output)
+  if (outcome !== undefined) {
+    verdict = judge({ corpus: entries, outcomes: readOutcomes(outcome), warnings, pinned: pin.version, registered: packages.map(packageKey), loaded: said.packages })
   } else problems.push(`the validator wrote no ${local(output)}`)
   problems.push(...verdict.problems)
 

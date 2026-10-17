@@ -57,7 +57,13 @@ export async function fetchVerified({ url, path, sha256 }, { fetch = globalThis.
   mkdirSync(dirname(path), { recursive: true })
   const part = `${path}.part`
   const response = await fetch(url, { redirect: 'follow' })
-  if (!response.ok || response.body === null) throw new Error(`${url} answered ${String(response.status)}`)
+  // What a server sent -- its status, the hash of its bytes -- is printed
+  // and never carried in the error: the error reaches the gate's results
+  // file, and nothing a server sends is written there.
+  if (!response.ok || response.body === null) {
+    console.error(`${url} answered ${String(response.status)}`)
+    throw new Error(`${url} did not serve the file`)
+  }
   const hash = createHash('sha256')
   const body = Readable.fromWeb(response.body)
   body.on('data', (chunk) => hash.update(chunk))
@@ -65,7 +71,8 @@ export async function fetchVerified({ url, path, sha256 }, { fetch = globalThis.
   const got = hash.digest('hex')
   if (got !== sha256) {
     rmSync(part, { force: true })
-    throw new Error(`refused what ${url} served: its SHA-256 is ${got}, where the register says ${sha256}`)
+    console.error(`${url} served bytes whose SHA-256 is ${got}`)
+    throw new Error(`refused what ${url} served: its SHA-256 is not ${sha256}, the one the register says`)
   }
   renameSync(part, path)
   return true

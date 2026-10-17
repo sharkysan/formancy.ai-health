@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpath
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
-import { afterAll, describe, expect, test } from 'vitest'
+import { afterAll, describe, expect, test, vi } from 'vitest'
 import { fetchVerified, layout, prepareHome, sha256File } from './cache.mjs'
 
 /**
@@ -54,7 +54,11 @@ describe('fetchVerified', () => {
   test('refuses, and leaves nothing, when the bytes served are not the registered ones', async () => {
     const directory = scratch()
     const path = join(directory, 'p.tgz')
-    await expect(fetchVerified({ url: 'https://example.org/p.tgz', path, sha256: sha(Buffer.from('other')) }, serving(BYTES))).rejects.toThrow(/refused what https:\/\/example.org\/p.tgz served: its SHA-256 is/)
+    const printed = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await expect(fetchVerified({ url: 'https://example.org/p.tgz', path, sha256: sha(Buffer.from('other')) }, serving(BYTES))).rejects.toThrow(/^refused what https:\/\/example.org\/p.tgz served: its SHA-256 is not [0-9a-f]{64}, the one the register says$/)
+    // What was served is printed, and never carried into the results file.
+    expect(printed).toHaveBeenCalledWith(`https://example.org/p.tgz served bytes whose SHA-256 is ${sha(BYTES)}`)
+    printed.mockRestore()
     expect(readdirSync(directory)).toEqual([])
   })
 
@@ -70,7 +74,10 @@ describe('fetchVerified', () => {
     expect(await fetchVerified({ url: 'https://example.org/p.tgz', path, sha256: sha(BYTES) }, serving(BYTES))).toBe(true)
     expect(await sha256File(path)).toBe(sha(BYTES))
     rmSync(path)
-    await expect(fetchVerified({ url: 'https://example.org/p.tgz', path, sha256: sha(BYTES) }, serving(BYTES, 404))).rejects.toThrow(/answered 404/)
+    const printed = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await expect(fetchVerified({ url: 'https://example.org/p.tgz', path, sha256: sha(BYTES) }, serving(BYTES, 404))).rejects.toThrow(/^https:\/\/example.org\/p.tgz did not serve the file$/)
+    expect(printed).toHaveBeenCalledWith('https://example.org/p.tgz answered 404')
+    printed.mockRestore()
   })
 })
 
