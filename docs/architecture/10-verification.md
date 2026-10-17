@@ -1,0 +1,117 @@
+# 10. Verification
+
+What is checked, how, and what each check proves, the limits included. The
+organising principle is that an export is proved on the resources it
+produced ([0005](../decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md)),
+as Formancy Report proves a report on the PDF it produced
+([formancy.ai-report 0003](https://github.com/sharkysan/formancy.ai-report/blob/main/docs/decisions/0003-a-rendered-report-is-proved-on-the-pdf-it-produced.md)):
+by the official HL7 FHIR validator, on the JSON the packages as built wrote,
+never on their input and never through a mocked validator.
+
+## 10.1 A check that has been seen to fail
+
+A resource broken on purpose, for one thing, must be refused for exactly
+that thing -- matched by severity, message id or issue type, and expression
+-- or the gate fails, saying nothing is watching it. That is how a check of
+the validator's is watched failing here. A record's **Verified by** line
+names what holds it, as the [decisions' format](../decisions/README.md#format)
+asks. Where its checks were watched failing, the line says so and what was
+planted to make each fail, as in
+[0004](../decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)
+to [0008](../decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md);
+all of those but 0005 also say that every file was restored byte for byte
+after.
+
+## 10.2 The gates
+
+Every job is in [`gates.yml`](../../.github/workflows/gates.yml), which CI
+runs on every pull request and a release before it publishes.
+
+| Job | Command | What it proves | What it does not |
+|---|---|---|---|
+| `verify` | `pnpm build`, `pnpm typecheck` | The packages build; no published package names a Node or DOM global or imports what its manifest does not declare ([§5](05-building-blocks.md#what-holds-the-layers)) | A global reached by a cast; a manifest that declares more than a record admits |
+| | `pnpm check:pkg` | publint and attw, ESM only: the commonest cause of a package that does not work in its host | That it runs: the install gate does that |
+| | `node scripts/verify-licenses.mjs` | Every published manifest declares the source-available terms, and every tarball carries `LICENSE.md` and `NOTICE` ([0001](../decisions/0001-a-paid-module-in-its-own-repository.md)) | That the licence's terms are Data's and Report's: nothing compares the texts |
+| | `node scripts/dependency-licences.mjs` | Every production dependency of a published package, as installed, is under a permissive licence | Whether a licence's terms are what its identifier says; code a package vendors |
+| | `pnpm test:repo` | The repository's guards, among them: exactness and no clock, HL7's notice and the names, upstream at exact versions, the size budget, the test matrix, `codecov.yml`, the CLA's hash, the README's generated parts, the workflows' shape, the validator's registers, verdict, command line and corpus coverage, the code systems the corpus writes, no valid AHV number in any file, and this architecture ([0010](../decisions/0010-the-architecture-is-documented-in-arc42s-sections-held-to-the-repository-by-a-guard.md)) | What only a person reading prose can see: whether a sentence is true |
+| `test` | each package's `test:coverage`, one job each | Each package's suite, against the other packages as built. Coverage is reported, never gated | That a suite covers what it should: [`ci-test-jobs.test.mjs`](../../scripts/ci-test-jobs.test.mjs) holds only that every suite runs |
+| `install` | `pnpm test:e2e:install` | The packed tarballs install into a plain npm project, type-check with `skipLibCheck` off against their published declarations, and run under Node: a decimal, a Questionnaire, a response, a document, and each package's `Refusal` caught | Any host but Node; the registry's copy, which it never reads |
+| `validator` | `node scripts/validator.mjs`, then the registers' test against what it downloaded and ran | What the packages wrote of the corpus is accepted by the pinned validator, offline, against the registered packages, with no error and no warning but the registered ones; every broken resource is refused for what it breaks, the CH ORF documents among them; the registers are the bytes and the validator's own load | See 10.3 |
+
+Beside them, [`cla.yml`](../../.github/workflows/cla.yml) checks every pull
+request's commit authors against the CLA record, and
+[`security.yml`](../../.github/workflows/security.yml) runs CodeQL and
+dependency review. A release runs `gates.yml` again, then checks and pins
+what it would publish ([§6.6](06-runtime-view.md#66-a-release)).
+[`workflows.test.mjs`](../../scripts/workflows.test.mjs) holds the
+workflows to the shape that depends on: every third-party action pinned to
+a commit, and the validator job's `setup-java` too, while GitHub's own,
+those of its `actions` organisation, are taken by tag; no `${{ }}` in a script; no cache in a
+release; the validator job's order and uploads.
+
+## 10.3 What a conformance claim covers
+
+The claim is the guide and its version, the validator and its version, and
+the corpus, and nothing more ([0005](../decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md));
+the README's [validator gate](../../README.md#the-validator-gate) states it
+in full, and [its table](../../README.md#what-it-is-built-and-judged-against),
+derived by [`scripts/compatibility.mjs`](../../scripts/compatibility.mjs),
+the versions.
+
+For a CH ORF document the corpus is
+[`ch-orf.mjs`](../../scripts/validator/ch-orf.mjs): the document health-ch,
+as built, makes of a synthetic referral, accepted against CH ORF on CH Core
+with CH Term, with no error and no warning but dom-6 and CH Core's
+`gln-startswith76`, which the corpus's GLNs under GS1's prefix for examples
+raise, each registered with its reason; and documents made of it with one
+thing broken, the ones [0009](../decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md) lists, each of which the validator must refuse
+for exactly that. A wrong check digit is among them, which the validator
+only warns of and the gate, that warning unregistered, refuses.
+
+What it does not cover:
+
+- **A resource the corpus does not hold.** The corpus is synthetic and
+  [`corpus.test.mjs`](../../scripts/validator/corpus.test.mjs) holds it to
+  every type and rule the packages write, not to every form a customer has.
+- **Codes the registered packages do not hold.** LOINC, SNOMED CT, UCUM and
+  a language tag's registration are unchecked offline; a code system nobody
+  knows is information, which refuses nothing; a media type is unchecked.
+- **A response that is not complete**, which the corpus has none of
+  ([0007](../decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)).
+- **The bytes in a Binary.** The validator recomputes the size and SHA-1 of
+  bytes in an attachment and not of those in a Binary, and lets an
+  attachment url to nothing through; health-document refuses both, and
+  health-corpus's tests hold its output to Node's base64 and SHA-1
+  ([0008](../decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
+- **The PDF itself.** It is no PDF/A, and what its pages say is Report's to
+  prove.
+- **The codes a Swiss host sends.** Offline, a Composition's type and
+  category draw nothing against CH Term's SNOMED CT value sets, a made-up
+  code included, and the corpus holds HL7's own codes there; the LOINC
+  section code is held by its pattern alone ([0009](../decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)).
+- **An AHV number the gate should accept.** The corpus's one has a wrong
+  check digit, since a valid one may be a person's, so that a valid number
+  is held to its system rests on health-ch's tests and on CH Core's
+  constraints as read, not on a verdict of the validator's ([0009](../decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)).
+- **What CH ORF's prose asks beyond its profiles**: the Questionnaire inside
+  the Bundle, a stylesheet, and R4's definition of a narrative "clinically
+  safe" for a human to read alone, which a narrative of titles is not. The
+  profiles do not ask them, and the gate accepts the document without them
+  ([0009](../decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)).
+- **A receiving system.** That one accepts a resource is shown by nothing
+  here.
+
+## 10.4 What is not verified yet
+
+- **The release report** that would derive a release's evidence from the run
+  that gated it, as Formancy Report's does
+  ([formancy.ai-report 0014](https://github.com/sharkysan/formancy.ai-report/blob/main/docs/decisions/0014-a-release-report-is-derived-from-the-run-that-gated-it.md)).
+  The install and validator jobs already write results for it, and nothing
+  reads them yet.
+- **PDF/A**: no gate proves a producer, so every declaration is refused; a
+  gate for it waits for a Report release that writes PDF/A
+  ([0008](../decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
+- **A browser.** There is no page, so there is no browser gate, and no gate
+  runs a package in a browser.
+- **That a test never mocks the validator**, and that a fixture holds no
+  real person's data: review's.

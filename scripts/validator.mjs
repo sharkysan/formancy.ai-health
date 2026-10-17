@@ -8,7 +8,8 @@
 // It needs `pnpm build` first, because the corpus is made and written by the
 // packages as built, and a Java at least as new as the pin's `java`. In order:
 //
-// 1. Checks the registers and the corpus, and refuses to run on a wrong one.
+// 1. Checks the registers, and the Java against the pin's, and refuses to
+//    run on a wrong one.
 // 2. Fetches the JAR and every package into the cache, each refused unless
 //    its SHA-256 is the registered one (scripts/validator/cache.mjs), and
 //    lays out the validator's package cache with those packages and no
@@ -17,7 +18,8 @@
 //    responses of the synthetic forms, health-document's Bundles of the
 //    referral letter health-corpus renders with Formancy Report,
 //    health-ch's CH ORF document of a synthetic referral, and the
-//    resources built by hand -- and writes it with health-core's writeJson.
+//    resources built by hand -- checks it, refusing to run on a wrong one,
+//    and writes it with health-core's writeJson.
 // 4. Runs the validator once over every file, offline: `-tx n/a` (no
 //    terminology server), `-txCache n/a`, and `-no-http-access`, which
 //    refuses every request the validator would make, for a package, a

@@ -41,10 +41,23 @@ describe('toQuestionnaire', () => {
 
   // A form of a version nothing here reads may mean anything: mapped as
   // if it were a version that is read, a field's new meaning would be
-  // exported as its old one. It is refused before anything else is read,
-  // and alone, since nothing else about it is known.
+  // exported as its old one. It is refused before anything else of it is
+  // read, and is its only refusal, since nothing else about it is known.
   test.each(['5', '0', 4, undefined])('refuses a form of spec version %s, and says nothing else of it', (specVersion) => {
     expect(refused({ ...form([{ key: 'x', type: 'signature' }]), specVersion })).toEqual(['version form.specVersion'])
+  })
+
+  // The host's context is checked before the form, and an item's options
+  // are named under the url its base makes: a field mapped under a base
+  // that was refused would name its options under no url at all. So a
+  // wrong context is refused first, a form of an unknown version beside it
+  // still for its version alone, and no field is mapped until the context
+  // is right -- the order docs/architecture tells a host its refusals come
+  // in.
+  test("refuses the host's context first, beside a version's, and maps no field under one it refuses", () => {
+    const wrong = { ...HOST, base: 'no base' }
+    expect(refused({ ...form([name]), specVersion: '5' }, wrong)).toEqual(['grammar context.base', 'version form.specVersion'])
+    expect(refused(form([{ key: 'drawn', type: 'signature' }]), wrong)).toEqual(['grammar context.base'])
   })
 
   // A host's form is untrusted: something that is not an object at all
