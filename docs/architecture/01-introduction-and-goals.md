@@ -11,7 +11,10 @@ vendor's application calls it, gets FHIR JSON back and sends it
 itself ([`CLAUDE.md`](../../CLAUDE.md#what-this-is-and-what-it-is-not)).
 
 What it is not: an EHR, a FHIR server or a terminology service, or a
-renderer of PDFs or of forms; and it is not intended as a medical device.
+renderer of PDFs or of forms; and it is not intended as a medical device,
+as the README's [intended purpose](../../README.md#intended-purpose) says
+in CLAUDE.md's words, which no lawyer has read yet
+([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).
 Version 1 has no server, no page and no network.
 
 It is sold to the vendors whose software hospitals and practices run, to
@@ -47,18 +50,22 @@ submission as a QuestionnaireResponse, a PDF as a DocumentReference in a
 document Bundle, a referral as a CH ORF document, its patient, author and
 orders in CH Core's profiles and its GLN and AHV number held to their check
 digits, and the gate that runs the HL7 FHIR validator over what the
-packages write. Nothing is released.
+packages write. 0.1.0, a developer preview of all of it, was ready to tag
+and not released on 17 October 2026: the README's [What 0.1.0 is](../../README.md#what-010-is)
+says whom it is for, what it publishes and the gates it is held to.
 
-**Planned, and not here**, in the README's words: extraction from a
-QuestionnaireResponse; PDF/A, which waits for a Report release that writes
-it; the MHD provide Bundle and CH EPR; and of CH ORF the Questionnaire
-inside the Bundle, a PDF and the Composition's receivers, contacts and
-other extensions; then Germany's, the United Kingdom's, Austria's and HL7
-Europe's. Which version of
-a guide a package targets is decided in the record that brings it.
+**Not in 0.1.0**, as the README's [list](../../README.md#not-in-010) has
+it: PDF/A, and with it the CH EPR's MHD document, which wait for a Report
+release that writes PDF/A; extraction from a QuestionnaireResponse;
+Germany's, the United Kingdom's, Austria's and HL7 Europe's profiles; file,
+signature, ranking, matrix and rich-text items; FHIRPath anywhere; and of
+CH ORF the Questionnaire inside the Bundle, a PDF and the Composition's
+receivers, contacts and other extensions. Which version of a guide a
+package targets is decided in the record that brings it.
 
 **Out of version 1**: a server, a page, sending anything, a terminology
-service, and any clinical logic -- a score, a warning, a suggested therapy --
+service, a browser, in which no gate runs the packages, and any clinical
+logic -- a score, a warning, a suggested therapy --
 which would make the product a candidate medical device
 ([`CLAUDE.md`](../../CLAUDE.md#secrets-health-data-and-untrusted-input)).
 

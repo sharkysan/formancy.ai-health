@@ -33,10 +33,10 @@
 // Run by the `validator` job in gates.yml, and by hand the same way.
 
 import { spawnSync } from 'node:child_process'
-import { closeSync, existsSync, fstatSync, mkdirSync, openSync, readFileSync, readSync, rmSync, writeFileSync } from 'node:fs'
+import { closeSync, existsSync, fstatSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { fetchVerified, layout, prepareHome } from './validator/cache.mjs'
+import { fetchVerified, layout, prepareHome, sha256File } from './validator/cache.mjs'
 import { corpus as buildCorpus } from './validator/corpus.mjs'
 import { corpusProblems, judge } from './validator/judge.mjs'
 import { readConsole, readOutcomes } from './validator/outcome.mjs'
@@ -89,6 +89,19 @@ export function validatorArguments({ jar, home, files, packages, definitions, ou
   ]
 }
 
+/**
+ * How `args` -- the command line the gate spawns -- runs the validator
+ * against the network: the terminology server and cache it names, null
+ * where it names none, and whether HTTP is left open, which only
+ * `-no-http-access` closes. What the results file records, so that the
+ * release report's check of an offline run is of the run and not of a
+ * constant (0011).
+ */
+export function offlineOf(args) {
+  const after = (flag) => (args.includes(flag) ? (args[args.indexOf(flag) + 1] ?? null) : null)
+  return { tx: after('-tx'), txCache: after('-txCache'), httpAccess: !args.includes('-no-http-access') }
+}
+
 /** The major version `java -version` reports: `openjdk version "17.0.4"` is 17, `"1.8.0_402"` is 8. */
 export function javaMajor(text) {
   const match = /version "(\d+)(?:\.(\d+))?/.exec(String(text))
@@ -119,6 +132,15 @@ function written(fd) {
   return bytes.toString('utf8')
 }
 
+/**
+ * The results of a run that stopped before the validator's verdict: when it
+ * started and stopped, why, and that it did not pass. The release report
+ * reads a results file only when it says when its run started (0011).
+ */
+export function stoppedResults(message, { startedAt, finishedAt }) {
+  return { gate: 'validator', startedAt, finishedAt, problems: [message], passed: false }
+}
+
 /** The file at `path` as text, or undefined when there is none: read, not checked and then read. */
 function readIfThere(path) {
   try {
@@ -129,7 +151,7 @@ function readIfThere(path) {
   }
 }
 
-async function main(argv) {
+async function main(argv, startedAt) {
   const started = performance.now()
   const { java, cache, results, fresh } = options(argv)
   const { pin, packages, warnings } = readRegisters(repo)
@@ -169,9 +191,19 @@ async function main(argv) {
   const consoleFile = join(work, 'console.log')
   const files = entries.map((entry) => join(work, 'corpus', entry.file))
   const definitions = entries.filter((entry) => entry.definition === true).map((entry) => join(work, 'corpus', entry.file))
+  // What the results file says of how the validator ran is read from what
+  // it ran with, just before it runs: the command line spawned, the JAR's
+  // bytes by their hash, and the packages laid out in its package cache --
+  // never copied from the registers it was meant to match, which the
+  // release report holds it to.
+  const args = validatorArguments({ jar: where.jar(pin), home: where.home, files, packages, definitions, output })
+  const jarSha256 = await sha256File(where.jar(pin))
+  const cached = readdirSync(where.packages)
+    .filter((name) => name !== 'packages.ini')
+    .sort()
   const log = openSync(consoleFile, 'w+')
   const ran = performance.now()
-  const run = spawnSync(java, validatorArguments({ jar: where.jar(pin), home: where.home, files, packages, definitions, output }), { stdio: ['ignore', log, log] })
+  const run = spawnSync(java, args, { stdio: ['ignore', log, log] })
   const validatorSeconds = seconds(ran)
   // Read back through the descriptor the validator wrote to, not by its
   // path a second time, so what is judged is what it wrote.
@@ -191,11 +223,19 @@ async function main(argv) {
 
   const report = {
     gate: 'validator',
-    validator: { version: pin.version, sha256: pin.sha256, reported: said.version, java: said.java ?? null },
-    // Refusals the console printed: its package lookups. A refused fetch of
-    // a profile is printed nowhere but in that resource's outcome.
-    offline: { tx: 'n/a', txCache: 'n/a', httpAccess: false, consoleRefusals: said.refused },
-    packages: { registered: packages.map(packageKey), loaded: said.packages ?? null },
+    // When this run started and ended: what the release report holds a
+    // results file to, so that another run's is never read as this one's.
+    startedAt,
+    finishedAt: new Date().toISOString(),
+    // The pinned version, the SHA-256 of the JAR that ran, measured, and what it said it was.
+    validator: { version: pin.version, sha256: jarSha256, reported: said.version, java: said.java ?? null },
+    // The options it ran with, from the command line, and the refusals the
+    // console printed: its package lookups. A refused fetch of a profile is
+    // printed nowhere but in that resource's outcome.
+    offline: { ...offlineOf(args), consoleRefusals: said.refused },
+    // `registered`: what the gate laid out in the validator's package cache,
+    // read from that directory; `loaded`: what the validator said it loaded.
+    packages: { registered: cached, loaded: said.packages ?? null },
     corpus: local(join(work, 'corpus')),
     outcome: local(output),
     console: local(consoleFile),
@@ -222,7 +262,8 @@ async function main(argv) {
 // `node scripts/validator.mjs [--java <path>] [--cache <dir>] [--results <file>] [--fresh]`
 if (process.argv[1]?.replaceAll('\\', '/').endsWith('scripts/validator.mjs')) {
   const argv = process.argv.slice(2)
-  main(argv).then(
+  const startedAt = new Date().toISOString()
+  main(argv, startedAt).then(
     (code) => {
       process.exitCode = code
     },
@@ -231,7 +272,7 @@ if (process.argv[1]?.replaceAll('\\', '/').endsWith('scripts/validator.mjs')) {
       // them finds a failure and not an absence.
       const { results } = options(argv)
       mkdirSync(dirname(results), { recursive: true })
-      writeFileSync(results, `${JSON.stringify({ gate: 'validator', problems: [error.message], passed: false }, null, 2)}\n`)
+      writeFileSync(results, `${JSON.stringify(stoppedResults(error.message, { startedAt, finishedAt: new Date().toISOString() }), null, 2)}\n`)
       console.error(`Validator gate failed: ${error.message}`)
       process.exitCode = 1
     },

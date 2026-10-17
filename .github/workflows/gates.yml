@@ -1,18 +1,22 @@
 name: Gates
 
-# The gates every change and every release passes, in one place, as in
-# formancy.ai-report (its 0014) and formancy.ai-data (its 0035): ci.yml calls
-# this on every pull request and every push to main, and release.yml calls it
-# before anything is published, so a release's gate is CI's by construction.
+# The gates every change and every release passes, in one place (0011, as
+# formancy.ai-report 0014 and formancy.ai-data 0035): ci.yml calls this on
+# every pull request and every push to main, and release.yml calls it before
+# anything is published, so a release's gate is CI's by construction and its
+# report describes its own run. Every job but the last ends by collecting
+# what it found into one results file and uploading it as
+# `release-results-<key>`; the `report` job builds the release report from
+# all of them and fails the run on anything its `problems` list
+# (scripts/release-report/report.mjs).
 #
-# Four jobs, because four things exist to prove: the build, types,
-# packaging, licences and the repository's guards (`verify`); each package's
-# suite on a runner of its own (`test`); the packed tarballs in a project
-# that is not this one (`install`); and the FHIR resources the packages
-# write, judged by the HL7 FHIR validator against pinned guide packages
-# (`validator`, 0005). The release report that reads every job's results
-# arrives with the first release it reports on -- not before, so that no
-# job here passes for having nothing to check.
+# Four jobs leave results, because four things exist to prove: the build,
+# types, packaging, licences and the repository's guards (`verify`); each
+# package's suite on a runner of its own (`test`); the packed tarballs in a
+# project that is not this one (`install`); and the FHIR resources the
+# packages write, judged by the HL7 FHIR validator against pinned guide
+# packages (`validator`, 0005). A job added here is one the report expects
+# results from: it needs a collect step, and collect.mjs a reader for it.
 #
 # A release runs code from here with its own permissions, so third-party
 # actions are pinned to commit hashes, with the tag in a comment, under
@@ -101,9 +105,28 @@ jobs:
       # versions, no source file is past the 600-line budget, the `test`
       # job's matrix names every package with a suite, the README says what
       # LICENSE.md says, nothing names the product with HL7's marks and
-      # NOTICE and the README carry HL7's notice, and these workflows keep the
-      # shape the release depends on. A guard that is not a gate is a comment.
+      # NOTICE and the README carry HL7's notice, these workflows keep the
+      # shape the release depends on, and the release report's registers
+      # hold. A guard that is not a gate is a comment.
       - run: pnpm test:repo
+
+      # What this job found, for the report: the guards' results and the
+      # dist/ of every published package it built. Even when a step above
+      # failed, so the report says what failed rather than that nothing came.
+      # Every upload here overwrites: a job run again replaces its own earlier
+      # attempt's artefact, which v4 would otherwise refuse by name, and no two
+      # jobs share a key (workflows.test.mjs), so it never replaces another's.
+      - name: Keep what this job found, for the report
+        id: collect
+        if: ${{ !cancelled() }}
+        run: node scripts/release-report/collect.mjs --job verify
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: release-results-${{ steps.collect.outputs.key }}
+          path: release-results/
+          if-no-files-found: error
+          overwrite: true
 
   # Every package's suite, each in a job of its own on its own runner, as in
   # formancy.ai-data, where nine suites sharing one runner timed out a test
@@ -168,6 +191,23 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
 
+      # The package's suite, the test files the checkout holds for it, its
+      # coverage and turbo's own start and end of the task, and the dist/ of
+      # every published package turbo built for it.
+      - name: Keep what this job found, for the report
+        id: collect
+        if: ${{ !cancelled() }}
+        run: node scripts/release-report/collect.mjs --job test --package "$PACKAGE"
+        env:
+          PACKAGE: ${{ matrix.package }}
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: release-results-${{ steps.collect.outputs.key }}
+          path: release-results/
+          if-no-files-found: error
+          overwrite: true
+
   # Every job above runs inside the workspace, against the tree it built from --
   # and a workspace sibling resolves a package through a symlink to its SOURCE
   # directory. So an exports map that is wrong for a real consumer can be right
@@ -175,7 +215,8 @@ jobs:
   # into a plain npm project, type-checks it with skipLibCheck OFF and runs it
   # under Node. Its own job so that `verify` stays the fast signal and a red
   # "install" says what is wrong. The tarballs it installed and ran are kept as
-  # the run's `release-tarballs`: a release publishes exactly these.
+  # the run's `release-tarballs`: a release publishes exactly these, and the
+  # report holds each to the dist/ every other job built.
   install:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -206,6 +247,20 @@ jobs:
 
       - run: node scripts/install-test.mjs --keep-tarballs release-tarballs
 
+      # The install gate's record, test-results/install.json, which it
+      # writes however it ends: whether it passed, the Node and npm, what a
+      # clean install resolved, and each tarball's hashes.
+      - name: Keep what this job found, for the report
+        id: collect
+        if: ${{ !cancelled() }}
+        run: node scripts/release-report/collect.mjs --job install
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: release-results-${{ steps.collect.outputs.key }}
+          path: release-results/
+          if-no-files-found: error
+          overwrite: true
       - uses: actions/upload-artifact@v4
         with:
           name: release-tarballs
@@ -283,6 +338,21 @@ jobs:
         env:
           VALIDATOR_GATE_RAN: 'true'
 
+      # What this job found, for the report: the gate's own file, and the run
+      # of the registers' test just made, whose passes account for the cases
+      # `verify` skips (0011). After both, and whatever the gate found.
+      - name: Keep what this job found, for the report
+        id: collect
+        if: ${{ !cancelled() }}
+        run: node scripts/release-report/collect.mjs --job validator
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: release-results-${{ steps.collect.outputs.key }}
+          path: release-results/
+          if-no-files-found: error
+          overwrite: true
+
       # The results, the corpus as written, the validator's own outcomes and
       # its console, whatever the run found.
       - uses: actions/upload-artifact@v4
@@ -292,5 +362,81 @@ jobs:
           path: |
             test-results/validator.json
             test-results/validator/
+          if-no-files-found: error
+          overwrite: true
+
+  # The release report (0011), built from what every job above found: what
+  # this run was tested on -- Node, pnpm, TypeScript, upstream @formancy/*,
+  # the FHIR version, the validator the gate ran and the Java it ran on --
+  # every package's results, the validator gate's verdict held to the
+  # registers, the build identity of what a release publishes, the release
+  # gates and the known limitations. It fails the run on anything in its
+  # problems -- a job that ended other than success, an artefact missing,
+  # twice or another run's, a test skipped that the validator job did not
+  # pass, or failed, a resource not judged as the corpus expects, a tarball
+  # whose dist/ is not every job's -- and writes the report either way, into
+  # the job summary and the `release-report` artefact. For a release or a
+  # rehearsal it also writes the release body, and fails here, before
+  # anything is published, when the body has no changelog section or is
+  # longer than GitHub accepts.
+  #
+  # The limit is not measured on CI yet: it is verify's, whose install this
+  # job shares, until three green runs give a slowest time to triple. The
+  # checkout keeps the whole history, for a document's last change when a
+  # gate's evidence is a document.
+  report:
+    needs: [verify, test, install, validator]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable pnpm
+
+      - name: Get pnpm store directory
+        id: pnpm-store
+        run: |
+          store=$(pnpm store path --silent)
+          echo "path=${store}" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        if: inputs.release == ''
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      # What the checkout says it is tested with is read from what is
+      # installed: @formancy/spec, TypeScript and the rest, and health-core's
+      # FHIR version through TypeScript's parser. Nothing is built here; the
+      # report reads every other job's results.
+      - run: pnpm install --frozen-lockfile
+
+      # One directory per artefact, never merged: two jobs that wrote one key
+      # stay two, and the report says so.
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-results-*
+          path: release-results
+
+      - name: The report, from what every job found
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          RELEASE: ${{ inputs.release }}
+        run: node scripts/release-report/report.mjs --results release-results --out release-report
+
+      - name: The report, in the run's summary
+        if: ${{ !cancelled() }}
+        run: cat release-report/release-report.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: release-report
+          path: release-report/
           if-no-files-found: error
           overwrite: true

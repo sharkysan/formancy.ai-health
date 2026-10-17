@@ -1,6 +1,6 @@
 # 0010 — Document the architecture in arc42's sections, under formancy.ai's file names, and hold what a test can see of it to the repository by a guard
 
-- **Status:** accepted
+- **Status:** accepted; its guard reads Markdown through `scripts/markdown.mjs`, fences in quotes and lists as GitHub does, by [0011](0011-a-release-report-is-derived-from-the-run-that-gated-it.md)
 - **Date:** 2026-10-17
 - **Deciders:** Daniel Bacher
 - **Verified by:** `scripts/architecture.test.mjs`, in `pnpm test:repo`,

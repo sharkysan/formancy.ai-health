@@ -1,0 +1,79 @@
+{
+  "$comment": "The release gates as the delivery plan names them: its acceptance gates G1 to G7 (plan 19.1), the three 0.1.0 adds -- the dependency-licence guard, the trademark-notice guard and a clean rehearsal of release.yml (plan 17.4) -- and the legal review the paid release waits for, each with the evidence a run must pass, the reason it is open, or both. The plan is a working document kept out of the repository, so no gate's wording is here: the report prints the id and its evidence. Read by scripts/release-report/report.mjs; held by scripts/release-report/gates.test.mjs, and the legal gate by scripts/licence-status.test.mjs. A document is stated evidence and never counts as passed in a run. A gate with a reason is open whatever its evidence, and the evidence it has must pass all the same. Each reason is printed in every report and every release body, so it says what stays true on the release's own run. 0.1.0's gates are G1 as plan 17.4 reads it, the install gate over every published package, which leaves plan 19.1's G1 open in part, G2, G3, G5, licences, trademark and rehearsal; G4, G6, G7 and legal belong to later releases.",
+  "gates": [
+    {
+      "gate": "G1",
+      "evidence": [
+        { "job": "install" },
+        { "file": "scripts/upstream-deps.test.mjs" }
+      ],
+      "open": "Partly evidenced: the install gate installs and runs every published package's tarball in plain npm projects under Node, and upstream packages are depended on at exact versions; no gate bundles a package for a browser, and that no upstream file is copied, a stylesheet included, is held by review (0002)."
+    },
+    {
+      "gate": "G2",
+      "evidence": [
+        { "job": "validator" },
+        { "file": "scripts/validator/registers.test.mjs" },
+        { "file": "scripts/validator/judge.test.mjs" },
+        { "file": "scripts/validator/outcome.test.mjs" },
+        { "file": "scripts/validator/corpus.test.mjs" },
+        { "file": "scripts/validator.test.mjs" }
+      ]
+    },
+    {
+      "gate": "G3",
+      "evidence": [
+        { "file": "packages/health-core/src/exactness.test.ts" },
+        { "file": "packages/health-core/src/numbers.test.ts" },
+        { "file": "scripts/exact-and-reproducible.test.mjs" }
+      ]
+    },
+    {
+      "gate": "G4",
+      "open": "A later release: no Formancy Report release writes PDF/A, so health-document refuses every PDF/A declaration (0008), and veraPDF over the PDFs a Bundle carries arrives with H09."
+    },
+    {
+      "gate": "G5",
+      "evidence": [
+        { "file": "packages/health-questionnaire/src/questionnaire.test.ts" },
+        { "file": "packages/health-questionnaire/src/items.test.ts" },
+        { "file": "packages/health-document/src/bundle.test.ts" }
+      ],
+      "open": "Partly evidenced: an unknown spec version, an unmapped field type and a dangling reference each refuse, with a test of each; no package reads a FHIR, SDC or guide version, or a code system, from what a host hands it in order to refuse an unknown one -- each writes the one FHIR version health-core names and the profiles its guide pins -- so those refusals have no case to test yet."
+    },
+    {
+      "gate": "G6",
+      "evidence": [
+        { "job": "verify" },
+        { "file": "scripts/synthetic-identifiers.test.mjs" },
+        { "file": "packages/health-core/src/refusal.test.ts" }
+      ],
+      "open": "A later release, partly evidenced: the type-check refuses a Node or DOM global in a published package's source, no file holds a valid AHV number, and no refusal quotes a value; that a dependency brings no network module, that nothing logs, and that no fixture holds a real person's data are held by review."
+    },
+    {
+      "gate": "G7",
+      "open": "A later release: a lawyer's review of the licence, the CLA, the agreements, the intended purpose and the trademark position, documentation a customer has accepted as accurate, and a customer-accepted paid pilot, none of which exists yet."
+    },
+    {
+      "gate": "licences",
+      "evidence": [
+        { "job": "verify" },
+        { "file": "scripts/dependency-licences.test.mjs" }
+      ]
+    },
+    {
+      "gate": "trademark",
+      "evidence": [
+        { "file": "scripts/trademark.test.mjs" }
+      ]
+    },
+    {
+      "gate": "rehearsal",
+      "open": "A dispatch of release.yml on the release commit, whose check job reads this report after the gates: no run of the gates can see a rehearsal, so no report can say whether one ran clean."
+    },
+    {
+      "gate": "legal",
+      "open": "Needs a lawyer: LICENSE.md says at the top that no lawyer has reviewed it (0001), and does not say, as the README does, that a customer's product computing a clinical result from its own forms carries the regulatory duty that brings; CLA.md has not been reviewed either; the README's intended purpose is in CLAUDE.md's words, which no lawyer has read (0011); and the trademark position is the maintainer's reading of HL7's pages (0003)."
+    }
+  ]
+}

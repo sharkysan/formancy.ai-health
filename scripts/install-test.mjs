@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Install the packed packages into a project that knows nothing about this
- * repository, and run it.
+ * Install the packed packages into projects that know nothing about this
+ * repository, and run them.
  *
  * **Why no other gate can see this.** `pnpm build`, `typecheck`, `test:coverage`
  * and `check:pkg` all run inside the workspace, against the tree they were
@@ -11,23 +11,36 @@
  * no `exports` at all for four releases that way, while ninety-five tests and
  * `publint` said nothing.
  *
- * **What this proves, and only this.** The tarballs `pnpm pack` produces install
- * into a plain npm project; every entry point resolves; the types resolve with
- * `skipLibCheck` off, so a declaration file that imports a type its consumer
- * does not have is found here rather than by a customer; and the code runs
- * under Node. One host, Node's, because every package here is a library a
- * host calls from Node; formancy.ai-report's gate plans a project per kind of
- * host, and that arrives here with a package a browser imports, if one ever
- * does.
+ * **What this proves, and only this.** The tarballs `pnpm pack` produces
+ * install into plain npm projects, each holding only what its host would
+ * (`install-hosts.mjs` says what, and why apart); every entry point
+ * resolves; the types resolve with `skipLibCheck` off, so a declaration file
+ * that imports a type its consumer does not have is found here rather than
+ * by a customer; and the code runs under Node. One kind of host, Node's,
+ * because every package here is a library a host calls from Node;
+ * formancy.ai-report's gate plans a project per kind of host, and that
+ * arrives here with a package a browser imports, if one ever does.
+ *
+ * **The guide's code too** (0011; formancy.ai-report 0015).
+ * docs/getting-started.md's blocks are read once, by getting-started.mjs,
+ * before anything is packed -- a block the gate would not run fails it
+ * there -- and written into the `guide/` directory of the project that
+ * builds them, where its type-check covers them and `guide-node.ts` runs
+ * them and holds them to the output the guide shows.
  *
  * It does **not** talk to npm about these packages, so it says nothing about
- * the registry copy; the tools come from the registry.
+ * the registry copy; the tools, and what the guide installs beside the
+ * tarballs, come from the registry.
  *
  * **What it leaves behind.** `test-results/install.json` at the root, written
  * however the gate ends: whether it passed, the Node and npm it ran under,
- * every `@formancy/*` package a clean `npm install` resolved, and each
- * tarball's name, sha256, npm integrity and the hash of its `dist/` -- what
- * a release report reads, once there is one (formancy.ai-report 0014). With
+ * each tarball's name, sha256, npm integrity and the hash of its `dist/`,
+ * and, per project, every `@formancy/*` package its clean `npm install`
+ * resolved, what it installed beside the tarballs, the tools that checked
+ * it, the guide's blocks it was given and the line each opens on, how far
+ * it got and what each step said -- what the release report reads and
+ * holds to install-hosts.mjs's plan (0011; formancy.ai-report 0014), which
+ * shows a consumer's project's resolutions apart from the guide's. With
  * `--keep-tarballs <dir>` the tarballs are copied there before the work
  * directory goes, so the release publishes exactly these.
  */
@@ -37,6 +50,8 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, 
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { readGuide } from './getting-started.mjs'
+import { GUIDE_HOSTS, HOSTS } from './install-hosts.mjs'
 import { distHash, distOfTarball } from './release/dist-hash.mjs'
 import { installed } from './release/installed.mjs'
 import { integrityOf } from './release/publish.mjs'
@@ -104,11 +119,12 @@ function run(command, args, cwd) {
 const inProject = (command, cwd) => run('npx', ['--no', '--', ...command], cwd)
 
 /**
- * Every `@formancy/*` package the consumer's `npm install` resolved, this
+ * Every `@formancy/*` package a project's `npm install` resolved, this
  * repository's and upstream's, by version. Read right after the install,
- * because the consumer is deleted at the end. formancy.ai-report also records
- * each runtime dependency its report's *Tested on* names; that list arrives
- * here with the report.
+ * because the project is deleted at the end. formancy.ai-report also records
+ * each third-party runtime dependency its report's *Tested on* names; no
+ * published package here has one, and the report says one added later is
+ * "not reported" until this records it (0011).
  */
 function resolvedIn(project) {
   const scope = join(project, 'node_modules', '@formancy')
@@ -139,15 +155,78 @@ function describeTarball(name, file) {
 
 const json = (value) => `${JSON.stringify(value, null, 2)}\n`
 
+/**
+ * Writes what the guide gives `host`'s kind into `dir`'s `guide/`
+ * directory: its module, and the lines its program is shown printing.
+ * Answers what install.json records of it.
+ */
+function writeGuide(host, dir, guide) {
+  const given = guide.get(host.kind)
+  mkdirSync(join(dir, 'guide'))
+  writeFileSync(join(dir, 'guide', host.entry), `${given.code}\n`)
+  if (given.output !== null) writeFileSync(join(dir, 'guide', 'output.txt'), `${given.output}\n`)
+  return { kind: host.kind, files: [host.entry], blocks: given.blocks }
+}
+
+/**
+ * Installs the project `name` in a directory of its own under `work` --
+ * the tarballs, what its host installs beside them and its tools -- and
+ * runs its steps in order, filling `entry` in as each passes. Answers what
+ * to print.
+ */
+function check(name, host, entry, tarballs, guide) {
+  const dir = join(work, name)
+  mkdirSync(dir, { recursive: true })
+  // The fixture is copied rather than generated: TypeScript inside a template
+  // literal inside a script is the shape that cost upstream two broken attempts.
+  cpSync(join(here, 'install-fixture'), dir, { recursive: true })
+  if (host.guide !== undefined) entry.guide = writeGuide(host.guide, dir, guide)
+  writeFileSync(
+    join(dir, 'package.json'),
+    json({
+      name: `formancy-health-install-${name}`,
+      private: true,
+      type: 'module',
+      dependencies: { ...Object.fromEntries([...tarballs].map(([package_, file]) => [package_, `file:${file}`])), ...host.with },
+      devDependencies: host.tools,
+    }),
+  )
+  writeFileSync(join(dir, 'tsconfig.json'), json(host.tsconfig))
+
+  // npm rather than pnpm, deliberately: pnpm in a directory under a workspace
+  // can still find the workspace, and resolving through it is the thing this
+  // test exists to avoid.
+  run('npm', ['install', '--no-audit', '--no-fund', '--loglevel', 'error'], dir)
+  entry.npmInstalled = true
+  entry.resolved = resolvedIn(dir)
+  entry.installed = Object.fromEntries(Object.keys(host.with).map((package_) => [package_, installed(dir, package_)?.version ?? null]))
+  entry.tools = Object.fromEntries(Object.keys(host.tools).map((tool) => [tool, installed(dir, tool)?.version ?? null]))
+
+  const beside = Object.entries(entry.installed).map(([package_, version]) => `${package_} ${String(version)}`).join(', ')
+  const lines = [`\n${name}: ${host.consumer}, ${beside === '' ? 'the tarballs alone' : `the tarballs beside ${beside}`}`]
+  if (entry.guide !== null) lines.push(`  the guide's ${entry.guide.kind} blocks, from lines ${entry.guide.blocks.join(', ')} of docs/getting-started.md, in guide/${entry.guide.files.join(', guide/')}`)
+  for (const [at, step] of host.steps.entries()) {
+    const said = inProject(step.command, dir).trim()
+    entry.steps[at].done = true
+    entry.steps[at].said = said
+    lines.push(`  ${step.name}: ${said === '' ? 'passed' : said.replaceAll('\n', '\n    ')}`)
+  }
+  return lines.join('\n')
+}
+
 const keepAt = process.argv.indexOf('--keep-tarballs')
 const keep = keepAt === -1 ? undefined : resolve(process.argv[keepAt + 1] ?? '')
 if (keepAt !== -1 && process.argv[keepAt + 1] === undefined) throw new Error('--keep-tarballs needs a directory')
 
 const work = mkdtempSync(join(tmpdir(), 'formancy-health-install-'))
-const record = { startedAt: new Date().toISOString(), node: process.version, npm: null, resolved: [], tarballs: [] }
+const record = { startedAt: new Date().toISOString(), node: process.version, npm: null, tarballs: [], consumers: [] }
 let failure
 
 try {
+  // Read before anything is packed: a guide block the gate would not run
+  // fails here, without waiting for npm.
+  const guide = readGuide(readFileSync(join(repo, 'docs', 'getting-started.md'), 'utf8'), GUIDE_HOSTS)
+
   const packages = publishable()
   // @formancy/health-core, @formancy/health-questionnaire,
   // @formancy/health-document and @formancy/health-ch today; health-corpus
@@ -172,67 +251,18 @@ try {
     mkdirSync(keep, { recursive: true })
     for (const file of tarballs.values()) cpSync(file, join(keep, basename(file)))
   }
+  record.npm = run('npm', ['--version'], work).trim()
 
-  // The fixture is copied rather than generated: TypeScript inside a template
-  // literal inside a script is the shape that cost upstream two broken attempts.
-  const project = join(work, 'consumer')
-  mkdirSync(project, { recursive: true })
-  cpSync(join(here, 'install-fixture'), project, { recursive: true })
+  const projects = Object.entries(HOSTS)
+  record.consumers = projects.map(([name, host]) => ({ project: name, consumer: host.consumer, npmInstalled: false, installed: {}, tools: {}, resolved: [], guide: null, steps: host.steps.map((step) => ({ step: step.name, done: false, said: null })) }))
+  console.log(`installing the tarballs into ${String(projects.length)} plain npm projects, each with what its host has, and checking each…`)
+  // Each project's clean install resolved what its own entry records: the
+  // report reads a consumer's apart from the guide's, which installs
+  // Report's packages beside the tarballs (versions.mjs), so no list here
+  // merges the two.
+  for (const [at, [name, host]] of projects.entries()) console.log(check(name, host, record.consumers[at], tarballs, guide))
 
-  writeFileSync(
-    join(project, 'package.json'),
-    json({
-      name: 'formancy-health-install-test',
-      private: true,
-      type: 'module',
-      dependencies: Object.fromEntries(packages.map(({ name }) => [name, `file:${tarballs.get(name)}`])),
-      devDependencies: {
-        // What a Node consumer has. A declaration file that references
-        // Node's types is checked against them with skipLibCheck off.
-        '@types/node': '^22.10.0',
-        // The TypeScript the workspace pins; a consumer on another major is
-        // its own question.
-        typescript: '~6.0.3',
-        tsx: '^4.20.3',
-      },
-    }),
-  )
-
-  writeFileSync(
-    join(project, 'tsconfig.json'),
-    json({
-      compilerOptions: {
-        strict: true,
-        target: 'ES2023',
-        module: 'NodeNext',
-        moduleResolution: 'nodenext',
-        lib: ['ES2023'],
-        types: ['node'],
-        noEmit: true,
-        // OFF, deliberately. Skipping library checks is what lets a broken
-        // declaration file reach a consumer unnoticed, and the published
-        // `.d.mts` files are precisely what is on trial here.
-        skipLibCheck: false,
-      },
-      include: ['consume.ts'],
-    }),
-  )
-
-  console.log('installing the tarballs into a plain npm project…')
-  // npm rather than pnpm, deliberately: pnpm in a directory under a workspace
-  // can still find the workspace, and resolving through it is the thing this
-  // test exists to avoid.
-  run('npm', ['install', '--no-audit', '--no-fund', '--loglevel', 'error'], project)
-  record.npm = run('npm', ['--version'], project).trim()
-  record.resolved = resolvedIn(project)
-
-  console.log('type-checking the consumer against the installed types…')
-  inProject(['tsc', '--noEmit', '-p', 'tsconfig.json'], project)
-
-  console.log('running it under Node…')
-  process.stdout.write(inProject(['tsx', 'consume.ts'], project))
-
-  console.log('\ninstall test passed: the packed tarballs work in a project that is not this one')
+  console.log('\ninstall test passed: the packed tarballs, and the guide, work in projects that are not this one')
 } catch (error) {
   failure = error
   console.error('\ninstall test FAILED')

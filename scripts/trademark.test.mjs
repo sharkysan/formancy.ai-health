@@ -169,10 +169,11 @@ describe("HL7's notice", () => {
   })
 
   // A guard on the guard: a walk that found no published package would
-  // hold two files and pass. The packages published today, and not the
-  // private corpus.
+  // hold two files and pass. The four packages published today, each by
+  // name -- a walk that missed one would hold three and pass -- and not
+  // the private corpus.
   test("is looked for in every published package's README", () => {
-    expect(carrying()).toEqual(expect.arrayContaining(['packages/health-core/README.md', 'packages/health-document/README.md', 'packages/health-ch/README.md']))
+    expect(carrying()).toEqual(expect.arrayContaining(['packages/health-core/README.md', 'packages/health-questionnaire/README.md', 'packages/health-document/README.md', 'packages/health-ch/README.md']))
     expect(carrying()).not.toContain('packages/health-corpus/README.md')
   })
 
