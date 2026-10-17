@@ -10,10 +10,9 @@ import { configDefaults } from 'vitest/config'
  * reporter vitest adds on CI, and with it every failure's annotation on the
  * pull request.
  *
- * The JSON is what a release report reads once there is one --
- * formancy.ai-report 0014's shape, which arrives here with the first
- * release. Until then nothing reads it, and it is written anyway so that a
- * run already leaves what the report will need.
+ * The JSON is what the release report reads (0011, formancy.ai-report
+ * 0014's shape): each test's status, which collect.mjs carries to the
+ * report job and the report holds to every test file the checkout holds.
  */
 export const reporters: NonNullable<NonNullable<ViteUserConfig['test']>['reporters']> = [
   ...configDefaults.reporters,

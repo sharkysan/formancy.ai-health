@@ -5,20 +5,23 @@ merely not done yet.
 
 ## 11.1 Where the accepted costs are written
 
-There is no limitations register here. Formancy Report keeps
-[one](https://github.com/sharkysan/formancy.ai-report/blob/main/docs/release/limitations.json)
-beside its release report, which reads it
-([formancy.ai-report 0014](https://github.com/sharkysan/formancy.ai-report/blob/main/docs/decisions/0014-a-release-report-is-derived-from-the-run-that-gated-it.md));
-this repository has neither yet. Until it does, each record's **What it
-costs** paragraph is the register of what a host, an integrator or an
-operator meets, and this section names the larger costs without restating
-them.
+Each record's **What it costs** paragraph says what it costs; the
+limitations register, [`limitations.json`](../release/limitations.json),
+says in one sentence each what of it a host, an integrator or an operator
+of a release meets, held to the records by hash, and every release report
+prints it after the limitations its own run shows
+([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md),
+as [formancy.ai-report 0014](https://github.com/sharkysan/formancy.ai-report/blob/main/docs/decisions/0014-a-release-report-is-derived-from-the-run-that-gated-it.md)).
+A record edited, its Status line included, fails `pnpm test:repo` until it
+is read again and stamped; whether a line is a fair summary of its record
+is review's. This section names the larger costs without restating them.
 
 ## 11.2 The larger accepted risks
 
 | Risk | Why it is accepted | Record |
 |---|---|---|
 | **The licence is in force before a lawyer has read it** | It states the terms carefully and says at the top that nobody reviewed it; a customer's production agreement governs, and the first paid release waits for the review | [0001](../decisions/0001-a-paid-module-in-its-own-repository.md) |
+| **The intended purpose is worded before a lawyer has read it** | The plan asks for it in the README before 0.1.0, and for a lawyer's reading before the paid release; the README holds CLAUDE.md's sentence word for word, so the two cannot part unnoticed, and says no lawyer has read it. Under the MDR and the MepV a purpose is all a maker says of a product, and the guard holds one paragraph of it | [0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md) |
 | **The trademark position is the maintainer's reading of HL7's pages** | Its conditions could not all be read, and whether the marks are protected in Switzerland was not checked; a trademark lawyer's review is owed before the first paid release | [0003](../decisions/0003-the-product-name-carries-no-hl7-mark.md) |
 | **Codes outside the registered packages are not checked** | Offline is what makes a verdict the same on every machine and sends nobody's record to a public server. Once a terminology's warning is registered, every such code passes, a made-up one too | [0005](../decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md) |
 | **The validator's formats are not a contract, and a ballot is pinned** | Message ids, the `Package Summary` line and the outcome's extensions are what the gate reads; a release that changes one fails the gate loudly. SDC declares a ballot of the R4 extensions, so the register holds it | [0005](../decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md) |
@@ -37,16 +40,37 @@ them.
 | **A host's text is held stricter than R4** | health-core's `text` refuses characters R4 says only that a string SHOULD not hold, which no XML form of a resource carries; a receiver may take a name health-ch refuses | [0009](../decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md) |
 | **CH Term at the release CH Core's range answers** | The validator cannot load CH Core otherwise; a receiver with a newer CH Term may judge a host's codes otherwise | [0009](../decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md) |
 | **One maintainer, and no required status check** | Stated in [`GOVERNANCE.md`](../../GOVERNANCE.md): a red check is stopped by a maintainer reading it, not by the ruleset | -- |
+| **The verify job skips the registers' cases that read the validator's downloads** | `verify` has neither the downloads nor a Java; the validator job runs the file again after the gate, and the release report accounts for each skip by that job's pass of the same test, by name, failing the run on any skip it cannot account for | [0005](../decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md), [0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md) |
+| **The release report had not run on GitHub by 17 October 2026** | It is built in every test from a synthetic run and was built from one machine's runs; the first pull request run is the first that shows the artefacts arrive as it reads them | [0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md) |
+| **The guide's program is run, not judged** | The install gate compiles and runs it against the packed packages and holds its output to the guide's; that its resources conform is no gate's claim -- the validator judges the corpus, made by the same packages of other synthetic input | [0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md) |
+| **The guide's project and the SBOM resolve on the day** | The guide's Report packages and what they bring, and the SBOM's closure beyond the report's packages, are what npm resolved during the run, unlocked, as the tools are; the report and the SBOM check hold the packages they name to the versions the suites loaded, and the SBOM to npm's lockfile of the install it was read from, which says what was resolved that day and not on another | [0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md) |
 
 ## 11.3 Known debt
 
-- **No release report**, which [`RELEASING.md`](../../RELEASING.md) says
-  arrives before the first release with the gates it reports on; **and no
-  limitations register**, above, which nothing here plans yet.
-- **The SBOM is made from the workspace**, by cdxgen reading the checkout,
-  where Formancy Report makes its own from the pinned tarballs installed
-  outside the checkout; [`release.yml`](../../.github/workflows/release.yml)
-  says that change arrives with the first release.
+- **The SBOM's step had not run on a runner by 17 October 2026.** Its
+  commands ran by hand on one machine, on the install gate's tarballs, and
+  gave the SBOM the check accepts, against the report and against npm's
+  lockfile of that install; the old step's, cdxgen over the checkout, gave
+  one it refuses
+  ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).
+  The first rehearsal is the first run of
+  [`release.yml`](../../.github/workflows/release.yml)'s new step.
+- **The licence does not say a customer's regulatory duty.** Plan 15.2
+  asks both the licence and the README to say that a customer's product
+  computing a clinical result from its own forms carries the regulatory
+  duty that brings; the README says it, and `LICENSE.md`, Version 1 in
+  force, does not. Changing the licence is the maintainer's, and the
+  legal gate's reason names it
+  ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).
+- **The guide's reading has no Markdown parser.** It refuses an HTML
+  comment and a line indented as code, which it cannot tell from a list's
+  paragraph, and reads a fence in a list item to its closing fence
+  ([`scripts/markdown.mjs`](../../scripts/markdown.mjs)); the guide is
+  written around both.
+- **Open release gates**: the gates [`gates.json`](../release/gates.json)
+  keeps open, some partly evidenced, each for the reason it gives, which
+  every report prints with the evidence each has
+  ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).
 - **The validator's runner, corpus and registers live in `scripts/` and
   `docs/release/`**, where 0005 and 0006 expected health-corpus to hold them;
   the move is not clean, and 0008 says why it is not made.
@@ -57,12 +81,16 @@ them.
   third-party pins of `gates.yml` and `release.yml` alone, since no release
   runs `security.yml` ([`CLAUDE.md`](../../CLAUDE.md#checks-before-pushing)).
 - **Settings nothing in the repository can read**: that a merged branch is
-  deleted by the merge, `main`'s ruleset, and the `npm` environment's
-  policy of `v*` tags alone, which keeps the npm token from any other ref.
+  deleted by the merge, `main`'s ruleset, the `npm` environment's policy of
+  `v*` tags alone, which keeps the npm token from any other ref, and the
+  two secrets a run reads, neither of them set on 17 October 2026.
   [`.github/REPO-METADATA.md`](../../.github/REPO-METADATA.md) records
-  them, and review holds them.
+  them, [`RELEASING.md`](../../RELEASING.md#before-the-first-release) says
+  what was read with `gh api` that day, and review holds them.
 - **Held by review alone**: that nothing calls the product open source; that
-  no prose uses FHIR as a brand; that no fixture holds a real person's data;
+  no prose uses FHIR as a brand; that the README's intended purpose is what
+  the packages do, and that no page claims a clinical purpose; that the
+  README's Status, which is one day's, is still true; that no fixture holds a real person's data;
   that no test mocks the validator; that no item computes a clinical result;
   that an AHV number a test computes in memory, and a GLN written outside
   the corpus, are nobody's.
@@ -88,13 +116,14 @@ them.
 
 ## 11.4 Open, and planned
 
-What the README lists as planned and not here: extraction from a
-QuestionnaireResponse, PDF/A once Report writes it, the MHD provide Bundle
-and CH EPR, and of CH ORF the Questionnaire inside the Bundle, a PDF and
-the Composition's receivers, contacts and other extensions; then Germany's,
-the United Kingdom's, Austria's and HL7 Europe's. Each comes with the
-record that decides its guide's version and what its package may import.
-A package not named in [§5](05-building-blocks.md), or a record linked from no section, fails
+What the README lists as [not in 0.1.0](../../README.md#not-in-010):
+PDF/A once Report writes it, and the MHD provide Bundle and CH EPR with it;
+extraction from a QuestionnaireResponse; Germany's, the United Kingdom's,
+Austria's and HL7 Europe's profiles; file, signature, ranking, matrix and
+rich-text items; FHIRPath; of CH ORF the Questionnaire inside the Bundle, a
+PDF and the Composition's receivers, contacts and other extensions. Each
+comes, when it does, with the record that decides it -- a guide's version,
+what a package may import. A package not named in [§5](05-building-blocks.md), or a record linked from no section, fails
 [`scripts/architecture.test.mjs`](../../scripts/architecture.test.mjs)
 ([0010](../decisions/0010-the-architecture-is-documented-in-arc42s-sections-held-to-the-repository-by-a-guard.md));
 that the record is linked from the section it changes is review's.

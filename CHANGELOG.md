@@ -10,6 +10,166 @@ later.
 
 ## Unreleased
 
+**The first release, a developer preview.** It is for a vendor to evaluate
+Formancy Health and build against it: a CH ORF referral from a formancy
+form and a person's answers to it, and a document Bundle that carries a
+PDF Formancy Report rendered. It is not yet for a production export of a
+person's record: no lawyer has read the licence, the intended purpose or
+the trademark position, and the release gates that ask for that reading
+are open ([`docs/release/gates.json`](docs/release/gates.json)).
+
+Published at 0.1.0: `@formancy/health-core`, `health-questionnaire`,
+`health-document` and `health-ch`. They are under
+the Formancy Health Source-Available Licence, which no lawyer has reviewed
+yet ([0001](docs/decisions/0001-a-paid-module-in-its-own-repository.md)).
+Besides one another they depend on one package, at an exact version:
+formancy's `@formancy/spec`, at the release the README's table names and
+the release report's Tested on shows. They take no peer, and run under
+Node in every gate and nowhere else. `@formancy/health-corpus`, which
+renders its PDF with Formancy Report's released packages, stays private.
+
+Not in this release:
+- **PDF/A, and the CH EPR's MHD document**, which waits for a Formancy
+  Report release that writes PDF/A; until then health-document refuses
+  every PDF/A declaration
+  ([0008](docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
+- **Extraction** from a QuestionnaireResponse.
+- **Germany, the United Kingdom, Austria and Europe.**
+- **File, signature, ranking, matrix and rich-text items**, each refused
+  with the form
+  ([0006](docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)),
+  and **FHIRPath** anywhere.
+- **Of CH ORF**, the Questionnaire inside the Bundle, and a PDF, the
+  Composition's receivers and contacts and the rest
+  [0009](docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)
+  refuses.
+- **A page, a server or any transport.**
+
+The release report of the run that gates this release lists, under "Known
+limitations", what each decision record says a user will meet.
+
+**The README says what 0.1.0 is, what is not in it, and what it is for**
+([0011](docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)):
+its Status says, on 17 October 2026, that 0.1.0 is ready to tag and not
+released, what has not run on GitHub yet and what is the maintainer's; a
+section says what 0.1.0 publishes and the gates it is held to, a list what
+is not in it, and a section its intended purpose -- a converter of what a
+vendor's application holds into FHIR resources, and an assembler of
+documents of them, for software vendors -- with CLAUDE.md's sentence that
+it is not an EHR, a FHIR server or a terminology service and not intended
+as a medical device, word for word; and the getting-started guide is the
+first thing it sends a developer to. A vendor deciding whether to build a
+health product on this one reads first what it is for and what is missing,
+and until now the README said only what was built; the purpose a device is
+judged by is what its maker says it is for, so a README that worded it
+otherwise than the rule every change is held to would be a second purpose
+nobody compared. `scripts/readme.test.mjs`, in `pnpm test:repo`, fails when
+the README's Intended purpose section stops holding CLAUDE.md's sentence,
+read from CLAUDE.md, and when a relative link of the README, or the
+heading it names, no longer lands, and failed on the README's link to a
+section of RELEASING.md before that section was written. RELEASING.md now
+says what the maintainer sets before the first release, as read with
+`gh api` on 17 October 2026: the `npm` environment's policy is set, and
+neither `NPM_TOKEN` nor `CODECOV_TOKEN` is. The README's opening names one
+audience, the vendors whose software hospitals and practices run, as its
+intended purpose does, since a device's purpose is what its maker says of
+it anywhere; and it says that keeping a document's identifier unique
+across documents is the host's.
+
+**Every run of the gates ends in a release report, and a release attaches
+it signed** ([0011](docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md),
+[`docs/release/`](docs/release/README.md)), as Formancy Report's does
+(formancy.ai-report 0014): until now nothing said what a release was tested
+on or which gates it had passed, and the install and validator gates wrote
+results nobody read. Each job of the gates collects what it found and
+uploads it; a last job, `report`, builds the report of that run -- what it
+was tested on, from the published manifests, what is installed and the
+README's compatibility tuple, beside what each job ran; each package's
+results, held to every test file the checkout holds for it; the install
+gate; the validator gate's verdict, read again from its rows and held to the
+validator and the packages `docs/release/` pins; each tarball's built files
+against every job's `dist/`; the release gates; and the known limitations --
+and fails the run on any problem it lists. The registers' cases `verify`
+skips, by design, are accounted for one by one by the validator job's pass
+of the same case, and a skip nothing accounts for fails the run, as a
+failure does. Two registers arrive with it: `docs/release/gates.json`, the
+plan's gates G1 to G7, 0.1.0's dependency-licence guard, trademark guard and
+rehearsal, and the legal review, each with its evidence or the reason it is
+open -- G1 among the open ones, in part, since no gate bundles a package
+for a browser and that no upstream file is copied is review's, so no
+report prints it passed -- and `docs/release/limitations.json`, what each decision record's
+costs mean to a user, integrator or operator, held to the records by hash,
+so an edited record fails `pnpm test:repo` until it is read again and
+stamped. A release's `check` job now refuses a report that is not that
+run's, green and whole, and a tarball that is not the one the report says
+the install gate ran, and pins the report beside the tarballs; `publish`
+signs the report beside the SBOM and attaches both; the release body is the
+changelog section and the report's summary, built by the report job, which
+replaces the body `check` built. The validator gate's results now say when
+its run started and ended, which the report holds them to, and record
+what the run used, measured as it ran -- the offline options from the
+command line it spawned, the JAR's SHA-256, the packages laid out in the
+validator's cache -- where they were copied from the registers the report
+then compared them with, so the comparison could not fail. The report
+holds the install gate to the projects `scripts/install-hosts.mjs` plans,
+not to the gate's own `passed`, so a gate that dropped the guide's
+project fails the run; judges each resource again from its row's counts,
+not only from the gate's verdict; reads the install gate's record and the
+validator's files only from the job that leaves them; and, on a machine,
+refuses guards that ran before the gate they read. Each was a hole
+review found in the report's first build the same day. By 17 October
+2026 the report had not run on GitHub: the first pull request run is the
+first that shows the artefacts arrive as it reads them.
+
+**A getting-started guide, whose code the install gate compiles and runs**
+([`docs/getting-started.md`](docs/getting-started.md),
+[0011](docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)),
+as Formancy Report's is (formancy.ai-report 0015): there was no guide, and
+the package READMEs' examples are fragments nothing compiles. It takes a
+Node application from an empty npm project to a Questionnaire of a formancy
+form, a QuestionnaireResponse of a submission, a document Bundle carrying a
+PDF Formancy Report rendered, and a CH ORF document, from synthetic data,
+showing what each refuses. Every block of code names its host in its fence,
+and `pnpm test:e2e:install` writes the blocks into a project of their own --
+the tarballs, beside what the guide's section 1 installs: `@formancy/spec`
+and Report's runtime and renderer, each at the release a manifest here
+declares -- type-checks them with `skipLibCheck` off, runs the program and
+fails unless it prints exactly what the guide shows. The consumer's
+project keeps the tarballs alone, so that a package's import of what it
+never declared still fails there, and the release report's Tested on
+shows a consumer's clean install from that project, the guide's apart; both projects
+are now checked with exact optional properties and checked indices too.
+`scripts/getting-started.test.mjs`, in `pnpm test:repo`, fails when a block
+escapes the gate, when the program imports what section 1 does not install,
+when section 1 installs other than the gate or at another version, or saves
+it as a range -- npm's default, under which a reader's next install takes
+another `@formancy/spec` beside health-questionnaire's -- and when
+a link or an anchor no longer lands; it reads Markdown through
+`scripts/markdown.mjs`, the architecture's guard's reading, which now finds
+a fence in a quote or a list as GitHub does. The install gate takes longer:
+on one machine, npm's cache warm, about 11 s before and 24 to 39 s after,
+once 114 s and later that day 207 s, the registry's waits varying.
+
+**The SBOM describes what a consumer installs** (0011, as
+formancy.ai-report 0017): `release.yml`'s `check` job no longer installs the
+workspace. It installs the tarballs it pinned with npm, in a project outside
+the checkout, no lifecycle script run, and cdxgen reads that install; the
+SBOM is then held to the release report -- every published package at the
+release's version, `@formancy/spec` and every other upstream package a
+consumer's install brings at the version the suites loaded -- before it is
+pinned and signed, and to npm's lockfile of the install it was read from,
+so that it names nothing that install does not hold, a tool among it, and
+leaves out nothing it holds: the report says what an SBOM must name and not
+what it must not, and the defect behind Report's 0017 was a tool named.
+cdxgen's reading of the workspace, run on this checkout,
+named none of the four packages a release publishes, named vitest and two
+TypeScripts as required and Formancy Report's packages, which only the
+private health-corpus uses, and left out ajv, which every consumer installs
+with `@formancy/spec`; the new step, run by hand on the install gate's
+tarballs, names the four packages, `@formancy/spec` and its closure, and
+nothing else. It had not run on a runner by 17 October 2026: the first
+rehearsal is its first.
+
 **The architecture is documented, as arc42 in formancy.ai's files**
 ([`docs/README.md`](docs/README.md), [0010](docs/decisions/0010-the-architecture-is-documented-in-arc42s-sections-held-to-the-repository-by-a-guard.md)): introduction and goals, constraints,
 context, solution strategy, building blocks, the runtime and deployment

@@ -5,14 +5,14 @@ name: Release
 # workflow, at which commit, produced the tarball, and only the workflow can
 # make it.
 #
-# In formancy.ai-report's order, which is formancy.ai-data's (its 0035),
-# without their release report, which arrives here with the first release:
-# the gates CI runs; then, in a job that holds `contents: read` and no
-# secret, every check on what would be published, pinned by hash; then, only
+# In formancy.ai-report's order, which is formancy.ai-data's (its 0035;
+# here 0011): the gates CI runs, ending in the release report of that run;
+# then, in a job that holds `contents: read` and no secret, every check on
+# what would be published -- the report first -- pinned by hash; then, only
 # on a version tag's push, everything permanent, in one job that publishes
-# only what was pinned. A `workflow_dispatch` rehearses all of it but that
-# last job, on any branch, with no secret and no permission beyond reading
-# the repository.
+# only what was pinned and attaches the report, signed, beside the SBOM. A
+# `workflow_dispatch` rehearses all of it but that last job, on any branch,
+# with no secret and no permission beyond reading the repository.
 on:
   push:
     tags: ['v*']
@@ -123,7 +123,9 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  # Exactly the gates CI runs, with the release named. No secret is passed:
+  # Exactly the gates CI runs, with the release named, ending in the report
+  # job, which builds the release report and the release body from what
+  # every gate found and fails the run on its problems. No secret is passed:
   # the coverage upload never runs in a release.
   gates:
     needs: tag
@@ -132,13 +134,16 @@ jobs:
       release: ${{ needs.tag.outputs.release }}
 
   # Every check on what would be published, in a job that holds
-  # `contents: read` and no secret: each tarball is the install gate's, at
-  # the release's version, declaring and carrying its licence; the release
-  # body exists and fits. What it checked is pinned by sha256 as its outputs
-  # -- the tarballs before cdxgen runs, whose dependencies nothing locks, the
-  # SBOM once it is generated -- and `publish` refuses anything it downloads
-  # that is not that. No cache is restored here: a tag's run may restore one
-  # a main-branch run saved.
+  # `contents: read` and no secret. The report is this run's, green and
+  # whole, at the release's version; each tarball is, byte for byte, the one
+  # the install gate installed and ran, at that version, declaring and
+  # carrying its licence; the release body the report job built exists and
+  # fits; the SBOM names what a consumer's install of those tarballs brings.
+  # What it checked is pinned by sha256 as its outputs -- the report and the
+  # tarballs before cdxgen runs, whose dependencies nothing locks, the SBOM
+  # once it is held to the report -- and `publish` refuses anything it
+  # downloads that is not that. No cache is restored here: a tag's run may
+  # restore one a main-branch run saved.
   check:
     needs: [tag, gates]
     runs-on: ubuntu-latest
@@ -146,65 +151,77 @@ jobs:
     permissions:
       contents: read
     outputs:
-      checked: ${{ steps.tarballs-checked.outputs.checked }}
+      checked: ${{ steps.report-checked.outputs.checked }}
       sbom: ${{ steps.sbom-checked.outputs.checked }}
     steps:
       - uses: actions/checkout@v4
 
+      # Node alone: the checks below import nothing but Node's own modules,
+      # and the workspace is not installed, so nothing reads it in place of
+      # what ships.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: corepack enable pnpm
 
-      # cdxgen reads the installed tree.
-      - run: pnpm install --frozen-lockfile
-
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-report
+          path: release-report
       - uses: actions/download-artifact@v4
         with:
           name: release-tarballs
           path: release-tarballs
 
-      - name: The tarballs are the release's, and carry their licence
-        id: tarballs-checked
-        env:
-          VERSION: ${{ needs.tag.outputs.version }}
-        run: node scripts/release/pins.mjs check --version "${VERSION}" release-tarballs >> "$GITHUB_OUTPUT"
-
-      # The body is this version's section of CHANGELOG.md, measured here,
-      # before anything is published: GitHub refuses a body over 125,000
-      # characters, and refuses it after npm already holds the version.
-      - name: The release body is this version's entry
+      # The report job built the body from this version's section of
+      # CHANGELOG.md and the report's summary, and measured it: GitHub
+      # refuses a body over 125,000 characters, and refuses it after npm
+      # already holds the version. This holds the report to this run and the
+      # tarballs to the report, and pins all of them.
+      - name: The report and the tarballs are what this run gated
+        id: report-checked
         env:
           RELEASE: ${{ needs.tag.outputs.release }}
           VERSION: ${{ needs.tag.outputs.version }}
-        run: node scripts/release-notes.mjs --release "${RELEASE}" --version "${VERSION}" RELEASE_NOTES.md
+        run: node scripts/release/pins.mjs check --release "${RELEASE}" --version "${VERSION}" --report release-report release-tarballs >> "$GITHUB_OUTPUT"
 
       # A bill of materials for what actually ships, so a customer -- or an
       # auditor -- can answer "what is in this" without resolving it
-      # themselves. --required-only because an SBOM for a released artefact
-      # should describe the artefact, not the workbench. formancy.ai-report
-      # makes it from the pinned tarballs installed outside the checkout
-      # instead (its 0017), after cdxgen reading its workspace named test
-      # tools as required; that change arrives here with the first release.
+      # themselves. It describes the artefact, not the workbench: the
+      # tarballs pinned above, installed by npm into a project of their own
+      # outside the checkout as a consumer installs them, with no lifecycle
+      # script run and no peer, and --required-only. cdxgen reading the
+      # workspace names its test tools as required and the packages being
+      # published as links; formancy.ai-report's v0.1.0 tag was refused for
+      # an SBOM made that way (its 0017).
       - name: Generate a CycloneDX SBOM
         id: sbom
         env:
           RELEASE: ${{ needs.tag.outputs.release }}
           VERSION: ${{ needs.tag.outputs.version }}
         run: |
+          mkdir "${RUNNER_TEMP}/formancy-health-sbom"
+          cd "${RUNNER_TEMP}/formancy-health-sbom"
+          printf '{ "name": "formancy-health", "version": "%s", "private": true }\n' "${VERSION}" > package.json
+          npm install --ignore-scripts --legacy-peer-deps --no-audit --no-fund "${GITHUB_WORKSPACE}"/release-tarballs/*.tgz
           npx --yes @cyclonedx/cdxgen@12.8.4 \
             --type javascript \
             --required-only \
-            --output "formancy-health-${RELEASE}-sbom.cdx.json" \
+            --output "${GITHUB_WORKSPACE}/formancy-health-${RELEASE}-sbom.cdx.json" \
             --project-name formancy-health \
             --project-version "${VERSION}" \
             .
 
-      - name: The SBOM is one, and is pinned
+      # The SBOM is one, names every package this release publishes at its
+      # version, every runtime dependency and every upstream package a
+      # consumer's install brings -- @formancy/spec, through
+      # health-questionnaire -- and each the report names at the version the
+      # suites loaded; and it names exactly what npm's lockfile of the
+      # install above holds, no tool and no package of another tree.
+      - name: The SBOM names what the suites loaded and what the install holds, and is pinned
         id: sbom-checked
         env:
           RELEASE: ${{ needs.tag.outputs.release }}
-        run: node scripts/release/pins.mjs sbom "formancy-health-${RELEASE}-sbom.cdx.json" >> "$GITHUB_OUTPUT"
+        run: node scripts/release/pins.mjs sbom --report release-report --installed "${RUNNER_TEMP}/formancy-health-sbom/package-lock.json" "formancy-health-${RELEASE}-sbom.cdx.json" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -213,20 +230,14 @@ jobs:
           if-no-files-found: error
           overwrite: true
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: release-notes
-          path: RELEASE_NOTES.md
-          if-no-files-found: error
-          overwrite: true
-
   # Everything that cannot be taken back, and the only job with any
   # permission beyond reading. The job-level condition is the boundary: no
   # step here carries an `if` of its own, so a step added later is guarded
   # without anybody remembering to guard it. Nothing is installed or built
   # here; it publishes the tarballs `check` passed, and first refuses
-  # anything it downloaded that is not what `check` pinned -- before anything
-  # is signed, and again in the step that holds the npm token.
+  # anything it downloaded that is not what `check` pinned, and a report that
+  # is not this run's, green and whole -- before anything is signed, and
+  # again in the step that holds the npm token.
   #
   # Ordered so that npm, whose version numbers nothing can delete, comes as
   # late as possible: signatures, then npm, then the GitHub release, which can
@@ -256,6 +267,11 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
 
+      - id: report
+        uses: actions/download-artifact@v4
+        with:
+          name: release-report
+          path: release-report
       - id: tarballs
         uses: actions/download-artifact@v4
         with:
@@ -266,17 +282,12 @@ jobs:
         with:
           name: release-sbom
           path: .
-      - id: notes
-        uses: actions/download-artifact@v4
-        with:
-          name: release-notes
-          path: .
 
-      # Every file just downloaded is, byte for byte, one `check` pinned; or
-      # nothing is signed.
+      # Every file just downloaded is, byte for byte, one `check` pinned, and
+      # the report is this run's, green and whole; or nothing is signed.
       - name: What was downloaded is what check checked
         id: downloads-checked
-        run: node scripts/release/pins.mjs downloads release-tarballs "formancy-health-${RELEASE}-sbom.cdx.json"
+        run: node scripts/release/pins.mjs downloads --release "${RELEASE}" --version "${VERSION}" --report release-report release-tarballs "formancy-health-${RELEASE}-sbom.cdx.json"
 
       - id: cosign
         uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
@@ -290,25 +301,44 @@ jobs:
             --bundle "formancy-health-${RELEASE}-sbom.cdx.json.sigstore" \
             "formancy-health-${RELEASE}-sbom.cdx.json"
 
+      # The report of the run that gated this release, signed by the same
+      # identity, so a customer can check it is the one this workflow made.
+      - name: Sign the release report
+        id: sign-report
+        run: |
+          for kind in md json; do
+            cp "release-report/release-report.${kind}" "formancy-health-${RELEASE}-release-report.${kind}"
+            cosign sign-blob --yes \
+              --bundle "formancy-health-${RELEASE}-release-report.${kind}.sigstore" \
+              "formancy-health-${RELEASE}-release-report.${kind}"
+          done
+
       # No container image: version 1 is a library, with no server to build
       # one from.
 
       # The tarballs the install gate packed, installed and ran, and `check`
-      # pinned: npm receives exactly those bytes, with provenance. publish.mjs
-      # holds them to the pin again itself.
+      # held to the report and pinned: npm receives exactly those bytes, with
+      # provenance. publish.mjs holds them, and the report, to the pin again
+      # itself.
       - name: Publish to npm with provenance
         id: npm-publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
-        run: node scripts/release/publish.mjs --tarballs release-tarballs
+        run: node scripts/release/publish.mjs --tarballs release-tarballs --report release-report
 
+      # The body is this version's changelog section and the report's summary,
+      # built and measured by the report job before anything was published.
       - name: Create the GitHub release
         id: github-release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
-          body_path: RELEASE_NOTES.md
+          body_path: release-report/RELEASE_NOTES.md
           files: |
             formancy-health-*-sbom.cdx.json
             formancy-health-*-sbom.cdx.json.sigstore
+            formancy-health-*-release-report.md
+            formancy-health-*-release-report.md.sigstore
+            formancy-health-*-release-report.json
+            formancy-health-*-release-report.json.sigstore
           fail_on_unmatched_files: true

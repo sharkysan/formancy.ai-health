@@ -1,9 +1,9 @@
-import { execFileSync } from 'node:child_process'
 import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, posix } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import YAML from 'yaml'
+import { CODE_SPAN, anchorsOf, committable, isRelative, linkProblems, linksIn, resolveLink, shown } from './markdown.mjs'
 
 /**
  * The architecture documentation held to the repository it describes:
@@ -48,7 +48,10 @@ import YAML from 'yaml'
  * `NOTICE` -- which is read as a word, and the links into other
  * repositories, which are not followed. Headings are read as `#` headings;
  * an underlined heading's anchor is not seen, so a link to one is refused,
- * which is the safe side.
+ * which is the safe side. The reading of Markdown -- where a fence or a
+ * comment is, a link and a heading's anchor -- is scripts/markdown.mjs's,
+ * which the getting-started guide's guard shares (0011), so the two cannot
+ * read one document two ways.
  */
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -100,22 +103,6 @@ function listing(directory) {
   }
 }
 
-/** `git ls-files` with `flags`, as `/`-separated paths. */
-const gitFiles = (...flags) =>
-  execFileSync('git', ['ls-files', '-z', ...flags], { cwd: repo, encoding: 'utf8' })
-    .split('\0')
-    .filter((file) => file !== '')
-
-/**
- * Every file git would commit, `/`-separated: tracked and still on the disk,
- * and new but not ignored. A file deleted and not yet staged is still in the
- * index, and its deletion is what the next commit would hold.
- */
-function committable() {
-  const deleted = new Set(gitFiles('--deleted'))
-  return new Set(gitFiles('--cached', '--others', '--exclude-standard').filter((file) => !deleted.has(file)))
-}
-
 /**
  * Every workspace package and app, as `{ file, name }`: the directories
  * pnpm-workspace.yaml names, each `<directory>/*` or a directory, and the
@@ -152,130 +139,10 @@ function names(text, name) {
   return new RegExp(`(?<![\\w@./-])${escaped}(?![\\w/-]|\\.\\w)`).test(text)
 }
 
-/** `markdown` with every fenced block's lines blanked, so nothing inside one is read as a heading or a link. */
-function outsideFences(markdown) {
-  let fence
-  return markdown
-    .split('\n')
-    .map((line) => {
-      const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line)
-      if (fence === undefined) {
-        if (marker === null) return line
-        fence = marker[1]
-        return ''
-      }
-      if (marker !== null && marker[1][0] === fence[0] && marker[1].length >= fence.length && line.trim() === marker[1]) fence = undefined
-      return ''
-    })
-    .join('\n')
-}
-
-/** A code span: a run of backticks, text that crosses no blank line, and the same run again. */
-const CODE_SPAN = /(`+)((?:(?!\n[ \t]*\n)[\s\S])*?[^`])\1(?!`)/g
-
-/** Inline code turned to letters, line breaks kept: a bracket inside a code span is no link, and a link around one is still a link. */
-const lettered = (text) => text.replace(CODE_SPAN, (span) => span.replace(/[^\n]/g, 'x'))
-
-/**
- * `markdown` as GitHub shows it: every fenced block and HTML comment
- * blanked, line breaks and code spans kept. A comment is looked for outside
- * code spans, and one never closed runs to the end, as an HTML block does.
- */
-function shown(markdown) {
-  const text = outsideFences(markdown)
-  let at = 0
-  let out = ''
-  for (const comment of lettered(text).matchAll(/<!--[\s\S]*?(?:-->|$)/g)) {
-    const end = comment.index + comment[0].length
-    out += text.slice(at, comment.index) + text.slice(comment.index, end).replace(/[^\n]/g, ' ')
-    at = end
-  }
-  return out + text.slice(at)
-}
-
-/** An inline link or image: its text, which may wrap and hold one level of brackets, and its destination, with an optional title. */
-const LINK = /!?\[((?:[^[\]]|\[[^[\]]*\])*)\]\(\s*(<[^<>\n]*>|[^\s()<>]*(?:\([^\s()]*\)[^\s()<>]*)*)(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/g
-
-/** A link reference definition: `[label]: destination`. */
-const DEFINITION = /^ {0,3}\[[^\]\n]+\]:[ \t]*(<[^<>\n]*>|\S+)/gm
-
 /** Each of `packages` that `markdown` does not show by name, as `name (file)`. */
 function unnamed(markdown, packages) {
   const text = shown(markdown)
   return packages.filter(({ name }) => !names(text, name)).map(({ file, name }) => `${name === '' ? 'a package with no name' : name} (${file})`)
-}
-
-/** Every link `markdown` shows, inline or by definition, by its destination as written. */
-function linksIn(markdown) {
-  const text = lettered(shown(markdown))
-  return [...text.matchAll(LINK), ...text.matchAll(DEFINITION)].map((found) => found.at(-1).replace(/^<(.*)>$/, '$1'))
-}
-
-/** Whether a destination is relative: no scheme, and not `//host`. */
-const isRelative = (href) => !/^[a-z][a-z0-9+.-]*:/i.test(href) && !href.startsWith('//')
-
-/**
- * The anchor GitHub gives a heading's text: a link read as its text, code as
- * its letters, lowercased, everything but letters, marks, digits, `_`, `-`
- * and spaces dropped, and each space a hyphen.
- */
-const slug = (text) =>
-  text
-    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/`/g, '')
-    .toLowerCase()
-    .replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, '')
-    .replace(/ /g, '-')
-
-/** The anchors of the `#` headings a Markdown file shows, a repeated one with -1, -2 after it, as GitHub numbers them. */
-function anchorsOf(markdown) {
-  const seen = new Map()
-  const anchors = new Set()
-  for (const line of shown(markdown).split('\n')) {
-    const heading = /^ {0,3}#{1,6}(?:[ \t]+(.*?))?(?:[ \t]+#+)?[ \t]*$/.exec(line)
-    if (heading === null) continue
-    const base = slug(heading[1] ?? '')
-    const count = seen.get(base) ?? 0
-    seen.set(base, count + 1)
-    anchors.add(count === 0 ? base : `${base}-${String(count)}`)
-  }
-  return anchors
-}
-
-/**
- * Where a relative link in `file` leads: `{ target, fragment }`, the target a
- * `/`-separated path from the repository's root -- `file` itself for a bare
- * fragment -- or `{ outside: true }` past the root.
- */
-function resolveLink(file, href) {
-  const at = href.indexOf('#')
-  const path = decodeURIComponent(at === -1 ? href : href.slice(0, at))
-  const fragment = at === -1 ? undefined : decodeURIComponent(href.slice(at + 1))
-  const target = path === '' ? file : posix.normalize(posix.join(posix.dirname(file), path)).replace(/\/$/, '')
-  return target === '..' || target.startsWith('../') ? { outside: true } : { target, fragment }
-}
-
-/**
- * What is wrong with `file`'s relative links, one sentence each: a target
- * past the root, one git would not commit -- a directory, an ignored file,
- * none at all -- a fragment into a file that is not Markdown, and one that
- * names no heading. `files` is what git would commit, and `read` a file's
- * text, so that a fixture can stand in for the repository.
- */
-function linkProblems(file, markdown, files, read) {
-  return linksIn(markdown)
-    .filter(isRelative)
-    .flatMap((href) => {
-      const link = resolveLink(file, href)
-      if (link.outside) return [`${file}: ${href} leads out of the repository`]
-      if (!files.has(link.target)) {
-        const directory = [...files].some((path) => path.startsWith(`${link.target}/`))
-        return [`${file}: ${href} names ${link.target}, ${directory ? 'a directory: link its README.md' : 'which is no file git would commit'}`]
-      }
-      if (link.fragment === undefined || link.fragment === '') return []
-      if (!link.target.endsWith('.md')) return [`${file}: ${href} has a fragment into a file that is not Markdown, which nothing here can check`]
-      return anchorsOf(read(link.target) ?? '').has(link.fragment) ? [] : [`${file}: ${href} names no heading of ${link.target}`]
-    })
 }
 
 /** The text of every code span `markdown` shows, as CommonMark gives it: a line break read as a space, and one space taken from each end of a span that has one at both. */
@@ -366,7 +233,7 @@ describe('the architecture', () => {
   // or to a heading since reworded opens on nothing, or on GitHub's 404,
   // and reads as true in the source.
   test('links only to files git would commit, and to headings they have', () => {
-    const files = committable()
+    const files = committable(repo)
     expect(documents().flatMap((file) => linkProblems(file, textOf(file) ?? '', files, textOf))).toEqual([])
   })
 
@@ -375,7 +242,7 @@ describe('the architecture', () => {
   // deleted leaves the sentence citing nothing, and the link check above
   // never reads it.
   test('names as code only paths git would commit', () => {
-    const files = committable()
+    const files = committable(repo)
     expect(documents().flatMap((file) => pathProblems(file, textOf(file) ?? '', files))).toEqual([])
   })
 
@@ -385,7 +252,7 @@ describe('the architecture', () => {
   // from the files, so that the last file of a kind deleted still leaves
   // its name read as a path, and refused.
   test('reads a bare name of every kind of file git would commit as a path', () => {
-    const kinds = new Set([...committable()].map((file) => posix.extname(file)).filter((extension) => extension !== ''))
+    const kinds = new Set([...committable(repo)].map((file) => posix.extname(file)).filter((extension) => extension !== ''))
     expect([...kinds].filter((extension) => !EXTENSIONS.has(extension)), 'add each to EXTENSIONS').toEqual([])
   })
 

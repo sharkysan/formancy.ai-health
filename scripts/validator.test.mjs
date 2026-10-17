@@ -1,7 +1,7 @@
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
-import { javaMajor, validatorArguments } from './validator.mjs'
+import { javaMajor, offlineOf, stoppedResults, validatorArguments } from './validator.mjs'
 import { readRegisters } from './validator/registers.mjs'
 
 /**
@@ -70,5 +70,39 @@ describe('javaMajor', () => {
     expect(javaMajor('openjdk version "25.0.4.1" 2026-08-18 LTS')).toBe(25)
     expect(javaMajor('java version "1.8.0_402"')).toBe(8)
     expect(javaMajor('no java here')).toBeUndefined()
+  })
+})
+
+describe('what the gate records of how it ran the validator', () => {
+  // The release report holds the gate to an offline run by what its file
+  // records (0011). A record written as a constant says offline whatever
+  // the command line was, and the report's check of it would only repeat
+  // itself; read from the command line the gate spawns, one that lost
+  // `-no-http-access`, or named a terminology server or a cache, records
+  // that, and the report fails the run.
+  test('is read from the command line it spawns', () => {
+    expect(offlineOf(args)).toEqual({ tx: 'n/a', txCache: 'n/a', httpAccess: false })
+    expect(offlineOf(args.filter((value) => value !== '-no-http-access'))).toEqual({ tx: 'n/a', txCache: 'n/a', httpAccess: true })
+    const online = args.map((value, index) => (args[index - 1] === '-tx' ? 'https://tx.fhir.org/r4' : value))
+    expect(offlineOf(online)).toEqual({ tx: 'https://tx.fhir.org/r4', txCache: 'n/a', httpAccess: false })
+    const cached = args.filter((value, index) => value !== '-txCache' && args[index - 1] !== '-txCache')
+    expect(offlineOf(cached)).toEqual({ tx: 'n/a', txCache: null, httpAccess: false })
+  })
+})
+
+describe('the results of a run that stopped', () => {
+  // The release report reads the gate's file only when it says when its
+  // run started (0011): a file with no start cannot be told from another
+  // run's. A gate that stopped -- no Java, a register that does not hold, a
+  // download refused -- still leaves one, saying when and why, or a red run
+  // would read as a gate that never ran.
+  test('say when the run started and stopped, and why, and that it did not pass', () => {
+    expect(stoppedResults('cannot run java', { startedAt: '2026-10-17T10:00:00.000Z', finishedAt: '2026-10-17T10:00:05.000Z' })).toEqual({
+      gate: 'validator',
+      startedAt: '2026-10-17T10:00:00.000Z',
+      finishedAt: '2026-10-17T10:00:05.000Z',
+      problems: ['cannot run java'],
+      passed: false,
+    })
   })
 })

@@ -30,13 +30,14 @@ runs on every pull request and a release before it publishes.
 | Job | Command | What it proves | What it does not |
 |---|---|---|---|
 | `verify` | `pnpm build`, `pnpm typecheck` | The packages build; no published package names a Node or DOM global or imports what its manifest does not declare ([§5](05-building-blocks.md#what-holds-the-layers)) | A global reached by a cast; a manifest that declares more than a record admits |
-| | `pnpm check:pkg` | publint and attw, ESM only: the commonest cause of a package that does not work in its host | That it runs: the install gate does that |
+| | `pnpm check:pkg` | publint and attw, ESM only: the commonest cause of a package that does not work in its host | That it runs: the install gate does that. On the machine 0011 was built on it stopped before it checked anything, publint's `pnpm pack` refused by corepack's pnpm, and each package passed run by hand ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)) |
 | | `node scripts/verify-licenses.mjs` | Every published manifest declares the source-available terms, and every tarball carries `LICENSE.md` and `NOTICE` ([0001](../decisions/0001-a-paid-module-in-its-own-repository.md)) | That the licence's terms are Data's and Report's: nothing compares the texts |
 | | `node scripts/dependency-licences.mjs` | Every production dependency of a published package, as installed, is under a permissive licence | Whether a licence's terms are what its identifier says; code a package vendors |
-| | `pnpm test:repo` | The repository's guards, among them: exactness and no clock, HL7's notice and the names, upstream at exact versions, the size budget, the test matrix, `codecov.yml`, the CLA's hash, the README's generated parts, the workflows' shape, the validator's registers, verdict, command line and corpus coverage, the code systems the corpus writes, no valid AHV number in any file, and this architecture ([0010](../decisions/0010-the-architecture-is-documented-in-arc42s-sections-held-to-the-repository-by-a-guard.md)) | What only a person reading prose can see: whether a sentence is true |
+| | `pnpm test:repo` | The repository's guards, among them: exactness and no clock, HL7's notice and the names, upstream at exact versions, the size budget, the test matrix, `codecov.yml`, the CLA's hash, the README's generated parts, the workflows' shape, the validator's registers, verdict, command line and corpus coverage, the code systems the corpus writes, no valid AHV number in any file, this architecture ([0010](../decisions/0010-the-architecture-is-documented-in-arc42s-sections-held-to-the-repository-by-a-guard.md)), and the getting-started guide held to the install gate -- every block handed to it, section 1 installing what the gate installs, every link landing -- by [`getting-started.test.mjs`](../../scripts/getting-started.test.mjs), and the README's intended purpose holding CLAUDE.md's sentence that the product is not intended as a medical device, word for word, and its links landing, by [`readme.test.mjs`](../../scripts/readme.test.mjs), all three reading Markdown through [`markdown.mjs`](../../scripts/markdown.mjs) ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)) | What only a person reading prose can see: whether a sentence is true, the intended purpose's of what the packages do among them |
 | `test` | each package's `test:coverage`, one job each | Each package's suite, against the other packages as built. Coverage is reported, never gated | That a suite covers what it should: [`ci-test-jobs.test.mjs`](../../scripts/ci-test-jobs.test.mjs) holds only that every suite runs |
-| `install` | `pnpm test:e2e:install` | The packed tarballs install into a plain npm project, type-check with `skipLibCheck` off against their published declarations, and run under Node: a decimal, a Questionnaire, a response, a document, and each package's `Refusal` caught | Any host but Node; the registry's copy, which it never reads |
+| `install` | `pnpm test:e2e:install` | The packed tarballs install into a plain npm project holding nothing else, type-check with `skipLibCheck` off against their published declarations, strictly, and run under Node: a decimal, a Questionnaire, a response, a document, and each package's `Refusal` caught. And in a project of its own, the tarballs beside what the guide's section 1 installs, the [getting-started guide](../getting-started.md)'s program, type-checked the same way and run: it must print exactly the lines the guide shows and write its two documents ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)) | Any host but Node; the registry's copy, which it never reads; that the guide's resources conform, which the validator says of its corpus alone |
 | `validator` | `node scripts/validator.mjs`, then the registers' test against what it downloaded and ran | What the packages wrote of the corpus is accepted by the pinned validator, offline, against the registered packages, with no error and no warning but the registered ones; every broken resource is refused for what it breaks, the CH ORF documents among them; the registers are the bytes and the validator's own load | See 10.3 |
+| `report` | `node scripts/release-report/report.mjs`, over what every other job's collect step uploaded | The run as a whole: every job ended in success and left its results, each section from the job that leaves it; every suite ran every test file the checkout holds for it, and nothing in it failed or was skipped but a registers' case the validator job's run passed; the install gate passed with one tarball per published package at the version, and ran every project [`install-hosts.mjs`](../../scripts/install-hosts.mjs) plans to its last step, the guide's blocks in the guide's project; the validator gate's verdict, read again from each row's counts and held, as the gate measured its run, to the registers the checkout pins; each tarball's built files the same bytes as every job's build; each release gate's evidence passed; each register holds ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)) | That a gate's evidence is the right evidence, or a register line still true: review's. It had not run on GitHub by 17 October 2026 |
 
 Beside them, [`cla.yml`](../../.github/workflows/cla.yml) checks every pull
 request's commit authors against the CLA record, and
@@ -47,7 +48,15 @@ what it would publish ([§6.6](06-runtime-view.md#66-a-release)).
 workflows to the shape that depends on: every third-party action pinned to
 a commit, and the validator job's `setup-java` too, while GitHub's own,
 those of its `actions` organisation, are taken by tag; no `${{ }}` in a script; no cache in a
-release; the validator job's order and uploads.
+release; the validator job's order and uploads; every job's collect step
+and upload, and the report waiting for all of them; and a release that
+checks the report before it pins, makes the SBOM of the tarballs it pinned
+-- installed by npm outside the checkout, no workspace installed -- and
+holds it to the report and to npm's lockfile of that install, and signs
+and attaches the report beside the SBOM
+([`verify-publish.test.mjs`](../../scripts/release-report/verify-publish.test.mjs)
+holds what the SBOM must name, and that it names nothing the install does
+not hold).
 
 ## 10.3 What a conformance claim covers
 
@@ -103,15 +112,32 @@ What it does not cover:
 
 ## 10.4 What is not verified yet
 
-- **The release report** that would derive a release's evidence from the run
-  that gated it, as Formancy Report's does
-  ([formancy.ai-report 0014](https://github.com/sharkysan/formancy.ai-report/blob/main/docs/decisions/0014-a-release-report-is-derived-from-the-run-that-gated-it.md)).
-  The install and validator jobs already write results for it, and nothing
-  reads them yet.
+- **The release report on GitHub**, as of 17 October 2026. It is built in
+  every test from a synthetic run, and was built from one machine's runs
+  ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md));
+  that the artefacts arrive as it reads them, and that separate runners
+  build the same bytes, only the first CI run shows; that the SBOM step
+  runs on a runner as it ran by hand, only a rehearsal. Its gates register,
+  [`gates.json`](../release/gates.json), keeps open the gates it gives a
+  reason, each for that reason, some of them partly evidenced, and every
+  report prints which and why.
 - **PDF/A**: no gate proves a producer, so every declaration is refused; a
   gate for it waits for a Report release that writes PDF/A
   ([0008](../decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
 - **A browser.** There is no page, so there is no browser gate, and no gate
-  runs a package in a browser.
+  runs a package in a browser or bundles one for it, which is why G1 is
+  open in part.
+- **The intended purpose.** The guard holds the README's to CLAUDE.md's
+  sentence, and nothing to what the packages do or what another page says
+  of them; no lawyer has read the words, which the legal gate of
+  [`gates.json`](../release/gates.json) waits for, beside G7's review; and
+  that a customer's product computing a clinical result carries the duty
+  that brings is said by the README and not by `LICENSE.md`
+  ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).
+- **The settings a release reads.** The `npm` environment's policy, its
+  token, Codecov's and the repository's visibility were read with `gh api`
+  on 17 October 2026 for
+  [`RELEASING.md`](../../RELEASING.md#before-the-first-release), and nothing
+  reads them again.
 - **That a test never mocks the validator**, and that a fixture holds no
   real person's data: review's.

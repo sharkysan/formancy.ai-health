@@ -24,6 +24,7 @@ Formancy Health
 └── Honest about itself
     ├── its licence, in every tarball                   ← the terms say what they are
     ├── no HL7 mark in a name
+    ├── its intended purpose, one sentence in two files
     ├── a code only of a terminology whose terms allow it
     └── its architecture's names and links, true of the repository
 ```
@@ -58,6 +59,12 @@ Formancy Health
 | Q24 | The host's answers to a CH ORF document do not claim CH ORF's response profile, are not the patient's, or name their Questionnaire without its version | No document; `profile`, `reference` or `unversioned` | health-ch's [`response.test.ts`](../../packages/health-ch/src/response.test.ts) |
 | Q25 | A file git holds or would add holds an AHV number that passes its check, however its digits are separated | `pnpm test:repo` fails | [`synthetic-identifiers.test.mjs`](../../scripts/synthetic-identifiers.test.mjs) |
 | Q26 | The corpus writes a code under a system no register of its terms admits, a LOINC code unrecorded or without its recorded name, or a SNOMED CT code | `pnpm test:repo` fails | [`terminology.test.mjs`](../../scripts/terminology.test.mjs) |
+| Q27 | A gates run in which a job ended other than success, a suite skipped a test the validator job did not pass, the install gate left out or did not finish a project its plan names, the validator judged a resource otherwise than the corpus expects -- by its verdict or by the row's own counts -- or ran against another register, or not offline, as it measured its run, or a tarball's built files are not every job's | The report job fails the run, naming each | the `report` job; [`report.test.mjs`](../../scripts/release-report/report.test.mjs) ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)) |
+| Q28 | A decision record is edited, or written, without its entry in the limitations register read and stamped | `pnpm test:repo` fails, naming the command that stamps it | [`limitations.test.mjs`](../../scripts/release-report/limitations.test.mjs) |
+| Q29 | A release handed a report of another run, a partial or local one, or a tarball that is not the one the report says the install gate ran | Refused before anything is signed or published | [`verify-publish.test.mjs`](../../scripts/release-report/verify-publish.test.mjs), [`pins.test.mjs`](../../scripts/release/pins.test.mjs), [`publish.test.mjs`](../../scripts/release/publish.test.mjs) |
+| Q30 | A package changes so that the getting-started guide's code no longer compiles against the packed packages, or prints other than the guide shows; a block of code escapes the gate, or section 1 installs other than the gate, or saves a package as a range | The install gate fails on the first; `pnpm test:repo` on the second, naming the line | `pnpm test:e2e:install`, [`guide-node.ts`](../../scripts/install-fixture/guide-node.ts); [`getting-started.test.mjs`](../../scripts/getting-started.test.mjs) ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)) |
+| Q31 | A release's SBOM leaves out a published package at the release's version, or an upstream package a consumer's install brings, or names one at another version than the suites loaded, or names a component the install it was read from does not hold, or leaves out one it holds | Refused before it is pinned, signed or attached | [`verify-publish.test.mjs`](../../scripts/release-report/verify-publish.test.mjs), [`pins.test.mjs`](../../scripts/release/pins.test.mjs), [`workflows.test.mjs`](../../scripts/workflows.test.mjs) ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)) |
+| Q32 | CLAUDE.md's sentence saying the product is not intended as a medical device, or the README's *Intended purpose*, is reworded without the other; a link of the README names a file or a heading that is gone | `pnpm test:repo` fails, quoting the sentence or naming the link | [`readme.test.mjs`](../../scripts/readme.test.mjs) ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)) |
 
 ## 9.3 Budgets
 

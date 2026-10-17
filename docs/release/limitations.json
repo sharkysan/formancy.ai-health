@@ -1,0 +1,396 @@
+{
+  "$comment": "What each decision record's costs say a user, integrator or operator of a release will meet, one sentence each, or why the record has none (0011; formancy.ai-report 0014). Held to the records by scripts/release-report/limitations.test.mjs: 'reviewed' is the sha256 of the record as it was read, so any edit to a record -- a status line naming a later record included -- fails until it is read again and stamped with 'node scripts/release-report/limitations.mjs --stamp NNNN'. A line can outlive its truth until its record changes; 'heldBy' names a test that shows it still holds, and the release report fails a run in which that test did not pass. The wording is held by review.",
+  "records": {
+    "0001": {
+      "reviewed": "sha256:2adbf5439bd08318dd3cc606671654d7900afe0abc223c23f1329716aa96d29a",
+      "limitations": [
+        {
+          "area": "licence",
+          "says": "Running Formancy Health in production needs a paid licence, and shipping it inside a vendor's product a separate agreement to redistribute; reading, evaluating, developing and testing it are free, with no expiry."
+        },
+        {
+          "area": "licence",
+          "says": "The `@formancy` scope mixes formancy's Apache-2.0 packages with this module's source-available ones, so a dependency audit reads each package's licence rather than its scope.",
+          "heldBy": "scripts/release/pins.test.mjs"
+        },
+        {
+          "area": "licence",
+          "says": "No lawyer has reviewed the licence; until one has, it is a statement of intent made carefully, and a customer's production agreement is the document that governs.",
+          "heldBy": "scripts/licence-status.test.mjs"
+        },
+        {
+          "area": "licence",
+          "says": "A self-hoster of formancy gets no export to FHIR without a production licence for this product: the generic mapping of a form to the SDC guide is part of it, not of formancy."
+        },
+        {
+          "area": "licence",
+          "says": "No SNOMED CT or LOINC content is bundled, and an implementation guide package or a terminology keeps its own terms."
+        }
+      ]
+    },
+    "0002": {
+      "reviewed": "sha256:f595c742d65402921e19bef05618211cce2ac14e62eb18dca8950645b00b75e0",
+      "limitations": [
+        {
+          "area": "release",
+          "says": "The published packages depend on upstream `@formancy/*` packages at exact versions, so an upstream fix reaches an installation only through a release of this module that moves the version.",
+          "heldBy": "scripts/upstream-deps.test.mjs"
+        },
+        {
+          "area": "release",
+          "says": "Health has no page and no user interface, and none ships before formancy releases its admin colours in a package, since nothing of formancy's is copied here."
+        }
+      ]
+    },
+    "0003": {
+      "reviewed": "sha256:53305404e8f360995a2121de22c33cf53666804174b79aff97885ce63e37820f",
+      "limitations": [
+        {
+          "area": "naming",
+          "says": "Formancy Health holds no licence from HL7, and no file here claims HL7's permission or licence to use its marks.",
+          "heldBy": "scripts/trademark.test.mjs"
+        },
+        {
+          "area": "naming",
+          "says": "Nothing here claims HL7's endorsement or certification, and a conformance claim names the guide, the validator and the corpus and nothing more; review holds both, and no test does."
+        },
+        {
+          "area": "naming",
+          "says": "The trademark position is the maintainer's reading of HL7's pages and not legal advice, whether the marks are protected in Switzerland was not checked, and a trademark lawyer's review is owed before the first paid release."
+        },
+        {
+          "area": "naming",
+          "says": "The product's name does not say FHIR, so a vendor looking for a FHIR export finds this one by its description, its topics and its README."
+        }
+      ]
+    },
+    "0004": {
+      "reviewed": "sha256:57ebda1fbda19455618f565db327b32342e8787a21ef337d9b690c2ccc2bd032",
+      "limitations": [
+        {
+          "area": "json",
+          "says": "A host must keep a number's text: one that holds a decimal as a JavaScript number has already turned 0.10 into 0.1, a JavaScript number is refused, and nothing here can recover the zero.",
+          "heldBy": "packages/health-core/src/numbers.test.ts"
+        },
+        {
+          "area": "json",
+          "says": "FHIR JSON is written by health-core's `writeJson` and read by its `readJson`: `JSON.stringify` of a resource that holds a number throws rather than write it, and `JSON.parse` would lose its digits.",
+          "heldBy": "packages/health-core/src/json-write.test.ts"
+        },
+        {
+          "area": "json",
+          "says": "XML Schema's limits on a decimal are not held: a thirty-digit value or `1E+400` is kept as written, though a receiver need support only eighteen digits of a decimal.",
+          "heldBy": "packages/health-core/src/exactness.test.ts"
+        },
+        {
+          "area": "json",
+          "says": "The resource types are typed here by hand against R4's definitions, so a mistake in one is found only where the type-check or the validator gate can see it."
+        },
+        {
+          "area": "json",
+          "says": "Not checked in FHIR JSON yet: a lone surrogate, a string past R4's 1 MB, a null in an array that lines nothing up, and a uri beyond R4's permissive pattern."
+        },
+        {
+          "area": "json",
+          "says": "A refusal names a rule and a path and never a value, but the path repeats the document's names, so text that is not FHIR JSON can put a name of its own into a refusal."
+        }
+      ]
+    },
+    "0005": {
+      "reviewed": "sha256:1a8671f6e87f11235e2495a31626bc8bebb10abfd6e7ef9adaee7da1192d3c95",
+      "limitations": [
+        {
+          "area": "conformance",
+          "says": "A conformance claim covers the synthetic corpus the gate judged, against the pinned validator and guide packages, and nothing more: not a customer's forms, and not a receiving system's acceptance."
+        },
+        {
+          "area": "conformance",
+          "says": "The gate runs offline, so a code from a code system no registered package holds -- LOINC, SNOMED CT, UCUM, a language tag's registration -- is not checked, and once its warning is registered every such code passes, a made-up one too."
+        },
+        {
+          "area": "conformance",
+          "says": "A code under a system nobody knows, a made-up system URI included, is information to the validator and refuses nothing; which systems an export may write is the packages' to refuse."
+        },
+        {
+          "area": "conformance",
+          "says": "The validator's message ids, its console and its outcomes' extensions are not a contract, so a new validator release can fail the gate until its pin is moved and what changed is read.",
+          "heldBy": "scripts/validator/outcome.test.mjs"
+        },
+        {
+          "area": "conformance",
+          "says": "SDC 4.0.0 declares a ballot of the R4 extensions, so the register pins a prerelease that no guide here would be chosen at.",
+          "heldBy": "scripts/validator/registers.test.mjs"
+        },
+        {
+          "area": "conformance",
+          "says": "Running the validator gate downloads the validator and every registered package, each from the address its register holds -- the release's asset on GitHub, packages.fhir.org -- and needs a Java at least as new as the major version the pin names.",
+          "heldBy": "scripts/validator/registers.test.mjs"
+        },
+        {
+          "area": "conformance",
+          "says": "An issue without a message id is matched by its issue type and expression, so a second issue of the same type at the same place passes as the one the corpus expects."
+        }
+      ]
+    },
+    "0006": {
+      "reviewed": "sha256:49dab858bd9e69da70d42d5d9641ae61fb5c9d8682ac48e19c53922c5f963583",
+      "limitations": [
+        {
+          "area": "forms",
+          "says": "A form with a pattern, an email or URL format, a mask, a step other than one, a sourced option list or a required checkbox, or a rule that is not a simple comparison of a field before it, is refused whole until its author changes it.",
+          "heldBy": "packages/health-questionnaire/src/items.test.ts"
+        },
+        {
+          "area": "forms",
+          "says": "A signature, ranking, matrix, rich-text or file field refuses the export, naming the field.",
+          "heldBy": "packages/health-questionnaire/src/items.test.ts"
+        },
+        {
+          "area": "forms",
+          "says": "A bound or a literal is the double formancy holds, so `0.10` in a form is written 0.1, and a decimal literal past fifteen significant digits is refused.",
+          "heldBy": "packages/health-questionnaire/src/conditions.test.ts"
+        },
+        {
+          "area": "forms",
+          "says": "A text missing in a language the host asks for is refused rather than filled from the default language, and the form's title is written untranslated.",
+          "heldBy": "packages/health-questionnaire/src/texts.test.ts"
+        },
+        {
+          "area": "forms",
+          "says": "A language is held to its form and canonical case, not to the registry, so `zz` is exported -- the validator refuses it as a Questionnaire's language, and nothing offline checks it as a translation's -- and a host must write `de-CH`, not `de-ch`."
+        },
+        {
+          "area": "forms",
+          "says": "A field renamed with `renamedFrom` is a new linkId in the next Questionnaire version, and a field moved to another page sits under another group, so mapping answers across either is the host's."
+        },
+        {
+          "area": "forms",
+          "says": "Options are coded in a code system named after the Questionnaire's url and the field's key, which no CodeSystem resource defines, so a receiver cannot look the codes up."
+        },
+        {
+          "area": "forms",
+          "says": "A Questionnaire's version is the host's word: nothing checks that it is the version formancy published, nor that the content is that version's."
+        },
+        {
+          "area": "forms",
+          "says": "Widgets, layouts and the screens of a paged form are not carried: a renderer of the Questionnaire draws it its own way."
+        },
+        {
+          "area": "forms",
+          "says": "A form formancy's validator accepts and its engine refuses -- a field keyed with a word CEL reserves, read by a rule -- is exported, since the engine is no dependency here."
+        },
+        {
+          "area": "forms",
+          "says": "What the validator only warns of is exported as it is: a label or a title with leading or trailing whitespace, or a control character, is written unchanged, and nothing here trims or drops a character."
+        },
+        {
+          "area": "conformance",
+          "says": "A warning the register accepts by its id is accepted wherever the corpus raises it, so a `TERMINOLOGY_TX_WARNING` about another code, or sdc-3 on a Questionnaire that should have used semver, would pass unseen."
+        }
+      ]
+    },
+    "0007": {
+      "reviewed": "sha256:9c8dca81f0d92b8b3739189841ce5145fcae68b56de797b67a850a3bb366f2e5",
+      "limitations": [
+        {
+          "area": "answers",
+          "says": "A number answer is the double formancy stores, so a person's `70.50` is written 70.5: the response says what formancy stored, not what was typed.",
+          "heldBy": "packages/health-questionnaire/src/answers.test.ts"
+        },
+        {
+          "area": "answers",
+          "says": "Answers a formancy server stores are refused here -- a value of another type than its field's, a date the calendar lacks, a tick twice, a fraction or a value past 32 bits on an integer item, a value on an item a visible rule disables.",
+          "heldBy": "packages/health-questionnaire/src/response.test.ts"
+        },
+        {
+          "area": "answers",
+          "says": "What a page a skip rule walks past holds is left out of the response, with nothing in the result naming it."
+        },
+        {
+          "area": "answers",
+          "says": "formancy's reading of an unanswered field is restated here, so nothing fails when formancy changes it, and the next adoption of `@formancy/*` must read it again."
+        },
+        {
+          "area": "answers",
+          "says": "An empty list and null are one answer, none, though formancy tells them apart for a rule, so a value on an item such a rule enables can be refused as disabled."
+        },
+        {
+          "area": "answers",
+          "says": "The gate judges complete responses only, and a row's `_id` is not carried, so a receiver cannot read formancy's row identity."
+        },
+        {
+          "area": "answers",
+          "says": "A text answer with leading or trailing whitespace, or a line break in a `string` item's answer, is written as formancy holds it, though the validator warns of it."
+        },
+        {
+          "area": "answers",
+          "says": "A subject's type is held to a form, not to R4's list of types, so `Patiant/1` is taken as a reference."
+        },
+        {
+          "area": "answers",
+          "says": "Rows past a repeating group's maximum are refused by the package, which the validator does not count there, so only the package's tests show that."
+        }
+      ]
+    },
+    "0008": {
+      "reviewed": "sha256:320cab22f02dcc0f5b53563a7f5e216925b98e5ee985e9cf32b6cc3df83970d5",
+      "limitations": [
+        {
+          "area": "documents",
+          "says": "Every PDF/A declaration is refused, so no CH EPR or ePA document can be made until a Formancy Report release writes PDF/A and a gate here proves it.",
+          "heldBy": "packages/health-document/src/pdf.test.ts"
+        },
+        {
+          "area": "documents",
+          "says": "A plain PDF is told from an error page or a cut download by its first and last lines alone, so a PDF broken inside is attached, and one with a comment or whitespace after `%%EOF`, which PDF readers tolerate, is refused."
+        },
+        {
+          "area": "documents",
+          "says": "A document refuses a reference that names no entry, an entry nothing reaches, a Provenance and a stylesheet, so a valid R4 document whose entries refer beyond it is refused here.",
+          "heldBy": "packages/health-document/src/bundle.test.ts"
+        },
+        {
+          "area": "documents",
+          "says": "A Composition must be given a subject and sections of entries, and a DocumentReference a status, a type, a subject, a date and a title, more than R4 asks."
+        },
+        {
+          "area": "documents",
+          "says": "No bound on a PDF's size is set, since none was measured, and one whose base64 is longer than the engine's longest string fails with the engine's error, not a refusal."
+        },
+        {
+          "area": "documents",
+          "says": "Assembling a document decodes and hashes each attached PDF again, about half a second for a 5 MB PDF on the machine 0008 measured on 17 October 2026."
+        },
+        {
+          "area": "documents",
+          "says": "Not offered yet: a narrative beyond the Composition's titles, attesters, a custodian, an encounter, a DocumentReference's format code and context, reading a document back, and the MHD provide Bundle."
+        },
+        {
+          "area": "documents",
+          "says": "Links are found by name: an attachment's url is followed only in a DocumentReference's content, so a Binary named by a Patient's photo is refused as unreferenced, and a canonical is an identifier, never resolved."
+        },
+        {
+          "area": "documents",
+          "says": "In a Binary, only this package checks the attachment's size and hash; the validator does not, nor that the attachment's url names a Binary."
+        }
+      ]
+    },
+    "0009": {
+      "reviewed": "sha256:828aca5b3e9ad7d7a72bcf5d93c2a21024ccc50211995f31861d2dd474537fbd",
+      "limitations": [
+        {
+          "area": "switzerland",
+          "says": "A CH ORF document does not carry its Questionnaire, against two of CH ORF's SHALLs: the response names it by its versioned canonical, and the host publishes it there.",
+          "heldBy": "packages/health-ch/src/document.test.ts"
+        },
+        {
+          "area": "switzerland",
+          "says": "Much of CH ORF is not offered -- receivers, copy receivers, urgent contacts, a PDF, addresses, telecoms, EPR-SPID and the rest 0009 lists -- and a host that passes one is refused, not left out.",
+          "heldBy": "packages/health-ch/src/people.test.ts"
+        },
+        {
+          "area": "documents",
+          "says": "The Composition's narrative is its titles alone, which meets CH ORF's cardinality and not R4's definition of a narrative safe to read on its own."
+        },
+        {
+          "area": "switzerland",
+          "says": "A GLN or an AHV number with a wrong check digit is refused here, though the validator only warns of it, and the gate has never judged an AHV number it should accept.",
+          "heldBy": "packages/health-ch/src/identifiers.test.ts"
+        },
+        {
+          "area": "switzerland",
+          "says": "A response must claim CH ORF's response profile when the host makes it, or health-ch refuses it; nothing here appends the claim.",
+          "heldBy": "packages/health-ch/src/response.test.ts"
+        },
+        {
+          "area": "switzerland",
+          "says": "Offline, a Composition's type and category draw nothing against CH Term's SNOMED CT value sets, so the codes a Swiss host sends there are not judged."
+        },
+        {
+          "area": "switzerland",
+          "says": "The gate loads CH Term 3.3.0, the release CH Core's range answers, so a receiver on a newer CH Term may judge a host's codes otherwise.",
+          "heldBy": "scripts/validator/registers.test.mjs"
+        },
+        {
+          "area": "switzerland",
+          "says": "A host's text that health-ch and health-document read is held stricter than R4 -- a control character, a lone surrogate, U+FFFE and U+FFFF are refused -- so a receiver may take a name health-ch refuses.",
+          "heldBy": "packages/health-core/src/host.test.ts"
+        },
+        {
+          "area": "answers",
+          "says": "health-questionnaire's answers and item texts are not read with health-core's rule for a host's text, and are held to none of it: a control character or a lone surrogate there is written as it is."
+        },
+        {
+          "area": "switzerland",
+          "says": "A refusal inside a host's answers can carry, in its path, a name the host chose for a member below the response's own."
+        },
+        {
+          "area": "conformance",
+          "says": "The validator gate downloads IHE's formatCode package, under CC-BY-4.0, because CH Core needs it; no package of this product carries it.",
+          "heldBy": "scripts/validator/registers.test.mjs"
+        },
+        {
+          "area": "switzerland",
+          "says": "The stylesheet CH ORF's prose says a document Bundle shall include is not written, a third of CH ORF's SHALLs a document here does not meet."
+        },
+        {
+          "area": "switzerland",
+          "says": "The Questionnaire does not claim CH ORF's `ch-orf-questionnaire` profile, and the generic elements CH ORF's prose asks of one -- author, data entry person, receiver -- are held by no profile and not written here."
+        },
+        {
+          "area": "conformance",
+          "says": "CH Core's `gln-startswith76` is accepted wherever the corpus raises it, as every registered warning is, so a GLN under a Swiss prefix in the corpus would never be refused for it."
+        },
+        {
+          "area": "switzerland",
+          "says": "A context wrong in health-ch's way and in the Composition's is refused for the first, and for the second only on the next attempt."
+        }
+      ]
+    },
+    "0010": {
+      "reviewed": "sha256:bfed8e4eb2e805e3b8710c61eb632be203f81eeabc677e56d5345f11b00281e8",
+      "none": "It documents the architecture and holds the documents to the repository; it costs a contributor an edit per change, and nothing a release ships costs a user, an integrator or an operator anything because of it."
+    },
+    "0011": {
+      "reviewed": "sha256:711e034bfdacfc0e11066a55a903618e480c97c8a53a05e7ac56dfb49ab969b6",
+      "limitations": [
+        {
+          "area": "release",
+          "says": "A release's evidence is the report of the run that gated it, attached and signed beside the SBOM; a report built on a machine is no release's, and a release refuses one.",
+          "heldBy": "scripts/release-report/verify-publish.test.mjs"
+        },
+        {
+          "area": "release",
+          "says": "Tested on is not accepted by: the report names the Node, TypeScript and formancy spec the run ran, and nothing in the packages refuses another.",
+          "heldBy": "scripts/release-report/tested-on.test.mjs"
+        },
+        {
+          "area": "release",
+          "says": "The release's SBOM lists the published packages and what a consumer's install of them brought on the day of the release, resolved then and unlocked; it is held to the report's packages and versions, and the rest of its closure to nothing.",
+          "heldBy": "scripts/release-report/verify-publish.test.mjs"
+        },
+        {
+          "area": "release",
+          "says": "The getting-started guide's program is compiled and run against the packed packages, under Node, by the install gate of every run of the gates, and the resources it writes are not judged by the validator gate, whose claim is about its own corpus."
+        },
+        {
+          "area": "release",
+          "says": "The guide renders its PDF with Formancy Report's packages, which run in production only under Report's own licence; a host with its PDF already needs neither."
+        },
+        {
+          "area": "release",
+          "says": "Formancy Health is not intended as a medical device, in CLAUDE.md's words, which the README's intended purpose holds word for word.",
+          "heldBy": "scripts/readme.test.mjs"
+        },
+        {
+          "area": "release",
+          "says": "No lawyer has read the intended purpose yet, and a customer's product that computes a clinical result from its own forms carries the regulatory duty that brings, which the README says and LICENSE.md does not."
+        },
+        {
+          "area": "release",
+          "says": "The publish job had never run before 0.1.0's tag: the workflows test holds its shape and not its behaviour, and the first release is the first run of it."
+        }
+      ]
+    }
+  }
+}

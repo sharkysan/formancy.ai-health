@@ -65,7 +65,10 @@ one, takes an address without HL7's marks in it (0003).
 
 ## Secrets the workflows expect
 
-Neither is set yet: on 16 October 2026 both are the maintainer's to add.
+Neither was set on 17 October 2026, and both are the maintainer's to add before the first
+release ([`RELEASING.md`](../RELEASING.md#before-the-first-release)): read
+with `gh api` on 17 October 2026, the repository holds no secret and the
+`npm` environment none, its deployment policy admitting tags `v*` alone.
 
 | Secret | Used by | Without it |
 |---|---|---|

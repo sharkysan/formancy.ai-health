@@ -25,9 +25,9 @@ import type { ViteUserConfig } from 'vitest/config'
  */
 export const coverage: NonNullable<NonNullable<ViteUserConfig['test']>['coverage']> = {
   provider: 'v8',
-  // `json-summary` writes coverage/coverage-summary.json, whose totals a
-  // release report shows per package once there is one (formancy.ai-report
-  // 0014's shape) -- reported there as here, never gated.
+  // `json-summary` writes coverage/coverage-summary.json, whose totals the
+  // release report shows per package (0011; formancy.ai-report 0014's shape)
+  // -- reported there as here, never gated.
   reporter: ['text', ['lcov', { projectRoot: '../..' }], 'json-summary'],
   include: ['src/**/*.ts'],
   exclude: ['src/**/*.test.ts', 'src/**/*.d.ts', 'src/index.ts', 'src/main.ts'],
