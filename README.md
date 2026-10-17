@@ -4,7 +4,7 @@
 
 A self-hosted export module for [formancy](https://github.com/sharkysan/formancy.ai)
 and [Formancy Report](https://github.com/sharkysan/formancy.ai-report), for
-hospitals and the vendors whose software they run. It exports a formancy form
+the vendors whose software hospitals and practices run. It exports a formancy form
 as a FHIR® R4 `Questionnaire`, a person's answers to it as a
 `QuestionnaireResponse`, and a PDF that Formancy Report rendered in the
 document resource the receiving side's guide asks for, each shaped to the
@@ -12,10 +12,37 @@ profiles a country publishes rather than to FHIR's base resources alone.
 What an export cannot say in the profile it targets, it refuses rather than
 leaves out.
 
-> **Status: started 16 October 2026. A formancy form exports as an SDC Questionnaire, a submission of it as a QuestionnaireResponse, a PDF as a document Bundle, and a referral as a CH ORF document; nothing is released.**
+**Start with [the getting-started guide](./docs/getting-started.md)**: from
+an empty npm project to a Questionnaire of a formancy form, a
+QuestionnaireResponse of a submission, a document Bundle carrying a PDF
+Formancy Report rendered, and a CH ORF referral, under Node, from synthetic
+data. The install gate compiles its code against the packed packages, runs
+it and holds what it prints to what the guide shows, so its code fails CI
+when it stops being true; of its prose, a guard holds its install lines
+and its links, and review the rest
+([0011](./docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).
+
+> **Status, 17 October 2026: 0.1.0, a developer preview, is ready to tag
+> and not released.** Nothing is on npm and no tag is pushed. The
+> packages' manifests say 0.1.0, and a release report built from one
+> machine's runs that day -- the guards, every package's suite, the install
+> gate and the validator gate -- found no problem, as a partial report:
+> it allowed the verify, install and validator jobs' results missing, as a
+> machine must, so the gates that rest on a job's result are judged only
+> on GitHub ([`RELEASING.md`](./RELEASING.md#the-release-report)). On that
+> machine `pnpm check:pkg` stopped before it checked anything, its pnpm
+> refused by corepack's; publint and attw, run in each package by hand,
+> passed. None of it had run on GitHub that day as 0.1.0 has it: the first
+> pull request run is the release report's first there, and a rehearsal
+> of the release workflow the first of its SBOM step. What is left is the
+> maintainer's -- that run, the secrets the workflows expect, the
+> changelog's 0.1.0 heading, dated the tag's day, through a pull request
+> before the rehearsal, the rehearsal and the tag
+> ([`RELEASING.md`](./RELEASING.md#before-the-first-release)) -- and what
+> 0.1.0 holds, and leaves out, is [below](#what-010-is).
 >
-> What exists on 17 October 2026 is the licence, the pipeline that proves
-> the packages, as Formancy Report's proves its own, and four packages.
+> Built: the licence, the pipeline that proves the packages, as Formancy
+> Report's proves its own, and four packages.
 > `@formancy/health-core` names the FHIR version it emits, holds FHIR R4's
 > primitives to their types -- a decimal as its digits, never a JavaScript
 > number, bytes as canonical base64 -- and writes and reads FHIR JSON that
@@ -34,8 +61,90 @@ leaves out.
 > validator, offline, against pinned guide packages, over what the
 > packages make of synthetic forms, submissions, a referral letter
 > Formancy Report 0.1.0 renders, in the private `@formancy/health-corpus`,
-> and a referral, and resources built by hand. Next is the readiness of a
-> first developer preview.
+> and a referral, and resources built by hand. Every run of the gates ends
+> in a release report of what it was tested on and what it found, which a
+> release attaches signed beside an SBOM of what a consumer installs.
+
+## What 0.1.0 is
+
+A developer preview, as Formancy Report's 0.1.0 was: for a vendor to
+evaluate Formancy Health and build against it -- a CH ORF referral from a
+formancy form and a person's answers to it, and a document Bundle that
+carries a PDF Formancy Report rendered -- while PDF/A, the EPR and the
+other countries are still to come. It is not yet for a production export of a
+person's record: no lawyer has read the licence, the
+[intended purpose](#intended-purpose) or the trademark position, and the
+release gates that ask for that reading are open.
+
+It publishes `@formancy/health-core`, `@formancy/health-questionnaire`,
+`@formancy/health-document` and `@formancy/health-ch`, each at 0.1.0 and
+under the Formancy Health Source-Available Licence
+([0001](./docs/decisions/0001-a-paid-module-in-its-own-repository.md)),
+each described [below](#packages). Besides one another they depend on
+formancy's `@formancy/spec` alone, at the exact version the
+[table](#what-it-is-built-and-judged-against) names, through which
+health-questionnaire reads a form, and on what it brings, which a
+release's SBOM lists; they take no peer. `@formancy/health-corpus` stays
+private.
+
+The gates 0.1.0 is held to are the register's
+([`docs/release/gates.json`](./docs/release/gates.json)): reuse and
+compatibility, through the install gate over every published package,
+which the register keeps open in part -- no gate bundles a package for a
+browser, and that no upstream file is copied is review's; conformance,
+through the validator gate; exactness; failing closed, of which the
+register keeps a part open, for refusals no package has a case for yet;
+the dependency licences; HL7's notice and the names; and a clean
+rehearsal of the release workflow, which no run of the gates can see.
+PDF/A, privacy beyond what the guards hold, customer readiness and the
+legal review belong to later releases. The release report of the run
+that gates a release says which passed in it, and why each open one is
+open.
+
+### Not in 0.1.0
+
+- **PDF/A, and with it the CH EPR's MHD document.** No release of Formancy
+  Report writes PDF/A, so health-document refuses every PDF/A declaration
+  ([0008](./docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
+- **Extraction**: no resource is extracted from a QuestionnaireResponse.
+- **Germany, the United Kingdom, Austria and Europe.** CH Core and CH ORF
+  are the only national profiles; the [formats](#the-formats-it-targets)
+  say which come next.
+- **File, signature, ranking, matrix and rich-text items.** A form that
+  holds one is refused whole, naming the field
+  ([0006](./docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)).
+- **FHIRPath, anywhere.** A visibility rule beyond a simple comparison
+  refuses the form, a computed field is exported read-only and never as a
+  calculated item, and the dependency-licence guard refuses `fhirpath`
+  today.
+- **Of CH ORF**: the Questionnaire inside the Bundle, which the response
+  names by its canonical instead; and a PDF, the Composition's receivers
+  and contacts, and the rest 0009 lists, each refused rather than left out
+  ([0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)).
+- **A page, a server, or any transport.** It is a library; a vendor's
+  application sends what it writes.
+- **A browser.** Every gate runs the packed packages under Node; none runs
+  them in a browser or another engine, so that is not claimed.
+
+## Intended purpose
+
+Formancy Health converts what a vendor's application holds -- a formancy
+form, a person's answers to it, a PDF, a referral -- into resources of the
+HL7® FHIR® standard, and assembles them into documents, for the software
+vendors who build it into their products. A vendor's application calls it,
+gets FHIR JSON back and sends it itself. It is not an EHR, a FHIR server or
+a terminology service, and it is not intended as a medical device.
+
+Nothing it ships computes a clinical result: no template, no fixture and
+no generated item computes a score, raises a warning or suggests a
+therapy, and no calculated item is written. A customer's own forms are the
+customer's, and where a customer's product computes a clinical result
+from them, the regulatory duty that brings is that product's. No lawyer
+has read these words yet; that reading is owed before the first paid
+release ([`docs/release/gates.json`](./docs/release/gates.json)). The
+sentence naming a medical device is CLAUDE.md's, word for word, and
+`scripts/readme.test.mjs` fails when the two part; that nothing computes
+a clinical result is held by review.
 
 ## Licence, in one table
 
@@ -99,16 +208,18 @@ the referral letter it renders with Formancy Report 0.1.0's released
 packages, the only place Report is a dependency, and the documents the
 validator gate judges.
 
-Planned and not here: extraction from a QuestionnaireResponse, PDF/A,
-which waits for a Report release that writes it, the MHD provide Bundle
-and CH EPR, and of CH ORF the Questionnaire inside the Bundle, a PDF and
-the Composition's receivers, contacts and other extensions; then
-Germany's, the United Kingdom's, Austria's and HL7 Europe's.
+What is planned and not here yet is [Not in 0.1.0](#not-in-010), above.
 
 A decimal travels as its text. Build one with `decimal('70.50', path)`
 from the text a form or a database gave you, never from a JavaScript
 number: 0.10 cannot be recovered from 0.1, and health-core refuses a
 number rather than guess.
+
+A document's identifier is the host's, and so is keeping it unique across
+documents: the same input gives the same Bundle, identifier included, and
+FHIR's documents page says a document's identifier is never re-used,
+which nothing here can see across a host's documents
+([0008](./docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
 
 ## How it relates to formancy.ai, Formancy Data and Formancy Report
 
@@ -152,19 +263,23 @@ pnpm test
 The gates CI runs, from `.github/workflows/gates.yml`: `pnpm build`,
 `pnpm typecheck`, `pnpm check:pkg`, `node scripts/verify-licenses.mjs`,
 `node scripts/dependency-licences.mjs` and `pnpm test:repo`, which holds the
-repository's guards, HL7's notice among them and the rule that no package
-converts a value through a JavaScript number or reads a clock; each package's
+repository's guards, HL7's notice among them, this README's intended
+purpose and links, and the rule that no package converts a value through a
+JavaScript number or reads a clock; each package's
 `test:coverage` in a job of its own; `pnpm test:e2e:install`, which packs
 the packages, installs them into a plain npm project, type-checks it with
-`skipLibCheck` off and runs it under Node; and `node scripts/validator.mjs`,
-the validator gate below.
+`skipLibCheck` off and runs it under Node, and does the same with the
+program of the [getting-started guide](./docs/getting-started.md) in a
+project of its own; `node scripts/validator.mjs`,
+the validator gate below; and the release report, built from what every
+other job found, which fails the run on anything it lists
+([`docs/release/`](./docs/release/README.md)).
 Beside them, every pull request's commit authors are checked against the
 CLA, and CodeQL and dependency review run. A release runs the same gates and
-publishes only the tarballs the install gate ran, with provenance and a
-signed SBOM. [`CLAUDE.md`](./CLAUDE.md) says what each is for and what the
-bar is.
-
-Not here yet: the release report of the run that gates a release.
+publishes only the tarballs the install gate ran, with provenance, a signed
+SBOM of what a consumer's install of them brings, and the signed report of
+the run that gated it.
+[`CLAUDE.md`](./CLAUDE.md) says what each is for and what the bar is.
 
 ### The validator gate
 
@@ -267,10 +382,12 @@ validator loaded, the time it took -- is in that run's
 
 ## Documents
 
-- [`docs/`](./docs/README.md) — the architecture, as arc42 in formancy.ai's files, whose decisions are the records below, and where to start reading it.
+- [`docs/getting-started.md`](./docs/getting-started.md) — from an empty npm project to a Questionnaire, a QuestionnaireResponse, a document Bundle carrying a Report PDF, and a CH ORF document, under Node; its code is compiled and run against the packed packages by the install gate.
+- [`docs/`](./docs/README.md) — the architecture, as arc42 in formancy.ai's files, whose decisions are the records below, and where to start reading it, by who you are.
 - [`docs/decisions/`](./docs/decisions/README.md) — every decision somebody could helpfully undo, with what verifies it.
-- [`docs/release/`](./docs/release/README.md) — the registers a conformance claim rests on: the validator the gate runs, and every package it loads.
+- [`docs/release/`](./docs/release/README.md) — the registers a conformance claim rests on, the validator the gate runs and every package it loads; the two every release report reads, the release gates and each record's known limitations; and what a release report holds and what fails it.
 - [`CHANGELOG.md`](./CHANGELOG.md) — what changed and why.
-- [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`CLA.md`](./CLA.md) — contributions are taken under a CLA, checked on every pull request.
+- [`CLAUDE.md`](./CLAUDE.md) — the rules a change is held to, and the gates and guards that hold them.
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`CLA.md`](./CLA.md) — contributions are taken under a CLA, checked on every pull request; [`GOVERNANCE.md`](./GOVERNANCE.md) says who decides.
 - [`SECURITY.md`](./SECURITY.md) — how to report a vulnerability, and what this product considers highest risk.
-- [`RELEASING.md`](./RELEASING.md) — releases are cut by the workflow, with provenance and a signed SBOM.
+- [`RELEASING.md`](./RELEASING.md) — releases are cut by the workflow, with provenance, a signed SBOM and the signed release report; what the maintainer sets before the first.

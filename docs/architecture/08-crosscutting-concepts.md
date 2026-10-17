@@ -274,4 +274,10 @@ No template, fixture or generated item computes a score, raises a warning or
 suggests a therapy: no calculated item and no FHIRPath is written
 ([0006](../decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)),
 and the corpus's letter says it means nothing. That nothing does is
-review's; a customer's form is the customer's.
+review's; a customer's form is the customer's, and so is the duty of a
+product that computes a clinical result from one. The README's
+[intended purpose](../../README.md#intended-purpose) says so, with
+CLAUDE.md's sentence that the product is not intended as a medical device,
+which [`readme.test.mjs`](../../scripts/readme.test.mjs) holds word for
+word in both; no lawyer has read the words yet
+([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).

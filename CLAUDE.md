@@ -18,7 +18,10 @@ guide included; formancy itself exports nothing to FHIR.
 It is a library. Version 1 has no server, no page and no network: a vendor's
 application calls it, gets FHIR JSON back and sends it itself. It is not an
 EHR, a FHIR server or a terminology service, and it is not intended as a
-medical device.
+medical device. The README's *Intended purpose* holds that sentence word
+for word, and `scripts/readme.test.mjs` fails when the two part (0011): a
+change to it here is a change there, in the same pull request, and no
+lawyer has read either yet.
 
 Four things follow, and three of them have a guard:
 
@@ -223,9 +226,22 @@ and the document says what. Three shapes, in order of preference:
    in the building blocks, a decision record is linked from no section, a
    relative link in the architecture, or the heading it points at, no
    longer exists, or a path written there as code names no file git would
-   commit. All of them run as
-   `pnpm test:repo`, and CI runs that — **a guard that is not a gate is a
-   comment.**
+   commit; `scripts/release-report/limitations.test.mjs` fails when a
+   decision record has no entry in `docs/release/limitations.json`, or
+   changed since its entry was read, and `gates.test.mjs` beside it when
+   `docs/release/gates.json` names evidence no run can pass (0011);
+   `scripts/getting-started.test.mjs` fails when a block of code in
+   `docs/getting-started.md` names no host, a file is not named in the
+   prose before its block, the program imports what section 1 does not
+   install, section 1 installs other than the install gate installs or at
+   another version, or a link or an anchor no longer resolves (0011);
+   `scripts/readme.test.mjs` fails when the README's *Intended purpose*
+   stops holding the sentence above that says what the product is not,
+   word for word, or a relative link of the README, or the heading it
+   names, no longer lands (0011). The architecture's guard, the guide's and
+   the README's read Markdown through one module, `scripts/markdown.mjs`.
+   All of them run as `pnpm test:repo`, and CI runs that — **a guard that
+   is not a gate is a comment.**
 3. **Measure it.** Below.
 
 Counts written into prose go stale. **Prefer wording without a number.** Where a
@@ -445,6 +461,30 @@ exactly what CI does:
   outcomes and console beside it. Locally: `pnpm build`, then
   `node scripts/validator.mjs --java <path to java>`, which downloads into
   the gitignored `.fhir-cache/`.
+- **`report`** builds the release report from what every other job's
+  collect step uploaded
+  ([0011](docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md),
+  [`docs/release/`](docs/release/README.md)). It fails the run when:
+  - a job ended other than success or left no results;
+  - a published package has no suite;
+  - a test or a file was skipped or failed -- a test `verify` skipped passes
+    only where the validator job's run of the registers passed that same
+    test, by name;
+  - a test file the checkout holds did not run in its suite -- a test file
+    is known by its name, not by the suite's include;
+  - the install gate failed, or packed other than one tarball per published
+    package at the version;
+  - the validator gate failed, or, though it says it passed, judged nothing
+    or a resource otherwise than the corpus expects, ran another validator
+    or JAR or another register than `docs/release/` pins, loaded anything
+    else, or did not run offline;
+  - two builds of one package differ, or a tarball's built files are not
+    every job's;
+  - a release gate's evidence or a limitation's `heldBy` test did not pass.
+
+  A job added to gates.yml needs a collect step and an upload, which the
+  workflows test holds, and a reader in `scripts/release-report/collect.mjs`,
+  which refuses a job it has none for.
 
 `cla.yml` checks every pull request's commit authors against the CLA record,
 and `security.yml` runs CodeQL and dependency review.
@@ -455,16 +495,23 @@ and `security.yml` runs CodeQL and dependency review.
   them);
 - no `${{ }}` appears inside a script;
 - a release restores no cache;
-- `release.yml` pins what its `check` job checked before the SBOM is made,
-  and publishes nothing else;
+- every gates job collects and uploads under its own key, and the report
+  waits for all of them;
+- `release.yml` checks the report before it pins, pins what its `check` job
+  checked before the SBOM is made, publishes nothing else, and signs and
+  attaches the report beside the SBOM;
+- `check` installs no workspace, and makes the SBOM from the tarballs it
+  pinned, installed by npm outside the checkout with no lifecycle script,
+  and holds it to the report before pinning it (formancy.ai-report 0017);
+  the scripts it and `publish` run import only Node's built-ins;
 - in `publish`, only the npm step holds the token or runs npm, and it comes
-  after the signature;
+  after both signatures;
 - nothing in a workflow a release runs sets `continue-on-error`, or runs a
   command inside an `echo`, where bash would lose its failure;
 - the `validator` job runs the gate after the build, on the Java its pin
   needs from a `setup-java` pinned to a commit, holds the registers after
-  the gate with none of their cases skipped, caches only downloads and
-  only in CI, fetches and runs nothing
+  the gate with none of their cases skipped, collects after that, caches
+  only downloads and only in CI, fetches and runs nothing
   but through the script, and uploads its results however it ends.
 
 Locally, run the same commands for what you changed.
@@ -483,22 +530,43 @@ Locally, run the same commands for what you changed.
   packages.fhir.org serves, and `declaredBy`, `canonical` and `licence`
   from the packages themselves, which the validator job's run of the
   registers' test checks.
+- After the sentence of *What this is, and what it is not* that names a
+  medical device changes, the README's *Intended purpose* says the same,
+  word for word; that section of CLAUDE.md names a medical device in that
+  one sentence and no other, or the guard cannot tell which it holds.
+- After a file the README links is renamed, or a heading it names reworded,
+  the README's link follows it.
+- A new decision record needs its entry in `docs/release/limitations.json`:
+  the costs a user, integrator or operator meets, or why it has none. An
+  edited one needs a re-read and
+  `node scripts/release-report/limitations.mjs --stamp NNNN`, and that
+  includes a Status line naming a later record.
 
 `test:e2e:install` is the only gate that looks at the packages from outside:
 - it packs them;
-- installs the tarballs into a plain npm project;
-- type-checks it with `skipLibCheck` **off**;
-- runs it under Node.
+- installs the tarballs into plain npm projects, each holding only what its
+  host has (`scripts/install-hosts.mjs`): the consumer's, the tarballs
+  alone, and the guide's, the tarballs beside what the guide's section 1
+  installs;
+- type-checks each with `skipLibCheck` **off**, strictly, against Node's
+  types;
+- runs each under Node;
+- compiles and runs `docs/getting-started.md` (0011, as
+  formancy.ai-report 0015): every block of code in the guide names its host
+  in its fence (`ts guide=node`), and the gate writes the blocks into the
+  guide's project, type-checks them, and runs the program, which must print
+  exactly the lines the guide's output blocks show.
+  `scripts/getting-started.test.mjs` fails when a block names no host, a
+  file is not named in the prose before its block, an install line names
+  what the gate does not install, or a link or anchor no longer resolves.
 
 That matters because every other gate resolves a package through a symlink to
 its source, so an `exports` map that is wrong for a consumer can be right for
 the whole suite. It needs `pnpm build` first.
 `scripts/install-fixture/consume.ts` is the consumer; a package's public entry
-points belong in it.
-
-Not here yet: the release report of the run that gated a release
-(formancy.ai-report 0014), which will read the validator job's
-`test-results/validator.json` with the rest.
+points belong in it. A change to a package that the guide shows -- an
+option, a context member, a refusal's message -- changes the guide in the
+same pull request.
 
 ## Conventions that live upstream
 

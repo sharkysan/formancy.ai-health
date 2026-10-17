@@ -32,6 +32,16 @@ const { pin, packages } = readRegisters(repo)
 const where = layout(join(repo, '.fhir-cache'))
 const RESULTS = join(repo, 'test-results', 'validator.json')
 
+/**
+ * The bound on hashing the cache, past vitest's 5 s default, which made the
+ * two cases that hash it a coin toss on a busy machine. Hashing the 204 MB
+ * JAR took 1.0 and 1.2 s alone in Node and 2.7 s inside the whole of
+ * `pnpm test:repo`, and missed the 5 s default twice in the minute after the
+ * validator gate finished, on a desktop on 17 October 2026 (Windows 11,
+ * Node 24). The bound is for a machine having a bad day, not for the work.
+ */
+const HASHING = 60_000
+
 /** Whether every registered tarball is in the cache. */
 const cached = packages.every((item) => existsSync(where.tgz(item)))
 
@@ -98,7 +108,7 @@ describe('the validator pin', () => {
   test.skipIf(!existsSync(where.jar(pin)))('is the JAR in the cache, byte for byte', async () => {
     expect(await sha256File(where.jar(pin))).toBe(pin.sha256)
     expect(statSync(where.jar(pin)).size).toBe(pin.bytes)
-  })
+  }, HASHING)
 })
 
 describe('the package register', () => {
@@ -174,7 +184,7 @@ describe('the package register', () => {
       expect(await sha256File(where.tgz(item)), packageKey(item)).toBe(item.sha256)
       expect(statSync(where.tgz(item)).size, packageKey(item)).toBe(item.bytes)
     }
-  })
+  }, HASHING)
 
   // What the register says of a package is what the package says of
   // itself, read from the manifest the gate unpacked from those bytes:

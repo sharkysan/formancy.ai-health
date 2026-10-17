@@ -1,7 +1,8 @@
 // One hash for a package's built `dist/`, so a tarball can be compared with the
-// dist/ a job built (formancy.ai-report 0014; formancy.ai-data 0035). The
-// install gate records it for every tarball it packs, for the release report
-// that arrives with the first release.
+// dist/ a job built (0011; formancy.ai-report 0014, formancy.ai-data 0035).
+// The install gate records it for every tarball it packs, and every job's
+// collect step for every dist/ it built; the release report holds the two
+// to each other.
 //
 // sha256 over the sorted lines `relative/path\0<sha256 of the file>\n`, one
 // per file: the same files with the same bytes give the same hash wherever

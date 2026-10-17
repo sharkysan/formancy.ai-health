@@ -199,16 +199,30 @@ says why each step is there.
 push of a v* tag
    │
    ├─ tag      the tag and the manifests' one version agree
-   ├─ gates    exactly the jobs CI runs (gates.yml), with no secret
-   ├─ check    the install job's tarballs, at the version, carrying their licence,
-   │           pinned by SHA-256; the release notes, this version's entry and short
-   │           enough for GitHub, checked and not pinned; an SBOM, pinned once made
+   ├─ gates    exactly the jobs CI runs (gates.yml), with no secret; each collects
+   │           what it found, and the report job builds the release report and
+   │           the release body from all of it, failing the run on its problems
+   ├─ check    no workspace installed · the report, this run's, green and whole;
+   │           the install job's tarballs, at the version, carrying their
+   │           licence, byte for byte the ones the report says the install gate
+   │           ran; the body, short enough for GitHub -- all pinned by SHA-256 ·
+   │           then the SBOM: those tarballs installed by npm outside the
+   │           checkout, no script run, cdxgen over that install, held to the
+   │           report's packages and versions and to npm's lockfile of that
+   │           install, and pinned
    ▼
-publish    what was downloaded is, byte for byte, the tarballs and the SBOM check
-           pinned · the SBOM signed, keyless · npm, with provenance · the GitHub
-           release, with the notes
+publish    what was downloaded is, byte for byte, what check pinned, and the
+           report this run's · the SBOM and the report signed, keyless · npm,
+           with provenance · the GitHub release, with the body, the SBOM and
+           the report and their signatures
 ```
 
 [`.github/workflows/release.yml`](../../.github/workflows/release.yml), and
-[`RELEASING.md`](../../RELEASING.md) for the steps a person takes. A
-dispatch rehearses everything but `publish`. Nothing has been released.
+[`RELEASING.md`](../../RELEASING.md) for the steps a person takes. The report
+is [0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)'s:
+every run of the gates ends in one, a pull request's included; so is the
+SBOM's making, from what a consumer installs rather than from the
+workspace. A dispatch rehearses everything but `publish`. As of 17 October
+2026 nothing had been released: 0.1.0 is ready to tag, and what a release
+reads that only the maintainer can set is RELEASING.md's
+[Before the first release](../../RELEASING.md#before-the-first-release).

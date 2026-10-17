@@ -14,9 +14,15 @@ import { reporters } from './vitest.results'
  * resource type the packages write, a PDF in each place health-document puts
  * one (0008), and every code system the corpus writes is one whose terms
  * admit it, LOINC with its name and its notice in NOTICE and no SNOMED CT,
- * and no file holds an AHV number that passes its check (0009); and the
+ * and no file holds an AHV number that passes its check (0009); the
  * architecture in docs/ names every package and decision record, and links
- * to and names as code only what exists (0010).
+ * to and names as code only what exists (0010); and the release report's
+ * registers hold, every decision record read as it stands, the report
+ * fails a run on what it should, a release holds the SBOM to it, and the
+ * getting-started guide hands every block of code to the install gate,
+ * installs what the gate installs and links only to what exists, and the
+ * README's intended purpose holds CLAUDE.md's sentence word for word and
+ * its links land (0011).
  *
  * Run as `pnpm test:repo`, and by CI on every pull request. A guard that is not
  * a gate is a comment.

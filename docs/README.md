@@ -4,8 +4,11 @@ Engineering documentation for the people who need to understand *why*
 Formancy Health is built the way it is: contributors, evaluators, and the
 vendors who would ship it inside their own products.
 
-Nothing here is a tutorial. How to call a package is the
-[README](../README.md) and each package's own; what changed, and why, is
+Nothing here is a tutorial but one: the
+[getting-started guide](getting-started.md), from an empty npm project to a
+CH ORF document, which the install gate compiles and runs. How to call a
+package is the [README](../README.md) and each package's own; what changed,
+and why, is
 [`CHANGELOG.md`](../CHANGELOG.md); the rules a change is held to are
 [`CLAUDE.md`](../CLAUDE.md).
 
@@ -13,10 +16,12 @@ Nothing here is a tutorial. How to call a package is the
 
 | If you are… | Read |
 |---|---|
+| Deciding whether to build on 0.1.0 | The README's [What 0.1.0 is](../README.md#what-010-is), its [Not in 0.1.0](../README.md#not-in-010) and its [Intended purpose](../README.md#intended-purpose), then the release report the release attaches |
 | New to the repository | [Introduction and goals](architecture/01-introduction-and-goals.md), then [Solution strategy](architecture/04-solution-strategy.md) — the ideas everything else follows from |
 | Looking for where something lives | [Building blocks](architecture/05-building-blocks.md) |
-| Calling a package from your application | The [README](../README.md), the package's README, and [Deployment](architecture/07-deployment-view.md) for what a host supplies |
+| Calling a package from your application | The [getting-started guide](getting-started.md), the [README](../README.md), the package's README, and [Deployment](architecture/07-deployment-view.md) for what a host supplies |
 | Asking what a conformance claim covers | [Verification](architecture/10-verification.md#103-what-a-conformance-claim-covers), then [0005](decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md) |
+| Asking what a release was tested on | The release report it attaches, which [`release/`](release/README.md) describes, then [0011](decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md) |
 | Wondering why an obvious simpler thing was not done | The [decision records](decisions/README.md) |
 | About to change something load-bearing | [Risks and technical debt](architecture/11-risks-and-debt.md), and the record behind it |
 
@@ -69,7 +74,10 @@ it changes: that it is linked from a section, the guard holds; that the
 section is the one it changes, review.
 
 [`release/`](release/README.md) holds the registers a conformance claim
-rests on: the validator the gate runs, and every package it loads.
+rests on -- the validator the gate runs, and every package it loads -- and
+the two every release report reads: the release gates, and the known
+limitations of each record
+([0011](decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).
 
 ---
 

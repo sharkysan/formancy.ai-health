@@ -1,28 +1,45 @@
 // What release.yml's `check` job checked, pinned by sha256, and the `publish`
-// job's refusal of anything else -- formancy.ai-report's shape, which is
-// formancy.ai-data's (its 0035), without their release report, which arrives
-// here with the first release.
+// job's refusal of anything else (0011; formancy.ai-report 0014's shape,
+// which is formancy.ai-data 0035's).
 //
 // Every job of a run can write to its artefacts. So `check`, which holds
-// `contents: read` and no secret, checks the tarballs and the SBOM and writes
-// their sha256 as its outputs, and `publish`, which holds the npm token and
-// an identity that signs, refuses before it signs anything any downloaded
-// file that is not, byte for byte, one `check` pinned:
+// `contents: read` and no secret, checks the release report the gates built,
+// the tarballs and the SBOM -- held to what the report says a consumer's
+// install brings (formancy.ai-report 0017), and to npm's lockfile of the
+// install it was read from, so it names nothing that install does not hold
+// -- and writes their sha256 as its outputs; and `publish`, which holds the
+// npm token and an identity that signs, refuses before it signs anything
+// any downloaded file that is not, byte for byte, one `check` pinned, and a
+// report that is not this run's, green and whole:
 //
-//   node scripts/release/pins.mjs check --version <x.y.z> <tarball dir>   >> "$GITHUB_OUTPUT"
-//   node scripts/release/pins.mjs sbom <sbom file>                         >> "$GITHUB_OUTPUT"
-//   node scripts/release/pins.mjs downloads <tarball dir> <sbom file>      (CHECKED, CHECKED_SBOM set)
+//   node scripts/release/pins.mjs check --release <r> --version <x.y.z> --report <dir> <tarball dir>   >> "$GITHUB_OUTPUT"
+//   node scripts/release/pins.mjs sbom --report <dir> --installed <package-lock.json> <sbom file>     >> "$GITHUB_OUTPUT"
+//   node scripts/release/pins.mjs downloads --release <r> --version <x.y.z> --report <dir> <tarball dir> <sbom file>
 //
-// Node's built-ins only: neither job installs anything for this.
+// with GITHUB_SHA and GITHUB_RUN_ID, which every step has, and, for
+// `downloads`, CHECKED and CHECKED_SBOM, what `check` pinned. `check` runs
+// before cdxgen, whose dependencies nothing locks, so what it pins is what
+// the gates uploaded. A pin is a file's path as both jobs download it.
+//
+// Node's built-ins and the repository's own scripts only: the publish job
+// installs nothing.
 
 import { createHash } from 'node:crypto'
-import { readdirSync, readFileSync } from 'node:fs'
-import { basename, join } from 'node:path'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { basename, join, relative } from 'node:path'
+import { installedTarballProblems, notesProblems, reportFilesProblems, reportProblems, sbomInstallProblems, sbomReportProblems } from '../release-report/verify-publish.mjs'
 import { LICENSE_FIELD, LICENSE_FILES } from '../verify-licenses.mjs'
 import { readTarball } from './tarball.mjs'
 
 /** The hex sha256 of `bytes`. */
 export const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex')
+
+/** What a release reads of a tarball (`{ path, bytes }`): its file name and sha256, and its manifest's name, version and licence, and the licence files it carries. */
+export function describe({ path, bytes }) {
+  const entries = readTarball(bytes)
+  const manifest = JSON.parse(entries.get('package/package.json')?.toString('utf8') ?? '{}')
+  return { file: basename(path), sha256: sha256(bytes), name: manifest.name, version: manifest.version, license: manifest.license, carries: LICENSE_FILES.filter((file) => entries.has(`package/${file}`)) }
+}
 
 /**
  * What is wrong with a tarball a release would publish (`{ path, bytes }`):
@@ -30,12 +47,11 @@ export const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex'
  * LICENSE.md or NOTICE. Empty when nothing is.
  */
 export function tarballProblems({ path, bytes }, version) {
-  const entries = readTarball(bytes)
-  const manifest = JSON.parse(entries.get('package/package.json')?.toString('utf8') ?? '{}')
+  const { name, version: packed, license, carries } = describe({ path, bytes })
   const problems = []
-  if (manifest.version !== version) problems.push(`${path} is ${String(manifest.name)}@${String(manifest.version)}, not at the release version ${version}`)
-  if (manifest.license !== LICENSE_FIELD) problems.push(`${path} declares the licence ${String(manifest.license)}, not "${LICENSE_FIELD}"`)
-  for (const file of LICENSE_FILES) if (!entries.has(`package/${file}`)) problems.push(`${path} carries no ${file}`)
+  if (packed !== version) problems.push(`${path} is ${String(name)}@${String(packed)}, not at the release version ${version}`)
+  if (license !== LICENSE_FIELD) problems.push(`${path} declares the licence ${String(license)}, not "${LICENSE_FIELD}"`)
+  for (const file of LICENSE_FILES) if (!carries.includes(file)) problems.push(`${path} carries no ${file}`)
   return problems
 }
 
@@ -50,9 +66,14 @@ export function sbomProblems(bytes) {
   return document?.bomFormat === 'CycloneDX' ? [] : ['the SBOM is not a CycloneDX document']
 }
 
-/** The pins of `files` (`[{ path, bytes }]`): each file's name and the sha256 of its bytes, in name order. */
+/**
+ * The pins of `files` (`[{ path, bytes }]`): each file's path, '/'-separated,
+ * and the sha256 of its bytes, in path order. By path, not by name: the
+ * report's directory and the tarballs' are pinned together, and a file moved
+ * from one to the other is not the file that was checked.
+ */
 export function pinsOf(files) {
-  return Object.fromEntries(files.map(({ path, bytes }) => [basename(path), sha256(bytes)]).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+  return Object.fromEntries(files.map(({ path, bytes }) => [path.replaceAll('\\', '/'), sha256(bytes)]).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
 }
 
 /**
@@ -79,11 +100,43 @@ export function pinProblems(checked, files) {
   return problems
 }
 
-/** Every regular file directly in `dir`, as `{ path, bytes }`. */
+/** Every regular file directly in `dir`, as `{ path, bytes }`, its path as the workflow names it: relative to where the job runs, '/'-separated. */
 export function filesIn(dir) {
   return readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isFile())
-    .map((entry) => ({ path: join(dir, entry.name).replaceAll('\\', '/'), bytes: readFileSync(join(dir, entry.name)) }))
+    .map((entry) => entry.name)
+    .sort()
+    .map((name) => ({ path: relative(process.cwd(), join(dir, name)).replaceAll('\\', '/'), bytes: readFileSync(join(dir, name)) }))
+}
+
+/** The release report in `dir`, parsed. */
+export const readReport = (dir) => JSON.parse(readFileSync(join(dir, 'release-report.json'), 'utf8'))
+
+/** This run, as the report is held to it: the release and version given, and the commit and run GitHub says. */
+function thisRun(release, version, env = process.env) {
+  for (const name of ['GITHUB_SHA', 'GITHUB_RUN_ID']) if (!env[name]) throw new Error(`pins.mjs holds the report to this run, and ${name} is not set`)
+  return { release, version, commit: env.GITHUB_SHA, runId: env.GITHUB_RUN_ID }
+}
+
+/**
+ * Everything `check` refuses before it pins: the report, the files beside
+ * it, the body, and the tarballs -- each at the version, under its licence,
+ * and the install gate's.
+ */
+export function checkProblems({ reportDir, tarballDir, release, version, env = process.env }) {
+  const files = filesIn(tarballDir)
+  const tarballs = files.filter(({ path }) => path.endsWith('.tgz'))
+  const notes = join(reportDir, 'RELEASE_NOTES.md')
+  const report = existsSync(join(reportDir, 'release-report.json')) ? readReport(reportDir) : undefined
+  return [
+    ...reportFilesProblems(readdirSync(reportDir)),
+    ...(report === undefined ? [] : reportProblems(report, thisRun(release, version, env))),
+    ...notesProblems(existsSync(notes) ? readFileSync(notes, 'utf8') : null),
+    ...(tarballs.length === 0 ? [`${tarballDir} holds no tarball`] : []),
+    ...files.filter(({ path }) => !path.endsWith('.tgz')).map(({ path }) => `${path} is not a tarball`),
+    ...tarballs.flatMap((file) => tarballProblems(file, version)),
+    ...(report === undefined ? [] : installedTarballProblems(report, tarballs.map(describe))),
+  ]
 }
 
 /** Exit naming every problem, or say nothing was wrong. */
@@ -96,36 +149,45 @@ function settle(problems, what) {
 
 if (process.argv[1]?.replaceAll('\\', '/').endsWith('scripts/release/pins.mjs')) {
   const [stage, ...rest] = process.argv.slice(2)
+  const options = {}
+  const positional = []
+  for (let at = 0; at < rest.length; at += 1) {
+    if (rest[at].startsWith('--')) options[rest[at].slice(2)] = rest[(at += 1)]
+    else positional.push(rest[at])
+  }
+  const need = (name) => {
+    if (options[name] === undefined || options[name] === '') throw new Error(`pins.mjs ${String(stage)} needs --${name}`)
+    return options[name]
+  }
   if (stage === 'check') {
-    const at = rest.indexOf('--version')
-    const version = at === -1 ? undefined : rest[at + 1]
-    const dir = rest.find((arg, index) => index !== at && index !== at + 1)
-    if (version === undefined || version === '' || dir === undefined) throw new Error('usage: pins.mjs check --version <x.y.z> <tarball dir>')
-    const files = filesIn(dir)
-    const tarballs = files.filter(({ path }) => path.endsWith('.tgz'))
+    const [tarballDir] = positional
+    if (tarballDir === undefined) throw new Error('usage: pins.mjs check --release <r> --version <x.y.z> --report <dir> <tarball dir>')
+    const reportDir = need('report')
+    settle(checkProblems({ reportDir, tarballDir, release: need('release'), version: need('version') }), 'The report and the tarballs are not this release')
+    console.log(`checked=${JSON.stringify(pinsOf([...filesIn(reportDir), ...filesIn(tarballDir)]))}`)
+  } else if (stage === 'sbom') {
+    const [file] = positional
+    if (file === undefined) throw new Error('usage: pins.mjs sbom --report <dir> --installed <package-lock.json> <sbom file>')
+    const report = readReport(need('report'))
+    const lockfile = JSON.parse(readFileSync(need('installed'), 'utf8'))
+    const bytes = readFileSync(file)
+    const problems = sbomProblems(bytes)
+    const sbom = problems.length > 0 ? null : JSON.parse(bytes.toString('utf8'))
+    settle(sbom === null ? problems : [...sbomReportProblems(report, sbom), ...sbomInstallProblems(sbom, lockfile)], 'The SBOM is not this release’s')
+    console.log(`checked=${JSON.stringify(pinsOf([{ path: relative(process.cwd(), file), bytes }]))}`)
+  } else if (stage === 'downloads') {
+    const [tarballDir, sbom] = positional
+    if (tarballDir === undefined || sbom === undefined) throw new Error('usage: pins.mjs downloads --release <r> --version <x.y.z> --report <dir> <tarball dir> <sbom file>')
+    const reportDir = need('report')
     settle(
       [
-        ...(tarballs.length === 0 ? [`${dir} holds no tarball`] : []),
-        ...files.filter(({ path }) => !path.endsWith('.tgz')).map(({ path }) => `${path} is not a tarball`),
-        ...tarballs.flatMap((file) => tarballProblems(file, version)),
+        ...pinProblems(process.env.CHECKED, [...filesIn(reportDir), ...filesIn(tarballDir)]),
+        ...pinProblems(process.env.CHECKED_SBOM, [{ path: relative(process.cwd(), sbom), bytes: readFileSync(sbom) }]),
+        ...reportProblems(readReport(reportDir), thisRun(need('release'), need('version'))),
       ],
-      'The tarballs are not the release',
+      'What was downloaded is not what the check job checked, or not this run’s; nothing is signed or published',
     )
-    console.log(`checked=${JSON.stringify(pinsOf(tarballs))}`)
-  } else if (stage === 'sbom') {
-    const [file] = rest
-    if (file === undefined) throw new Error('usage: pins.mjs sbom <sbom file>')
-    const bytes = readFileSync(file)
-    settle(sbomProblems(bytes), 'The SBOM is not one')
-    console.log(`checked=${JSON.stringify(pinsOf([{ path: file, bytes }]))}`)
-  } else if (stage === 'downloads') {
-    const [dir, sbom] = rest
-    if (dir === undefined || sbom === undefined) throw new Error('usage: pins.mjs downloads <tarball dir> <sbom file>')
-    settle(
-      [...pinProblems(process.env.CHECKED, filesIn(dir)), ...pinProblems(process.env.CHECKED_SBOM, [{ path: sbom, bytes: readFileSync(sbom) }])],
-      'What was downloaded is not what the check job checked; nothing is signed or published',
-    )
-    console.log('downloads: every file is the one the check job checked')
+    console.log('downloads: every file is the one the check job checked, and the report is this run’s')
   } else {
     throw new Error('usage: pins.mjs check|sbom|downloads ...')
   }
