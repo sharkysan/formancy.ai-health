@@ -1,0 +1,43 @@
+{
+  "name": "@formancy/health-corpus",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Formancy Health's test support, never published: the PDFs Formancy Report 0.1.0 renders for the documents the packages build, and the fixtures that prove them.",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "test:coverage": "vitest run --coverage",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@formancy/health-core": "workspace:*",
+    "@formancy/health-document": "workspace:*",
+    "@formancy/report-render-pdf": "0.1.0",
+    "@formancy/report-runtime": "0.1.0",
+    "@formancy/report-spec": "0.1.0"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "unrun": "^0.3.1",
+    "vitest": "catalog:",
+    "@types/node": "catalog:"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sharkysan/formancy.ai-health.git",
+    "directory": "packages/health-corpus"
+  },
+  "homepage": "https://github.com/sharkysan/formancy.ai-health",
+  "bugs": "https://github.com/sharkysan/formancy.ai-health/issues"
+}

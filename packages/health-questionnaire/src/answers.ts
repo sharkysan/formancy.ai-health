@@ -30,12 +30,11 @@
  * null answer and no empty list, so each is an item with no answer. A
  * checkbox left false is answered false, as it is formancy's value.
  */
-import { Refusal } from '@formancy/health-core'
+import { item as indexed, Refusal, type Refusals } from '@formancy/health-core'
 import type { FieldDef } from '@formancy/spec'
 import type { ItemType } from './item-types.js'
 import type { QuestionnaireItem } from './resource.js'
 import type { QuestionnaireResponseAnswer, ResponseCoding } from './response-resource.js'
-import { item as indexed, type Refusals } from './refusals.js'
 import { dateOf, dateTimeOf, decimalOf, integerOf, timeOf } from './values.js'
 
 /** Whether formancy holds no answer in `value`, as `@formancy/core` 0.5.0's `unanswered` reads one -- but a checkbox's false, which is an answer. */

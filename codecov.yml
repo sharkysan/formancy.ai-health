@@ -50,6 +50,14 @@ component_management:
       name: packages/health-core
       paths:
         - packages/health-core/**
+    - component_id: health-corpus
+      name: packages/health-corpus
+      paths:
+        - packages/health-corpus/**
+    - component_id: health-document
+      name: packages/health-document
+      paths:
+        - packages/health-document/**
     - component_id: health-questionnaire
       name: packages/health-questionnaire
       paths:

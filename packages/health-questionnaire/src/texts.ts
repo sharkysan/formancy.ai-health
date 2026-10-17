@@ -26,10 +26,10 @@
  * written in the default language and never translated: it is the form's
  * name, not a question anybody answers.
  */
-import { language as languageTag, type FhirCode } from '@formancy/health-core'
+import { language as languageTag, member, type FhirCode, type Refusals } from '@formancy/health-core'
 import type { FormSchema, Text } from '@formancy/spec'
 import { EXTENSION, type Extension, type PrimitiveElement } from './resource.js'
-import { FORM, member, type Refusals } from './refusals.js'
+import { FORM } from './refusals.js'
 
 /** A text and its translations, ready to be written as `text` and `_text`, or `display` and `_display`. */
 export interface Written {

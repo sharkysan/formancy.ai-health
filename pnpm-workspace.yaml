@@ -31,3 +31,13 @@ catalog:
   # The repository's guards read YAML: the workflows' jobs and matrices, and
   # this file's packages.
   yaml: ^2.9.1
+
+# pnpm installs nothing released less than a day ago. Formancy Report 0.1.0,
+# from this repository's own rightsholder, was released on 16 October 2026
+# and taken by health-corpus the next morning, for the PDFs H06 attaches;
+# each release is named, so a later one waits its day as any other does.
+minimumReleaseAgeExclude:
+  - '@formancy/report-core@0.1.0'
+  - '@formancy/report-render-pdf@0.1.0'
+  - '@formancy/report-runtime@0.1.0'
+  - '@formancy/report-spec@0.1.0'

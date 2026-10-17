@@ -17,14 +17,14 @@
  * random source, so the same form and context give the same resource, and
  * `writeJson` the same bytes.
  */
-import { code, uri, type Refusal } from '@formancy/health-core'
+import { code, member, Refusals, uri, type Refusal } from '@formancy/health-core'
 import type { FormSchema } from '@formancy/spec'
 import { validateSchema } from '@formancy/spec/validate'
 import { checkContext, type CheckedContext, type QuestionnaireContext } from './context.js'
 import { itemsOf } from './items.js'
 import { placesOf, type Place } from './places.js'
 import { EXTENSION, SDC_QUESTIONNAIRE, VERSION_ALGORITHM, type Extension, type Questionnaire, type QuestionnaireItem } from './resource.js'
-import { FORM, fromPointer, member, Refusals } from './refusals.js'
+import { FORM, fromPointer } from './refusals.js'
 import { ruleEffects } from './rules.js'
 import { Texts } from './texts.js'
 

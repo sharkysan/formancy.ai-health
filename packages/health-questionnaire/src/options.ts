@@ -16,10 +16,9 @@
  * An option's picture is presentation, an address the Questionnaire does
  * not carry.
  */
-import { code, uri } from '@formancy/health-core'
+import { code, item, member, uri, type Refusals } from '@formancy/health-core'
 import type { FieldDef } from '@formancy/spec'
 import type { AnswerOption, Coding } from './resource.js'
-import { item, member, type Refusals } from './refusals.js'
 import type { Texts } from './texts.js'
 
 /** The code system the options of the field `key` are named in. */

@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    // TypeScript 6 includes no @types package unless told: this one runs
+    // under Node alone, renders with Report's Node entry and checks bytes
+    // with Node's Buffer and crypto, so it is told Node's.
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"]
+}

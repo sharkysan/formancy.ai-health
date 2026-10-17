@@ -10,7 +10,9 @@ import { reporters } from './vitest.results'
  * package's source converts a value through a JavaScript number or reads a
  * clock or a random source, the README's compatibility table is current, and
  * the validator gate's registers, verdict and command line hold (0005), and its
- * corpus holds everything the questionnaire package maps (0006).
+ * corpus holds everything the questionnaire package maps (0006) and every
+ * resource type the packages write, a PDF in each place health-document puts
+ * one (0008).
  *
  * Run as `pnpm test:repo`, and by CI on every pull request. A guard that is not
  * a gate is a comment.

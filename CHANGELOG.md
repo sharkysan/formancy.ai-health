@@ -10,6 +10,67 @@ later.
 
 ## Unreleased
 
+**A PDF is attached to a document Bundle by its own bytes, and a PDF/A
+declaration is refused** ([0008](docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)):
+`@formancy/health-document`, new. `toDocumentReference(pdf, context)`
+writes an R4 DocumentReference of a PDF whose `application/pdf`
+attachment carries the bytes as base64, or names a Binary that holds
+them, with their size and their SHA-1 -- computed here, since a hash a
+host gave and nothing checked would be a claim nobody made, and the HL7
+validator recomputes both from the data. The host declares what the PDF
+is: a plain PDF is attached when its first line is a PDF header and its
+last `%%EOF`, which is all that can be read without a parser; every PDF/A
+level is refused as unproved, because nothing here proves that a
+producer makes PDF/A until veraPDF arrives on a Report release that
+writes it, and a receiver archives a document as PDF/A on its sender's
+word. `toDocumentBundle(context)` writes a document of the host's
+resources: its identifier and timestamp the host's, the timestamp as
+`meta.lastUpdated` too, which documents.html calls the document date and
+makes mandatory, the Composition first, then only what it refers to;
+every reference is resolved before output, and a dangling one, an entry
+the Composition does not reach and two entries of one name each refuse
+it whole, every refusal at once, because a document "SHALL include only"
+what it refers to and a receiver cannot show one whose reference names
+nothing. That is stricter than R4 in two ways a host meets: a reference
+from an entry -- a DocumentReference's author by `Practitioner/<id>` --
+must resolve inside the document too, where R4 lets it point outside;
+and a DocumentReference's status, type, subject, date and title, and a
+Composition's subject and sections, are required where R4 makes them
+optional, since none is made up here. Every DocumentReference's
+attachment in a document is held to its bytes: a size, a hash or a media
+type that its data or the Binary it names does not have refuses the
+document as `mismatch`, because a host can pair a DocumentReference with
+another PDF's Binary and the HL7 validator does not look inside a Binary
+an attachment names; it costs about 0.1 s a megabyte, measured. The
+PDF's bytes are copied when checked by calling nothing they bring, so a
+Node Buffer reused after it was handed over changes nothing attached.
+
+**health-core writes bytes, and holds every package's refusals**:
+`toBase64Binary`, `base64Binary` and `fromBase64Binary` write, check and
+read R4's base64Binary in RFC 4648's one canonical spelling -- R4's own
+regex leaves `/` out -- because a PDF's bytes and their hash are
+base64Binary and the next package to write one should not write it
+again. `Refusals`, `member` and `item`, health-questionnaire's collector
+and path writers, move to health-core, so every package names where in
+one form; health-questionnaire writes what it wrote. Eight rules are
+new: `not-bytes`, `not-pdf`, `unproved`, `absent`, `dangling`,
+`unreferenced`, `duplicate-entry`, `mismatch`. `base64Binary` and
+`fromBase64Binary` read the text once, character by character, because
+a regex of repeated quanta ran out of stack on the base64 of a 4 MB PDF
+and threw a RangeError instead of answering.
+
+**`@formancy/health-corpus`, private and never published, takes
+`@formancy/report-spec`, `@formancy/report-runtime` and
+`@formancy/report-render-pdf` at exactly 0.1.0**, Formancy Report's first
+release, to render a synthetic referral letter's PDF with Report's own
+renderer, so that the acceptance -- Report's bytes attached and read back
+unchanged -- is shown on Report's output and not on a hand-made PDF. No
+published package depends on Report. The validator gate now judges three
+documents of that PDF and nine broken ones, and its corpus guard fails
+when a resource type the packages write stands in no resource it accepts.
+The validator's runner and synthetic forms stay in `scripts/validator/`:
+moving them would need dependencies health-corpus does not have.
+
 **A formancy submission is exported as a QuestionnaireResponse, or refused
 whole**
 ([0007](docs/decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)):

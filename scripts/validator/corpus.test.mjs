@@ -3,7 +3,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { describe, expect, test } from 'vitest'
-import { corpus } from './corpus.mjs'
+import { corpus, documentResponse } from './corpus.mjs'
 import { intake, intakeContext, intakeResponseContext, intakeRoutine, intakeUrgent, minimal, minimalAnswers, minimalContext, minimalResponseContext } from './forms.mjs'
 
 /**
@@ -18,16 +18,26 @@ import { intake, intakeContext, intakeResponseContext, intakeRoutine, intakeUrge
  * `@formancy/spec`'s field types and rule kinds is offered to
  * `toQuestionnaire` in a form of one field, and what it exports is what
  * the corpus must hold. A type the package starts to map fails this until
- * a corpus form uses it. It reads `packages/*\/dist`, so it needs
- * `pnpm build`, which the `verify` job runs before `pnpm test:repo`.
+ * a corpus form uses it. And every resource type a package writes, each
+ * export's resources derived from the export itself, and the two places
+ * health-document puts a PDF's bytes, must stand in a resource the gate
+ * accepts (0008). It reads `packages/*\/dist`, so it needs `pnpm build`,
+ * which the `verify` job runs before `pnpm test:repo`.
  */
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
-const QUESTIONNAIRE = join(repo, 'packages', 'health-questionnaire', 'dist', 'index.mjs')
-const CORE = join(repo, 'packages', 'health-core', 'dist', 'index.mjs')
+const built = (name) => join(repo, 'packages', name, 'dist', 'index.mjs')
+const QUESTIONNAIRE = built('health-questionnaire')
+const CORE = built('health-core')
+const DOCUMENT = built('health-document')
+const CORPUS = built('health-corpus')
 
-if (!existsSync(QUESTIONNAIRE) || !existsSync(CORE)) throw new Error('scripts/validator/corpus.test.mjs reads the packages as built: run pnpm build first')
-const { toQuestionnaire, toQuestionnaireResponse } = await import(pathToFileURL(QUESTIONNAIRE).href)
+if (![QUESTIONNAIRE, CORE, DOCUMENT, CORPUS].every((path) => existsSync(path))) throw new Error('scripts/validator/corpus.test.mjs reads the packages as built: run pnpm build first')
+const questionnairePackage = await import(pathToFileURL(QUESTIONNAIRE).href)
+const { toQuestionnaire, toQuestionnaireResponse } = questionnairePackage
 const core = await import(pathToFileURL(CORE).href)
+const documentPackage = await import(pathToFileURL(DOCUMENT).href)
+const documents = await import(pathToFileURL(CORPUS).href)
+const pdf = await documents.renderReferral()
 // @formancy/spec as health-questionnaire resolves it: the version it maps.
 const fromQuestionnaire = createRequire(join(repo, 'packages', 'health-questionnaire', 'package.json'))
 const { FIELD_TYPES, RULE_KINDS } = await import(pathToFileURL(fromQuestionnaire.resolve('@formancy/spec')).href)
@@ -186,11 +196,26 @@ describe('the corpus of the validator gate', () => {
   // the package's: made by toQuestionnaire and toQuestionnaireResponse,
   // never typed into the corpus.
   test('is made by the package, which accepts every form and submission of it', () => {
-    const entries = corpus({ core, questionnaire: { toQuestionnaire, toQuestionnaireResponse } })
+    const entries = corpus({ core, questionnaire: questionnairePackage, documents, pdf })
     const resource = (file) => entries.filter((entry) => entry.file === file)[0]?.resource
     expect(resource('questionnaire-referral-intake.json')).toEqual(exported(intake, intakeContext).questionnaire)
     expect(resource('questionnaire-minimal-v1.json')).toEqual(exported(minimal, minimalContext).questionnaire)
     for (const [file, made] of responses) expect(resource(file)).toEqual(made)
+  })
+
+  // Every document the gate is told is the package's is health-document's,
+  // made of the PDF Report rendered: never typed into the corpus.
+  test('holds documents health-document made of the PDF Report rendered', () => {
+    const entries = corpus({ core, questionnaire: questionnairePackage, documents, pdf })
+    const resource = (file) => entries.filter((entry) => entry.file === file)[0]?.resource
+    const made = (document) => {
+      const result = documents.referralDocument(document)
+      return result.ok ? result.bundle : result.refusals.map((refusal) => refusal.message)
+    }
+    expect(resource('bundle-document-pdf-as-data.json')).toEqual(made({ pdf, placement: 'data' }))
+    expect(resource('bundle-document-pdf-in-binary.json')).toEqual(made({ pdf, placement: 'binary' }))
+    const response = documentResponse(toQuestionnaireResponse, documents.NAMES)
+    expect(resource('bundle-document-with-questionnaireresponse.json')).toEqual(made({ pdf, placement: 'data', response }))
   })
 
   // A response is judged by the validator as what it holds: an answer of
@@ -220,5 +245,83 @@ describe('the corpus of the validator gate', () => {
     expect([...derived]).toEqual(expect.arrayContaining(['valueCoding', 'valueInteger', 'valueTime', 'nested items', 'repeated items']))
     const written = new Set(responses.flatMap(([, made]) => [...answerShapes(made.item)]))
     expect([...derived].filter((shape) => !written.has(shape)).sort()).toEqual([])
+  })
+})
+
+/** Every resource type `value` holds, a Bundle's entries' included. */
+function resourceTypes(value, into = new Set()) {
+  if (Array.isArray(value)) for (const each of value) resourceTypes(each, into)
+  else if (typeof value === 'object' && value !== null) {
+    if (typeof value.resourceType === 'string') into.add(value.resourceType)
+    for (const each of Object.values(value)) resourceTypes(each, into)
+  }
+  return into
+}
+
+/** Where a DocumentReference holds its PDF's bytes, for every one `value` holds: `data`, or `url` to a Binary. */
+function placements(value, into = new Set()) {
+  if (Array.isArray(value)) for (const each of value) placements(each, into)
+  else if (typeof value === 'object' && value !== null) {
+    if (value.resourceType === 'DocumentReference') for (const { attachment } of value.content) for (const name of ['data', 'url']) if (attachment[name] !== undefined) into.add(name)
+    for (const each of Object.values(value)) placements(each, into)
+  }
+  return into
+}
+
+/**
+ * Each export of each package, with the resources it writes when offered
+ * what the corpus offers it: its forms, its submissions, the PDF Report
+ * rendered in each place health-document puts one. An export no probe
+ * offers anything fails the suite, so a new one cannot write a resource
+ * type nobody asked about.
+ */
+const smallestPdf = new Uint8Array([...'%PDF-1.4\n%%EOF\n'].map((character) => character.charCodeAt(0)))
+const PROBES = {
+  toQuestionnaire: () => [exported(oneField('text')).questionnaire],
+  toQuestionnaireResponse: () => [toQuestionnaireResponse(oneField('text'), { only: 'a' }, { questionnaire: HOST, status: 'in-progress', authored: '2026-10-17' }).questionnaireResponse],
+  toDocumentReference: () =>
+    ['data', 'binary'].flatMap((placement) => {
+      const result = documentPackage.toDocumentReference({ bytes: smallestPdf, profile: 'PDF' }, documents.referralContext(placement))
+      return result.ok ? [result.documentReference, ...(result.binary === undefined ? [] : [result.binary])] : []
+    }),
+  // The Bundle and the Composition are what it writes; the host's
+  // entries in it are the host's, and are not counted as its.
+  toDocumentBundle: () =>
+    ['data', 'binary'].flatMap((placement) => {
+      const result = documentPackage.toDocumentBundle(documents.referralDocumentContext({ pdf: smallestPdf, placement }))
+      return result.ok ? [{ ...result.bundle, entry: [result.bundle.entry[0]] }] : []
+    }),
+}
+
+describe('the resources of the validator gate', () => {
+  const exportsOf = (module) => Object.entries(module).filter(([name, value]) => typeof value === 'function' && /^to[A-Z]/.test(name)).map(([name]) => name)
+
+  // A guard on the guard: an export the probes do not know writes
+  // resources nobody derived, and a probe that names no export probes
+  // nothing.
+  test('probe every export of the packages that writes a resource', () => {
+    expect([...exportsOf(questionnairePackage), ...exportsOf(documentPackage)].sort()).toEqual(Object.keys(PROBES).sort())
+  })
+
+  // Every resource type a package writes stands in a resource the gate
+  // accepts: one the packages started to write -- a Provenance, an MHD
+  // List -- fails here until the corpus holds it, and one the corpus
+  // stopped holding fails here until it does again.
+  test('hold every resource type the packages write, in resources the gate must accept', () => {
+    const written = new Set(Object.values(PROBES).flatMap((probe) => [...resourceTypes(probe())]))
+    expect([...written].sort()).toEqual(['Binary', 'Bundle', 'Composition', 'DocumentReference', 'Questionnaire', 'QuestionnaireResponse'])
+    const accepted = corpus({ core, questionnaire: questionnairePackage, documents, pdf }).filter((entry) => entry.expect === 'accepted')
+    const held = new Set(accepted.flatMap((entry) => [...resourceTypes(entry.resource)]))
+    expect([...written].filter((type) => !held.has(type)).sort()).toEqual([])
+  })
+
+  // The acceptance asks for the PDF attached, and health-document puts its
+  // bytes in two places: each must stand in a document the gate accepts.
+  test('hold the PDF in every place health-document puts it, in documents the gate must accept', () => {
+    const written = placements(PROBES.toDocumentReference())
+    expect([...written].sort()).toEqual(['data', 'url'])
+    const accepted = corpus({ core, questionnaire: questionnairePackage, documents, pdf }).filter((entry) => entry.expect === 'accepted')
+    const held = placements(accepted.map((entry) => entry.resource))
+    expect([...written].filter((place) => !held.has(place))).toEqual([])
   })
 })

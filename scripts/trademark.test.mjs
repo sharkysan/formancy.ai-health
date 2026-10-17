@@ -263,6 +263,8 @@ describe('the names', () => {
     expect(names[0]).toBe('formancy-health')
     expect(names).toContain('@formancy/health-core')
     expect(names).toContain('@formancy/health-questionnaire')
+    expect(names).toContain('@formancy/health-document')
+    expect(names).toContain('@formancy/health-corpus')
     expect(firstHeading('LICENSE.md')).toBe('Formancy Health Source-Available Licence')
     expect(firstHeading('README.md')).toBe('Formancy Health')
   })

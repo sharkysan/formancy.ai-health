@@ -41,14 +41,13 @@
  * rules have no order, so such a rule is refused, and the form's author
  * moves the field.
  */
-import { code, integer, type FhirCode } from '@formancy/health-core'
+import { code, integer, type FhirCode, type Refusals } from '@formancy/health-core'
 import { unanswered } from './answers.js'
 import type { Comparison, Condition, Literal, Operator } from './cel.js'
 import { itemTypeOf, repeats, type ItemType } from './item-types.js'
 import { optionCoding } from './options.js'
 import { isTopLevel, type Place, type Places } from './places.js'
 import type { EnableWhen } from './resource.js'
-import type { Refusals } from './refusals.js'
 import { dateOf, dateTimeOf, decimalLiteralOf, timeOf } from './values.js'
 
 /** What enables an item: its conditions, and how they join when there are several. */

@@ -78,6 +78,8 @@ describe('how big a source file may be', () => {
     expect(paths.length).toBeGreaterThan(10)
     expect(paths.filter((path) => path.startsWith('packages/health-core/src/') && path.endsWith('.ts'))).not.toEqual([])
     expect(paths.filter((path) => path.startsWith('packages/health-questionnaire/src/') && path.endsWith('.ts'))).not.toEqual([])
+    expect(paths.filter((path) => path.startsWith('packages/health-document/src/') && path.endsWith('.ts'))).not.toEqual([])
+    expect(paths.filter((path) => path.startsWith('packages/health-corpus/src/') && path.endsWith('.ts'))).not.toEqual([])
     expect(paths).toContain('packages/health-core/tsdown.config.ts')
     expect(paths).toContain('scripts/check-cla.mjs')
     expect(paths.filter((path) => NOT_SOURCE.test(path))).toEqual([])

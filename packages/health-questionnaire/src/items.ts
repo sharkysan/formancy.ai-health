@@ -36,12 +36,11 @@
  * 'http://hl7.org/fhir/questionnaire-item-control' version '4.0.1'`).
  */
 import type { FieldDef } from '@formancy/spec'
-import { code, type FhirInteger } from '@formancy/health-core'
+import { code, member, type FhirInteger, type Refusals } from '@formancy/health-core'
 import { itemTypeOf, repeats, type ItemType } from './item-types.js'
 import { answerOptionsOf } from './options.js'
 import type { Place, Places } from './places.js'
 import { EXTENSION, type Extension, type QuestionnaireItem } from './resource.js'
-import { member, type Refusals } from './refusals.js'
 import type { RuleEffects } from './rules.js'
 import type { Texts } from './texts.js'
 import { dateOf, dateTimeOf, decimalOf, integerOf, timeOf } from './values.js'

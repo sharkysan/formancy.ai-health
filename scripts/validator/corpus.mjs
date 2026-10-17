@@ -8,15 +8,20 @@
 // makes of the synthetic submissions there (0007), which between them hold
 // every answer type it writes -- scripts/validator/corpus.test.mjs derives
 // both sets from the package and holds the forms and submissions to them
-// -- and, each broken for one thing, the package's output with what a
-// decision of 0006 or 0007 left out put back, so the gate shows why it is
-// left out. A response is judged against its Questionnaire, which the gate
-// loads as a definition. **Built by hand** from health-core's primitives
-// and written by its `writeJson`: a Bundle, which no package builds yet
-// (H06), the Questionnaire and the QuestionnaireResponse it holds, which
-// predate the package's, and the resources broken to show each of the
-// gate's checks watching. A decimal goes in as `decimal('70.50')` and
-// comes out as the number token 70.50, and the validator reads that.
+// -- and the document Bundles `@formancy/health-document`, as built, makes
+// of the referral letter `@formancy/health-corpus` renders with Formancy
+// Report 0.1.0 (0008): the PDF in the DocumentReference's attachment, the
+// PDF in a Binary beside it, and the PDF beside a QuestionnaireResponse of
+// the intake; and, each broken for one thing, the package's output with
+// what a decision of 0006, 0007 or 0008 left out or refuses put back, so
+// the gate shows why. A response is judged against its Questionnaire,
+// which the gate loads as a definition. **Built by hand** from
+// health-core's primitives and written by its `writeJson`: a collection
+// Bundle, which no package builds, the Questionnaire and the
+// QuestionnaireResponse it holds, which predate the package's, and the
+// resources broken to show each of the gate's checks watching. A decimal
+// goes in as `decimal('70.50')` and comes out as the number token 70.50,
+// and the validator reads that.
 //
 // Every entry is one file the validator judges, with `expect`:
 //
@@ -38,7 +43,9 @@
 // external code system, in `questionnaire-code-unchecked-offline.json`, is
 // a LOINC code that does not exist: tx.fhir.org called it "Unknown code
 // '0000-0' in the CodeSystem 'http://loinc.org' version '2.82'" on
-// 17 October 2026, and it carries no LOINC content.
+// 17 October 2026, and it carries no LOINC content. The documents' codes
+// are HL7's own, from code systems the registered packages hold, which the
+// validator checks offline.
 
 import { intake, intakeContext, intakeResponseContext, intakeRoutine, intakeUrgent, minimal, minimalAnswers, minimalContext, minimalResponseContext } from './forms.mjs'
 
@@ -209,10 +216,140 @@ function responseOutput(core, { toQuestionnaireResponse }) {
 }
 
 /**
- * The corpus, built with `core`, health-core's exports, and `questionnaire`,
- * health-questionnaire's: `{ file, expect, why?, definition?, resource }` each.
+ * The document `referralDocument` makes of `document`; the gate stops on a
+ * refusal, which is the package refusing a document the corpus says it
+ * assembles.
  */
-export function corpus({ core, questionnaire: questionnairePackage }) {
+function assembled(referralDocument, document) {
+  const result = referralDocument(document)
+  if (!result.ok) throw new Error(`the package refused a corpus document: ${result.refusals.map((refusal) => refusal.message).join('; ')}`)
+  return result.bundle
+}
+
+/**
+ * The intake's urgent answers as the response a document carries: the
+ * same answers and Questionnaire as the corpus's response, its subject,
+ * author and source the document's own entries, by their urn:uuid.
+ */
+export function documentResponse(toQuestionnaireResponse, names) {
+  const context = { ...intakeResponseContext, subject: { reference: names.patient }, author: { reference: names.practitioner }, source: { reference: names.patient } }
+  return answered(toQuestionnaireResponse, intake, intakeUrgent, context)
+}
+
+/**
+ * The documents, accepted and broken: what `@formancy/health-document`
+ * makes of `@formancy/health-corpus`'s referral letter, the PDF
+ * `@formancy/report-render-pdf` 0.1.0 rendered, and that output with one
+ * thing R4's document rules ask for taken out, or one thing the package
+ * refuses put back (0008). A dangling reference and an entry the
+ * Composition does not reach are refused by the package before it writes
+ * a Bundle; here they are put back to show the validator refuses them too.
+ */
+function documentOutput(core, { toQuestionnaireResponse }, { NAMES, referralDocument, PRACTITIONER }, pdf) {
+  const withData = assembled(referralDocument, { pdf, placement: 'data' })
+  const inBinary = assembled(referralDocument, { pdf, placement: 'binary' })
+  const withResponse = assembled(referralDocument, { pdf, placement: 'data', response: documentResponse(toQuestionnaireResponse, NAMES) })
+  const broken = (made, change) => {
+    const resource = copy(made)
+    change(resource)
+    return resource
+  }
+  const at = (bundle, fullUrl) => bundle.entry.findIndex((entry) => entry.fullUrl === fullUrl)
+  const attachment = (bundle) => bundle.entry[at(bundle, NAMES.documentReference)].resource.content[0].attachment
+  return [
+    { file: 'bundle-document-pdf-as-data.json', expect: 'accepted', resource: withData },
+    { file: 'bundle-document-pdf-in-binary.json', expect: 'accepted', resource: inBinary },
+    { file: 'bundle-document-with-questionnaireresponse.json', expect: 'accepted', resource: withResponse },
+    {
+      file: 'bundle-document-without-identifier.json',
+      why: "a document without its identifier, R4's bdl-9, which the package refuses to assemble without the host's",
+      expect: [{ severity: 'error', id: 'http://hl7.org/fhir/StructureDefinition/Bundle#bdl-9', expression: 'Bundle' }],
+      resource: broken(withData, (bundle) => {
+        delete bundle.identifier
+      }),
+    },
+    {
+      file: 'bundle-document-without-timestamp.json',
+      why: "a document without its timestamp, R4's bdl-10, which the package writes from the host's instant beside meta.lastUpdated",
+      expect: [{ severity: 'error', id: 'http://hl7.org/fhir/StructureDefinition/Bundle#bdl-10', expression: 'Bundle' }],
+      resource: broken(withData, (bundle) => {
+        delete bundle.timestamp
+      }),
+    },
+    {
+      file: 'bundle-document-composition-not-first.json',
+      why: "a document whose first entry is not its Composition, R4's bdl-11, which the package always writes first",
+      // The validator says it three ways: bdl-11, its own check of the first
+      // entry -- placed at the second, measured -- and the Composition and
+      // the DocumentReference, which no longer come after it, unreachable
+      // forwards from it, both placed at the last entry (measured).
+      expect: [
+        { severity: 'error', id: 'http://hl7.org/fhir/StructureDefinition/Bundle#bdl-11', expression: 'Bundle' },
+        { severity: 'error', id: 'Bundle_BUNDLE_Entry_Document', expression: 'Bundle.entry[1].resource' },
+        { severity: 'warning', id: 'BUNDLE_BUNDLE_ENTRY_REVERSE_R4', expression: 'Bundle.entry[5]' },
+      ],
+      resource: broken(withData, (bundle) => {
+        bundle.entry.push(bundle.entry.shift())
+      }),
+    },
+    {
+      file: 'bundle-document-composition-without-date.json',
+      why: "a Composition without its date, which R4 makes 1..1 and the package refuses to write without the host's",
+      expect: [{ severity: 'error', id: 'Validation_VAL_Profile_Minimum', expression: 'Bundle.entry[0].resource/*Composition/null*/' }],
+      resource: broken(withData, (bundle) => {
+        delete bundle.entry[0].resource.date
+      }),
+    },
+    {
+      file: 'bundle-document-dangling-reference.json',
+      why: 'a reference to a resource the document does not hold, the patient taken out, which the package refuses as dangling',
+      // An error for the Composition's subject, which the validator places at
+      // the entry after the Composition while its message names
+      // Composition.subject, and a warning at each reference that the
+      // urn:uuid is in no entry (measured).
+      expect: [
+        { severity: 'error', id: 'Bundle_BUNDLE_Entry_NotFound', expression: 'Bundle.entry[1].resource.subject' },
+        { severity: 'warning', id: 'Bundle_BUNDLE_Not_Local', expression: 'Bundle.entry[0].resource/*Composition/null*/.subject' },
+        { severity: 'warning', id: 'Bundle_BUNDLE_Not_Local', expression: 'Bundle.entry[2].resource/*DocumentReference/null*/.subject' },
+      ],
+      resource: broken(withData, (bundle) => {
+        bundle.entry.splice(at(bundle, NAMES.patient), 1)
+      }),
+    },
+    {
+      file: 'bundle-document-unreferenced-entry.json',
+      why: 'an entry the Composition does not reach, a second practitioner, which the package refuses as unreferenced',
+      expect: [{ severity: 'error', id: 'Bundle_BUNDLE_Entry_Orphan_DOCUMENT', expression: 'Bundle.entry[5]' }],
+      resource: broken(withData, (bundle) => {
+        bundle.entry.push({ fullUrl: 'urn:uuid:2b0e6f3c-5d1a-4e8b-9c7f-1a2b3c4d5eff', resource: copy(PRACTITIONER) })
+      }),
+    },
+    {
+      file: 'bundle-document-attachment-size-wrong.json',
+      why: "an attachment's size that is not its bytes', which the package counts from the bytes it encodes",
+      expect: [{ severity: 'error', id: 'TYPE_SPECIFIC_CHECKS_DT_ATT_SIZE_CORRECT', expression: 'Bundle.entry[3].resource/*DocumentReference/null*/.content[0].attachment' }],
+      resource: broken(withData, (bundle) => {
+        attachment(bundle).size = core.unsignedInt(String(pdf.length + 1), 'corpus')
+      }),
+    },
+    {
+      file: 'bundle-document-attachment-hash-wrong.json',
+      why: "an attachment's SHA-1 that is not its bytes' -- that of no bytes at all -- which the package computes from the bytes it encodes; the validator computes it too, and accepts the package's",
+      expect: [{ severity: 'error', id: 'TYPE_SPECIFIC_CHECKS_DT_ATT_HASH_MISMATCH', expression: 'Bundle.entry[3].resource/*DocumentReference/null*/.content[0].attachment' }],
+      resource: broken(withData, (bundle) => {
+        attachment(bundle).hash = '2jmj7l5rSw0yVb/vlWAYkK/YBwk='
+      }),
+    },
+  ]
+}
+
+/**
+ * The corpus, built with `core`, health-core's exports; `questionnaire`,
+ * health-questionnaire's; `documents`, health-corpus's, which make
+ * health-document's Bundles; and `pdf`, the PDF health-corpus rendered with
+ * Report: `{ file, expect, why?, definition?, resource }` each.
+ */
+export function corpus({ core, questionnaire: questionnairePackage, documents, pdf }) {
   const { code, dateTime, decimal, id, uri } = core
 
   // SDC 4.0.0's sdc-2: "If version is present, versionAlgorithm must be
@@ -275,6 +412,7 @@ export function corpus({ core, questionnaire: questionnairePackage }) {
   return [
     ...packageOutput(core, questionnairePackage),
     ...responseOutput(core, questionnairePackage),
+    ...documentOutput(core, questionnairePackage, documents, pdf),
     { file: 'questionnaire.json', expect: 'accepted', definition: true, resource: questionnaire() },
     { file: 'questionnaireresponse.json', expect: 'accepted', resource: questionnaireResponse() },
     { file: 'bundle.json', expect: 'accepted', resource: bundle() },
