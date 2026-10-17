@@ -78,7 +78,10 @@ parser of its own, and holds the one `Refusal` every package refuses with
 ([0004](docs/decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)).
 `@formancy/health-questionnaire` exports a formancy form, read through
 `@formancy/spec` 0.5.0, as an SDC 4.0.0 Questionnaire, or refuses it whole
-([0006](docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)).
+([0006](docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)),
+and a submission of it as a QuestionnaireResponse walked from that
+Questionnaire's own mapping
+([0007](docs/decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)).
 That is all the product code there is. Beside them, and not product code,
 the validator gate judges what the packages write
 ([0005](docs/decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md)):
@@ -92,7 +95,7 @@ further only where a part has its own reason to change:
    profiles, and the refusal of a version it does not know. No framework, no
    Node, no network, no formancy or Report dependency.
 2. `health-questionnaire` -- a formancy form to an SDC Questionnaire
-   (0006), and answers to a QuestionnaireResponse; extraction later. It
+   (0006), and answers to a QuestionnaireResponse (0007); extraction later. It
    reads forms through `@formancy/spec` at an exact version, and depends on
    nothing else but health-core.
 3. `health-document` -- the document Bundle and its Composition; a
@@ -164,7 +167,8 @@ and the document says what. Three shapes, in order of preference:
    converts a value through a JavaScript number or reads a clock or a random
    source; `scripts/compatibility.test.mjs` fails when the compatibility
    table is stale; `scripts/validator/corpus.test.mjs` fails when the
-   questionnaire package maps something no corpus form holds;
+   questionnaire package maps or writes something no corpus form or
+   submission holds;
    `scripts/validator/registers.test.mjs` fails when a
    register is malformed or, where the validator job has run, says other
    than the bytes and the validator's own load. All of them run as
@@ -202,11 +206,13 @@ is the tool for it.
   the packages produced. Not on the builder's input, not on hand-written
   JSON, and not through a mocked validator. The corpus
   (`scripts/validator/corpus.mjs`) holds what health-questionnaire, as
-  built, makes of the synthetic forms in `scripts/validator/forms.mjs`,
-  and builds by hand only what no package builds yet, written by
-  health-core's `writeJson`; `scripts/validator/corpus.test.mjs` fails when
-  a field type, item type or rule the package maps is in no corpus form. A
-  conformance claim is about those Questionnaires and no other.
+  built, makes of the synthetic forms and submissions in
+  `scripts/validator/forms.mjs`, each response judged against its
+  Questionnaire, and builds by hand only what no package builds yet,
+  written by health-core's `writeJson`; `scripts/validator/corpus.test.mjs`
+  fails when a field type, item type or rule the package maps is in no
+  corpus form, or an answer type it writes in no corpus response. A
+  conformance claim is about those resources and no other.
 - The validator and every guide package are fetched by exact version,
   refused unless their hash is the one `docs/release/validator.json` or
   `docs/release/ig-packages.json` registers, and run offline: no

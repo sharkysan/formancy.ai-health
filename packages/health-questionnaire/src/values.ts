@@ -1,15 +1,16 @@
 /**
  * A formancy value as the FHIR value of an item's type: a bound of a
- * field, or the literal a condition compares an answer with. Decided once,
- * here, for both, and for the answers H05 writes.
+ * field, the literal a condition compares an answer with, or an answer.
+ * Decided once, here, for all three (0006, 0007).
  *
  * - **A number** in a formancy form is a JavaScript number: `min`, `max`
  *   and `step` are typed `number` by `@formancy/spec` 0.5.0, and an answer
- *   is a JSON number. So a bound reaches this package as a double, and
- *   its text is the shortest that reads back as that double, which is the
- *   value formancy compares an answer with: a bound written `0.10` in the
- *   form's JSON is 0.1 by the time anything here sees it, and nothing can
- *   tell. A whole number is written from its BigInt, exactly, and held to
+ *   is a JSON number. So a bound or an answer reaches this package as a
+ *   double, and its text is the shortest that reads back as that double,
+ *   which is the value formancy holds and compares: `0.10` in the form's
+ *   JSON, or typed by a person, is 0.1 by the time anything here sees it,
+ *   and nothing can tell. -0 is `-0`, since `0` reads back as another
+ *   double. A whole number is written from its BigInt, exactly, and held to
  *   R4's 32-bit range, never wrapped. A literal in a rule is text, and
  *   keeps its digits, where they are digits a double keeps: CEL compares
  *   an answer with the double nearest the literal, and R4 with the
@@ -30,15 +31,22 @@
 import { TEMPORAL_SHAPES } from '@formancy/spec'
 import { Refusal, date, dateTime, decimal, integer, time, type FhirDate, type FhirDateTime, type FhirDecimal, type FhirInteger, type FhirTime } from '@formancy/health-core'
 
-/** A formancy number bound as a FHIR decimal. */
+/**
+ * A formancy number, a bound or an answer, as a FHIR decimal: the
+ * shortest text that reads back as its double, which ECMAScript's number
+ * to string is for every double but -0, which it writes `0`. NaN and the
+ * infinities have no such text, and are refused as not a decimal.
+ */
 export function decimalOf(value: number, path: string): FhirDecimal {
-  return decimal(String(value), path)
+  return decimal(Object.is(value, -0) ? '-0' : String(value), path)
 }
 
 /**
- * A formancy number bound as a FHIR integer: from its BigInt when it is
- * whole, which is exact for every whole double, so a value past 32 bits is
- * refused as outside R4's range; a fraction is refused as not an integer.
+ * A formancy number, a bound or an answer, as a FHIR integer: from its
+ * BigInt when it is whole, which is exact for every whole double, so a
+ * value past 32 bits is refused as outside R4's range; a fraction --
+ * 2.0000001, which formancy's step of one admits within its tolerance --
+ * is refused as not an integer, never rounded.
  */
 export function integerOf(value: number, path: string): FhirInteger {
   return integer(Number.isInteger(value) ? BigInt(value) : String(value), path)

@@ -22,7 +22,7 @@ import type { FormSchema } from '@formancy/spec'
 import { validateSchema } from '@formancy/spec/validate'
 import { checkContext, type CheckedContext, type QuestionnaireContext } from './context.js'
 import { itemsOf } from './items.js'
-import { placesOf } from './places.js'
+import { placesOf, type Place } from './places.js'
 import { EXTENSION, SDC_QUESTIONNAIRE, VERSION_ALGORITHM, type Extension, type Questionnaire, type QuestionnaireItem } from './resource.js'
 import { FORM, fromPointer, member, Refusals } from './refusals.js'
 import { ruleEffects } from './rules.js'
@@ -71,6 +71,53 @@ function questionnaireOf(form: FormSchema, context: CheckedContext, url: string,
   }
 }
 
+/** A field's place in the form beside the item it became, and its fields' the same: what the answers' export walks (response.ts). */
+export interface Pair {
+  readonly place: Place
+  readonly item: QuestionnaireItem
+  readonly children: readonly Pair[]
+}
+
+/** A form mapped: its Questionnaire, and each of its fields beside its item, in the Questionnaire's order. */
+export interface Mapped {
+  readonly questionnaire: Questionnaire
+  readonly pairs: readonly Pair[]
+}
+
+/**
+ * The places beside the items made of them. itemsOf makes one item per
+ * place, in order, when nothing is refused, and a container's of its
+ * fields: anything else is a bug here, and thrown as one.
+ */
+export function pairsOf(places: readonly Place[], items: readonly QuestionnaireItem[]): Pair[] {
+  if (places.length !== items.length) throw new Error('the items are not one per field')
+  return places.map((place, index) => {
+    const item = items[index] as QuestionnaireItem
+    if (item.linkId !== place.field.key) throw new Error('an item is not its field')
+    return { place, item, children: pairsOf(place.children, item.item ?? []) }
+  })
+}
+
+/**
+ * `form` mapped with `context`, already checked; or undefined, with every
+ * reason it cannot be in `refusals`. The one reading of a form both
+ * exports share: the Questionnaire's items, and the response's walk of
+ * them, come from here, so the two cannot disagree on an item, a linkId,
+ * a type or a condition.
+ */
+export function mapForm(form: FormSchema, context: CheckedContext | undefined, refusals: Refusals): Mapped | undefined {
+  const before = refusals.count
+  const read = readForm(form, refusals)
+  if (read === undefined || context === undefined) return undefined
+  const url = `${context.base}/Questionnaire/${read.id}`
+  const places = placesOf(read)
+  const texts = new Texts(read, context.languages, refusals)
+  const effects = ruleEffects(read, places, url, refusals)
+  const items = itemsOf(places.roots, { places, effects, texts, url, refusals })
+  if (refusals.count > before) return undefined
+  return { questionnaire: questionnaireOf(read, context, url, texts, items), pairs: pairsOf(places.roots, items) }
+}
+
 /**
  * `form` as a Questionnaire, with what `context` says of it; or every
  * reason it cannot be one, each naming where in the form or the context
@@ -78,14 +125,6 @@ function questionnaireOf(form: FormSchema, context: CheckedContext, url: string,
  */
 export function toQuestionnaire(form: FormSchema, context: QuestionnaireContext): QuestionnaireExport {
   const refusals = new Refusals()
-  const checked = checkContext(context, refusals)
-  const read = readForm(form, refusals)
-  if (read === undefined || checked === undefined) return { ok: false, refusals: refusals.list }
-  const url = `${checked.base}/Questionnaire/${read.id}`
-  const places = placesOf(read)
-  const texts = new Texts(read, checked.languages, refusals)
-  const effects = ruleEffects(read, places, url, refusals)
-  const items = itemsOf(places.roots, { places, effects, texts, url, refusals })
-  if (refusals.count > 0) return { ok: false, refusals: refusals.list }
-  return { ok: true, questionnaire: questionnaireOf(read, checked, url, texts, items) }
+  const mapped = mapForm(form, checkContext(context, refusals), refusals)
+  return mapped === undefined ? { ok: false, refusals: refusals.list } : { ok: true, questionnaire: mapped.questionnaire }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@formancy/health-questionnaire",
   "version": "0.1.0",
-  "description": "Formancy Health's questionnaire: a formancy form as a Structured Data Capture Questionnaire for the HL7® FHIR® standard, R4 4.0.1, refused whole where a field has no faithful item. No framework, no Node, no network.",
+  "description": "Formancy Health's questionnaire: a formancy form as a Structured Data Capture Questionnaire, and its answers as a QuestionnaireResponse, for the HL7® FHIR® standard, R4 4.0.1, each refused whole where a field or an answer has no faithful item. No framework, no Node, no network.",
   "license": "SEE LICENSE IN LICENSE.md",
   "type": "module",
   "sideEffects": false,

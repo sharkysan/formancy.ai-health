@@ -10,7 +10,9 @@
  *   as an SDC `calculatedExpression`: translating formancy's CEL into
  *   FHIRPath is not this package's, and a calculated item is where clinical
  *   logic would start (plan 15.2). The value formancy computed travels as
- *   the captured answer.
+ *   the captured answer. On a field a visible rule can hide it is
+ *   refused: formancy computes it there while it is hidden, and keeps
+ *   the value, which R4 gives no disabled item (0007).
  * - `disabled` and `required`, which hold while an expression does, and
  *   `validate` and `check`, which judge an answer: refused. SDC states each
  *   only in FHIRPath, or not at all.
@@ -42,12 +44,20 @@ export function ruleEffects(form: FormSchema, places: Places, url: string, refus
   const scope: ConditionScope = { places, url, skipped, refusals }
   const enabling = new Map<FieldDef, Enabling>()
   const readOnly = new Set<FieldDef>()
+  /** Whether a visible rule can hide the field at `place`: it, or a container it is in, is a visible rule's target. */
+  const hiddenByVisible = (place: Place) => [place, ...place.within].some((at) => at.dataPath !== undefined && targeted.has(at.dataPath))
 
   for (const [index, rule] of rules.entries()) {
     const path = item(member(member(FORM, 'logic'), 'rules'), index)
     if (rule.kind === 'computed') {
       const target = places.byDataPath.get(rule.target)
-      if (target === undefined || target.field.fields !== undefined || target.field.type === 'static') refusals.add('unmapped', member(path, 'target'))
+      // formancy computes a field while a visible rule hides it, and the
+      // value stays in its submission (measured, 0007), where R4 gives a
+      // disabled item no answer: every such response would be refused,
+      // as clearOnHide off would be. On a page a skip rule walks past it
+      // is left out with every other value there.
+      const holdsNone = target === undefined || target.field.fields !== undefined || target.field.type === 'static'
+      if (holdsNone || hiddenByVisible(target)) refusals.add('unmapped', member(path, 'target'))
       else readOnly.add(target.field)
       continue
     }
@@ -69,7 +79,6 @@ export function ruleEffects(form: FormSchema, places: Places, url: string, refus
     if (enabled !== undefined) enabling.set(target.field, enabled)
   }
 
-  const hideable = (place: Place) =>
-    [place, ...place.within].some((at) => at.dataPath !== undefined && targeted.has(at.dataPath)) || (place.page !== undefined && skipped.has(place.page))
+  const hideable = (place: Place) => hiddenByVisible(place) || (place.page !== undefined && skipped.has(place.page))
   return { enabling, readOnly, hideable }
 }

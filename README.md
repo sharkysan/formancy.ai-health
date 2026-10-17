@@ -12,7 +12,7 @@ profiles a country publishes rather than to FHIR's base resources alone.
 What an export cannot say in the profile it targets, it refuses rather than
 leaves out.
 
-> **Status: started 16 October 2026. One export exists, a formancy form as an SDC Questionnaire, and nothing is released.**
+> **Status: started 16 October 2026. Two exports exist, a formancy form as an SDC Questionnaire and a submission of it as a QuestionnaireResponse, and nothing is released.**
 >
 > What exists on 17 October 2026 is the licence, the pipeline that proves
 > the packages, as Formancy Report's proves its own, and two packages.
@@ -20,11 +20,13 @@ leaves out.
 > primitives to their types -- a decimal as its digits, never a JavaScript
 > number -- and writes and reads FHIR JSON that keeps every digit.
 > `@formancy/health-questionnaire` exports a formancy form as an SDC 4.0.0
-> Questionnaire, translated into the languages a host asks for, or refuses
-> it whole. Beside them, the gate that runs the HL7 FHIR validator, offline,
-> against pinned guide packages, over the Questionnaires the package makes
-> of synthetic forms and resources built by hand. Next are a person's
-> answers as a QuestionnaireResponse, then CH Core and CH ORF.
+> Questionnaire, translated into the languages a host asks for, and a
+> submission of it as a QuestionnaireResponse to that Questionnaire, or
+> refuses either whole. Beside them, the gate that runs the HL7 FHIR
+> validator, offline, against pinned guide packages, over the
+> Questionnaires and responses the package makes of synthetic forms and
+> submissions, and resources built by hand. Next are the document Bundle
+> with a Report PDF, then CH Core and CH ORF.
 
 ## Licence, in one table
 
@@ -78,12 +80,11 @@ comes with it.
 | Package | What it is |
 | --- | --- |
 | `@formancy/health-core` | The FHIR version the module emits, R4 4.0.1; FHIR R4's primitives, each checked against its type when made, a number held as its digits; and a writer and a reader of FHIR JSON that keep every digit, give the same bytes for the same input, and refuse an empty value, a null outside an array, a name given twice and a JavaScript number, naming where and never quoting the value ([0004](./docs/decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)). No framework, no Node, no network. |
-| `@formancy/health-questionnaire` | A formancy form, read through `@formancy/spec` 0.5.0, as an SDC 4.0.0 Questionnaire: one item per field with its key as the linkId, under the host's canonical base and formancy's published version, its texts translated into each language the host asks for; a visibility rule as `enableWhen` where it is a simple comparison, a computed field read-only, and no FHIRPath. What an item cannot say as the field says it refuses the whole export, every refusal at once, naming where ([0006](./docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)). No framework, no Node, no network. |
+| `@formancy/health-questionnaire` | A formancy form, read through `@formancy/spec` 0.5.0, as an SDC 4.0.0 Questionnaire: one item per field with its key as the linkId, under the host's canonical base and formancy's published version, its texts translated into each language the host asks for; a visibility rule as `enableWhen` where it is a simple comparison, a computed field read-only, and no FHIRPath. What an item cannot say as the field says it refuses the whole export, every refusal at once, naming where ([0006](./docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)). And a formancy submission of the form as a QuestionnaireResponse to that Questionnaire, walked from its own items: each answer of its item's type, a number answer exactly the double formancy holds, no answer where formancy holds none, a value on a page a skip rule walks past left out, the subject and the author by name from the host; a value of another type, an option not offered, a value past a bound, a name the form does not have or an answer to an item the other answers disable refuses it whole ([0007](./docs/decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)). No framework, no Node, no network. |
 
-Planned and not here: the QuestionnaireResponse of a person's answers and
-extraction from it, the document Bundle that carries a Report PDF, and the
-Swiss profiles; then Germany's, the United Kingdom's, Austria's and HL7
-Europe's.
+Planned and not here: extraction from a QuestionnaireResponse, the
+document Bundle that carries a Report PDF, and the Swiss profiles; then
+Germany's, the United Kingdom's, Austria's and HL7 Europe's.
 
 A decimal travels as its text. Build one with `decimal('70.50', path)`
 from the text a form or a database gave you, never from a JavaScript
@@ -161,7 +162,9 @@ access at all. An error fails the gate, and so does a warning that
 accepted. Every resource of the corpus, `scripts/validator/corpus.mjs`, is
 written by health-core's `writeJson`: the Questionnaires health-questionnaire
 makes of the synthetic forms in `scripts/validator/forms.mjs`, which hold
-every field type and rule it maps, and resources built by hand where no
+every field type and rule it maps, the QuestionnaireResponses it makes of
+the synthetic submissions there, which hold every answer type it writes,
+each judged against its Questionnaire, and resources built by hand where no
 package builds one yet. Some are broken on purpose, each for one thing, and
 the gate fails unless the validator refuses each for exactly that.
 
@@ -181,12 +184,15 @@ language only as far as its own reading of a tag goes, which refuses
 a code system nothing knows, a made-up system URI, is only information,
 which the gate accepts; the code systems a Questionnaire names for a
 form's options are such systems. What the gate shows is that the
-Questionnaires health-questionnaire makes of the corpus's forms are accepted
-against SDC 4.0.0 on R4 4.0.1 by the HL7 FHIR validator 7.0.2, offline, with
-no error and no warning but the registered ones, their option codes and
-the registration of their language tags unchecked -- health-core holds
-each tag to its form, nothing to the registry; not that a form the corpus
-lacks would be, and nothing yet about answers.
+Questionnaires health-questionnaire makes of the corpus's forms, and the
+responses it makes of the corpus's submissions, against those
+Questionnaires, are accepted against SDC 4.0.0 on R4 4.0.1 by the HL7 FHIR
+validator 7.0.2, offline, with no error and no warning but the registered
+ones, their option codes and the registration of their language tags
+unchecked -- health-core holds each tag to its form, nothing to the
+registry; not that a form or a submission the corpus lacks would be, and
+nothing about a response that is not complete, which the corpus has none
+of.
 
 ### What it is built and judged against
 

@@ -3,11 +3,15 @@
 A formancy form as a Structured Data Capture (SDC) 4.0.0 Questionnaire for
 the HL7® FHIR® standard, R4 4.0.1: one item per field, with its key as the
 linkId, its texts in the form's default language and translated into the
-languages the host asks for. What the Questionnaire cannot say as the form
-says it is refused, naming where, and the whole export with it: never a
-part of one. No framework, no Node, no network. Decision
+languages the host asks for; and a submission of it as a
+QuestionnaireResponse to that Questionnaire. What a resource cannot say as
+the form or the submission says it is refused, naming where, and the whole
+export with it: never a part of one. No framework, no Node, no network.
+Decisions
 [0006](../../docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)
-says why each part is as it is, and what it costs.
+and
+[0007](../../docs/decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)
+say why each part is as it is, and what it costs.
 
 ```ts
 import { writeJson } from '@formancy/health-core'
@@ -64,19 +68,32 @@ page and a static text, where it is refused. `maxLength` is `maxLength`;
 `minLength`, `min`, `max`, `earliest` and `latest` are R4's `minLength`,
 `minValue` and `maxValue` extensions; `maxItems` is `questionnaire-maxOccurs`, and
 `minItems` above zero `questionnaire-minOccurs` on a required item, refused
-on another. `pattern`, `format`, `mask` and an `optionsSource` are refused.
+on another. A repeater's `minItems` is not `questionnaire-minOccurs`, which
+the HL7 validator counts against each row's answers, so that no response
+would validate: one, on a required repeater, is what `required` says
+already, and one above is refused. `pattern`, `format`, `mask` and an
+`optionsSource` are refused.
 A whole-number bound past R4's 32 bits is refused, never wrapped.
 
 Rules: a `visible` rule is `enableWhen` where its CEL is a comparison of a
 field at the top of the form, before the item, with a literal -- `==`,
 `!=`, a list holding a value, a chain of those joined by one of `&&` or
-`||`, or one ordering alone, written with its unanswered case, since
-formancy shows a field whose rule cannot evaluate. A number literal keeps
+`||`, or one ordering alone. An ordering is written with its unanswered
+case, since formancy shows a field whose rule cannot evaluate, and so is a
+`!=`, which formancy holds for an unanswered field and the validator does
+not; under `&&` a `!=` is refused, since its unanswered case cannot be
+nested there. A number literal keeps
 its digits, and one of more than fifteen significant digits is refused,
 since CEL compares the double nearest it and R4 the digits. A `skip` rule is the
-page's `enableWhen`, negated. A `computed` field is `readOnly`, and never a
-`calculatedExpression`. Every other rule, and every other expression, is
-refused: no FHIRPath is written anywhere.
+page's `enableWhen`, negated, with the same refusals: a list holding a
+value, negated, is refused. A comparison with a text of nothing but
+whitespace is refused, since formancy shows what it enables and the
+response, reading formancy's "no answer", never writes such a text. A
+`computed` field is `readOnly`, and never a `calculatedExpression`; on a
+field a visible rule can hide it is refused, as `clearOnHide: false` is
+there, since formancy computes the field while it is hidden and keeps the
+value. Every other rule, and every other expression, is refused: no
+FHIRPath is written anywhere.
 
 Not carried, because they say how a form looks and not what it collects:
 widgets, layouts, a datagrid's columns, a repeater's button labels, an
@@ -85,11 +102,89 @@ extension on the text's element; a text missing in a language asked for is
 refused. The form's title is a plain string in `@formancy/spec` 0.5.0 and
 is written untranslated.
 
+## The answers
+
+```ts
+import { writeJson } from '@formancy/health-core'
+import { toQuestionnaireResponse } from '@formancy/health-questionnaire'
+
+const result = toQuestionnaireResponse(form, engine.value(), {
+  questionnaire: context, // what toQuestionnaire was given for this form
+  status: 'completed',
+  authored: '2026-10-17T10:00:00+02:00', // the host's clock, never read here
+  subject: { reference: 'Patient/7' }, // a name, never an address
+})
+
+if (result.ok) send(writeJson(result.questionnaireResponse))
+else for (const refusal of result.refusals) log(refusal.rule, refusal.path)
+```
+
+The answers are formancy's submission, the value its engine holds: a
+group's answers in an object under its key, a repeater's rows in a list,
+each with formancy's `_id`, a page's beside it. The response is walked from
+the Questionnaire's own items, so its linkIds, nesting, types, options and
+conditions are the Questionnaire's; a form `toQuestionnaire` refuses
+refuses its answers with the same refusals.
+
+| `context` | Becomes |
+| --- | --- |
+| `questionnaire` | `QuestionnaireResponse.questionnaire`: `url\|version` of the Questionnaire `toQuestionnaire` writes with it, or its url alone when it has no version |
+| `status` | `in-progress`, `completed`, `amended`, `entered-in-error` or `stopped`; a completed or amended response must answer every enabled required item |
+| `authored` | a FHIR dateTime, with its zone where it has a time |
+| `subject`, `author`, `source` | references by name, `Patient/7` or a `urn:uuid:`, never an absolute URL; an author or a source of a type R4 allows there |
+
+The SDC QuestionnaireResponse profile, `sdc-questionnaireresponse|4.0.0`,
+is claimed with a subject and a versioned Questionnaire, where it
+validates; any other response is plain R4. No id, identifier, item text or
+narrative is written: an item's text is the Questionnaire's.
+
+| formancy holds | The response writes |
+| --- | --- |
+| a text, a textarea's, a hidden field's | `valueString`, as it is |
+| a number | `valueDecimal`, the shortest text that reads back as the double formancy holds, `-0` included; on an integer item `valueInteger`, refused unless whole and within 32 bits |
+| a checkbox's true or false | `valueBoolean` |
+| a select's, a radio's value; checkboxes' ticks | `valueCoding`, the Questionnaire's option's system, code and display, without its translations; a tick each, in formancy's order |
+| a date, a time, a date and time | `valueDate`; `valueTime`, `HH:MM:00`; `valueDateTime`, in UTC |
+| a group's object; a repeater's rows; a page's fields | the item's items; an item per row, of the repeater's linkId; the page's items |
+
+**A number answer is exactly the double formancy holds.** formancy stores
+a JSON number, so `70.50` typed is 70.5 before this package sees it; what
+is written reads back as the same double, with no digit added or lost, and
+not the text a person typed.
+
+**No answer** is formancy's own: absent, null, a text of nothing but
+whitespace, an empty list. Such an item is not written, nor a group, a page
+or a row with nothing answered in it; a checkbox left false is answered
+false. **A value on a disabled item**, read as the validator reads the
+Questionnaire's enableWhen: on a page a skip rule walks past, formancy
+keeps it, and it is left out; on an item a visible rule hides, formancy
+clears it when the rule hides it, so one there was set while the item was
+hidden, and is refused, as `disabled`. A text answer is written as
+formancy holds it: leading or trailing whitespace, and a line break in a
+`text` field's answer, which is a `string` item, are kept, and the
+validator warns of each, quoting the answer in the first warning.
+
+Refused, every one at once, at a path from `answers` and never quoting a
+value: `answer-type`, a value of another type than its item's -- formancy's
+engine accepts `'abc'` in a number field with no bound, `42` in a text
+field, `'yes'` in a checkbox; `option`, a value no option has, or a tick
+twice; `bound`, past `min`, `max`, `earliest`, `latest`, `minLength`,
+`maxLength`, `minItems` or `maxItems`; `unknown`, a name the form gives no
+answer, refused at the object that holds it and never repeated;
+`disabled`; `required`; `reference`; and a primitive's `grammar`,
+`calendar` or `range` -- a fraction on an integer item, which formancy's
+step admits within its tolerance, a date the calendar lacks, a whole
+number past 32 bits.
+
 ## What it does not prove
 
-That a Questionnaire conforms is the validator gate's to say (0005), and it
-says it of the Questionnaires this package makes of the corpus's synthetic
-forms: SDC 4.0.0 on R4 4.0.1, the HL7 FHIR validator 7.0.2, offline.
+That a Questionnaire or a response conforms is the validator gate's to say
+(0005), and it says it of the Questionnaires this package makes of the
+corpus's synthetic forms, and of the responses it makes of the corpus's
+synthetic submissions, each against its Questionnaire: SDC 4.0.0 on R4
+4.0.1, the HL7 FHIR validator 7.0.2, offline. Every corpus response is
+complete: an incomplete one is a warning the gate cannot register by
+linkId, and is judged nowhere.
 Offline, a translation's language is not checked there at all, the
 Questionnaire's own only as far as the validator's built-in reading of a
 tag goes, and the code systems of the options not at all; a tag here is

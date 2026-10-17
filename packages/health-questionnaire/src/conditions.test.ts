@@ -25,21 +25,47 @@ function shown(cel: string): string {
 
 const coding = (key: string, value: string) => `{"system":"${URL}/${key}","code":"${value}"}`
 
+/** `!=` with its unanswered case beside it, under any. */
+const unequal = (key: string, answer: string) =>
+  `"enableWhen":[{"question":"${key}","operator":"!=",${answer}},{"question":"${key}","operator":"exists","answerBoolean":false}],"enableBehavior":"any"`
+
 describe('a visibility rule', () => {
   // formancy shows `x == 'a'` when x is 'a' and hides it otherwise,
-  // unanswered included, and so does R4's `=`; `!=` shows it unanswered
-  // in both. Measured on @formancy/core 0.5.0.
+  // unanswered included, and so does R4's `=`. Measured on @formancy/core
+  // 0.5.0.
   test.each([
     ["country == 'CH'", `"enableWhen":[{"question":"country","operator":"=","answerCoding":${coding('country', 'CH')}}]`],
-    ['country != "DE"', `"enableWhen":[{"question":"country","operator":"!=","answerCoding":${coding('country', 'DE')}}]`],
     ['consent == true', '"enableWhen":[{"question":"consent","operator":"=","answerBoolean":true}]'],
-    ['consent != true', '"enableWhen":[{"question":"consent","operator":"!=","answerBoolean":true}]'],
     ["reason == 'other'", '"enableWhen":[{"question":"reason","operator":"=","answerString":"other"}]'],
-    ["history != 'none'", '"enableWhen":[{"question":"history","operator":"!=","answerString":"none"}]'],
     ['age == 18', '"enableWhen":[{"question":"age","operator":"=","answerInteger":18}]'],
     ["born == '2000-01-31'", '"enableWhen":[{"question":"born","operator":"=","answerDate":"2000-01-31"}]'],
   ])('%s is the same enableWhen', (cel, written) => {
     expect(shown(cel)).toBe(`{"linkId":"follow_up","type":"string",${written}}`)
+  })
+
+  // formancy shows `x != 'a'` unanswered: null != 'a' is true. The HL7
+  // validator reads R4's `!=` as "an answer that differs", so with no
+  // answer it disables the item, and refuses the answer a person gave it
+  // (Questionnaire_QR_Item_NotEnabled2, measured 17 October 2026 with
+  // 7.0.2, 0007); R5 words it "no answer is equal", which enables it. So
+  // the unanswered case is written beside it, as an ordering's is, and
+  // both readings agree with formancy's.
+  test.each([
+    ['country != "DE"', unequal('country', `"answerCoding":${coding('country', 'DE')}`)],
+    ['consent != true', unequal('consent', '"answerBoolean":true')],
+    ["history != 'none'", unequal('history', '"answerString":"none"')],
+  ])('%s holds, or the field is unanswered', (cel, written) => {
+    expect(shown(cel)).toBe(`{"linkId":"follow_up","type":"string",${written}}`)
+  })
+
+  // Under ||, the unanswered case is one more condition of the any, once
+  // per question; under &&, "this, and that differs or is unanswered" is
+  // a nesting enableWhen cannot say, and is refused.
+  test('writes != with its unanswered case under ||, and refuses it under &&', () => {
+    expect(shown("country == 'CH' || reason != 'x' || reason != 'y'")).toContain(
+      `"enableWhen":[{"question":"country","operator":"=","answerCoding":${coding('country', 'CH')}},{"question":"reason","operator":"!=","answerString":"x"},{"question":"reason","operator":"!=","answerString":"y"},{"question":"reason","operator":"exists","answerBoolean":false}],"enableBehavior":"any"`,
+    )
+    expect(refused(ruled([...QUESTIONS, target], [{ target: 'follow_up', kind: 'visible', cel: "consent == true && country != 'CH'" }]))).toEqual(['unmapped form.logic.rules[0].cel'])
   })
 
   // A list answer holding a value is R4's `=` on a repeating question:
@@ -104,6 +130,12 @@ describe('a visibility rule', () => {
     ['in on one answer', "'CH' in country"],
     ['a string for a number', "age == '18'"],
     ['an empty string', "reason == ''"],
+    // formancy shows `reason == '  '` for an answer of two spaces
+    // (measured on @formancy/core 0.5.0 in review, 17 October 2026), and
+    // its `unanswered` reads that answer as none, which the response
+    // therefore never writes (0007): R4's `=` would hide the item
+    // formancy showed, and refuse what was typed into it.
+    ['a string of nothing but whitespace', "reason == '  '"],
     ['an escape', "reason == 'it\\'s'"],
     ['an exponent', 'weight > 1e3'],
     ['null', 'reason == null'],
@@ -188,14 +220,28 @@ describe('a visibility rule', () => {
 describe('a skip rule', () => {
   // A page is walked past while the rule holds, so it is enabled while it
   // does not: each comparison negated, && become any and || all.
+  // A negated equality is a `!=`, and carries its unanswered case as one
+  // written so does: formancy's `country == 'CH'` is false unanswered, so
+  // the page is not skipped, and shows.
+  const page: FieldDef = { key: 'visa', type: 'page', fields: [{ key: 'visa_number', type: 'text' }] }
+  const skipping = (cel: string) => ruled([country, consent, age, topics, page], [{ target: 'visa', kind: 'skip', cel }])
+  const enabled = (cel: string) => writeJson(exported(skipping(cel)).item?.[4] as QuestionnaireItem)
   test('enables its page while the rule does not hold', () => {
-    const page: FieldDef = { key: 'visa', type: 'page', fields: [{ key: 'visa_number', type: 'text' }] }
-    const enabled = (cel: string) => writeJson(exported(ruled([country, consent, age, page], [{ target: 'visa', kind: 'skip', cel }])).item?.[3] as QuestionnaireItem)
-    expect(enabled("country == 'CH'")).toContain(`"enableWhen":[{"question":"country","operator":"!=","answerCoding":${coding('country', 'CH')}}],"item"`)
-    expect(enabled("country == 'CH' && consent == true")).toContain(`"operator":"!=","answerCoding":${coding('country', 'CH')}},{"question":"consent","operator":"!=","answerBoolean":true}],"enableBehavior":"any"`)
-    expect(enabled("country != 'CH' || consent != true")).toContain('"enableBehavior":"all"')
+    expect(enabled("country == 'CH'")).toContain(`${unequal('country', `"answerCoding":${coding('country', 'CH')}`)},"item"`)
+    expect(enabled("country == 'CH' && consent == true")).toContain(
+      `"enableWhen":[{"question":"country","operator":"!=","answerCoding":${coding('country', 'CH')}},{"question":"consent","operator":"!=","answerBoolean":true},{"question":"country","operator":"exists","answerBoolean":false},{"question":"consent","operator":"exists","answerBoolean":false}],"enableBehavior":"any"`,
+    )
+    expect(enabled("country != 'CH' || consent != true")).toContain(`"enableWhen":[{"question":"country","operator":"=","answerCoding":${coding('country', 'CH')}},{"question":"consent","operator":"=","answerBoolean":true}],"enableBehavior":"all"`)
     // A skip rule that errors does not skip: unanswered, the page shows.
     expect(enabled('age > 65')).toContain('"enableWhen":[{"question":"age","operator":"<=","answerInteger":65},{"question":"age","operator":"exists","answerBoolean":false}],"enableBehavior":"any"')
+  })
+
+  // `||` negated is every `!=` at once, which enableWhen cannot say with
+  // each one's unanswered case. And a list not holding a value is no R4
+  // operator: `!=` on a repeating question is, to the validator, "some
+  // answer differs", which [a, b] meets though it holds a. Both refused.
+  test.each(["country == 'CH' || consent == true", "'a' in topics"])('refuses %s, whose negation enableWhen cannot say', (cel) => {
+    expect(refused(skipping(cel))).toEqual(['unmapped form.logic.rules[0].cel'])
   })
 })
 

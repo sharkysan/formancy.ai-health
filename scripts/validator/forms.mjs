@@ -1,12 +1,17 @@
-// Synthetic formancy forms, whose Questionnaires the validator gate judges
-// (0005, 0006): what `@formancy/health-questionnaire`, as built, writes of
-// them is the corpus's package output.
+// Synthetic formancy forms and submissions of them, whose Questionnaires
+// and QuestionnaireResponses the validator gate judges (0005, 0006, 0007):
+// what `@formancy/health-questionnaire`, as built, writes of them is the
+// corpus's package output.
 //
 // Between them they hold every field type, rule and construct version 1
-// maps (plan 8.1), which scripts/validator/corpus.test.mjs derives from
-// the package itself and holds the forms to. Everything is made up: no
+// maps (plan 8.1), and the submissions every answer type the package
+// writes, which scripts/validator/corpus.test.mjs derives from the package
+// itself and holds the forms and submissions to. Everything is made up: no
 // person, no clinic, no real code, and no clinical logic -- the one
-// computed field joins two names, and nothing scores, warns or suggests.
+// computed field joins two names, and nothing scores, warns or suggests. A
+// submission is what formancy's engine holds (`engine.value()`): a group's
+// answers in an object, a repeater's rows each with formancy's `_id`, and
+// a page's beside it.
 
 /** A message id's text in Swiss German, French and Italian. */
 const words = {
@@ -127,7 +132,9 @@ export const intake = {
     rules: [
       { target: 'full_name', kind: 'computed', cel: "given_name + ' ' + family_name" },
       { target: 'weight_note', kind: 'visible', cel: 'weight >= 150' },
-      { target: 'consent_detail', kind: 'visible', cel: "consent == true && canton != 'VS'" },
+      // Two equalities under &&: a `!=` under && is refused (0007), its
+      // unanswered case being a nesting enableWhen has not.
+      { target: 'consent_detail', kind: 'visible', cel: "consent == true && canton == 'BE'" },
       { target: 'canton_detail', kind: 'visible', cel: "canton == 'TI'" },
       { target: 'urgent_reason', kind: 'visible', cel: "urgency == 'urgent' || 'c' in topics" },
       { target: 'contact_page', kind: 'skip', cel: "urgency == 'routine'" },
@@ -171,3 +178,99 @@ export const minimal = {
 
 /** A form never published: no version, a draft. */
 export const minimalContext = { base: 'https://forms.synthetic.invalid', status: 'draft' }
+
+/**
+ * What the host says of answers to the intake: completed, of a synthetic
+ * patient, written down by a synthetic practitioner, at a time the host's
+ * clock gave.
+ */
+export const intakeResponseContext = {
+  questionnaire: intakeContext,
+  status: 'completed',
+  authored: '2026-10-17T10:00:00+02:00',
+  subject: { reference: 'Patient/synthetic-1' },
+  author: { reference: 'Practitioner/synthetic-2' },
+  source: { reference: 'Patient/synthetic-1' },
+}
+
+/**
+ * An urgent intake, every question answered and every rule's item shown:
+ * each answer type the package writes, a group, a repeater's rows and the
+ * contact page its skip rule leaves in.
+ */
+export const intakeUrgent = {
+  given_name: 'Synthetic',
+  family_name: 'Example',
+  full_name: 'Synthetic Example',
+  history: 'Nichts Besonderes',
+  weight: 151.5,
+  weight_note: 'Synthetische Bemerkung',
+  children: 3,
+  consent: true,
+  canton: 'BE',
+  consent_detail: 'Synthetische Einzelheiten',
+  urgency: 'urgent',
+  topics: ['a', 'c'],
+  urgent_reason: 'Synthetischer Grund',
+  born: '2010-05-04',
+  arrival: '07:15',
+  seen: '2026-03-01T09:00:00Z',
+  campaign: 'synthetic-campaign',
+  address: { city: 'Synthetische Stadt' },
+  contacts: [
+    { _id: 'r1', contact_name: 'Contact One', contact_calls: 2 },
+    { _id: 'r2', contact_name: 'Contact Two' },
+  ],
+  history_detail: 'Synthetische Vorgeschichte',
+  children_detail: 'Synthetische Angaben',
+  guardian: 'Synthetic Guardian',
+  early_arrival: 'Synthetischer Anlass',
+  seen_detail: 'Synthetische Bemerkung',
+  contact_phone: '000 000 00 00',
+}
+
+/**
+ * A routine intake: what formancy holds and the response does not carry.
+ * Unanswered fields absent, null or empty; a checkbox left false, which is
+ * an answer; a row formancy padded and nobody filled; and a phone number
+ * typed on the contact page before the answers made its skip rule walk
+ * past it, which formancy keeps and R4 gives the disabled page no answer
+ * for. And the detail of a history left empty, which `history != 'keine'`
+ * shows in formancy, and the Questionnaire enables by its unanswered case:
+ * without it, the validator calls the item disabled (0007); and the note on
+ * a weight nobody gave, which `weight >= 150` shows in formancy, its error
+ * failing open, and the Questionnaire enables the same way (0006).
+ */
+export const intakeRoutine = {
+  given_name: 'Synthetic',
+  family_name: null,
+  history: '',
+  weight_note: 'Synthetische Bemerkung',
+  consent: false,
+  canton: null,
+  urgency: 'routine',
+  topics: ['b'],
+  arrival: null,
+  campaign: 'synthetic-campaign',
+  address: {},
+  contacts: [{ _id: 'r1', contact_name: 'Contact One' }, { _id: 'r2' }],
+  history_detail: 'Synthetische Vorgeschichte',
+  contact_phone: '000 000 00 00',
+}
+
+/** What the host says of answers to the minimal form: completed, of nobody named, to the unpublished draft. */
+export const minimalResponseContext = { questionnaire: minimalContext, status: 'completed', authored: '2026-10-17' }
+
+/** Answers to the minimal form, one of each of its fields. */
+export const minimalAnswers = {
+  reason: 'Synthetic reason',
+  weight: 72,
+  consent: true,
+  colour: 'blue',
+  size: 's',
+  born: '1990-01-01',
+  source: 'synthetic-leaflet',
+  box: { inside: 'Synthetic' },
+  rows: [{ _id: 'r1', row_note: 'One' }, { _id: 'r2', row_note: 'Two' }],
+  remarks: 'Synthetic remarks',
+}

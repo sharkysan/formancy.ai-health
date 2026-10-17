@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { exported, form, onlyItem, refused } from './test-support.js'
+import { answered, exported, form, onlyItem, refused, refusedAnswers } from './test-support.js'
 
 describe('the test support', () => {
   // Every case of this package rests on these. If `refused` answered for a
@@ -16,5 +16,12 @@ describe('the test support', () => {
   test('reads the one item of a form of one field, and fails when it is refused', () => {
     expect(onlyItem({ key: 'step', type: 'page', fields: [{ key: 'a', type: 'text' }] }).linkId).toBe('step')
     expect(() => onlyItem({ key: 'notice', type: 'static' })).toThrow(/refused/)
+  })
+
+  // The same of answers: a case expecting a refusal fails when they are
+  // exported, and one expecting a response fails when they are refused.
+  test('fails a case about answers that expects the other answer', () => {
+    expect(() => refusedAnswers(form([{ key: 'reason', type: 'text' }]), {})).toThrow(/expected the answers to be refused/)
+    expect(() => answered(form([{ key: 'reason', type: 'text' }]), { reason: 42 })).toThrow(/refused: answers\.reason: /)
   })
 })

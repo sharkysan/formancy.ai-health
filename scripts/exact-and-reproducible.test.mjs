@@ -139,6 +139,9 @@ describe('the exactness and reproducibility guard', () => {
     expect(paths).toContain('packages/health-core/src/json-read.ts')
     expect(paths).toContain('packages/health-questionnaire/src/values.ts')
     expect(paths).toContain('packages/health-questionnaire/src/conditions.ts')
+    // The answers' export reads a person's numbers and writes them (0007).
+    expect(paths).toContain('packages/health-questionnaire/src/answers.ts')
+    expect(paths).toContain('packages/health-questionnaire/src/enablement.ts')
     expect(paths.filter((path) => TEST.test(path))).toEqual([])
   })
 
