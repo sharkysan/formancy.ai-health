@@ -17,6 +17,20 @@
 // here that attaches a Report PDF brings such an admission with the decision
 // that allows it. None does yet.
 //
+// FHIRPath is refused today. `fhirpath`, the TypeScript engine, and
+// `@lhncbc/ucum-lhc`, which it depends on, declare "SEE LICENSE IN
+// LICENSE.md": the US National Library of Medicine's own terms, with
+// LOINC's and UCUM's where their content is included, which no identifier
+// below names. A package that took FHIRPath -- for an enableWhenExpression,
+// for template extraction -- fails here until the maintainer admits a
+// version by a reviewed exception, with the record that explains it.
+// dependency-licences.test.mjs holds both refused as their manifests read
+// on 17 October 2026.
+//
+// The HL7 FHIR validator and the guide packages it loads are none of this
+// guard's: no published package depends on them, and the validator gate
+// fetches them in CI alone (0005). Their own register holds their licences.
+//
 // What is walked is what is installed: from each publishable workspace package
 // through its dependencies, optionalDependencies and peerDependencies, each
 // resolved as Node resolves it from the package's real directory, which is

@@ -252,11 +252,11 @@ describe('release.yml', () => {
 
 describe('gates.yml', () => {
   // CI and a release both call this, and only this, so a job added beside
-  // these three is one both run; it is added here in the same change, with
+  // these four is one both run; it is added here in the same change, with
   // whatever it proves. Called with the release named, taking the coverage
   // token alone, and only reading.
-  test('is its three jobs, called with the release named, the coverage token its one secret, reading only', () => {
-    expect(Object.keys(gates.jobs)).toEqual(['verify', 'test', 'install'])
+  test('is its four jobs, called with the release named, the coverage token its one secret, reading only', () => {
+    expect(Object.keys(gates.jobs)).toEqual(['verify', 'test', 'install', 'validator'])
     expect(gates.on.workflow_call.inputs.release).toMatchObject({ type: 'string', default: '' })
     expect(gates.on.workflow_call.secrets).toEqual({ CODECOV_TOKEN: { required: false } })
     expect(gates.permissions).toEqual({ contents: 'read' })
@@ -335,5 +335,76 @@ describe('gates.yml', () => {
     const install = gates.jobs.install.steps
     expect(install.map((step) => step.run).filter(Boolean)).toContain('node scripts/install-test.mjs --keep-tarballs release-tarballs')
     expect(install.find((step) => step.with?.name === 'release-tarballs')?.with).toEqual({ name: 'release-tarballs', path: 'release-tarballs/', 'if-no-files-found': 'error', overwrite: true })
+  })
+})
+
+describe('the validator job', () => {
+  const job = gates.jobs.validator
+  const runs = job.steps.map((step) => step.run).filter(Boolean)
+  const at = (predicate) => job.steps.findIndex(predicate)
+  const pin = JSON.parse(readFileSync(join(repo, 'docs', 'release', 'validator.json'), 'utf8'))
+
+  // 0005's gate: the script that fetches, checks, runs and judges, on the
+  // corpus health-core writes as built, with the Java setup-java put on the
+  // runner -- so the build comes first, and Java before the script.
+  test('runs the gate after the build, with the Java it set up', () => {
+    const gate = at((step) => step.run === 'node scripts/validator.mjs --java "$JAVA_HOME/bin/java"')
+    expect(gate).toBeGreaterThan(at((step) => step.run === 'pnpm build'))
+    expect(gate).toBeGreaterThan(at((step) => String(step.uses).startsWith('actions/setup-java@')))
+    expect(at((step) => step.run === 'pnpm build')).toBeGreaterThan(-1)
+  })
+
+  // setup-java is GitHub's, but the Java it installs runs the validator
+  // over everything the job judges; pinned to a commit as a third party's
+  // action is, at the Java the pin says the JAR needs, read from the pin.
+  test('sets up the Java the validator’s pin needs, from an action pinned to a commit', () => {
+    const java = job.steps.find((step) => String(step.uses).startsWith('actions/setup-java@'))
+    expect(java.uses).toMatch(/^actions\/setup-java@[0-9a-f]{40}$/)
+    expect(java.with).toEqual({ distribution: 'temurin', 'java-version': String(pin.java) })
+  })
+
+  // What `pnpm test:repo` cannot see without the downloads and the run --
+  // each hash against the bytes, each package's own manifest, the
+  // validator's own load -- is checked here, after the gate made them; and
+  // told the gate ran, so that a case which found nothing to read fails
+  // rather than skipping and passing.
+  test('holds the registers against what it downloaded and ran, after the gate, skipping nothing', () => {
+    const registers = at((step) => step.run === 'pnpm exec vitest run --config vitest.repo.config.mts scripts/validator/registers.test.mjs')
+    expect(registers).toBeGreaterThan(at((step) => String(step.run).startsWith('node scripts/validator.mjs')))
+    expect(job.steps[registers].env).toEqual({ VALIDATOR_GATE_RAN: 'true' })
+  })
+
+  // A download cache would only ever save a download: what is restored is
+  // used once its hash is the registered one. It holds the downloads and
+  // never the unpacked package cache, which the validator writes into.
+  test('caches the downloads alone, keyed on the registers', () => {
+    const cache = job.steps.find((step) => String(step.uses).startsWith('actions/cache@') && String(step.with?.path).includes('.fhir-cache'))
+    expect(cache.with.path.split('\n').map((line) => line.trim()).filter(Boolean)).toEqual(['.fhir-cache/validator', '.fhir-cache/packages'])
+    expect(cache.with.key).toBe("fhir-cache-${{ hashFiles('docs/release/validator.json', 'docs/release/ig-packages.json') }}")
+  })
+
+  // The results are the evidence a conformance claim cites, and a failed
+  // run's are the ones somebody needs; a run that left none fails here.
+  test('uploads its results whatever the run found', () => {
+    const upload = job.steps.find((step) => step.with?.name === 'validator-results')
+    expect(upload.if).toBe('always()')
+    expect(upload.with['if-no-files-found']).toBe('error')
+    expect(upload.with.path.split('\n').map((line) => line.trim()).filter(Boolean)).toEqual(['test-results/validator.json', 'test-results/validator/'])
+  })
+
+  // A download in a step of its own, or a JAR run by hand, would be one the
+  // script never hashed. Everything the job fetches or runs goes through
+  // it.
+  test('fetches nothing and runs no Java but through the script', () => {
+    // A command by its path or quoted counts too: `"$JAVA_HOME/bin/java" -jar`
+    // is a Java run by hand. The gate's own step names a Java to the script.
+    const command = /(?:^|[\s;&|("'/])(?:curl|wget|java)["']?(?:\s|$)/m
+    const gate = 'node scripts/validator.mjs --java "$JAVA_HOME/bin/java"'
+    expect(runs.filter((run) => run !== gate && command.test(run))).toEqual([])
+    expect(command.test('curl -sSL -o v.jar https://example.org/v.jar')).toBe(true)
+    expect(command.test('java -jar v.jar')).toBe(true)
+    expect(command.test('"$JAVA_HOME/bin/java" -jar v.jar')).toBe(true)
+    expect(command.test('/usr/bin/wget https://example.org/p.tgz')).toBe(true)
+    expect(command.test('pnpm exec vitest run scripts/validator/registers.test.mjs')).toBe(false)
   })
 })

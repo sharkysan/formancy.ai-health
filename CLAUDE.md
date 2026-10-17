@@ -60,9 +60,14 @@ keeps its own terms: HL7's specifications are referenced, not redistributed,
 and no SNOMED CT or LOINC content is bundled.
 `scripts/dependency-licences.mjs` holds the rule for the production
 dependencies of every publishable package, as formancy.ai-report 0006 holds
-it there, and refuses what it cannot read. Guide packages and terminology
-join it when the first of them arrives; until then review holds them, and
-what a licence identifier cannot say about a licence's terms.
+it there, and refuses what it cannot read; FHIRPath (`fhirpath` and the
+`@lhncbc/ucum-lhc` it brings) is refused by it today, and a case says so.
+Guide packages are no package's dependency: the validator gate loads them in
+CI, and their register records each one's licence as its package.json
+states it and refuses one the dependency policy would refuse (0005).
+Terminology joins a guard with the first code a package emits; until then
+review holds it, and what a licence identifier cannot say about a licence's
+terms.
 
 ## How the pieces fit
 
@@ -71,9 +76,13 @@ emits, holds R4's primitives as checked text -- a number as its digits,
 never a JavaScript number -- and writes and reads FHIR JSON exactly, by a
 writer and a parser of its own
 ([0004](docs/decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md));
-that is all the product code there is. The package path the plan
-proposes, each package depending only on those before it, and split further
-only where a part has its own reason to change:
+that is all the product code there is. Beside it, and not product code,
+the validator gate judges what health-core writes
+([0005](docs/decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md)):
+`scripts/validator.mjs`, its modules and corpus in `scripts/validator/`,
+and the registers of what it runs in `docs/release/`. The package path the
+plan proposes, each package depending only on those before it, and split
+further only where a part has its own reason to change:
 
 1. `health-core` -- FHIR R4 JSON with exact decimals, primitives held to
    their ranges, identity and references from the host, canonicals and
@@ -96,8 +105,10 @@ only where a part has its own reason to change:
    version, as `report-data-provider` alone may take Data's
    (formancy.ai-report 0016).
 7. `health-corpus` -- test support, never published: synthetic forms and
-   answers, the exact-value and identity fixtures, the guide package
-   register, the validator's runner, and PDFs Report rendered.
+   answers, the exact-value and identity fixtures, and PDFs Report
+   rendered. Until it arrives with the first package output it holds, the
+   validator's runner and corpus live in `scripts/validator/` and the
+   guide package register in `docs/release/` (0005).
 
 A package arrives with the decision record that says what it may import. When
 this map goes stale, the rename is the edit to make here.
@@ -111,8 +122,8 @@ in the same pull request as the code, not in a follow-up:
   the *Status* paragraph, which describes one point in time and no other.
 - **`CHANGELOG.md`** — a line under *Unreleased* for anything a user or
   integrator would notice, with the reason attached, not only the what. A bump
-  of an upstream `@formancy/*` version is always noticed, and so, once they
-  are pinned, is a guide package's or the validator's.
+  of an upstream `@formancy/*` version is always noticed, and so is one of
+  the validator or a guide package, which the registers pin (0005).
 - **Decision records** (`docs/decisions/`) — a new record for every decision
   someone could helpfully undo, in the format `docs/decisions/README.md`
   describes: next free number, the cost paragraph, the alternatives, and a
@@ -133,7 +144,10 @@ and the document says what. Three shapes, in order of preference:
 
 1. **Derive it.** `codecov.yml` is generated from the workspace by
    `scripts/codecov-config.mjs`; the README's licence sentence is generated
-   from `LICENSE.md` by `scripts/licence-status.mjs`.
+   from `LICENSE.md` by `scripts/licence-status.mjs`; its compatibility
+   table, the tuple the packages are built and judged against, from the
+   registers, health-core's `FHIR_VERSION` and the toolchain by
+   `scripts/compatibility.mjs`.
 2. **Check it.** `scripts/codecov-config.test.mjs` fails when the committed
    file is not what the generator produces; `scripts/check-cla.test.mjs` fails
    when `CLA.md` changes under a signature; `scripts/upstream-deps.test.mjs`
@@ -141,8 +155,12 @@ and the document says what. Three shapes, in order of preference:
    when HL7's notice goes missing or a name takes its mark;
    `scripts/exact-and-reproducible.test.mjs` fails when a package's source
    converts a value through a JavaScript number or reads a clock or a random
-   source. All of them run as `pnpm test:repo`, and CI runs that — **a guard
-   that is not a gate is a comment.**
+   source; `scripts/compatibility.test.mjs` fails when the compatibility
+   table is stale; `scripts/validator/registers.test.mjs` fails when a
+   register is malformed or, where the validator job has run, says other
+   than the bytes and the validator's own load. All of them run as
+   `pnpm test:repo`, and CI runs that — **a guard that is not a gate is a
+   comment.**
 3. **Measure it.** Below.
 
 Counts written into prose go stale. **Prefer wording without a number.** Where a
@@ -165,20 +183,32 @@ guide is said to require comes with where the guide says so.
 
 ## An export is proved on the resources it produced
 
-The rule this repository will hold once there is a resource to prove, as
-Formancy Report holds its rule about PDFs (formancy.ai-report 0003). It
-becomes a decision record of its own with the validator gate.
+Decision [0005](docs/decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md),
+held as Formancy Report holds its rule about PDFs (formancy.ai-report
+0003). The validator gate, `scripts/validator.mjs` and the `validator` job,
+is the tool for it.
 
 - A claim that an export conforms is checked by the official **HL7 FHIR
   validator**, against **pinned implementation guide packages**, on the JSON
   the packages produced. Not on the builder's input, not on hand-written
-  JSON, and not through a mocked validator.
+  JSON, and not through a mocked validator. Until a package builds a
+  resource, the corpus (`scripts/validator/corpus.mjs`) builds them by hand
+  and health-core's `writeJson` writes them, and no export is claimed to
+  conform.
 - The validator and every guide package are fetched by exact version,
-  checked against a hash in a committed register, and run offline. What
-  that leaves unchecked -- codes against their value sets -- is said where
-  a conformance claim is made.
-- Nothing silent. An error fails the gate; a warning is registered with the
-  reason it is accepted, or fixed.
+  refused unless their hash is the one `docs/release/validator.json` or
+  `docs/release/ig-packages.json` registers, and run offline: no
+  terminology server, no HTTP at all. Which packages the register holds is
+  the validator's own load, read from its `Package Summary`, never a
+  guide's page. What offline leaves unchecked -- a code from a code system
+  no registered package holds, LOINC, SNOMED CT and UCUM among them, and a
+  language tag -- is said where a conformance claim is made, as 0005
+  measured it.
+- Nothing silent. An error fails the gate; a warning is registered by its
+  message id in `scripts/validator/warnings.json`, with the reason it is
+  accepted, or fixed. A resource broken on purpose is refused for exactly
+  what it breaks, or the gate fails: that is how a check is watched
+  failing here.
 - A conformance claim names the guide and its version, the validator and its
   version, and the corpus, and nothing more. Never HL7's endorsement.
 - **Never silently drop, approximate or guess.** What an export cannot say in
@@ -333,6 +363,13 @@ exactly what CI does:
   `scripts/ci-test-jobs.test.mjs` fails when that list and the workspace
   disagree.
 - **`install`** runs `pnpm test:e2e:install`.
+- **`validator`** runs `pnpm build`, then `node scripts/validator.mjs` on
+  the Java 17 `actions/setup-java` installs, then
+  `scripts/validator/registers.test.mjs` against what the gate downloaded
+  and ran, and uploads `test-results/validator.json` and the corpus,
+  outcomes and console beside it. Locally: `pnpm build`, then
+  `node scripts/validator.mjs --java <path to java>`, which downloads into
+  the gitignored `.fhir-cache/`.
 
 `cla.yml` checks every pull request's commit authors against the CLA record,
 and `security.yml` runs CodeQL and dependency review.
@@ -348,7 +385,12 @@ and `security.yml` runs CodeQL and dependency review.
 - in `publish`, only the npm step holds the token or runs npm, and it comes
   after the signature;
 - nothing in a workflow a release runs sets `continue-on-error`, or runs a
-  command inside an `echo`, where bash would lose its failure.
+  command inside an `echo`, where bash would lose its failure;
+- the `validator` job runs the gate after the build, on the Java its pin
+  needs from a `setup-java` pinned to a commit, holds the registers after
+  the gate with none of their cases skipped, caches only downloads and
+  only in CI, fetches and runs nothing
+  but through the script, and uploads its results however it ends.
 
 Locally, run the same commands for what you changed.
 
@@ -358,6 +400,14 @@ Locally, run the same commands for what you changed.
   hash of the text signed.
 - After a package is added, run `node scripts/codecov-config.mjs --write`, and
   add the package to the `test` job's matrix.
+- After a register, health-core's `FHIR_VERSION`, Node, TypeScript or pnpm
+  changes, run `node scripts/compatibility.mjs --write`.
+- A new validator release or guide version changes its register and goes
+  through the gate: the packages registered are exactly those its
+  `Package Summary` names, each hash is read from the bytes
+  packages.fhir.org serves, and `declaredBy`, `canonical` and `licence`
+  from the packages themselves, which the validator job's run of the
+  registers' test checks.
 
 `test:e2e:install` is the only gate that looks at the packages from outside:
 - it packs them;
@@ -371,9 +421,9 @@ the whole suite. It needs `pnpm build` first.
 `scripts/install-fixture/consume.ts` is the consumer; a package's public entry
 points belong in it.
 
-Not here yet, each arriving with what it proves: the HL7 FHIR validator's
-gate, and the release report of the run that gated a release
-(formancy.ai-report 0014).
+Not here yet: the release report of the run that gated a release
+(formancy.ai-report 0014), which will read the validator job's
+`test-results/validator.json` with the rest.
 
 ## Conventions that live upstream
 
