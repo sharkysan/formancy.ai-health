@@ -19,7 +19,16 @@ import {
   type FhirInteger,
   type FhirJson,
 } from '@formancy/health-core'
-import { SDC_QUESTIONNAIRE, toQuestionnaire, type Questionnaire, type QuestionnaireContext } from '@formancy/health-questionnaire'
+import {
+  SDC_QUESTIONNAIRE,
+  SDC_QUESTIONNAIRE_RESPONSE,
+  toQuestionnaire,
+  toQuestionnaireResponse,
+  type Questionnaire,
+  type QuestionnaireContext,
+  type QuestionnaireResponse,
+  type ResponseContext,
+} from '@formancy/health-questionnaire'
 
 // The published code carries the FHIR version the package emits, and its
 // declaration says exactly which: a dist that lost the constant fails the
@@ -113,5 +122,29 @@ const signed = toQuestionnaire({ ...form, model: { fields: [{ key: 'drawn', type
 const [refusal] = signed.ok ? [] : signed.refusals
 if (!(refusal instanceof Refusal) || refusal.rule !== 'unmapped' || refusal.path !== 'form.model.fields[0].type') throw new Error('a signature field was not refused as unmapped, by a Refusal')
 
+// The answers to that form become a QuestionnaireResponse through the
+// published entry, to the Questionnaire's url and version, and writeJson
+// writes it: a dist that wrote a number answer other than as its double's
+// shortest text, named another canonical, lost the profile, or declared a
+// response writeJson's types do not take, fails here.
+const answering: ResponseContext = { questionnaire: host, status: 'completed', authored: '2026-10-17T10:00:00+02:00', subject: { reference: 'Patient/synthetic-1' } }
+const replied = toQuestionnaireResponse(form, { weight: 70.5 }, answering)
+if (!replied.ok) throw new Error(`toQuestionnaireResponse refused answers it writes: ${replied.refusals.map((refusal) => refusal.message).join('; ')}`)
+const response: QuestionnaireResponse = replied.questionnaireResponse
+const written_response = writeJson(response)
+for (const part of [`"profile":["${SDC_QUESTIONNAIRE_RESPONSE}"]`, `"questionnaire":"${questionnaire.url}|1"`, '"item":[{"linkId":"weight","answer":[{"valueDecimal":70.5}]}]']) {
+  if (!written_response.includes(part)) throw new Error(`the QuestionnaireResponse lacks ${part}: ${written_response}`)
+}
+
+// An answer formancy's step admits and R4's integer does not is refused,
+// by health-core's Refusal, naming where and never the value.
+const counted: Parameters<typeof toQuestionnaireResponse>[0] = { ...form, model: { fields: [{ key: 'children', type: 'number', step: 1 }] } }
+const stepped = toQuestionnaireResponse(counted, { children: 2.0000001 }, answering)
+const [stepRefusal] = stepped.ok ? [] : stepped.refusals
+if (!(stepRefusal instanceof Refusal) || stepRefusal.rule !== 'grammar' || stepRefusal.path !== 'answers.children' || stepRefusal.message.includes('2.0000001')) {
+  throw new Error('a fraction on an integer item was not refused by a Refusal at its path')
+}
+
 console.log(`ok: @formancy/health-core emits FHIR ${FHIR_VERSION}, and wrote ${written}`)
 console.log(`ok: @formancy/health-questionnaire wrote a Questionnaire of ${String(written_questionnaire.length)} characters and refused a signature`)
+console.log(`ok: @formancy/health-questionnaire wrote a QuestionnaireResponse of ${String(written_response.length)} characters and refused a fraction on an integer item`)

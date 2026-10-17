@@ -204,6 +204,20 @@ describe('what a field says beside its type', () => {
     expect(onlyItem({ ...topics, required: false, minItems: 0 }).extension).toHaveLength(1)
   })
 
+  // The HL7 validator counts a repeating group's minOccurs against the
+  // answers of each repetition, which a group never has: a response with
+  // two rows of a group with minOccurs 1 is refused twice,
+  // QUESTIONNAIRE_QR_ITEM_MIN_OCCURS, "this has 0 answers" (measured 17
+  // October 2026 with 7.0.2, 0007). Written, no response to the
+  // Questionnaire would validate. A minimum of one on a required repeater
+  // is what required already says of a repeating group, and is not
+  // written again; a minimum above one is refused.
+  test("a repeater's minItems of one is its required, and one above refused", () => {
+    const rows: FieldDef = { key: 'rows', type: 'repeater', required: true, minItems: 1, maxItems: 5, fields: [{ key: 'x', type: 'text' }] }
+    expect(digits(onlyItem(rows))).toMatchObject({ extension: [{ url: 'http://hl7.org/fhir/StructureDefinition/questionnaire-maxOccurs', valueInteger: '#5' }], required: true, repeats: true })
+    expect(refused(form([{ ...rows, minItems: 2 }]))).toEqual(['unmapped form.model.fields[0].minItems'])
+  })
+
   // An option list from a source the deployment names is not in the form,
   // and a choice of nothing says nothing; neither is a list of answers.
   test('refuses a choice whose options come from a source, or that offers none', () => {
@@ -288,5 +302,25 @@ describe('a computed field', () => {
   // A static text holds no value to compute, and a container none of its own.
   test('refuses a computed rule on what holds no answer', () => {
     expect(refused(ruled([{ key: 'address', type: 'group', fields: [{ key: 'city', type: 'text' }] }], [{ target: 'address', kind: 'computed', cel: "{'city': 'x'}" }]))).toEqual(['unmapped form.logic.rules[0].target'])
+  })
+
+  // formancy computes a field while a visible rule hides it: on
+  // @formancy/core 0.5.0 a name typed after the rule hid the field put its
+  // computed value in the submission, inside a hidden group too, and the
+  // field showed none (measured in review, 17 October 2026). R4 gives a
+  // disabled item no answer, so every such submission would be refused,
+  // `disabled`, though formancy made it: refused here, as clearOnHide off
+  // is, where an author can act on it. A page a skip rule walks past keeps
+  // every value in formancy, and the response leaves all of them out.
+  test('refuses a computed rule on a field a visible rule can hide, and not on a skipped page', () => {
+    const fields: FieldDef[] = [{ key: 'consent', type: 'checkbox' }, { key: 'given', type: 'text' }, { key: 'shown_name', type: 'text' }, { key: 'box', type: 'group', fields: [{ key: 'inner', type: 'text' }] }]
+    const shownName = { target: 'shown_name', kind: 'computed', cel: "given + '!'" } as const
+    expect(refused(ruled(fields, [shownName, { target: 'shown_name', kind: 'visible', cel: 'consent == true' }]))).toEqual(['unmapped form.logic.rules[0].target'])
+    expect(refused(ruled(fields, [{ target: 'box', kind: 'visible', cel: 'consent == true' }, { target: 'box.inner', kind: 'computed', cel: 'given' }]))).toEqual(['unmapped form.logic.rules[1].target'])
+    const rows: FieldDef = { key: 'rows', type: 'repeater', fields: [{ key: 'line_total', type: 'number' }] }
+    expect(refused(ruled([fields[0] as FieldDef, rows], [{ target: 'rows[].line_total', kind: 'computed', cel: 'item.line_total' }, { target: 'rows', kind: 'visible', cel: 'consent == true' }]))).toEqual(['unmapped form.logic.rules[0].target'])
+    const page: FieldDef = { key: 'step', type: 'page', fields: [{ key: 'total', type: 'number' }] }
+    const skipped = exported(ruled([fields[0] as FieldDef, page], [{ target: 'total', kind: 'computed', cel: '1 + 1' }, { target: 'step', kind: 'skip', cel: 'consent == true' }]))
+    expect(skipped.item?.[1]?.item).toEqual([{ linkId: 'total', type: 'decimal', readOnly: true }])
   })
 })

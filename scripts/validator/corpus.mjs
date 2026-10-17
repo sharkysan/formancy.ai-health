@@ -4,16 +4,19 @@
 // Two kinds. **Package output**: the Questionnaires
 // `@formancy/health-questionnaire`, as built, makes of the synthetic forms
 // in scripts/validator/forms.mjs (0006), which between them hold every
-// field type and rule version 1 maps -- scripts/validator/corpus.test.mjs
-// derives that set from the package and holds the forms to it -- and, each
-// broken for one thing, the package's output with what a decision of 0006
-// left out put back, so the gate shows why it is left out. **Built by
-// hand** from health-core's primitives and written by its `writeJson`: a
-// QuestionnaireResponse and a Bundle, which no package builds yet (H05,
-// H06), the Questionnaire they answer, and the resources broken to show
-// each of the gate's checks watching. A decimal goes in as
-// `decimal('70.50')` and comes out as the number token 70.50, and the
-// validator reads that.
+// field type and rule version 1 maps, and the QuestionnaireResponses it
+// makes of the synthetic submissions there (0007), which between them hold
+// every answer type it writes -- scripts/validator/corpus.test.mjs derives
+// both sets from the package and holds the forms and submissions to them
+// -- and, each broken for one thing, the package's output with what a
+// decision of 0006 or 0007 left out put back, so the gate shows why it is
+// left out. A response is judged against its Questionnaire, which the gate
+// loads as a definition. **Built by hand** from health-core's primitives
+// and written by its `writeJson`: a Bundle, which no package builds yet
+// (H06), the Questionnaire and the QuestionnaireResponse it holds, which
+// predate the package's, and the resources broken to show each of the
+// gate's checks watching. A decimal goes in as `decimal('70.50')` and
+// comes out as the number token 70.50, and the validator reads that.
 //
 // Every entry is one file the validator judges, with `expect`:
 //
@@ -37,7 +40,7 @@
 // '0000-0' in the CodeSystem 'http://loinc.org' version '2.82'" on
 // 17 October 2026, and it carries no LOINC content.
 
-import { intake, intakeContext, minimal, minimalContext } from './forms.mjs'
+import { intake, intakeContext, intakeResponseContext, intakeRoutine, intakeUrgent, minimal, minimalAnswers, minimalContext, minimalResponseContext } from './forms.mjs'
 
 /** The canonical base of the hand-built corpus: IANA's example domain, never fetched. */
 const BASE = 'http://example.org'
@@ -76,8 +79,13 @@ function packageOutput(core, { toQuestionnaire }) {
     return resource
   }
   return [
-    { file: 'questionnaire-referral-intake.json', expect: 'accepted', resource: made },
-    { file: 'questionnaire-minimal-v1.json', expect: 'accepted', resource: exported(toQuestionnaire, minimal, minimalContext) },
+    // Definitions too: the responses below are judged against them. The
+    // broken copies after them share the intake's url and version and are
+    // not definitions; with a copy validated and the original loaded as a
+    // definition, the validator judges a response against the definition
+    // (measured with 7.0.2 on 17 October 2026).
+    { file: 'questionnaire-referral-intake.json', expect: 'accepted', definition: true, resource: made },
+    { file: 'questionnaire-minimal-v1.json', expect: 'accepted', definition: true, resource: exported(toQuestionnaire, minimal, minimalContext) },
     {
       file: 'questionnaire-option-without-system.json',
       why: "an option coded without a system, as formancy's options are: 'A code with no system has no defined meaning', which is why the package names one under the Questionnaire's url",
@@ -112,6 +120,89 @@ function packageOutput(core, { toQuestionnaire }) {
       expect: [{ severity: 'error', id: 'Profile_EXT_Not_Here', expression: 'Questionnaire.item[0].item[12]' }],
       resource: broken((resource) => {
         delete resource.item[0].item[12].required
+      }),
+    },
+  ]
+}
+
+/**
+ * The QuestionnaireResponse `toQuestionnaireResponse` makes of `answers` to
+ * `form` in `context`; the gate stops on a refusal, which is the package
+ * refusing a submission the corpus says it writes.
+ */
+function answered(toQuestionnaireResponse, form, answers, context) {
+  const result = toQuestionnaireResponse(form, answers, context)
+  if (!result.ok) throw new Error(`the package refused a corpus submission: ${result.refusals.map((refusal) => refusal.message).join('; ')}`)
+  return result.questionnaireResponse
+}
+
+/**
+ * The package's responses, accepted and broken: what
+ * `@formancy/health-questionnaire` writes of the synthetic submissions, and
+ * that output with one thing 0007 refuses or leaves out put back. Each
+ * break is found by linkId, so the expressions follow the items.
+ */
+function responseOutput(core, { toQuestionnaireResponse }) {
+  const { integer } = core
+  const urgent = answered(toQuestionnaireResponse, intake, intakeUrgent, intakeResponseContext)
+  const routine = answered(toQuestionnaireResponse, intake, intakeRoutine, intakeResponseContext)
+  const broken = (made, change) => {
+    const resource = copy(made)
+    change(resource)
+    return resource
+  }
+  const about = (resource) => resource.item[0].item
+  const familyName = about(urgent).findIndex((item) => item.linkId === 'family_name')
+  const row = about(routine).findIndex((item) => item.linkId === 'contacts')
+  // The reason for urgency comes right after the topics in the Questionnaire.
+  const topics = about(routine).findIndex((item) => item.linkId === 'topics')
+  return [
+    { file: 'questionnaireresponse-referral-intake-urgent.json', expect: 'accepted', resource: urgent },
+    { file: 'questionnaireresponse-referral-intake-routine.json', expect: 'accepted', resource: routine },
+    { file: 'questionnaireresponse-minimal-v1.json', expect: 'accepted', resource: answered(toQuestionnaireResponse, minimal, minimalAnswers, minimalResponseContext) },
+    {
+      file: 'questionnaireresponse-answer-wrong-type.json',
+      why: "an answer of another type than its item's, a number on a text item, which formancy's engine accepts in a text field and the package refuses; on a question no enableWhen reads, since the validator stops the whole run on one that does ('Expected answer and actual answer have incompatible types', measured)",
+      expect: [{ severity: 'error', id: 'Questionnaire_QR_Item_WrongType', expression: `QuestionnaireResponse.item[0].item[${String(familyName)}].answer[0].value.ofType(integer)` }],
+      resource: broken(urgent, (resource) => {
+        about(resource)[familyName].answer = [{ valueInteger: integer('7', 'corpus') }]
+      }),
+    },
+    {
+      file: 'questionnaireresponse-answer-on-skipped-page.json',
+      why: 'an answer on an item the other answers disable: the contact page the routine intake skips, whose phone number formancy keeps and the package leaves out',
+      expect: [{ severity: 'error', id: 'Questionnaire_QR_Item_NotEnabled2', expression: 'QuestionnaireResponse.item[1]' }],
+      resource: broken(routine, (resource) => {
+        resource.item.push({ linkId: 'contact_page', item: [{ linkId: 'contact_phone', answer: [{ valueString: intakeRoutine.contact_phone }] }] })
+      }),
+    },
+    {
+      file: 'questionnaireresponse-answer-on-disabled-item.json',
+      why: "an answer on an item a visible rule disables: the reason for urgency the routine intake's answers hide, which formancy's engine clears when its rule hides it, and which the package refuses as disabled",
+      expect: [{ severity: 'error', id: 'Questionnaire_QR_Item_NotEnabled2', expression: `QuestionnaireResponse.item[0].item[${String(topics + 1)}]` }],
+      resource: broken(routine, (resource) => {
+        about(resource).splice(topics + 1, 0, { linkId: 'urgent_reason', answer: [{ valueString: 'Synthetischer Grund' }] })
+      }),
+    },
+    {
+      file: 'questionnaireresponse-linkid-not-in-questionnaire.json',
+      why: 'an item of a linkId the Questionnaire lacks, which a submission\'s name its form does not have would be, and which the package refuses',
+      expect: [{ severity: 'error', id: 'Questionnaire_QR_Item_NotFound', expression: 'QuestionnaireResponse' }],
+      resource: broken(urgent, (resource) => {
+        resource.item.push({ linkId: 'not_in_form', answer: [{ valueString: 'Synthetic' }] })
+      }),
+    },
+    {
+      file: 'questionnaireresponse-empty-row.json',
+      why: 'a row of the required repeater that holds nothing, which formancy pads a repeater with and counts, and which the package does not write',
+      expect: [
+        { severity: 'error', id: 'QUESTIONNAIRE_QR_ITEM_GROUP_REQUIRED', expression: `QuestionnaireResponse.item[0].item[${String(row + 1)}]` },
+        // The validator gives this issue its message as its id, with the
+        // linkId in it (measured): no other id is there to match.
+        { severity: 'error', id: "No response answer found for required item 'contact_name'", expression: `QuestionnaireResponse.item[0].item[${String(row + 1)}]` },
+      ],
+      resource: broken(routine, (resource) => {
+        about(resource).splice(row + 1, 0, { linkId: 'contacts' })
       }),
     },
   ]
@@ -183,6 +274,7 @@ export function corpus({ core, questionnaire: questionnairePackage }) {
 
   return [
     ...packageOutput(core, questionnairePackage),
+    ...responseOutput(core, questionnairePackage),
     { file: 'questionnaire.json', expect: 'accepted', definition: true, resource: questionnaire() },
     { file: 'questionnaireresponse.json', expect: 'accepted', resource: questionnaireResponse() },
     { file: 'bundle.json', expect: 'accepted', resource: bundle() },

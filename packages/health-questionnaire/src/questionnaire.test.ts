@@ -1,7 +1,8 @@
 import { Refusal, writeJson } from '@formancy/health-core'
 import { SPEC_VERSIONS } from '@formancy/spec'
 import { describe, expect, test } from 'vitest'
-import { SPEC_VERSIONS_MAPPED, toQuestionnaire } from './questionnaire.js'
+import { placesOf } from './places.js'
+import { SPEC_VERSIONS_MAPPED, pairsOf, toQuestionnaire } from './questionnaire.js'
 import { HOST, URL, exported, form, refused, ruled } from './test-support.js'
 
 const name = { key: 'given_name', type: 'text', label: 'Given name', required: true } as const
@@ -157,5 +158,18 @@ describe('toQuestionnaire', () => {
   test('writes a page as a group holding its fields', () => {
     const paged = exported(form([{ key: 'step_one', type: 'page', label: 'Step one', fields: [{ key: 'note', type: 'static', label: 'Nothing to answer.' }] }]))
     expect(paged.item).toEqual([{ linkId: 'step_one', text: 'Step one', type: 'group', item: [{ linkId: 'note', text: 'Nothing to answer.', type: 'display' }] }])
+  })
+
+  // The answers' export walks each field beside the item it became; the
+  // two are paired by their order, which itemsOf keeps. A pairing that
+  // came out of step would answer one field's item with another's value,
+  // so it throws, as a bug, rather than pair them anyway.
+  test('pairs each field with its item, and throws when they are out of step', () => {
+    const schema = form([name, { key: 'box', type: 'group', fields: [{ key: 'inside', type: 'text' }] }])
+    const { roots } = placesOf(schema)
+    const items = exported(schema).item ?? []
+    expect(pairsOf(roots, items).map((pair) => [pair.item.linkId, pair.children.map((child) => child.item.linkId)])).toEqual([['given_name', []], ['box', ['inside']]])
+    expect(() => pairsOf(roots, items.slice(1))).toThrow(/one per field/)
+    expect(() => pairsOf(roots, [...items].reverse())).toThrow(/not its field/)
   })
 })

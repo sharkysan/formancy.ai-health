@@ -10,6 +10,66 @@ later.
 
 ## Unreleased
 
+**A formancy submission is exported as a QuestionnaireResponse, or refused
+whole**
+([0007](docs/decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)):
+`toQuestionnaireResponse(form, answers, context)` in
+`@formancy/health-questionnaire`, walked from the Questionnaire
+`toQuestionnaire` writes of the same form and context, so that the two
+cannot disagree on an item, a type, an option or a condition. The answers
+are formancy's submission, the value its engine holds; the response names
+the Questionnaire's url and version, and takes its status, its time and
+its subject, author and source from the host, by name. A number answer is
+written as the shortest text that reads back as the double formancy holds,
+because formancy stores a JSON number and the text a person typed is gone
+before any export sees it; an integer item's answer is refused when it is
+not whole -- formancy's step admits 2.0000001 -- or past 32 bits, never
+rounded or wrapped. No answer is formancy's own, absent, null, blank or an
+empty list, and is not written; a value on a page a skip rule walks past,
+which formancy keeps, is left out, since R4 gives a disabled item no
+answer; a value on an item a visible rule hides, which formancy's engine
+clears when the rule hides it, is refused, because one there was set while
+the item was hidden, which no form a person fills does, or the two readings
+of the rule disagree. A value of another
+type than the field's, which formancy's engine accepts in a field with no
+bound, an option not offered, a value past a bound, a name the form does
+not have, a required item a completed response leaves unanswered, and a
+subject given as an address, each refuse the whole export, every refusal
+at once, quoting no answer. The SDC response profile is claimed only with
+a subject and a versioned Questionnaire, where it validates.
+
+**A `!=` in a Questionnaire is written with its unanswered case**, and is
+refused under `&&`, as is a skip rule of `||` or of a list holding a
+value; the Questionnaires of forms with a `!=` change. Because the HL7
+validator, judging the first responses, reads R4's `!=` as "an answer that
+differs" and disables an item whose question is unanswered, where formancy
+shows it: an answer a person gave there was refused
+(`Questionnaire_QR_Item_NotEnabled2`). With the unanswered case beside it,
+the validator's reading and R5's agree with formancy's (0007 supersedes
+0006 in this).
+
+**A computed field a visible rule can hide is refused in a
+Questionnaire**, and so is a rule comparing with a text of nothing but
+whitespace; forms with either, which 0006 exported, are refused. Because
+formancy computes the field while the rule hides it and keeps the value,
+which R4 gives a disabled item no answer for, so that every response to
+such a form would be refused; and because formancy holds a text of spaces
+and shows what a rule comparing with it enables, where the response,
+reading formancy's own "no answer", writes none (0007, found in review).
+
+**A repeater's `minItems` is no longer `questionnaire-minOccurs`**: one,
+on a required repeater, is what `required` says already, and one above is
+refused. Because the validator counts a repeating group's minimum against
+the answers of each row, which a group never has, so that no response to
+such a Questionnaire validated (0007).
+
+**health-core compares numbers and holds references**: `compareNumbers(a,
+b)`, exact and by value, for reading an enableWhen against an answer;
+`reference(value, path, types?)`, a reference by name, `Type/id` or a
+`urn:uuid:`, never an address; and the rules `answer-type`, `option`,
+`bound`, `unknown`, `disabled`, `required` and `reference`, so that a host
+branches on the answers' refusals as on every other.
+
 **A formancy form is exported as an SDC Questionnaire, or refused whole**
 ([0006](docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)):
 `@formancy/health-questionnaire` and its `toQuestionnaire(form, context)`,

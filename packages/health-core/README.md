@@ -52,6 +52,11 @@ leading `+`, no `-0`, no exponent. Ranges are compared as BigInt.
 
 `FhirNumber.text` is the text; `isFhirNumber(value)` tells one from any
 other object, a Questionnaire item with a `type` and a `text` included.
+`compareNumbers(a, b)` answers -1, 0 or 1 as R4 compares two numbers, by
+value and exactly: `2.5` and `2.50` are equal, `-0` and `0` too, and 2^53 +
+1 is greater than 2^53, which a double cannot tell. It is for reading what
+a number means -- an enableWhen and the answer it compares -- and never
+for writing one, which keeps its text.
 `JSON.stringify` of a `FhirNumber` throws rather than write an object
 where the number was: FHIR JSON is written by `writeJson`.
 
@@ -80,6 +85,14 @@ script, a region and variants, each in the case RFC 5646 gives it --
 47 would accept and the HL7 validator refuses as a resource's language
 ([0006](../../docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)).
 Whether a subtag is registered is not checked: `zz` passes.
+
+`reference(value, path, types?)` is a reference by name, as a host
+supplies one: `Patient/7`, a resource type and R4's id, which the receiver
+resolves against its own base, or a `urn:uuid:` inside the Bundle that
+carries both; of one of `types` where R4 allows only some. An absolute URL
+is an address, and refused as `reference`, as is a version-specific or a
+contained reference. That a type it allows anywhere is one R4 has is not
+checked: `Patiant/1` has the form.
 
 Nothing here makes an identifier, an id or a timestamp: identity is the
 host's to supply, and no source in the package reads a clock or a random
@@ -124,7 +137,15 @@ nothing reads; `invalid`, one its own format's validator refuses;
 `unmapped`, something the resource cannot say as the input says it; and
 `missing`, a text the resource needs and the input lacks, with the
 `language` it is missing in
-([0006](../../docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)). A path repeats the names of the
+([0006](../../docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)).
+A submission's answers are refused with seven more: `answer-type`, a
+value of another type than its item takes; `option`, one no option has,
+or chosen twice; `bound`, past a bound its item states; `unknown`, a name
+its form gives no answer, whose refusal names the object holding it and
+never the name, which is the submission's and not the form's; `disabled`,
+an answer to an item the other answers disable; `required`, a required
+item a completed response leaves unanswered; and `reference`
+([0007](../../docs/decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)). A path repeats the names of the
 document it passed through, element names in FHIR JSON; text that is not
 FHIR JSON may use anything as a name, and the path carries it.
 

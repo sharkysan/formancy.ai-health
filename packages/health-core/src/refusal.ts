@@ -43,6 +43,16 @@ const RULES = {
   invalid: 'the validator of its own format refuses it, so what it says is not known',
   unmapped: 'nothing in the resource says what it says, and nothing here approximates it',
   missing: 'a text the resource needs of it is absent, and nothing here supplies one or falls back to another language',
+  // What a submission's answers hold and a response cannot (0007). A
+  // submission's own names are not the form's, so `unknown` names the
+  // object that holds one and never the name itself.
+  'answer-type': 'it is not a value of the type its item takes, or its item takes no answer at all',
+  option: 'it is not one of the options its question offers, or it chooses one twice',
+  bound: 'it is outside a bound its question states',
+  unknown: "it holds a name its form gives no answer, which is not repeated here: only the form's own names are",
+  disabled: 'it answers an item the other answers disable, and R4 gives a disabled item no answer',
+  required: 'its item is required, and a completed response holds no answer to it that R4 counts',
+  reference: 'it is not a reference by name that R4 allows here: a resource type it allows and an id, or a urn:uuid, and never an address',
 } as const
 
 /** What was wrong with a value. */

@@ -4,13 +4,15 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import { corpus } from './corpus.mjs'
-import { intake, intakeContext, minimal, minimalContext } from './forms.mjs'
+import { intake, intakeContext, intakeResponseContext, intakeRoutine, intakeUrgent, minimal, minimalAnswers, minimalContext, minimalResponseContext } from './forms.mjs'
 
 /**
- * The validator gate's corpus holds every construct version 1 maps (0006):
- * H04's acceptance is that each produces a Questionnaire the validator
- * accepts, so a field type, an item type or a rule the package maps and
- * no corpus form uses is a mapping the gate never judged.
+ * The validator gate's corpus holds every construct version 1 maps (0006)
+ * and every answer the package writes (0007): H04's acceptance is that
+ * each produces a Questionnaire the validator accepts, and H05's that the
+ * answers of every mapped type are validated, so a field type, an item
+ * type, a rule or an answer type the package writes and no corpus form or
+ * submission holds is a mapping the gate never judged.
  *
  * Derived from the package as built, never listed here: each of
  * `@formancy/spec`'s field types and rule kinds is offered to
@@ -24,7 +26,7 @@ const QUESTIONNAIRE = join(repo, 'packages', 'health-questionnaire', 'dist', 'in
 const CORE = join(repo, 'packages', 'health-core', 'dist', 'index.mjs')
 
 if (!existsSync(QUESTIONNAIRE) || !existsSync(CORE)) throw new Error('scripts/validator/corpus.test.mjs reads the packages as built: run pnpm build first')
-const { toQuestionnaire } = await import(pathToFileURL(QUESTIONNAIRE).href)
+const { toQuestionnaire, toQuestionnaireResponse } = await import(pathToFileURL(QUESTIONNAIRE).href)
 const core = await import(pathToFileURL(CORE).href)
 // @formancy/spec as health-questionnaire resolves it: the version it maps.
 const fromQuestionnaire = createRequire(join(repo, 'packages', 'health-questionnaire', 'package.json'))
@@ -67,6 +69,33 @@ const mappedItemTypes = new Set([...FIELD_TYPES, 'number'].flatMap((type) => [on
   return result.ok ? [...itemTypes(result.questionnaire.item)] : []
 }))
 const forms = [intake, minimal]
+
+/** The response `toQuestionnaireResponse` makes of `answers` to `form`; fails the suite when it refuses a corpus submission. */
+function answered(form, answers, context) {
+  const result = toQuestionnaireResponse(form, answers, context)
+  if (!result.ok) throw new Error(`the package refused a corpus submission: ${result.refusals.map((refusal) => refusal.message).join('; ')}`)
+  return result.questionnaireResponse
+}
+
+/** The package's responses to the corpus's submissions, by the file the gate writes each to. */
+const responses = [
+  ['questionnaireresponse-referral-intake-urgent.json', answered(intake, intakeUrgent, intakeResponseContext)],
+  ['questionnaireresponse-referral-intake-routine.json', answered(intake, intakeRoutine, intakeResponseContext)],
+  ['questionnaireresponse-minimal-v1.json', answered(minimal, minimalAnswers, minimalResponseContext)],
+]
+
+/** What a response's items hold: each answer's value[x], a group's nested items, and a repeating group's repeated ones. */
+function answerShapes(items = [], into = new Set()) {
+  const seen = new Set()
+  for (const item of items) {
+    for (const answer of item.answer ?? []) for (const name of Object.keys(answer)) if (name.startsWith('value')) into.add(name)
+    if (item.item !== undefined) into.add('nested items')
+    if (seen.has(item.linkId)) into.add('repeated items')
+    seen.add(item.linkId)
+    answerShapes(item.item, into)
+  }
+  return into
+}
 
 describe('the corpus of the validator gate', () => {
   // A guard on the guard: derived sets that came back empty would be held
@@ -153,11 +182,43 @@ describe('the corpus of the validator gate', () => {
     for (const language of ['fr', 'it']) expect(written).toContain(`{"url":"lang","valueCode":"${language}"}`)
   })
 
-  // Every Questionnaire the gate is told is the package's is the
-  // package's: made by toQuestionnaire, never typed into the corpus.
-  test('is made by the package, which accepts every form of it', () => {
-    const entries = corpus({ core, questionnaire: { toQuestionnaire } })
-    expect(entries.filter((entry) => entry.file === 'questionnaire-referral-intake.json')[0]?.resource).toEqual(exported(intake, intakeContext).questionnaire)
-    expect(entries.filter((entry) => entry.file === 'questionnaire-minimal-v1.json')[0]?.resource).toEqual(exported(minimal, minimalContext).questionnaire)
+  // Every Questionnaire and response the gate is told is the package's is
+  // the package's: made by toQuestionnaire and toQuestionnaireResponse,
+  // never typed into the corpus.
+  test('is made by the package, which accepts every form and submission of it', () => {
+    const entries = corpus({ core, questionnaire: { toQuestionnaire, toQuestionnaireResponse } })
+    const resource = (file) => entries.filter((entry) => entry.file === file)[0]?.resource
+    expect(resource('questionnaire-referral-intake.json')).toEqual(exported(intake, intakeContext).questionnaire)
+    expect(resource('questionnaire-minimal-v1.json')).toEqual(exported(minimal, minimalContext).questionnaire)
+    for (const [file, made] of responses) expect(resource(file)).toEqual(made)
+  })
+
+  // A response is judged by the validator as what it holds: an answer of
+  // each type its item has, a group's nested items, a repeating group's
+  // repeated ones. Derived from the package, never listed: a pool of
+  // values is offered as the answer to every field type the package maps,
+  // and whatever value[x] and structure it writes, the corpus's responses
+  // must hold. The pool is only what is offered; what is written is the
+  // package's, and a type it starts to write fails this until a corpus
+  // submission answers it.
+  test('holds every answer type and structure the package writes, in the responses the gate judges', () => {
+    const pool = ['a', 'b', 1, 2.5, true, false, '2000-01-01', '09:30', '2026-01-01T00:00:00Z', ['a'], ['a', 'b'], { inner: 'x' }, [{ inner: 'x' }], [{ inner: 'x' }, { inner: 'y' }]]
+    const context = { questionnaire: HOST, status: 'in-progress', authored: '2026-10-17' }
+    const shapes = [...new Set(mappedFieldTypes)].flatMap((type) => [oneField(type), oneField(type, { step: 1 })])
+    const derived = new Set(
+      shapes.flatMap((form) =>
+        pool.flatMap((value) =>
+          // A page's field answers beside it, at the top; any other's under its key.
+          [{ only: value }, { inner: value }].flatMap((answers) => {
+            const result = toQuestionnaireResponse(form, answers, context)
+            return result.ok ? [...answerShapes(result.questionnaireResponse.item)] : []
+          }),
+        ),
+      ),
+    )
+    // A guard on the guard: a derivation that wrote nothing would be held by any corpus.
+    expect([...derived]).toEqual(expect.arrayContaining(['valueCoding', 'valueInteger', 'valueTime', 'nested items', 'repeated items']))
+    const written = new Set(responses.flatMap(([, made]) => [...answerShapes(made.item)]))
+    expect([...derived].filter((shape) => !written.has(shape)).sort()).toEqual([])
   })
 })

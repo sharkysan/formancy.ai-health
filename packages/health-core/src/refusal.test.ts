@@ -63,6 +63,27 @@ describe('a refusal', () => {
     expect(refusal.message).not.toContain('undefined')
   })
 
+  // The answers' export refuses what a submission holds and a response
+  // cannot: a value of another type, an option not offered, a value past a
+  // bound, a name the form does not have, an answer to a disabled item, a
+  // required item unanswered, a reference that is an address. A host
+  // branches on each by its rule; one with no words of its own would print
+  // "undefined" where the reason belongs (0007).
+  test.each([
+    ['answer-type', 'answers.weight'],
+    ['option', 'answers.topics[1]'],
+    ['bound', 'answers.children'],
+    ['unknown', 'answers.address'],
+    ['disabled', 'answers.canton_detail'],
+    ['required', 'answers.contacts'],
+    ['reference', 'context.subject.reference'],
+  ] as const)('for answers, %s, has words of its own and names its path', (rule, path) => {
+    const refusal = new Refusal(rule, path)
+    expect(refusal).toMatchObject({ rule, path })
+    expect(refusal.message.startsWith(`${path}: `)).toBe(true)
+    expect(refusal.message).not.toContain('undefined')
+  })
+
   // A text missing in one language is not the same refusal as the same
   // text missing in another: without the language, a host that asked for
   // fr and it would get two refusals it cannot tell apart, and fix one.

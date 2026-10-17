@@ -15,7 +15,11 @@
  *   extensions, each of the item's own type (values.ts).
  * - `maxItems` is `questionnaire-maxOccurs`, and `minItems` above zero
  *   `questionnaire-minOccurs`, which R4 allows only on a required item:
- *   on one that is not, it is refused.
+ *   on one that is not, it is refused. A repeater's is not written: the
+ *   HL7 validator counts a repeating group's minOccurs against the answers
+ *   of each repetition, which a group never has, so no response to such a
+ *   Questionnaire validates (measured, 0007). A minimum of one is what
+ *   `required` already says of a repeating group; one above is refused.
  * - `pattern`, `format` and `mask` constrain an answer in ways no SDC
  *   element states without a regular expression of another dialect or
  *   FHIRPath, and are refused; so is `clearOnHide: false` on a field a
@@ -55,7 +59,7 @@ import { dateOf, dateTimeOf, decimalOf, integerOf, timeOf } from './values.js'
  *
  * A repeater is required in both when it has a row: R4's repeating group
  * when one has an answer in it, so a row left empty, which formancy counts,
- * is for the answers' export to refuse (H05).
+ * is for the answers' export to refuse, and it does (response.ts, 0007).
  */
 const REQUIRED_REFUSED: ReadonlySet<FieldDef['type']> = new Set(['checkbox', 'group', 'page', 'static'])
 
@@ -99,8 +103,8 @@ function constraintsOf(field: FieldDef, type: ItemType, path: string, scope: Ite
   if (lowest !== undefined) add(refusals.take(() => bound(EXTENSION.minValue, type, lowest, lowestAt)))
   if (highest !== undefined) add(refusals.take(() => bound(EXTENSION.maxValue, type, highest, highestAt)))
   if (field.minItems !== undefined && field.minItems > 0) {
-    if (field.required === true) add(refusals.take(() => ({ url: EXTENSION.minOccurs, valueInteger: integerOf(field.minItems as number, member(path, 'minItems')) })))
-    else refusals.add('unmapped', member(path, 'minItems'))
+    if (field.required !== true || (field.type === 'repeater' && field.minItems > 1)) refusals.add('unmapped', member(path, 'minItems'))
+    else if (field.type !== 'repeater') add(refusals.take(() => ({ url: EXTENSION.minOccurs, valueInteger: integerOf(field.minItems as number, member(path, 'minItems')) })))
   }
   if (field.maxItems !== undefined) add(refusals.take(() => ({ url: EXTENSION.maxOccurs, valueInteger: integerOf(field.maxItems as number, member(path, 'maxItems')) })))
   if (type === 'choice') found.answerOption = answerOptionsOf(field, path, scope.url, scope.texts, refusals)

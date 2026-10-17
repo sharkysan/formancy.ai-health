@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, test, vi } from 'vitest'
-import { decimal, integer, isFhirNumber, positiveInt, unsignedInt, type FhirDecimal, type FhirInteger } from './numbers.js'
+import { compareNumbers, decimal, integer, isFhirNumber, positiveInt, unsignedInt, type FhirDecimal, type FhirInteger } from './numbers.js'
 import { refusalOf } from './test-support.js'
 
 describe('decimal', () => {
@@ -176,5 +176,53 @@ describe('a FHIR number', () => {
     expectTypeOf(decimal('1', 'value')).toEqualTypeOf<FhirDecimal>()
     expectTypeOf(integer('1', 'value')).toEqualTypeOf<FhirInteger>()
     expectTypeOf<FhirInteger>().not.toMatchTypeOf<FhirDecimal>()
+  })
+})
+
+describe('compareNumbers', () => {
+  // An enableWhen compares an answer with a value, and R4 compares the
+  // values, not their spellings: the HL7 validator enables an item on
+  // `= 2.50` for an answer of 2.5 (measured 17 October 2026, 0007), and
+  // formancy's CEL agrees. A comparison of the texts, or through a double,
+  // would get one of these wrong: a trailing zero, the sign of zero, an
+  // exponent, a digit past the seventeenth, a magnitude no double holds.
+  test.each([
+    ['2.5', '2.50', 0],
+    ['-0', '0', 0],
+    ['-0.0', '0.000', 0],
+    ['1E+2', '100', 0],
+    ['1e-3', '0.001', 0],
+    ['100', '1E+2', 0],
+    ['0.1', '0.10000000000000001', -1],
+    ['9007199254740993', '9007199254740992', 1],
+    ['-1', '1', -1],
+    ['1', '-1', 1],
+    ['-2', '-10', 1],
+    ['-10', '-2', -1],
+    ['0', '-0.5', 1],
+    ['-0.5', '0', -1],
+    ['0', '0.5', -1],
+    ['0.5', '0', 1],
+    ['1E+400', '1E+399', 1],
+    ['123456789012345678901234567890', '123456789012345678901234567891', -1],
+    ['0.5', '0.49999999999999999999', 1],
+    ['150', '149.99', 1],
+    ['99.5', '100', -1],
+  ] as const)('%s against %s is %i', (a, b, order) => {
+    expect(compareNumbers(decimal(a, 'a'), decimal(b, 'b'))).toBe(order)
+  })
+
+  // An integer item's answer is compared with an integer's value, and an
+  // integer is a number as a decimal is: 3 and 3.0 are one value.
+  test('compares an integer with a decimal by their values', () => {
+    expect(compareNumbers(integer('3', 'a'), decimal('3.0', 'b'))).toBe(0)
+    expect(compareNumbers(integer('-2147483648', 'a'), integer('2147483647', 'b'))).toBe(-1)
+  })
+
+  // Only a number made here has a checked text; anything else handed
+  // over is a bug in the caller, and answering for it would compare a
+  // text nobody checked.
+  test('throws on what is not a FHIR number', () => {
+    expect(() => compareNumbers({ type: 'decimal', text: '1' } as never, decimal('1', 'b'))).toThrow(TypeError)
   })
 })

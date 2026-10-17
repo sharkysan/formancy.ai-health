@@ -1,6 +1,6 @@
 # 0006 — Export a formancy form as an SDC Questionnaire, field by field, and refuse it whole where an item cannot say what the field says
 
-- **Status:** accepted
+- **Status:** accepted; its mapping of `!=`, of a repeater's `minItems`, of a computed field a visible rule can hide and of a comparison with whitespace superseded by [0007](0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)
 - **Date:** 2026-10-17
 - **Deciders:** Daniel Bacher
 - **Verified by:** the tests of `@formancy/health-questionnaire`, run by

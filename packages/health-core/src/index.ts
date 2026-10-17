@@ -1,6 +1,7 @@
 export { FHIR_VERSION } from './version.js'
 export { Refusal, type PrimitiveType, type RefusalContext, type Rule } from './refusal.js'
 export {
+  compareNumbers,
   decimal,
   integer,
   isFhirNumber,
@@ -33,6 +34,7 @@ export {
   type FhirUuid,
   type StringType,
 } from './strings.js'
+export { reference, type FhirReference } from './references.js'
 export type { FhirJson, FhirJsonObject } from './json.js'
 export { readJson } from './json-read.js'
 export { writeJson } from './json-write.js'

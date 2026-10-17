@@ -2,3 +2,7 @@ export { toQuestionnaire, SPEC_VERSIONS_MAPPED, type QuestionnaireExport } from 
 export { STATUSES, type QuestionnaireContext } from './context.js'
 export { SDC_QUESTIONNAIRE } from './resource.js'
 export type { AnswerOption, Coding, EnableWhen, Extension, PrimitiveElement, Questionnaire, QuestionnaireItem } from './resource.js'
+export { toQuestionnaireResponse, type QuestionnaireResponseExport } from './response.js'
+export { AUTHORS, RESPONSE_STATUSES, SOURCES, type ResponseContext } from './response-context.js'
+export { SDC_QUESTIONNAIRE_RESPONSE } from './response-resource.js'
+export type { QuestionnaireResponse, QuestionnaireResponseAnswer, QuestionnaireResponseItem, Reference, ResponseCoding } from './response-resource.js'

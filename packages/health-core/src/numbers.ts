@@ -138,3 +138,54 @@ export function positiveInt(value: string | bigint, path: string): FhirPositiveI
 export function unsignedInt(value: string | bigint, path: string): FhirUnsignedInt {
   return new FhirNumber('unsignedInt', value, path)
 }
+
+/** A number's value as its sign, its significant digits without a trailing zero, and the power of ten of the last of them; zero has no digits. */
+interface Value {
+  readonly negative: boolean
+  readonly digits: string
+  readonly exponent: bigint
+}
+
+/** R4's decimal grammar in parts: the sign, the whole digits, the fraction's and the exponent. */
+const PARTS = /^(-?)([0-9]+)(?:\.([0-9]+))?(?:[eE]([+-]?[0-9]+))?$/
+
+/** A FHIR number's text, already of R4's grammar, as its value: read from its digits, never through a double. */
+function valueOf(text: string): Value {
+  // Every FHIR number's text was checked against R4's grammar when it was
+  // made, which these parts are, so it matches.
+  const [, sign, whole, fraction = '', power = '0'] = PARTS.exec(text) as RegExpExecArray
+  const significant = `${whole as string}${fraction}`.replace(/^0+/, '')
+  const digits = significant.replace(/0+$/, '')
+  const exponent = BigInt(power) - BigInt(fraction.length) + BigInt(significant.length - digits.length)
+  return { negative: sign === '-' && digits !== '', digits, exponent }
+}
+
+/** -1, 0 or 1 as `a`'s magnitude is less than, equal to or greater than `b`'s. */
+function compareMagnitudes(a: Value, b: Value): -1 | 0 | 1 {
+  if (a.digits === '' || b.digits === '') return a.digits === b.digits ? 0 : a.digits === '' ? -1 : 1
+  // The power of ten just above each one's leading digit decides, unless
+  // they share it; then their digits, read from the left, do.
+  const above = (value: Value) => value.exponent + BigInt(value.digits.length)
+  if (above(a) !== above(b)) return above(a) < above(b) ? -1 : 1
+  const width = Math.max(a.digits.length, b.digits.length)
+  const [left, right] = [a.digits.padEnd(width, '0'), b.digits.padEnd(width, '0')]
+  return left === right ? 0 : left < right ? -1 : 1
+}
+
+/**
+ * -1, 0 or 1 as `a`'s value is less than, equal to or greater than `b`'s,
+ * compared as R4 compares numbers, by value and exactly: 2.5 and 2.50 are
+ * equal, -0 and 0 too, and 2^53 + 1 is greater than 2^53, which a double
+ * cannot tell. An integer compares with a decimal by its value. For what
+ * reads a FHIR number's meaning rather than its digits -- an enableWhen
+ * and the answer it compares (0007) -- and never for writing one, which
+ * keeps its text.
+ */
+export function compareNumbers(a: FhirNumber, b: FhirNumber): -1 | 0 | 1 {
+  if (!isFhirNumber(a) || !isFhirNumber(b)) throw new TypeError('compareNumbers compares FHIR numbers made by decimal(), integer(), positiveInt() or unsignedInt()')
+  const [left, right] = [valueOf(a.text), valueOf(b.text)]
+  if (left.negative !== right.negative) return left.negative ? -1 : 1
+  const order = compareMagnitudes(left, right)
+  if (!left.negative || order === 0) return order
+  return order === 1 ? -1 : 1
+}

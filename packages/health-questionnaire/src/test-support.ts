@@ -6,6 +6,9 @@ import type { FieldDef, FormSchema, LogicRule } from '@formancy/spec'
 import type { QuestionnaireContext } from './context.js'
 import { toQuestionnaire } from './questionnaire.js'
 import type { Questionnaire, QuestionnaireItem } from './resource.js'
+import type { ResponseContext } from './response-context.js'
+import type { QuestionnaireResponse } from './response-resource.js'
+import { toQuestionnaireResponse } from './response.js'
 
 /** A host's context: a base under a domain that never resolves (RFC 6761), a published version. */
 export const HOST: QuestionnaireContext = { base: 'https://forms.synthetic.invalid', version: '3', status: 'active' }
@@ -41,4 +44,21 @@ export function refused(schema: unknown, context: QuestionnaireContext = HOST): 
 export function onlyItem(field: FieldDef, context: QuestionnaireContext = HOST): QuestionnaireItem {
   const [only] = exported(form([field]), context).item as readonly QuestionnaireItem[]
   return only as QuestionnaireItem
+}
+
+/** A host's context for answers: the intake as HOST exports it, completed, of a synthetic patient. */
+export const RESPONDING: ResponseContext = { questionnaire: HOST, status: 'completed', authored: '2026-10-17T10:00:00+02:00', subject: { reference: 'Patient/synthetic-1' } }
+
+/** The QuestionnaireResponse of `answers` to `schema`; fails, listing them, when it is refused. */
+export function answered(schema: unknown, answers: unknown, context: ResponseContext = RESPONDING): QuestionnaireResponse {
+  const result = toQuestionnaireResponse(schema as FormSchema, answers, context)
+  if (!result.ok) throw new Error(`refused: ${result.refusals.map((refusal) => refusal.message).join('; ')}`)
+  return result.questionnaireResponse
+}
+
+/** Each refusal of `answers` to `schema`, as `rule path`; fails when they are exported. */
+export function refusedAnswers(schema: unknown, answers: unknown, context: ResponseContext = RESPONDING): string[] {
+  const result = toQuestionnaireResponse(schema as FormSchema, answers, context)
+  if (result.ok) throw new Error('expected the answers to be refused, and they were exported')
+  return result.refusals.map((refusal) => `${refusal.rule} ${refusal.path}`)
 }

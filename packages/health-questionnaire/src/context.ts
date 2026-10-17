@@ -47,19 +47,23 @@ export interface CheckedContext {
 
 const KNOWN_STATUS: ReadonlySet<string> = new Set(STATUSES)
 
-/** The context checked, or undefined with each thing wrong with it in `refusals`. */
-export function checkContext(context: QuestionnaireContext, refusals: Refusals): CheckedContext | undefined {
+/**
+ * The context checked, or undefined with each thing wrong with it in
+ * `refusals`, at paths from `at`: `context`, or where a response's context
+ * holds it.
+ */
+export function checkContext(context: QuestionnaireContext, refusals: Refusals, at: string = CONTEXT): CheckedContext | undefined {
   const before = refusals.count
-  const base = refusals.take(() => uri(context.base, member(CONTEXT, 'base')))
-  const version = context.version === undefined ? undefined : refusals.take(() => positiveInt(context.version as string | bigint, member(CONTEXT, 'version')))
-  const status = refusals.take(() => code(context.status, member(CONTEXT, 'status')))
-  if (status !== undefined && !KNOWN_STATUS.has(status)) refusals.add('unmapped', member(CONTEXT, 'status'))
+  const base = refusals.take(() => uri(context.base, member(at, 'base')))
+  const version = context.version === undefined ? undefined : refusals.take(() => positiveInt(context.version as string | bigint, member(at, 'version')))
+  const status = refusals.take(() => code(context.status, member(at, 'status')))
+  if (status !== undefined && !KNOWN_STATUS.has(status)) refusals.add('unmapped', member(at, 'status'))
   const languages: FhirCode[] = []
   for (const [index, asked] of (context.languages ?? []).entries()) {
     // A tag in its canonical case, as health-core's language() holds one:
     // the validator checks no translation's lang offline, so this is all
     // that does, and a refusal of a text missing in it names it.
-    const tag = refusals.take(() => language(asked, item(member(CONTEXT, 'languages'), index)))
+    const tag = refusals.take(() => language(asked, item(member(at, 'languages'), index)))
     // Asked twice is asked once: a second translation into one language
     // would be two answers to which text a reader of it sees.
     if (tag !== undefined && !languages.includes(tag)) languages.push(tag)
