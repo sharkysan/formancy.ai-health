@@ -10,6 +10,14 @@ later.
 
 ## Unreleased
 
+**The United Kingdom is among the formats it targets, after Germany and
+before Austria**: UK Core and, for England, the NHS Booking and Referral
+Standard (BaRS), on the same FHIR R4 4.0.1 as CH Core. After Germany
+because a BaRS referral is a message rather than a document and no
+released UK Core profiles a Questionnaire; before Austria because BaRS is
+a national standard in service. Like Austria's and Europe's, it is built
+only when a customer pays for it, and nothing for it is built yet.
+
 **Formancy Health is source-available, on Formancy Data's and Formancy
 Report's terms, and the licence is in force before a lawyer has read it**
 ([0001](docs/decisions/0001-a-paid-module-in-its-own-repository.md)).
