@@ -37,9 +37,20 @@ register, with a CHANGELOG line saying why, and goes through the gate:
    the package does.
 
 A guide in ballot is never chosen. A ballot a released guide declares is
-registered all the same, because the guide depends on it: SDC 4.0.0
-declares a ballot of the R4 extensions pack. The register's check refuses
-a prerelease the gate asks for, and one no registered package declares.
+registered all the same, because the guide depends on it: SDC 4.0.0 and
+CH Core 6.0.0 declare a ballot of the R4 extensions pack. The register's
+check refuses a prerelease the gate asks for, and one no registered
+package declares.
+
+A manifest may declare a range, as CH Core 6.0.0 declares CH Term
+`3.3.x`; the register pins the one release of it the validator loads,
+with a note naming the range, and the registers' test fails on a range
+it does not read, or two releases one range admits.
+
+A licence the dependency policy refuses is a decision's to admit, for one
+entry at its exact version, never a field's: 0009 admits CC-BY-4.0 for
+`ihe.formatcode.fhir#1.4.0`, which CH Term declares and the gate only
+downloads (`ADMITTED_LICENCES` in `scripts/validator/registers.mjs`).
 
 Held by `scripts/validator/registers.test.mjs`, in `pnpm test:repo` and,
 against the downloads and the run, in the validator job.

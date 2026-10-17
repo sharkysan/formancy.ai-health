@@ -4,7 +4,7 @@
  * they are. None of it is in the submission, and none of it is made here:
  * no clock, no identifier (CLAUDE.md, "Identity comes from the host").
  */
-import { code, dateTime, member, reference, type FhirCode, type FhirDateTime, type Refusals } from '@formancy/health-core'
+import { code, dateTime, item, known, member, reference, uri, type FhirCode, type FhirDateTime, type FhirUri, type Refusals } from '@formancy/health-core'
 import { checkContext, type CheckedContext, type QuestionnaireContext } from './context.js'
 import type { Reference } from './response-resource.js'
 import { CONTEXT } from './refusals.js'
@@ -43,6 +43,13 @@ export interface ResponseContext {
   readonly author?: { readonly reference: string }
   /** Who gave them, by name: one of R4's source types. */
   readonly source?: { readonly reference: string }
+  /**
+   * The profiles the response claims beside SDC's, canonicals the host
+   * names with their version: a country's response profile, such as CH
+   * ORF's, whose rules the validator holds a response to only when it
+   * claims it (0009). Never fetched.
+   */
+  readonly profiles?: readonly string[]
 }
 
 /** The response's own elements, each of the type it is written as. */
@@ -52,6 +59,8 @@ export interface ResponseElements {
   readonly subject: Reference | undefined
   readonly author: Reference | undefined
   readonly source: Reference | undefined
+  /** The host's claims, each once, in the order given. */
+  readonly profiles: readonly FhirUri[]
 }
 
 /**
@@ -70,17 +79,50 @@ export interface CheckedResponseContext {
 
 const KNOWN_STATUS: ReadonlySet<string> = new Set(RESPONSE_STATUSES)
 
+/** The members of the context, and no others. */
+const MEMBERS = ['questionnaire', 'status', 'authored', 'subject', 'author', 'source', 'profiles']
+
 /** The reference at `name` in the context, checked, of one of `types` where R4 allows only those. */
 function referenceAt(context: ResponseContext, name: 'subject' | 'author' | 'source', refusals: Refusals, types?: readonly string[]): Reference | undefined {
   const given: unknown = context[name]
   if (given === undefined) return undefined
+  // A reference by name and nothing else: a display beside it is the
+  // host's text, and would be left out without a word.
+  if (typeof given === 'object' && given !== null && !Array.isArray(given)) known(given, ['reference'], member(CONTEXT, name), refusals)
   const text = typeof given === 'object' && given !== null ? (given as { readonly reference?: unknown }).reference : undefined
   const checked = refusals.take(() => reference(text as string, member(member(CONTEXT, name), 'reference'), types))
   return checked === undefined ? undefined : { reference: checked }
 }
 
-/** The context checked, with each thing wrong with it in `refusals`. */
+/**
+ * The host's profile claims, checked: each a uri, each once. An empty
+ * list, or anything that is no list, is refused as absent: FHIR JSON has
+ * no empty array, and nothing else is a list of claims.
+ */
+function profilesAt(context: ResponseContext, refusals: Refusals): FhirUri[] {
+  const given: unknown = context.profiles
+  if (given === undefined) return []
+  const at = member(CONTEXT, 'profiles')
+  if (!Array.isArray(given) || given.length === 0) {
+    refusals.add('absent', at)
+    return []
+  }
+  const profiles: FhirUri[] = []
+  for (const [index, each] of (given as readonly string[]).entries()) {
+    const profile = refusals.take(() => uri(each, item(at, index)))
+    if (profile !== undefined && !profiles.includes(profile)) profiles.push(profile)
+  }
+  return profiles
+}
+
+/**
+ * The context checked, with each thing wrong with it in `refusals`: a
+ * member it does not name -- an encounter, a basedOn, which the response
+ * does not write -- as `unmapped`, and a context that is no object as
+ * `absent` (health-core's `known`).
+ */
 export function checkResponseContext(context: ResponseContext, refusals: Refusals): CheckedResponseContext {
+  if (!known(context, MEMBERS, CONTEXT, refusals)) return { questionnaire: undefined, complete: false, elements: undefined }
   const questionnaire = checkContext(context.questionnaire, refusals, member(CONTEXT, 'questionnaire'))
   const given = refusals.take(() => code(context.status, member(CONTEXT, 'status')))
   const status = given !== undefined && KNOWN_STATUS.has(given) ? given : undefined
@@ -89,7 +131,8 @@ export function checkResponseContext(context: ResponseContext, refusals: Refusal
   const subject = referenceAt(context, 'subject', refusals)
   const author = referenceAt(context, 'author', refusals, AUTHORS)
   const source = referenceAt(context, 'source', refusals, SOURCES)
+  const profiles = profilesAt(context, refusals)
   const complete = status !== undefined && COMPLETE.has(status)
   if (status === undefined || authored === undefined) return { questionnaire, complete, elements: undefined }
-  return { questionnaire, complete, elements: { status, authored, subject, author, source } }
+  return { questionnaire, complete, elements: { status, authored, subject, author, source, profiles } }
 }

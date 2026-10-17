@@ -46,6 +46,10 @@ component_management:
       - type: project
         informational: true
   individual_components:
+    - component_id: health-ch
+      name: packages/health-ch
+      paths:
+        - packages/health-ch/**
     - component_id: health-core
       name: packages/health-core
       paths:

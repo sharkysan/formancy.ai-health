@@ -39,6 +39,13 @@ function document(): DocumentContext {
   }
 }
 
+/**
+ * The narrative `document()`'s Composition carries, as writeJson writes
+ * the div's text: its title and its section's, each a heading, in the
+ * XHTML namespace.
+ */
+const NARRATIVE = '<div xmlns=\\"http://www.w3.org/1999/xhtml\\"><h1>Zuweisung</h1><h2>Bericht</h2></div>'
+
 /** The Bundle of `context`, which must not be refused. */
 function bundled(context: DocumentContext = document()) {
   const result = toDocumentBundle(context)
@@ -69,7 +76,8 @@ describe('a document Bundle', () => {
     const head =
       '{"resourceType":"Bundle","meta":{"lastUpdated":"2026-10-17T10:05:00+02:00"},' +
       `"identifier":{"system":"urn:ietf:rfc:3986","value":"${NAMES.document}"},"type":"document","timestamp":"2026-10-17T10:05:00+02:00",` +
-      `"entry":[{"fullUrl":"${NAMES.composition}","resource":{"resourceType":"Composition","status":"final",` +
+      `"entry":[{"fullUrl":"${NAMES.composition}","resource":{"resourceType":"Composition",` +
+      `"text":{"status":"generated","div":"${NARRATIVE}"},"status":"final",` +
       '"type":{"coding":[{"system":"http://terminology.hl7.org/CodeSystem/v2-0270","code":"CN","display":"Consultation"}]},' +
       `"subject":{"reference":"${NAMES.patient}"},"date":"2026-10-17T10:00:00+02:00","author":[{"reference":"${NAMES.practitioner}"}],"title":"Zuweisung",` +
       `"section":[{"title":"Bericht","entry":[{"reference":"${NAMES.documentReference}"}]}]}}`
@@ -117,7 +125,7 @@ describe('a document Bundle', () => {
     const context = withComposition({ id: 'referral-letter', identifier: { system: 'urn:ietf:rfc:3986', value: 'urn:uuid:00000000-0000-4000-8000-000000000007' }, category: [CLINICAL_DOCUMENT] })
     const composition = bundled({ ...context, id: 'referral-document' })
     expect(composition.id).toBe('referral-document')
-    expect(writeJson(composition.entry[0].resource)).toContain('"resourceType":"Composition","id":"referral-letter","identifier":{"system":"urn:ietf:rfc:3986","value":"urn:uuid:00000000-0000-4000-8000-000000000007"},"status":"final"')
+    expect(writeJson(composition.entry[0].resource)).toContain(`"resourceType":"Composition","id":"referral-letter","text":{"status":"generated","div":"${NARRATIVE}"},"identifier":{"system":"urn:ietf:rfc:3986","value":"urn:uuid:00000000-0000-4000-8000-000000000007"},"status":"final"`)
     expect(writeJson(bundled().entry[0].resource)).not.toContain('"identifier"')
   })
 
@@ -140,7 +148,63 @@ describe('a document Bundle', () => {
   })
 })
 
+describe('what a document claims, and its narrative', () => {
+  const CH_ORF_DOCUMENT = 'http://fhir.ch/ig/ch-orf/StructureDefinition/ch-orf-document'
+  const CH_ORF_COMPOSITION = 'http://fhir.ch/ig/ch-orf/StructureDefinition/ch-orf-composition|3.0.2'
+
+  // A guide that profiles a document asks the Bundle to claim its profile
+  // -- CH ORF: "The FHIR Bundle.meta.profile shall include the value
+  // http://fhir.ch/ig/ch-orf/StructureDefinition/ch-orf-document" -- and
+  // without the claim the validator holds the Bundle to R4 alone. The host
+  // names what each claims; written in R4's order of Meta, the
+  // lastUpdated first.
+  test('claims the profile the host names, for the Bundle and for the Composition', () => {
+    const composition = bundled({ ...withComposition({ profile: CH_ORF_COMPOSITION }), profile: CH_ORF_DOCUMENT })
+    expect(writeJson(composition)).toMatch(/^\{"resourceType":"Bundle","meta":\{"lastUpdated":"2026-10-17T10:05:00\+02:00","profile":\["http:\/\/fhir\.ch\/ig\/ch-orf\/StructureDefinition\/ch-orf-document"\]\},"identifier"/)
+    expect(writeJson(composition.entry[0].resource)).toContain(`{"resourceType":"Composition","meta":{"profile":["${CH_ORF_COMPOSITION}"]},"text":`)
+    expect(writeJson(bundled())).not.toContain('"profile"')
+  })
+
+  // A profile is a canonical, which is a uri; anything else would be a
+  // claim of nothing the validator could find.
+  test('refuses a profile that is no uri', () => {
+    expect(refusedAs(toDocumentBundle({ ...document(), profile: 'ch orf document' }))).toEqual(['grammar context.profile'])
+    expect(refusedAs(toDocumentBundle(withComposition({ profile: '' })))).toEqual(['grammar context.composition.profile'])
+  })
+
+  // A guide that asks for the Composition's narrative -- CH ORF makes
+  // Composition.text 1..1 -- gets one written from the Composition's own
+  // elements, so "generated" is true of it: its title and each section's
+  // title, and nothing a host wrote as markup. An ampersand or an angle
+  // bracket in a title is text, escaped; written as it is, it would be
+  // markup the host never wrote, or no XHTML at all.
+  test("writes a generated narrative of the Composition's titles, each escaped", () => {
+    const context = withComposition({ title: 'Zuweisung & Bericht', section: [{ title: 'Befund <dringend>', entry: [{ reference: NAMES.documentReference }] }] })
+    expect(writeJson(bundled(context).entry[0].resource)).toContain(
+      '"text":{"status":"generated","div":"<div xmlns=\\"http://www.w3.org/1999/xhtml\\"><h1>Zuweisung &amp; Bericht</h1><h2>Befund &lt;dringend&gt;</h2></div>"}',
+    )
+  })
+
+  // A title XML cannot carry -- a control character a host's database let
+  // through -- would make the narrative no XML, which the validator
+  // refuses; it is refused here, where the title stands, and never quoted,
+  // by health-core's text, which holds a host's text to what a narrative
+  // carries.
+  test('refuses a title the narrative cannot carry, at its place', () => {
+    const result = toDocumentBundle(withComposition({ title: 'Zuweisung\u0007', section: [{ title: 'Bericht\u0000', entry: [{ reference: NAMES.documentReference }] }] }))
+    expect(refusedAs(result)).toEqual(['grammar context.composition.title', 'grammar context.composition.section[0].title'])
+    for (const refusal of result.ok ? [] : result.refusals) expect(refusal.message).not.toContain('Zuweisung')
+  })
+})
+
 describe('what a document must be given', () => {
+  // What the host hands over is untrusted whatever its type says: a
+  // document that is no object is refused as absent, not read into a
+  // TypeError.
+  test('refuses a document that is no object', () => {
+    expect(refusedAs(toDocumentBundle('document' as never))).toEqual(['absent context'])
+  })
+
   // Each is the host's and nothing here makes one up: a document's
   // identifier "is never re-used", and one made here would be nobody's.
   test.each([
@@ -190,6 +254,50 @@ describe('what a document must be given', () => {
     ['an author by Type/id of a type R4 does not allow', { author: [{ reference: 'Observation/1' }] }, ['reference context.composition.author[0].reference']],
   ])('refuses a Composition with %s', (_, change, refused) => {
     expect(refusedAs(toDocumentBundle(withComposition(change)))).toEqual(refused)
+  })
+
+  // A member the context does not name -- a Composition's confidentiality,
+  // a coding's version, a section's mode, an entry's search -- is
+  // something the host meant to send, and the Bundle left it out without
+  // a word (found in H07's review). Each is refused as unmapped at the
+  // object that holds it, by health-core's `known`, as health-ch refuses
+  // its own context's, the member's name not repeated.
+  test.each([
+    ['the document', (given: DocumentContext) => ({ ...given, signature: { type: [] } }), 'unmapped context', 'signature'],
+    ["the document's identifier", (given: DocumentContext) => ({ ...given, identifier: { ...given.identifier, use: 'official' } }), 'unmapped context.identifier', 'use'],
+    ['the Composition', (given: DocumentContext) => withComposition({ confidentiality: 'N' }, given), 'unmapped context.composition', 'confidentiality'],
+    ["the Composition's identifier", (given: DocumentContext) => withComposition({ identifier: { system: 'urn:ietf:rfc:3986', value: NAMES.document, use: 'official' } }, given), 'unmapped context.composition.identifier', 'use'],
+    ["the Composition's type", (given: DocumentContext) => withComposition({ type: { ...CONSULTATION, version: '2.9' } }, given), 'unmapped context.composition.type', 'version'],
+    ['a category', (given: DocumentContext) => withComposition({ category: [{ ...CLINICAL_DOCUMENT, userSelected: true }] }, given), 'unmapped context.composition.category[0]', 'userSelected'],
+    ["the Composition's subject", (given: DocumentContext) => withComposition({ subject: { reference: NAMES.patient, display: 'Synthetica Beispiel' } }, given), 'unmapped context.composition.subject', 'display'],
+    ['an author', (given: DocumentContext) => withComposition({ author: [{ reference: NAMES.practitioner, type: 'Practitioner' }] }, given), 'unmapped context.composition.author[0]', 'type'],
+    ['a section', (given: DocumentContext) => withComposition({ section: [{ ...given.composition.section[0], mode: 'snapshot' }] }, given), 'unmapped context.composition.section[0]', 'mode'],
+    ['an entry', (given: DocumentContext) => withEntry(0, { ...given.entries[0], search: { mode: 'match' } } as never, given), 'unmapped context.entries[0]', 'search'],
+  ])('refuses a member %s does not name', (_, change, refused, name) => {
+    const result = toDocumentBundle(change(document()))
+    expect(refusedAs(result)).toEqual([refused])
+    expect(result.ok ? '' : result.refusals[0]?.message).not.toContain(name)
+  })
+
+  // A host's array may have a hole, which JSON never has. Walked past,
+  // one among the authors, the categories or the sections gave a Bundle
+  // health-core's writer then refused, and one among the entries a
+  // TypeError. Each is refused where it stands.
+  test('refuses a hole in a list, at its index', () => {
+    const holed = <T>(first: T, third: T): T[] => {
+      const list: T[] = [first]
+      list[2] = third
+      return list
+    }
+    const author = { reference: NAMES.practitioner }
+    expect(refusedAs(toDocumentBundle(withComposition({ author: holed(author, author) })))).toEqual(['absent context.composition.author[1]'])
+    expect(refusedAs(toDocumentBundle(withComposition({ category: holed(CLINICAL_DOCUMENT, CLINICAL_DOCUMENT) })))).toEqual(['absent context.composition.category[1]'])
+    const section = document().composition.section[0]
+    expect(refusedAs(toDocumentBundle(withComposition({ section: holed(section, section) })))).toEqual(['absent context.composition.section[1]'])
+    const entry = { reference: NAMES.documentReference }
+    expect(refusedAs(toDocumentBundle(withComposition({ section: [{ title: 'Bericht', entry: holed(entry, entry) }] })))).toEqual(['absent context.composition.section[0].entry[1]'])
+    const context = document()
+    expect(refusedAs(toDocumentBundle({ ...context, entries: holed(context.entries[0] as never, context.entries[1] as never) }))).toContain('absent context.entries[1]')
   })
 })
 

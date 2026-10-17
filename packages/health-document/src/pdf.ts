@@ -32,7 +32,7 @@
  * the value brings: not its `slice`, which on Node's Buffer shares the
  * Buffer's memory instead of copying it.
  */
-import { member, type Refusals } from '@formancy/health-core'
+import { known, member, type Refusals } from '@formancy/health-core'
 
 /** Where a refusal of the PDF points: what the host handed over. */
 export const PDF = 'pdf'
@@ -93,6 +93,9 @@ function looksLikeAPdf(bytes: Uint8Array): boolean {
 export function checkPdf(pdf: Pdf, refusals: Refusals): Uint8Array | undefined {
   const given: Partial<Pdf> = typeof pdf === 'object' && pdf !== null ? pdf : {}
   const before = refusals.count
+  // A member the PDF is not read for -- a file name, a title -- is the
+  // host's to say elsewhere, and would be left out without a word.
+  if (given === pdf) known(pdf, ['bytes', 'profile'], PDF, refusals)
   const profile: unknown = given.profile
   const profileAt = member(PDF, 'profile')
   if (profile === undefined) refusals.add('absent', profileAt)

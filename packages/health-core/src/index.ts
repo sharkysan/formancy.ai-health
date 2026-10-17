@@ -37,6 +37,8 @@ export {
 export { base64Binary, fromBase64Binary, toBase64Binary, type FhirBase64Binary } from './base64.js'
 export { reference, type FhirReference } from './references.js'
 export { Refusals } from './refusals.js'
+export { codeOf, known, needed, objectAt, optional, readItems, text, valueAt } from './host.js'
+export { xhtmlText } from './xhtml.js'
 export { item, member, type FhirJson, type FhirJsonObject } from './json.js'
 export { readJson } from './json-read.js'
 export { writeJson } from './json-write.js'

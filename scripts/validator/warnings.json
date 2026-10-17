@@ -3,7 +3,7 @@
   "warnings": [
     {
       "id": "http://hl7.org/fhir/StructureDefinition/DomainResource#dom-6",
-      "reason": "dom-6, 'A resource should have narrative for robust management', a best-practice constraint. No resource here carries a narrative, and 0006 decides that a Questionnaire is written without one: its items are what a renderer shows, and a narrative made from them would be a second rendering of the same texts that could disagree with them and that nothing here checks."
+      "reason": "dom-6, 'A resource should have narrative for robust management', a best-practice constraint. No resource here carries a narrative but a document's Composition, whose narrative of its titles CH ORF requires (0009). 0006 decides that a Questionnaire is written without one: its items are what a renderer shows, and a narrative made from them would be a second rendering of the same texts that could disagree with them and that nothing here checks. The same holds of every other resource the packages write that dom-6 asks of -- the QuestionnaireResponse, the DocumentReference, and health-ch's Patient, Practitioner, Organization, PractitionerRole and ServiceRequest, none of whose profiles makes text 1..1 (R4's, ch-orf-questionnaireresponse, ch-orf-servicerequest and CH Core's four, each text 0..1, read on 17 October 2026): a narrative made of a person's values would be a second rendering of them that nothing here checks against them, and a receiver renders the resources (0008, 0009)."
     },
     {
       "id": "TERMINOLOGY_TX_WARNING",
@@ -12,6 +12,10 @@
     {
       "id": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnairecommon#sdc-3",
       "reason": "sdc-3, 'Semver is the preferred version algorithm', a best-practice constraint. formancy numbers a form's published versions 1, 2, 3 (its server's form_versions.version), which the integer algorithm orders exactly; written as semver, 3.0.0 would claim major, minor and patch meanings formancy's numbers do not have (0006)."
+    },
+    {
+      "id": "http://fhir.ch/ig/ch-core/StructureDefinition/ch-core-gln-identifier#gln-startswith76",
+      "reason": "gln-startswith76, CH Core 6.0.0's 'GLN must start with 76 for Swiss HCP', a warning (ch-core-gln-identifier, Identifier.value). The corpus's GLNs are under GS1's prefix 952, 'used for demonstrations and examples of the GS1 system' (GS1 General Specifications 26.0, Table 1-4), so that no organisation or person holds them, which scripts/synthetic-identifiers.test.mjs holds; and health-ch takes a GLN that does not start 76 -- the author's, who may practise outside Switzerland -- as the GLN it is (0009). Accepted wherever the corpus raises it, as every entry here is; a GLN that starts 76, as a Swiss practitioner's does, is in no corpus file, since nothing shows of one that nobody holds it."
     }
   ]
 }

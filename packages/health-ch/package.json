@@ -1,0 +1,51 @@
+{
+  "name": "@formancy/health-ch",
+  "version": "0.1.0",
+  "description": "Formancy Health for Switzerland: CH Core 6.0.0 and CH ORF 3.0.2, the patient, the practitioner's role, the service request and the CH ORF document around a form's answers, naming its Questionnaire by canonical, for the HL7® FHIR® standard, R4 4.0.1, built from what the host supplies and never sent. No framework, no Node, no network.",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE.md",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "test:coverage": "vitest run --coverage",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check:pkg": "publint && attw --pack . --profile esm-only"
+  },
+  "dependencies": {
+    "@formancy/health-core": "workspace:*",
+    "@formancy/health-document": "workspace:*",
+    "@formancy/health-questionnaire": "workspace:*"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "catalog:",
+    "@formancy/spec": "0.5.0",
+    "@vitest/coverage-v8": "catalog:",
+    "publint": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "unrun": "^0.3.1",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sharkysan/formancy.ai-health.git",
+    "directory": "packages/health-ch"
+  },
+  "homepage": "https://github.com/sharkysan/formancy.ai-health",
+  "bugs": "https://github.com/sharkysan/formancy.ai-health/issues"
+}

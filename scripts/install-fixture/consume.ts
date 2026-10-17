@@ -22,6 +22,7 @@ import {
   type FhirInteger,
   type FhirJson,
 } from '@formancy/health-core'
+import { CH_ORF_DOCUMENT, GLN_SYSTEM, PROFILES, ahvn13, gln, toChOrfDocument, type ChOrfContext } from '@formancy/health-ch'
 import {
   PROVED_PDF_PROFILES,
   toDocumentBundle,
@@ -221,7 +222,76 @@ export function refusedByTheDocumentTypes(): void {
   toDocumentReference({ bytes: pdfBytes, profile: 'PDF/A' }, referenceContext)
 }
 
+// A CH ORF document from the tarballs: the answers health-questionnaire
+// writes, claiming CH ORF's response profile as the host passes it, and
+// the host's patient, author and order, which health-ch writes in CH
+// Core's and CH ORF's profiles and health-document assembles. A dist that
+// lost a profile, the LOINC section code CH ORF fixes or its LOINC name, a
+// GLN's system or the entries' order fails here; and one whose
+// health-document or health-questionnaire were second copies would refuse
+// what the other wrote. The GLNs are under GS1's prefix 952, kept for
+// examples, so nobody's; no valid AHV number is written here, nor in any
+// file, which scripts/synthetic-identifiers.test.mjs holds.
+const chNames = {
+  document: 'urn:uuid:00000000-0000-4000-8000-0000000000c0',
+  composition: 'urn:uuid:00000000-0000-4000-8000-0000000000c1',
+  patient: 'urn:uuid:00000000-0000-4000-8000-0000000000c2',
+  response: 'urn:uuid:00000000-0000-4000-8000-0000000000c3',
+  order: 'urn:uuid:00000000-0000-4000-8000-0000000000c4',
+  role: 'urn:uuid:00000000-0000-4000-8000-0000000000c5',
+  practitioner: 'urn:uuid:00000000-0000-4000-8000-0000000000c6',
+}
+const chAnswers = toQuestionnaireResponse(form, { weight: 70.5 }, { ...answering, subject: { reference: chNames.patient }, author: { reference: chNames.role }, profiles: [PROFILES.questionnaireResponse] })
+if (!chAnswers.ok) throw new Error(`toQuestionnaireResponse refused CH ORF's claim: ${chAnswers.refusals.map((refusal) => refusal.message).join('; ')}`)
+const referral: ChOrfContext = {
+  identifier: chNames.document,
+  timestamp: '2026-10-17T10:05:00+02:00',
+  composition: { fullUrl: chNames.composition, status: 'final', type: consultation, category: { system: 'http://terminology.hl7.org/CodeSystem/v3-ActClass', code: 'DOCCLIN' }, date: '2026-10-17T10:00:00+02:00', title: 'Zuweisung', sectionTitle: 'Auftrag' },
+  patient: { fullUrl: chNames.patient, identifier: [{ system: 'urn:oid:2.999.756.1', value: 'P-0001' }], name: { family: 'Beispiel', given: ['Synthetica'] } },
+  author: { fullUrl: chNames.role, practitioner: { fullUrl: chNames.practitioner, gln: '9520000000011', name: { family: 'Muster' } } },
+  serviceRequests: [{ fullUrl: chNames.order, placer: { system: 'urn:ietf:rfc:3986', value: 'urn:uuid:00000000-0000-4000-8000-0000000000c7' }, status: 'active', intent: 'order' }],
+  response: { fullUrl: chNames.response, questionnaireResponse: chAnswers.questionnaireResponse },
+}
+const chOrf = toChOrfDocument(referral)
+if (!chOrf.ok) throw new Error(`toChOrfDocument refused a referral it writes: ${chOrf.refusals.map((refusal) => refusal.message).join('; ')}`)
+const chOrfBundle: Bundle = chOrf.bundle
+const written_ch_orf = writeJson(chOrfBundle)
+const chOrfHead = `{"resourceType":"Bundle","meta":{"lastUpdated":"2026-10-17T10:05:00+02:00","profile":["${CH_ORF_DOCUMENT}"]},"identifier":{"system":"urn:ietf:rfc:3986","value":"${chNames.document}"}`
+for (const part of [chOrfHead, `"meta":{"profile":["${PROFILES.composition}"]}`, '"code":{"coding":[{"system":"http://loinc.org","code":"93037-0","display":"Portable medical order form"}]}', `{"system":"${GLN_SYSTEM}","value":"9520000000011"}`, `"profile":["${PROFILES.patient}"]`]) {
+  if (!written_ch_orf.includes(part)) throw new Error(`the CH ORF document lacks ${part}: ${written_ch_orf.slice(0, 400)}`)
+}
+const chOrfTypes = chOrf.bundle.entry.map((entry) => entry.resource['resourceType']).join()
+if (chOrfTypes !== 'Composition,Patient,QuestionnaireResponse,ServiceRequest,PractitionerRole,Practitioner') throw new Error(`the CH ORF document's entries are ${chOrfTypes}`)
+
+// A GLN whose check digit is not GS1's, and an AHV number in its printed
+// form, are refused by health-core's Refusal at their paths, naming no
+// digit: the validator only warns of either.
+if (gln('9520000000011', 'gln') !== '9520000000011') throw new Error('gln() did not keep a GLN')
+try {
+  gln('9520000000012', 'context.author.practitioner.gln')
+  throw new Error('gln() accepted a wrong check digit')
+} catch (error) {
+  if (!(error instanceof Refusal) || error.rule !== 'check-digit' || error.message.includes('952')) throw error
+}
+try {
+  ahvn13('756.1234.5678.90', 'context.patient.ahvn13')
+  throw new Error('ahvn13() accepted the printed form')
+} catch (error) {
+  if (!(error instanceof Refusal) || error.rule !== 'identifier' || error.path !== 'context.patient.ahvn13') throw error
+}
+const unchecked = toChOrfDocument({ ...referral, author: { ...referral.author, practitioner: { ...referral.author.practitioner, gln: '9520000000012' } } })
+const [digit] = unchecked.ok ? [] : unchecked.refusals
+if (!(digit instanceof Refusal) || digit.rule !== 'check-digit' || digit.path !== 'context.author.practitioner.gln') throw new Error('a wrong GLN was not refused in the document')
+
+// The declarations hold a host to what CH Core uses: gender unknown,
+// which CH Core says Switzerland does not use, does not compile.
+export function refusedByTheChTypes(): void {
+  // @ts-expect-error CH Core's ch-pat-2: gender unknown is not used in Switzerland
+  toChOrfDocument({ ...referral, patient: { ...referral.patient, gender: 'unknown' } })
+}
+
 console.log(`ok: @formancy/health-core emits FHIR ${FHIR_VERSION}, and wrote ${written}`)
 console.log(`ok: @formancy/health-questionnaire wrote a Questionnaire of ${String(written_questionnaire.length)} characters and refused a signature`)
 console.log(`ok: @formancy/health-questionnaire wrote a QuestionnaireResponse of ${String(written_response.length)} characters and refused a fraction on an integer item`)
 console.log(`ok: @formancy/health-document wrote a document Bundle of ${String(written_bundle.length)} characters carrying a PDF, and refused a PDF/A declaration and a dangling reference`)
+console.log(`ok: @formancy/health-ch wrote a CH ORF document of ${String(written_ch_orf.length)} characters, and refused a GLN's wrong check digit and a printed AHV number`)

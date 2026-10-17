@@ -12,7 +12,9 @@ import { reporters } from './vitest.results'
  * the validator gate's registers, verdict and command line hold (0005), and its
  * corpus holds everything the questionnaire package maps (0006) and every
  * resource type the packages write, a PDF in each place health-document puts
- * one (0008).
+ * one (0008), and every code system the corpus writes is one whose terms
+ * admit it, LOINC with its name and its notice in NOTICE and no SNOMED CT,
+ * and no file holds an AHV number that passes its check (0009).
  *
  * Run as `pnpm test:repo`, and by CI on every pull request. A guard that is not
  * a gate is a comment.

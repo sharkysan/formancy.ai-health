@@ -14,8 +14,8 @@
  * host's objects, so that a document once assembled does not change
  * (documents.html: "its content can never be changed").
  */
-import { id, item, member, readJson, Refusal, uuid, writeJson, type FhirJson, type FhirJsonObject, type FhirUuid, type Refusals } from '@formancy/health-core'
-import { CONTEXT, needed, optional, valueAt } from './context.js'
+import { id, known, member, needed, optional, readItems, readJson, Refusal, uuid, valueAt, writeJson, type FhirJson, type FhirJsonObject, type FhirUuid, type Refusals } from '@formancy/health-core'
+import { CONTEXT } from './context.js'
 
 /** A resource the host hands over, under the name it gives it in the Bundle. */
 export interface DocumentEntry {
@@ -53,13 +53,9 @@ function copyOf(resource: unknown, path: string): FhirJson {
   }
 }
 
-function entryAt(entries: readonly unknown[], index: number, refusals: Refusals): Entry {
-  const path = item(ENTRIES, index)
-  const given = entries[index]
-  if (typeof given !== 'object' || given === null) {
-    refusals.add('absent', path)
-    return { path, fullUrl: undefined, resource: undefined, type: undefined }
-  }
+function entryAt(entries: readonly unknown[], index: string, path: string, refusals: Refusals): Entry {
+  const given = valueAt(entries, index)
+  if (!known(given, ['fullUrl', 'resource'], path, refusals)) return { path, fullUrl: undefined, resource: undefined, type: undefined }
   const fullUrl = needed(given, 'fullUrl', member(path, 'fullUrl'), refusals, uuid)
   const at = member(path, 'resource')
   const resource = valueAt(given, 'resource')
@@ -85,5 +81,5 @@ function entryAt(entries: readonly unknown[], index: number, refusals: Refusals)
 /** The entries `given` holds, each read; undefined, refused, when there is no list of them. */
 export function entriesOf(given: unknown, refusals: Refusals): Entry[] | undefined {
   if (!Array.isArray(given)) return refusals.add('absent', ENTRIES)
-  return given.map((_, index) => entryAt(given, index, refusals))
+  return readItems(given, ENTRIES, (index, path) => entryAt(given, index, path, refusals))
 }

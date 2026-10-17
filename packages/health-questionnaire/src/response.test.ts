@@ -44,6 +44,46 @@ describe('toQuestionnaireResponse', () => {
     expect(answered(form([reason]), { reason: 'x' }, { ...RESPONDING, questionnaire: { base: HOST.base, status: 'draft' } })).not.toHaveProperty('meta')
   })
 
+  // A country's guide profiles the response too -- CH ORF's
+  // ch-orf-questionnaireresponse holds its subject to the document's
+  // patient -- and the validator holds a response only to the profiles it
+  // claims: one that does not claim the guide's is held to nothing of it
+  // (measured 17 October 2026, 0009). The host names those claims; each is
+  // written after SDC's, in the order given, once, in the one place a
+  // response's meta is written.
+  test("claims the profiles the host names, after SDC's, each once", () => {
+    const CH_ORF = 'http://fhir.ch/ig/ch-orf/StructureDefinition/ch-orf-questionnaireresponse|3.0.2'
+    const OTHER = 'https://profiles.synthetic.invalid/StructureDefinition/response|1'
+    const response = answered(form([reason]), { reason: 'x' }, { ...RESPONDING, profiles: [CH_ORF, OTHER, CH_ORF] })
+    expect(writeJson(response)).toContain(`"meta":{"profile":["http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaireresponse|4.0.0","${CH_ORF}","${OTHER}"]},"questionnaire"`)
+    // Where SDC's claim is not made, the host's are made alone.
+    const { subject: _, ...anonymous } = RESPONDING
+    expect(answered(form([reason]), { reason: 'x' }, { ...anonymous, profiles: [CH_ORF] }).meta).toEqual({ profile: [CH_ORF] })
+    // Naming SDC's own claim claims it once.
+    expect(answered(form([reason]), { reason: 'x' }, { ...RESPONDING, profiles: ['http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaireresponse|4.0.0'] }).meta).toEqual({
+      profile: ['http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaireresponse|4.0.0'],
+    })
+  })
+
+  // A claim is a canonical, a uri; an empty list claims nothing and FHIR
+  // JSON has no empty array, and something that is no list is no claims.
+  test('refuses claims that are no list of canonicals', () => {
+    expect(refusedAnswers(form([reason]), { reason: 'x' }, { ...RESPONDING, profiles: ['ch orf'] })).toEqual(['grammar context.profiles[0]'])
+    expect(refusedAnswers(form([reason]), { reason: 'x' }, { ...RESPONDING, profiles: [] })).toEqual(['absent context.profiles'])
+    expect(refusedAnswers(form([reason]), { reason: 'x' }, { ...RESPONDING, profiles: 'http://fhir.ch/ig/ch-orf/StructureDefinition/ch-orf-questionnaireresponse' as never })).toEqual(['absent context.profiles'])
+  })
+
+  // A host's array may have a hole, which JSON never has; walked past, a
+  // hole among the claims would leave the claim the host meant out of
+  // the response without a word. Each index is read, and a hole refused
+  // where it stands, as health-core's readItems reads the other packages'
+  // lists (0009).
+  test('refuses a hole among the claims, at its index', () => {
+    const claims: string[] = ['https://profiles.synthetic.invalid/StructureDefinition/response|1']
+    claims[2] = 'https://profiles.synthetic.invalid/StructureDefinition/other|1'
+    expect(refusedAnswers(form([reason]), { reason: 'x' }, { ...RESPONDING, profiles: claims })).toEqual(['grammar context.profiles[1]'])
+  })
+
   // The author and the source are the host's, by name, and written where
   // R4 puts them: after authored.
   test('writes the author and the source the host names', () => {
@@ -78,6 +118,23 @@ describe('toQuestionnaireResponse', () => {
       'reference context.author.reference',
       'reference context.source.reference',
     ])
+  })
+
+  // A member the context does not name -- an encounter, a basedOn, a
+  // publisher of the Questionnaire's, a reference's display -- is
+  // something the host meant the response to say, and it was left out
+  // without a word (found in H07's review, 0009). Each is refused as
+  // unmapped at the object that holds it, by health-core's `known`, its
+  // name not repeated; a context that is no object is refused as absent,
+  // where it was read into a TypeError.
+  test.each([
+    ['an encounter', { ...RESPONDING, encounter: { reference: 'Encounter/synthetic-1' } }, 'unmapped context'],
+    ['what it is based on', { ...RESPONDING, basedOn: [{ reference: 'ServiceRequest/synthetic-1' }] }, 'unmapped context'],
+    ["a publisher of the Questionnaire's", { ...RESPONDING, questionnaire: { ...HOST, publisher: 'Praxis Synthetica' } }, 'unmapped context.questionnaire'],
+    ["a subject's display", { ...RESPONDING, subject: { reference: 'Patient/synthetic-1', display: 'Synthetica Beispiel' } }, 'unmapped context.subject'],
+    ['null for a context', null, 'absent context'],
+  ])('refuses a context with %s', (_, context, refusal) => {
+    expect(refusedAnswers(form([reason]), { reason: 'x' }, context as never)).toEqual([refusal])
   })
 
   // Each of the response's own elements is refused alone, too: one wrong
@@ -311,13 +368,13 @@ describe('a refusal of answers', () => {
       { ...reason, key: 'required_reason' },
     ]
     const schema = ruled(fields, [{ target: 'detail', kind: 'visible', cel: "urgency == 'urgent'" }])
-    const answers = { name: 'Erika Muster', born: '1987-02-29', ahv: 7561234567897, weight: 314.15926, canton: 'Hans Meier', urgency: 'routine', detail: 'Erika', consent: 'Muster', 'Hans Meier': 'x' }
-    const result = toQuestionnaireResponse(schema, answers, { ...RESPONDING, subject: { reference: 'https://ehr.synthetic.invalid/Patient/756.1234.5678.97' } })
+    const answers = { name: 'Erika Muster', born: '1987-02-29', ahv: 7561234567890, weight: 314.15926, canton: 'Hans Meier', urgency: 'routine', detail: 'Erika', consent: 'Muster', 'Hans Meier': 'x' }
+    const result = toQuestionnaireResponse(schema, answers, { ...RESPONDING, subject: { reference: 'https://ehr.synthetic.invalid/Patient/756.1234.5678.90' } })
     expect(result.ok).toBe(false)
     if (result.ok) return
     expect(result.refusals.every((refusal) => refusal instanceof Refusal)).toBe(true)
     expect(new Set(result.refusals.map((refusal) => refusal.rule))).toEqual(new Set(['bound', 'calendar', 'range', 'option', 'disabled', 'answer-type', 'required', 'unknown', 'reference']))
-    const values = ['Erika', 'Muster', '1987-02-29', '7561234567897', '314.15926', 'Hans', 'Meier', '756.1234', 'synthetic.invalid/Patient']
+    const values = ['Erika', 'Muster', '1987-02-29', '7561234567890', '314.15926', 'Hans', 'Meier', '756.1234', 'synthetic.invalid/Patient']
     for (const refusal of result.refusals) for (const value of values) expect(`${refusal.message} ${refusal.path}`).not.toContain(value)
   })
 })

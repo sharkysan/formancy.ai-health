@@ -47,7 +47,11 @@ of a value. Every refusal is returned at once.
 | `languages` | a translation of every text into each, beside the form's default language; each a BCP 47 tag in its canonical case, `de-CH` and never `de-ch` or `de_CH`, as health-core's `language()` holds it, and so must the form's default locale be, which becomes `Questionnaire.language` |
 
 Nothing is made here: no id, no date, no publisher. The same form and
-context give the same resource, and `writeJson` the same bytes.
+context give the same resource, and `writeJson` the same bytes. A member
+the context does not name -- a publisher, a title -- is refused as
+`unmapped` at the context, its name not repeated, and a context that is
+no object as `absent`, by health-core's `known`
+([0009](../../docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)).
 
 ## The mapping
 
@@ -132,11 +136,19 @@ refuses its answers with the same refusals.
 | `status` | `in-progress`, `completed`, `amended`, `entered-in-error` or `stopped`; a completed or amended response must answer every enabled required item |
 | `authored` | a FHIR dateTime, with its zone where it has a time |
 | `subject`, `author`, `source` | references by name, `Patient/7` or a `urn:uuid:`, never an absolute URL; an author or a source of a type R4 allows there |
+| `profiles` | `meta.profile`, after SDC's: canonicals the response claims beside it, each a uri, each once -- a country's response profile, such as CH ORF's, which the validator holds a response to only when it claims it |
 
 The SDC QuestionnaireResponse profile, `sdc-questionnaireresponse|4.0.0`,
 is claimed with a subject and a versioned Questionnaire, where it
-validates; any other response is plain R4. No id, identifier, item text or
-narrative is written: an item's text is the Questionnaire's.
+validates; the host's `profiles` are claimed after it, or alone where it
+is not
+([0009](../../docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md));
+any other response is plain R4. No id, identifier, item text or
+narrative is written: an item's text is the Questionnaire's. A member of
+the context, of its `questionnaire` or of a reference it does not name
+-- an `encounter`, a `basedOn`, a reference's display -- is refused as
+`unmapped` where it stands, its name not repeated, and a context that is
+no object as `absent`, as `toQuestionnaire` refuses its context's.
 
 | formancy holds | The response writes |
 | --- | --- |

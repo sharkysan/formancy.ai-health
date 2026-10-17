@@ -98,6 +98,33 @@ describe('a DocumentReference of a PDF, its bytes in a Binary', () => {
   })
 })
 
+describe('what the host says of a PDF beyond what is written', () => {
+  // A member the context does not name -- a language, a Binary's media
+  // type, a PDF's file name, a coding's version -- is something the host
+  // meant to say, and the DocumentReference left it out without a word.
+  // Each is refused as unmapped at the object that holds it, by
+  // health-core's `known`, the member's name not repeated.
+  test.each([
+    ['the context', { ...context, language: 'de-CH' }, pdf, 'unmapped context', 'language'],
+    ['the Binary', { ...context, binary: { fullUrl: NAMES.binary, contentType: 'application/pdf' } }, pdf, 'unmapped context.binary', 'contentType'],
+    ['the type', { ...context, type: { ...CONSULTATION, version: '2.9' } }, pdf, 'unmapped context.type', 'version'],
+    ['the subject', { ...context, subject: { reference: NAMES.patient, display: 'Synthetica Beispiel' } }, pdf, 'unmapped context.subject', 'display'],
+    ['the PDF', context, { ...pdf, filename: 'zuweisung.pdf' }, 'unmapped pdf', 'filename'],
+  ])('refuses a member %s does not name', (_, given, attached, refused, name) => {
+    const result = toDocumentReference(attached as never, given as DocumentReferenceContext)
+    expect(refusedAs(result)).toEqual([refused])
+    expect(result.ok ? '' : result.refusals[0]?.message).not.toContain(name)
+  })
+
+  // A hole in a host's list, which JSON never has, is refused where it
+  // stands rather than walked past.
+  test('refuses a hole in a list, at its index', () => {
+    const categories: unknown[] = [CLINICAL_DOCUMENT]
+    categories[2] = CLINICAL_DOCUMENT
+    expect(refusedAs(toDocumentReference(pdf, { ...context, category: categories as never }))).toEqual(['absent context.category[1]'])
+  })
+})
+
 describe('what the host must say of a PDF', () => {
   // R4 makes each of these optional. A DocumentReference without one says
   // nothing a receiver files it by -- what it is, whose, when, under what

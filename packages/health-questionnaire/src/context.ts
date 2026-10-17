@@ -4,7 +4,7 @@
  * the Questionnaire must carry. None of it is in the form, and none of it
  * is made here (CLAUDE.md, "Identity comes from the host").
  */
-import { code, item, language, member, positiveInt, uri, type FhirCode, type FhirPositiveInt, type FhirUri, type Refusals } from '@formancy/health-core'
+import { code, item, known, language, member, positiveInt, uri, type FhirCode, type FhirPositiveInt, type FhirUri, type Refusals } from '@formancy/health-core'
 import { CONTEXT } from './refusals.js'
 
 /** R4's PublicationStatus, the codes `Questionnaire.status` is bound to, required. */
@@ -47,13 +47,18 @@ export interface CheckedContext {
 
 const KNOWN_STATUS: ReadonlySet<string> = new Set(STATUSES)
 
+/** The members of the context, and no others. */
+const MEMBERS = ['base', 'version', 'status', 'languages']
+
 /**
  * The context checked, or undefined with each thing wrong with it in
  * `refusals`, at paths from `at`: `context`, or where a response's context
- * holds it.
+ * holds it. A member it does not name is refused as `unmapped`, and a
+ * context that is no object as `absent` (health-core's `known`).
  */
 export function checkContext(context: QuestionnaireContext, refusals: Refusals, at: string = CONTEXT): CheckedContext | undefined {
   const before = refusals.count
+  if (!known(context, MEMBERS, at, refusals)) return undefined
   const base = refusals.take(() => uri(context.base, member(at, 'base')))
   const version = context.version === undefined ? undefined : refusals.take(() => positiveInt(context.version as string | bigint, member(at, 'version')))
   const status = refusals.take(() => code(context.status, member(at, 'status')))
