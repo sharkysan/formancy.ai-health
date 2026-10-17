@@ -52,9 +52,10 @@ does not carry over: each project's record names the hash of its own text.
 [`CLAUDE.md`](CLAUDE.md) is the working guide — for a person as much as for a
 coding agent. The short version: test-first with the failure observed, every
 decision somebody could undo written down with what verifies it, the documents
-updated in the same pull request as the code -- and, once there is a resource
-to prove, every claim that an export conforms proved by the HL7 FHIR
-validator on the JSON the packages produced.
+updated in the same pull request as the code -- and every claim that an
+export conforms proved by the HL7 FHIR validator, against pinned guide
+packages and offline, on the JSON the packages produced
+([0005](docs/decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md)).
 
 **No real health data, anywhere.** Not in an issue, a pull request, a test
 fixture or a screenshot. A fixture is synthetic, and a name, an identifier or

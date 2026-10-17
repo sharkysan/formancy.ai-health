@@ -288,6 +288,26 @@ describe('Formancy Report', () => {
   })
 })
 
+describe('FHIRPath', () => {
+  // The FHIRPath engine in TypeScript, and the UCUM library it depends on,
+  // each declare "SEE LICENSE IN LICENSE.md": custom terms of the US
+  // National Library of Medicine's, carrying LOINC's and UCUM's where their
+  // content is included, which no identifier on the allow-list says. Read
+  // from the registry on 17 October 2026: fhirpath 5.2.1 depends on
+  // @lhncbc/ucum-lhc ^7.1.10, whose newest 7.x is 7.1.10. So a package
+  // that took FHIRPath for an enableWhenExpression or for template
+  // extraction fails the verify job today. Admitting them is a reviewed
+  // exception the maintainer decides, with the record that explains it,
+  // never an edit to the allow-list.
+  test('refuses fhirpath and the UCUM library it brings, as their manifests declare them', () => {
+    const found = problems([entry('fhirpath', '5.2.1', 'SEE LICENSE in LICENSE.md', { via: ['@formancy/health-questionnaire'] }), entry('@lhncbc/ucum-lhc', '7.1.10', 'SEE LICENSE IN LICENSE.md', { via: ['@formancy/health-questionnaire', 'fhirpath'] })], {})
+    expect(found).toEqual([
+      'fhirpath@5.2.1 is SEE LICENSE in LICENSE.md by its package.json, which the policy refuses (@formancy/health-questionnaire > fhirpath)',
+      '@lhncbc/ucum-lhc@7.1.10 is SEE LICENSE IN LICENSE.md by its package.json, which the policy refuses (@formancy/health-questionnaire > fhirpath > @lhncbc/ucum-lhc)',
+    ])
+  })
+})
+
 describe('closure', () => {
   // pnpm's isolated layout: a dependency is a link, and its own dependencies
   // are linked beside its REAL directory, not beside the link. Resolved from

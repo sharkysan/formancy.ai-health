@@ -27,6 +27,13 @@ packages/*/NOTICE
 
 /.claude
 
+# What the validator gate downloads and unpacks (0005): the HL7 FHIR
+# validator's JAR, the guide packages it loads and its package cache. Each is
+# fetched by exact version and checked against the SHA-256 that
+# docs/release/validator.json or docs/release/ig-packages.json registers, and
+# none is ever committed.
+/.fhir-cache/
+
 # The delivery plan this repository started from. Kept locally for reference,
 # never committed: it is a working document, not a record.
 docs/plan.md

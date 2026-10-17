@@ -5,13 +5,14 @@ name: Gates
 # this on every pull request and every push to main, and release.yml calls it
 # before anything is published, so a release's gate is CI's by construction.
 #
-# Three jobs for now, because three things exist to prove: the build, types,
+# Four jobs, because four things exist to prove: the build, types,
 # packaging, licences and the repository's guards (`verify`); each package's
-# suite on a runner of its own (`test`); and the packed tarballs in a project
-# that is not this one (`install`). The HL7 FHIR validator's gate arrives
-# with the first resource it can judge, and the release report that reads
-# every job's results with the first release it reports on -- not before, so
-# that no job here passes for having nothing to check.
+# suite on a runner of its own (`test`); the packed tarballs in a project
+# that is not this one (`install`); and the FHIR resources the packages
+# write, judged by the HL7 FHIR validator against pinned guide packages
+# (`validator`, 0005). The release report that reads every job's results
+# arrives with the first release it reports on -- not before, so that no
+# job here passes for having nothing to check.
 #
 # A release runs code from here with its own permissions, so third-party
 # actions are pinned to commit hashes, with the tag in a comment, under
@@ -209,5 +210,87 @@ jobs:
         with:
           name: release-tarballs
           path: release-tarballs/
+          if-no-files-found: error
+          overwrite: true
+
+  # The HL7 FHIR validator over what the packages write (0005): the release
+  # docs/release/validator.json pins, against exactly the packages
+  # docs/release/ig-packages.json registers, each fetched by exact version
+  # and refused unless its SHA-256 is the registered one, then run offline,
+  # with no terminology server and no HTTP at all. An error fails the job; a
+  # warning fails it unless scripts/validator/warnings.json names it with
+  # its reason; and each broken resource of the corpus must be refused for
+  # exactly what it breaks. Its own job, because it needs a Java and a
+  # download of its own, and a red "validator" says which kind of wrong it
+  # is.
+  validator:
+    runs-on: ubuntu-latest
+    # A run that unpacked every package took 2 min 20 s, and 2 min 31 s
+    # timed again, on a desktop on 17 October 2026 (Windows 11, Java 17;
+    # 0005 says on what); the bound is for a registry or a runner having a
+    # bad day, not for the work.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable pnpm
+
+      - name: Get pnpm store directory
+        id: pnpm-store
+        run: |
+          store=$(pnpm store path --silent)
+          echo "path=${store}" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        if: inputs.release == ''
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - run: pnpm install --frozen-lockfile
+
+      # The corpus is written by health-core as built, not by its source.
+      - run: pnpm build
+
+      # The validator's JAR needs Java 17 (its classes are version 61). A
+      # third-party action in all but name, pinned like one.
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # CI only, like the pnpm store, and keyed on the registers: a cached
+      # download is used only once its SHA-256 is the registered one, and a
+      # release fetches everything from where the registers say.
+      - uses: actions/cache@v4
+        if: inputs.release == ''
+        with:
+          path: |
+            .fhir-cache/validator
+            .fhir-cache/packages
+          key: fhir-cache-${{ hashFiles('docs/release/validator.json', 'docs/release/ig-packages.json') }}
+
+      - run: node scripts/validator.mjs --java "$JAVA_HOME/bin/java"
+
+      # The registers held against the files this job downloaded and the run
+      # it just made, which pnpm test:repo in `verify` cannot see and skips.
+      # Here none of those cases may skip: VALIDATOR_GATE_RAN says the gate
+      # ran, and the suite fails when a file they read is missing.
+      - run: pnpm exec vitest run --config vitest.repo.config.mts scripts/validator/registers.test.mjs
+        env:
+          VALIDATOR_GATE_RAN: 'true'
+
+      # The results, the corpus as written, the validator's own outcomes and
+      # its console, whatever the run found.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validator-results
+          path: |
+            test-results/validator.json
+            test-results/validator/
           if-no-files-found: error
           overwrite: true

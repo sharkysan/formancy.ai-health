@@ -25,6 +25,7 @@ pnpm build && pnpm typecheck && pnpm test:coverage && pnpm check:pkg && pnpm tes
 node scripts/verify-licenses.mjs
 node scripts/dependency-licences.mjs
 pnpm test:e2e:install
+node scripts/validator.mjs --java <path to java 17 or later>
 
 # 4. Get the release commit onto main, through a pull request like any other.
 
@@ -55,8 +56,10 @@ anything that cannot be taken back:
 3. **`gates`: the gates CI runs, from
    [`gates.yml`](.github/workflows/gates.yml)** — build, types, packaging,
    licences and the repository guards; each package's suite on a runner of
-   its own; and the install gate, which packs, installs and runs the tarballs
-   and keeps them. Unlike CI, a release restores no Actions cache: a tag's run
+   its own; the install gate, which packs, installs and runs the tarballs
+   and keeps them; and the validator gate, which fetches the pinned HL7 FHIR
+   validator and guide packages from where their registers say and judges
+   the corpus offline (0005). Unlike CI, a release restores no Actions cache: a tag's run
    may restore one a main-branch run saved, and every job installs from the
    registry against the lockfile instead.
 4. **`check`, in a job that holds `contents: read` and no secret:**

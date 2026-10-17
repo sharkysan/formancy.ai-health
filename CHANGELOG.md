@@ -100,3 +100,48 @@ type a decimal as a JavaScript number. And a new guard,
 converts a value through a number or reads a clock or a random source,
 which would make the same input give other bytes or an identity nobody
 supplied.
+
+**FHIR resources are judged by the HL7 FHIR validator, offline, against
+pinned guide packages**
+([0005](docs/decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md)).
+A new `validator` job in the gates runs `scripts/validator.mjs`: validator
+**7.0.2**, the newest release on 17 October 2026, fetched from its GitHub
+release and refused unless its SHA-256 is the one
+`docs/release/validator.json` pins, on Java 17, its floor; and FHIR R4
+4.0.1 with Structured Data Capture **4.0.0**, together with every package
+the validator loads with them, each fetched from packages.fhir.org by exact
+version and refused unless its SHA-256 is the one
+`docs/release/ig-packages.json` registers. That list was read from the
+validator's own load, not from a guide's page: it includes R5 terminology
+the validator loads for itself and a ballot SDC 4.0.0 declares. Run by
+default, the validator downloads packages, asks a registry for the newest
+version of two of them on every run and checks codes on tx.fhir.org, so
+its verdict would depend on the day; here it runs with no terminology
+server and no HTTP at all, and the same commit gets the same verdict. What
+that costs is said where it is measured: codes from LOINC, SNOMED CT or
+UCUM, and language tags, are not checked offline, and the validator's
+warning that says so refuses a resource until it is registered with a
+reason; a code system nothing knows draws only information, online and
+offline, which the gate accepts. An error fails the job, and so does any warning
+`scripts/validator/warnings.json` does not name. The corpus is written by
+health-core's `writeJson`, and the resources broken on purpose in it
+are each refused for exactly what they break: a missing required
+element, two cardinalities, a code outside a required binding, a decimal
+written as a string, an unknown profile and an unchecked external code. No
+package builds a resource yet, so the corpus is built by hand, and the gate
+shows the pipeline judges health-core's output, not that an export
+conforms. Its first run found a rule the first Questionnaire will need:
+SDC's sdc-2, a version only with its version algorithm.
+
+**The README says what the packages are built and judged against**, in a
+table `scripts/compatibility.mjs` derives from health-core's
+`FHIR_VERSION`, the two registers, the workspace's manifests and the
+toolchain, and `scripts/compatibility.test.mjs` fails when it is stale --
+the plan's compatibility tuple, recorded where a test holds it.
+
+**The dependency-licence guard says that FHIRPath is refused today**, and a
+case holds it: `fhirpath` 5.2.1 and the `@lhncbc/ucum-lhc` 7.1.10 it brings
+each declare a licence of their own that no allowed identifier names, so a
+package that took FHIRPath for an `enableWhenExpression` or for template
+extraction fails `verify` until the maintainer admits a version by a
+reviewed exception.

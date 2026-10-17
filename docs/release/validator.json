@@ -1,0 +1,10 @@
+{
+  "$comment": "The HL7 FHIR validator the gate runs (0005): the command-line JAR of one release of hapifhir/org.hl7.fhir.core, fetched from that release's assets and refused unless its SHA-256 is this one. The hash was read from GitHub's digest of the asset and from the downloaded file, which agreed, on 17 October 2026. `java` is the oldest Java the JAR runs on: its manifest says `Build-Jdk-Spec: 17` and its classes are version 61. Read by scripts/validator.mjs and scripts/compatibility.mjs; held by scripts/validator/registers.test.mjs. A new release is adopted by changing all of it in one commit, with a CHANGELOG line saying why.",
+  "version": "7.0.2",
+  "released": "2026-10-15",
+  "url": "https://github.com/hapifhir/org.hl7.fhir.core/releases/download/7.0.2/validator_cli.jar",
+  "sha256": "e3e50f06b806437821b7aef8189a1b790415cb96c5036e0812ed62981452b377",
+  "bytes": 204412235,
+  "java": 17,
+  "licence": "Apache-2.0"
+}

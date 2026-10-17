@@ -1,0 +1,9 @@
+{
+  "$comment": "The validator's warnings the gate accepts (0005), each by the message id the validator gives it and with the reason it is accepted rather than fixed. Any other warning refuses the resource that raised it, as an error does; a warning the validator gives no id cannot be registered and must be fixed. An entry that no resource of the corpus raised in a run fails the gate too, so an entry never outlives its reason. Read by scripts/validator.mjs; held by scripts/validator/judge.test.mjs.",
+  "warnings": [
+    {
+      "id": "http://hl7.org/fhir/StructureDefinition/DomainResource#dom-6",
+      "reason": "dom-6, 'A resource should have narrative for robust management', a best-practice constraint. No resource here carries a narrative: whether a package writes Resource.text, and from what, is decided with the first package that builds a resource (H04), not by the corpus."
+    }
+  ]
+}
