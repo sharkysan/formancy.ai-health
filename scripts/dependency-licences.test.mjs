@@ -524,10 +524,16 @@ describe('fonts', () => {
 describe('this workspace', () => {
   // The real tree, so the guard is a gate and not an example. A walk that
   // found no publishable package has lost a directory and would pass by
-  // checking nothing; health-core is the one there is today.
-  test('passes, and found @formancy/health-core', () => {
+  // checking nothing. health-core has no production dependency;
+  // health-questionnaire reads forms through @formancy/spec, which brings
+  // ajv and @noble/hashes, and a walk that did not reach them would pass
+  // by never judging a third party.
+  test('passes, and found @formancy/health-core, @formancy/health-questionnaire and what they bring', () => {
     const { published, entries } = workspaceClosure()
     expect(published).toContain('@formancy/health-core')
+    expect(published).toContain('@formancy/health-questionnaire')
+    const judged = new Set(entries.filter((entry) => !entry.sibling).map((entry) => entry.name))
+    for (const name of ['@formancy/spec', 'ajv', '@noble/hashes']) expect(judged).toContain(name)
     expect(problems(entries)).toEqual([])
   })
 

@@ -44,4 +44,31 @@ describe('a refusal', () => {
     expect(refusal).toMatchObject({ rule: 'syntax', path: '$.a', offset: 6 })
     expect(refusal.message).toBe('$.a: not JSON at offset 6')
   })
+
+  // The packages above this one refuse what an input says and a resource
+  // cannot -- a form in a version nothing reads, a field type with no
+  // item, a text missing in a language -- and a host branches on those
+  // the way it branches on a primitive's: by the rule, from one class. A
+  // rule with no words of its own would print "undefined" where the
+  // reason belongs.
+  test.each([
+    ['version', 'form.specVersion'],
+    ['invalid', 'form.model.fields[0].key'],
+    ['unmapped', 'form.model.fields[2].type'],
+    ['missing', 'form.model.fields[1].label'],
+  ] as const)('for a mapping, %s, has words of its own and names its path', (rule, path) => {
+    const refusal = new Refusal(rule, path)
+    expect(refusal).toMatchObject({ rule, path, language: undefined })
+    expect(refusal.message.startsWith(`${path}: `)).toBe(true)
+    expect(refusal.message).not.toContain('undefined')
+  })
+
+  // A text missing in one language is not the same refusal as the same
+  // text missing in another: without the language, a host that asked for
+  // fr and it would get two refusals it cannot tell apart, and fix one.
+  test('names the language a text is missing in', () => {
+    const refusal = new Refusal('missing', 'form.model.fields[1].label', { language: 'fr' })
+    expect(refusal.language).toBe('fr')
+    expect(refusal.message).toBe('form.model.fields[1].label: a text the resource needs of it is absent, and nothing here supplies one or falls back to another language, in fr')
+  })
 })

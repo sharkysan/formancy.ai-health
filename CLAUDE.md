@@ -71,16 +71,19 @@ terms.
 
 ## How the pieces fit
 
-Almost nothing is built. `@formancy/health-core` names the FHIR version it
-emits, holds R4's primitives as checked text -- a number as its digits,
-never a JavaScript number -- and writes and reads FHIR JSON exactly, by a
-writer and a parser of its own
-([0004](docs/decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md));
-that is all the product code there is. Beside it, and not product code,
-the validator gate judges what health-core writes
+Little is built. `@formancy/health-core` names the FHIR version it emits,
+holds R4's primitives as checked text -- a number as its digits, never a
+JavaScript number -- writes and reads FHIR JSON exactly, by a writer and a
+parser of its own, and holds the one `Refusal` every package refuses with
+([0004](docs/decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)).
+`@formancy/health-questionnaire` exports a formancy form, read through
+`@formancy/spec` 0.5.0, as an SDC 4.0.0 Questionnaire, or refuses it whole
+([0006](docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)).
+That is all the product code there is. Beside them, and not product code,
+the validator gate judges what the packages write
 ([0005](docs/decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md)):
-`scripts/validator.mjs`, its modules and corpus in `scripts/validator/`,
-and the registers of what it runs in `docs/release/`. The package path the
+`scripts/validator.mjs`, its modules, corpus and synthetic forms in
+`scripts/validator/`, and the registers of what it runs in `docs/release/`. The package path the
 plan proposes, each package depending only on those before it, and split
 further only where a part has its own reason to change:
 
@@ -88,9 +91,10 @@ further only where a part has its own reason to change:
    their ranges, identity and references from the host, canonicals and
    profiles, and the refusal of a version it does not know. No framework, no
    Node, no network, no formancy or Report dependency.
-2. `health-questionnaire` -- a formancy form to an SDC Questionnaire, and
-   answers to a QuestionnaireResponse; extraction later. It reads forms
-   through `@formancy/spec` at an exact version.
+2. `health-questionnaire` -- a formancy form to an SDC Questionnaire
+   (0006), and answers to a QuestionnaireResponse; extraction later. It
+   reads forms through `@formancy/spec` at an exact version, and depends on
+   nothing else but health-core.
 3. `health-document` -- the document Bundle and its Composition; a
    DocumentReference and a Binary for a PDF's bytes; the MHD provide Bundle,
    built and never sent.
@@ -108,9 +112,10 @@ further only where a part has its own reason to change:
    (formancy.ai-report 0016).
 7. `health-corpus` -- test support, never published: synthetic forms and
    answers, the exact-value and identity fixtures, and PDFs Report
-   rendered. Until it arrives with the first package output it holds, the
-   validator's runner and corpus live in `scripts/validator/` and the
-   guide package register in `docs/release/` (0005).
+   rendered. Until it needs a dependency of its own -- Report's renderer,
+   for H06's PDFs -- the validator's runner, corpus and synthetic forms live
+   in `scripts/validator/` and the guide package register in
+   `docs/release/` (0005, 0006).
 
 A package arrives with the decision record that says what it may import. When
 this map goes stale, the rename is the edit to make here.
@@ -158,7 +163,9 @@ and the document says what. Three shapes, in order of preference:
    `scripts/exact-and-reproducible.test.mjs` fails when a package's source
    converts a value through a JavaScript number or reads a clock or a random
    source; `scripts/compatibility.test.mjs` fails when the compatibility
-   table is stale; `scripts/validator/registers.test.mjs` fails when a
+   table is stale; `scripts/validator/corpus.test.mjs` fails when the
+   questionnaire package maps something no corpus form holds;
+   `scripts/validator/registers.test.mjs` fails when a
    register is malformed or, where the validator job has run, says other
    than the bytes and the validator's own load. All of them run as
    `pnpm test:repo`, and CI runs that — **a guard that is not a gate is a
@@ -193,10 +200,13 @@ is the tool for it.
 - A claim that an export conforms is checked by the official **HL7 FHIR
   validator**, against **pinned implementation guide packages**, on the JSON
   the packages produced. Not on the builder's input, not on hand-written
-  JSON, and not through a mocked validator. Until a package builds a
-  resource, the corpus (`scripts/validator/corpus.mjs`) builds them by hand
-  and health-core's `writeJson` writes them, and no export is claimed to
-  conform.
+  JSON, and not through a mocked validator. The corpus
+  (`scripts/validator/corpus.mjs`) holds what health-questionnaire, as
+  built, makes of the synthetic forms in `scripts/validator/forms.mjs`,
+  and builds by hand only what no package builds yet, written by
+  health-core's `writeJson`; `scripts/validator/corpus.test.mjs` fails when
+  a field type, item type or rule the package maps is in no corpus form. A
+  conformance claim is about those Questionnaires and no other.
 - The validator and every guide package are fetched by exact version,
   refused unless their hash is the one `docs/release/validator.json` or
   `docs/release/ig-packages.json` registers, and run offline: no

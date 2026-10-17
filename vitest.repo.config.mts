@@ -9,7 +9,8 @@ import { reporters } from './vitest.results'
  * product with HL7's marks while NOTICE and the README carry HL7's notice, no
  * package's source converts a value through a JavaScript number or reads a
  * clock or a random source, the README's compatibility table is current, and
- * the validator gate's registers, verdict and command line hold (0005).
+ * the validator gate's registers, verdict and command line hold (0005), and its
+ * corpus holds everything the questionnaire package maps (0006).
  *
  * Run as `pnpm test:repo`, and by CI on every pull request. A guard that is not
  * a gate is a comment.

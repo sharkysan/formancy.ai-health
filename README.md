@@ -12,18 +12,19 @@ profiles a country publishes rather than to FHIR's base resources alone.
 What an export cannot say in the profile it targets, it refuses rather than
 leaves out.
 
-> **Status: started 16 October 2026. Nothing exports a resource yet, and nothing is released.**
+> **Status: started 16 October 2026. One export exists, a formancy form as an SDC Questionnaire, and nothing is released.**
 >
-> What exists on 17 October 2026 is the licence, the pipeline that will
-> prove the packages, as Formancy Report's proves its own, and one package:
-> `@formancy/health-core`, which names the FHIR version it emits, holds FHIR
-> R4's primitives to their types -- a decimal as its digits, never a
-> JavaScript number -- and writes and reads FHIR JSON that keeps every
-> digit. Beside it, the gate that runs the HL7 FHIR validator, offline,
-> against pinned guide packages, over a corpus of resources written by
-> health-core and built by hand, since no package builds one yet. Next is
-> the first export: a formancy form as an SDC Questionnaire, then CH Core
-> and CH ORF.
+> What exists on 17 October 2026 is the licence, the pipeline that proves
+> the packages, as Formancy Report's proves its own, and two packages.
+> `@formancy/health-core` names the FHIR version it emits, holds FHIR R4's
+> primitives to their types -- a decimal as its digits, never a JavaScript
+> number -- and writes and reads FHIR JSON that keeps every digit.
+> `@formancy/health-questionnaire` exports a formancy form as an SDC 4.0.0
+> Questionnaire, translated into the languages a host asks for, or refuses
+> it whole. Beside them, the gate that runs the HL7 FHIR validator, offline,
+> against pinned guide packages, over the Questionnaires the package makes
+> of synthetic forms and resources built by hand. Next are a person's
+> answers as a QuestionnaireResponse, then CH Core and CH ORF.
 
 ## Licence, in one table
 
@@ -77,11 +78,12 @@ comes with it.
 | Package | What it is |
 | --- | --- |
 | `@formancy/health-core` | The FHIR version the module emits, R4 4.0.1; FHIR R4's primitives, each checked against its type when made, a number held as its digits; and a writer and a reader of FHIR JSON that keep every digit, give the same bytes for the same input, and refuse an empty value, a null outside an array, a name given twice and a JavaScript number, naming where and never quoting the value ([0004](./docs/decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)). No framework, no Node, no network. |
+| `@formancy/health-questionnaire` | A formancy form, read through `@formancy/spec` 0.5.0, as an SDC 4.0.0 Questionnaire: one item per field with its key as the linkId, under the host's canonical base and formancy's published version, its texts translated into each language the host asks for; a visibility rule as `enableWhen` where it is a simple comparison, a computed field read-only, and no FHIRPath. What an item cannot say as the field says it refuses the whole export, every refusal at once, naming where ([0006](./docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)). No framework, no Node, no network. |
 
-Planned and not here: resources, the SDC Questionnaire and
-QuestionnaireResponse of a formancy form, the document Bundle that carries
-a Report PDF, and the Swiss profiles; then Germany's, the United
-Kingdom's, Austria's and HL7 Europe's.
+Planned and not here: the QuestionnaireResponse of a person's answers and
+extraction from it, the document Bundle that carries a Report PDF, and the
+Swiss profiles; then Germany's, the United Kingdom's, Austria's and HL7
+Europe's.
 
 A decimal travels as its text. Build one with `decimal('70.50', path)`
 from the text a form or a database gave you, never from a JavaScript
@@ -157,9 +159,11 @@ registers; the validator then runs with no terminology server and no HTTP
 access at all. An error fails the gate, and so does a warning that
 `scripts/validator/warnings.json` does not name with the reason it is
 accepted. Every resource of the corpus, `scripts/validator/corpus.mjs`, is
-written by health-core's `writeJson`; some are broken on purpose, each for
-one thing, and the gate fails unless the validator refuses each for exactly
-that.
+written by health-core's `writeJson`: the Questionnaires health-questionnaire
+makes of the synthetic forms in `scripts/validator/forms.mjs`, which hold
+every field type and rule it maps, and resources built by hand where no
+package builds one yet. Some are broken on purpose, each for one thing, and
+the gate fails unless the validator refuses each for exactly that.
 
 ```bash
 pnpm build                                      # the corpus is written by the package as built
@@ -170,12 +174,19 @@ It downloads into `.fhir-cache/`, which is never committed, and writes
 `test-results/validator.json`. Offline, the validator checks codes only
 against the code systems the registered packages hold: a code from LOINC,
 SNOMED CT or UCUM, and a language tag, are not checked, and the validator
-says so in a warning the gate refuses until it is registered. A code from
+says so in a warning the gate refuses until it is registered; a
+translation's language it does not check at all, and a resource's
+language only as far as its own reading of a tag goes, which refuses
+`de-ch` and `zz`. A code from
 a code system nothing knows, a made-up system URI, is only information,
-which the gate accepts. No package
-builds a resource yet, so the corpus is built by hand: what the gate shows
-today is that the pipeline judges health-core's output, not that any export
-conforms.
+which the gate accepts; the code systems a Questionnaire names for a
+form's options are such systems. What the gate shows is that the
+Questionnaires health-questionnaire makes of the corpus's forms are accepted
+against SDC 4.0.0 on R4 4.0.1 by the HL7 FHIR validator 7.0.2, offline, with
+no error and no warning but the registered ones, their option codes and
+the registration of their language tags unchecked -- health-core holds
+each tag to its form, nothing to the registry; not that a form the corpus
+lacks would be, and nothing yet about answers.
 
 ### What it is built and judged against
 
@@ -189,7 +200,7 @@ conforms.
 | What the validator loads with them | `hl7.fhir.xver-extensions#0.1.0`, `hl7.terminology.r4#6.2.0`, `hl7.fhir.uv.extensions.r4#5.2.0`, `hl7.terminology#7.4.0`, `hl7.fhir.uv.extensions#5.3.0`, `hl7.terminology.r5#7.1.0`, `hl7.fhir.uv.extensions.r5#5.2.0`, `hl7.terminology.r4#7.1.0`, `hl7.fhir.uv.xver-r5.r4#0.1.0`, `hl7.fhir.uv.tools.r4#1.1.2`, `hl7.fhir.r4.examples#4.0.1`, `hl7.fhir.uv.extensions.r4#5.3.0-ballot-tc1`, `hl7.terminology.r4#6.5.0` | `docs/release/ig-packages.json` |
 | The HL7 FHIR validator | 7.0.2, released 2026-10-15, SHA-256 `e3e50f06b806`… | `docs/release/validator.json` |
 | Java, for the validator | 17 or later | `docs/release/validator.json` |
-| `@formancy/*` upstream | none yet: no package depends on formancy, Formancy Report or Formancy Data | the workspace manifests |
+| `@formancy/spec` | 0.5.0 | the manifest of `@formancy/health-questionnaire` |
 | Node | `>=22.13.0`; CI runs 22 | the root `engines`; `.node-version` |
 | TypeScript | 6.0.3, declared `~6.0.3` | `pnpm-workspace.yaml` |
 | pnpm | 12.4.2, through corepack | the root `packageManager` |

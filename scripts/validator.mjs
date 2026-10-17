@@ -5,15 +5,17 @@
 //
 //   node scripts/validator.mjs [--java <path>] [--cache <dir>] [--results <file>] [--fresh]
 //
-// It needs `pnpm build` first, because the corpus is written by the package
-// as built, and a Java at least as new as the pin's `java`. In order:
+// It needs `pnpm build` first, because the corpus is made and written by the
+// packages as built, and a Java at least as new as the pin's `java`. In order:
 //
 // 1. Checks the registers and the corpus, and refuses to run on a wrong one.
 // 2. Fetches the JAR and every package into the cache, each refused unless
 //    its SHA-256 is the registered one (scripts/validator/cache.mjs), and
 //    lays out the validator's package cache with those packages and no
 //    others.
-// 3. Writes the corpus with health-core's writeJson.
+// 3. Makes the corpus -- health-questionnaire's Questionnaires of the
+//    synthetic forms, and the resources built by hand -- and writes it with
+//    health-core's writeJson.
 // 4. Runs the validator once over every file, offline: `-tx n/a` (no
 //    terminology server), `-txCache n/a`, and `-no-http-access`, which
 //    refuses every request the validator would make, for a package, a
@@ -42,6 +44,7 @@ const repo = join(dirname(fileURLToPath(import.meta.url)), '..')
 export const RESULTS = 'test-results/validator.json'
 const WORK = 'test-results/validator'
 const HEALTH_CORE = 'packages/health-core/dist/index.mjs'
+const HEALTH_QUESTIONNAIRE = 'packages/health-questionnaire/dist/index.mjs'
 
 /**
  * The validator's command line, all of it but `java` itself: the one place
@@ -140,10 +143,12 @@ async function main(argv) {
   console.log(`validator: ${pin.version} and ${String(packages.length)} packages checked against their registered SHA-256; fetched ${fetched.length === 0 ? 'nothing' : fetched.join(', ')}`)
   console.log(`validator: package cache ${local(where.packages)}: ${String(home.unpacked.length)} unpacked, ${String(home.kept.length)} kept${home.removed.length === 0 ? '' : `, removed ${home.removed.join(', ')}`}`)
 
-  const corePath = join(repo, HEALTH_CORE)
-  if (!existsSync(corePath)) throw new Error(`${HEALTH_CORE} is missing: run pnpm build first, since the corpus is written by the package as built`)
-  const core = await import(pathToFileURL(corePath).href)
-  const entries = buildCorpus(core)
+  const built = async (path) => {
+    if (!existsSync(join(repo, path))) throw new Error(`${path} is missing: run pnpm build first, since the corpus is made by the packages as built`)
+    return import(pathToFileURL(join(repo, path)).href)
+  }
+  const core = await built(HEALTH_CORE)
+  const entries = buildCorpus({ core, questionnaire: await built(HEALTH_QUESTIONNAIRE) })
   const corpusWrong = corpusProblems(entries)
   if (corpusWrong.length > 0) throw new Error(`the corpus does not hold:\n  - ${corpusWrong.join('\n  - ')}`)
   const work = join(repo, WORK)
