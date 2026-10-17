@@ -10,6 +10,32 @@ later.
 
 ## Unreleased
 
+**The architecture is documented, as arc42 in formancy.ai's files**
+([`docs/README.md`](docs/README.md), [0010](docs/decisions/0010-the-architecture-is-documented-in-arc42s-sections-held-to-the-repository-by-a-guard.md)): introduction and goals, constraints,
+context, solution strategy, building blocks, the runtime and deployment
+views, cross-cutting concepts, quality requirements, verification, risks
+and debt, and a glossary, about this product. arc42's own section on
+decisions is the records in `docs/decisions/`, MADR-shaped ADRs, as in
+formancy.ai, whose verification section arc42 does not have. Each statement
+of design is linked to the record behind it, each claim a test or gate
+holds is linked to it, and the rest is said to be review's. The
+rightsholder asked that every change be
+documented, and the architecture had no document beyond the decision
+records, which say why one thing is as it is and not how the pieces fit.
+`scripts/architecture.test.mjs`, in `pnpm test:repo`, keeps it from going
+stale in silence: it fails when a section or the entry is missing, when a
+workspace package is not named in the building blocks, when a decision
+record is linked from no section -- so a new package or record is placed in
+the architecture by the pull request that brings it -- when a relative
+link, or the heading it points at, no longer exists, and when a path
+written there as code names no file git would commit, so that a test, a
+module or a script renamed fails until the sentence naming it is changed.
+CLAUDE.md names the architecture among the documents a change keeps true.
+The sections describe `main` as of H07, the CH ORF document of
+[0009](docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)
+included: rebased onto it, the guard failed until health-ch was in the
+building blocks and 0009 linked from a section, as it is meant to.
+
 **A referral by form is a CH ORF document, in CH Core's and CH ORF's
 profiles** ([0009](docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)):
 `@formancy/health-ch`, new. `toChOrfDocument(context)` writes a CH ORF

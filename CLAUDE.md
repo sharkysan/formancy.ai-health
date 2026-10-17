@@ -144,7 +144,8 @@ further only where a part has its own reason to change:
    on, and the runner is the gate the workflow runs by its path (0008).
 
 A package arrives with the decision record that says what it may import. When
-this map goes stale, the rename is the edit to make here.
+this map goes stale, the rename is the edit to make here, and in the
+building blocks' table (`docs/architecture/05-building-blocks.md`).
 
 ## Every change keeps the documentation true
 
@@ -165,6 +166,20 @@ in the same pull request as the code, not in a follow-up:
   `superseded by NNNN` or `reversed` rather than editing it away. A decision
   that depends on another repository's record cites it as `formancy.ai 0003`,
   `formancy.ai-data 0008` or `formancy.ai-report 0003`.
+- **Architecture** (`docs/architecture/`, entered from `docs/README.md`:
+  arc42 in formancy.ai's files, whose section on decisions is the records
+  above) — the section the change touches: building blocks for a new
+  package or module and what it may import, the runtime view for a new
+  flow, deployment for what is published or what a host must supply,
+  cross-cutting concepts, quality requirements, verification for a new gate
+  or check, and risks and debt for anything accepted rather than fixed. The
+  building blocks' *May import* column restates the package path above and
+  the records, and nothing compares them, so a change to one is made to
+  the others in the same pull request. A new package not named in the
+  building blocks, a new record linked from no section, or a file the
+  sections link or name as code renamed without them, fails
+  `scripts/architecture.test.mjs` (0010); that a record is linked from the
+  section it changes is review's.
 
 Keep the voice of the existing documents: say what it costs and what it does
 not do, and never claim more than a test shows.
@@ -202,7 +217,13 @@ and the document says what. Three shapes, in order of preference:
    without its recorded name or without LOINC's notice in `NOTICE`, or an
    unrecorded SNOMED CT code; `scripts/synthetic-identifiers.test.mjs`
    fails on a valid AHV number in any file git holds, however its digits
-   are separated. All of them run as
+   are separated;
+   `scripts/architecture.test.mjs` fails when a section of the architecture
+   or `docs/README.md` is missing, a workspace package or app is not named
+   in the building blocks, a decision record is linked from no section, a
+   relative link in the architecture, or the heading it points at, no
+   longer exists, or a path written there as code names no file git would
+   commit. All of them run as
    `pnpm test:repo`, and CI runs that — **a guard that is not a gate is a
    comment.**
 3. **Measure it.** Below.

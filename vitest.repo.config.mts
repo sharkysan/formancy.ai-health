@@ -14,7 +14,9 @@ import { reporters } from './vitest.results'
  * resource type the packages write, a PDF in each place health-document puts
  * one (0008), and every code system the corpus writes is one whose terms
  * admit it, LOINC with its name and its notice in NOTICE and no SNOMED CT,
- * and no file holds an AHV number that passes its check (0009).
+ * and no file holds an AHV number that passes its check (0009); and the
+ * architecture in docs/ names every package and decision record, and links
+ * to and names as code only what exists (0010).
  *
  * Run as `pnpm test:repo`, and by CI on every pull request. A guard that is not
  * a gate is a comment.

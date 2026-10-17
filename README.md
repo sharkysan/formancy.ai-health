@@ -267,6 +267,7 @@ validator loaded, the time it took -- is in that run's
 
 ## Documents
 
+- [`docs/`](./docs/README.md) — the architecture, as arc42 in formancy.ai's files, whose decisions are the records below, and where to start reading it.
 - [`docs/decisions/`](./docs/decisions/README.md) — every decision somebody could helpfully undo, with what verifies it.
 - [`docs/release/`](./docs/release/README.md) — the registers a conformance claim rests on: the validator the gate runs, and every package it loads.
 - [`CHANGELOG.md`](./CHANGELOG.md) — what changed and why.
