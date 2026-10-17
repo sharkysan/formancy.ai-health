@@ -155,7 +155,11 @@ function valueOf(text: string): Value {
   // made, which these parts are, so it matches.
   const [, sign, whole, fraction = '', power = '0'] = PARTS.exec(text) as RegExpExecArray
   const significant = `${whole as string}${fraction}`.replace(/^0+/, '')
-  const digits = significant.replace(/0+$/, '')
+  // The trailing zeros counted from the end, not matched by a pattern,
+  // which an unanchored `0+$` would try from every zero of an inner run.
+  let end = significant.length
+  while (end > 0 && significant[end - 1] === '0') end -= 1
+  const digits = significant.slice(0, end)
   const exponent = BigInt(power) - BigInt(fraction.length) + BigInt(significant.length - digits.length)
   return { negative: sign === '-' && digits !== '', digits, exponent }
 }

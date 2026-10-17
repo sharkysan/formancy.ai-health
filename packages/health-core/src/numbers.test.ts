@@ -219,6 +219,18 @@ describe('compareNumbers', () => {
     expect(compareNumbers(integer('-2147483648', 'a'), integer('2147483647', 'b'))).toBe(-1)
   })
 
+  // A number's text has no length R4 bounds, and an answer is a person's
+  // input: its trailing zeros were stripped by a pattern that, tried from
+  // every zero of a long run that a digit then ends, took time in the
+  // square of the run (0.3 s for 20 000 zeros, 2.7 s for 60 000, measured
+  // on 17 October 2026). It is read in time linear in its length.
+  test('reads a long run of inner zeros in time linear in its length', () => {
+    const long = decimal(`1${'0'.repeat(200_000)}1`, 'a')
+    const started = Date.now()
+    expect(compareNumbers(long, decimal('1', 'b'))).toBe(1)
+    expect(Date.now() - started).toBeLessThan(1000)
+  })
+
   // Only a number made here has a checked text; anything else handed
   // over is a bug in the caller, and answering for it would compare a
   // text nobody checked.
