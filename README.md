@@ -64,6 +64,7 @@ Switzerland:
 | --- | --- | --- |
 | Switzerland | CH Core; CH ORF, Order & Referral by Form | HL7 Switzerland |
 | Germany | the Basisprofile DE; the ISiK Formularmodul | HL7 Deutschland; gematik |
+| United Kingdom | UK Core; the NHS Booking and Referral Standard (BaRS) | HL7 UK; NHS England |
 | Austria | AT Core, the HL7® Austria FHIR® Core Implementation Guide | HL7 Austria |
 | Europe | HL7 Europe Base and Core; the International Patient Summary (IPS) | HL7 Europe; HL7 International |
 
@@ -79,8 +80,8 @@ comes with it.
 
 Planned and not here: resources, the SDC Questionnaire and
 QuestionnaireResponse of a formancy form, the document Bundle that carries
-a Report PDF, and the Swiss profiles; then Germany's, Austria's and HL7
-Europe's.
+a Report PDF, and the Swiss profiles; then Germany's, the United
+Kingdom's, Austria's and HL7 Europe's.
 
 A decimal travels as its text. Build one with `decimal('70.50', path)`
 from the text a form or a database gave you, never from a JavaScript

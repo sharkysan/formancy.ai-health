@@ -9,8 +9,8 @@ so nothing fails when they drift from this file; it is held by review.
 
 > Export formancy forms and Formancy Report PDFs to the HL7® FHIR® standard,
 > shaped to each country's profiles: CH Core and CH ORF first, then Germany,
-> Austria and HL7 Europe. Source-available; free to evaluate and develop,
-> paid in production.
+> the UK, Austria and HL7 Europe. Source-available; free to evaluate and
+> develop, paid in production.
 
 FHIR and HL7 appear in the description and the topics only to name the
 standard and the guides the module implements, never as the product's name
@@ -36,7 +36,7 @@ formancy
 
 ```bash
 gh repo edit sharkysan/formancy.ai-health \
-  --description "Export formancy forms and Formancy Report PDFs to the HL7® FHIR® standard, shaped to each country's profiles: CH Core and CH ORF first, then Germany, Austria and HL7 Europe. Source-available; free to evaluate and develop, paid in production." \
+  --description "Export formancy forms and Formancy Report PDFs to the HL7® FHIR® standard, shaped to each country's profiles: CH Core and CH ORF first, then Germany, the UK, Austria and HL7 Europe. Source-available; free to evaluate and develop, paid in production." \
   --add-topic healthcare --add-topic fhir --add-topic hl7 \
   --add-topic questionnaire --add-topic ehealth --add-topic typescript \
   --add-topic self-hosted --add-topic source-available --add-topic formancy \

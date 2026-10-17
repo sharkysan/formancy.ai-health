@@ -96,9 +96,11 @@ further only where a part has its own reason to change:
    built and never sent.
 4. `health-ch` -- CH Core and CH ORF, later CH EPR: profiles, identifier
    systems, codes and the CH ORF document.
-5. `health-de`, `health-at`, `health-eu` -- the same for Germany's
-   Basisprofile DE and ISiK Formular, AT Core, and HL7 Europe and IPS, each
-   when its phase comes, Austria's and Europe's only when a customer pays.
+5. `health-de`, `health-uk`, `health-at`, `health-eu` -- the same for
+   Germany's Basisprofile DE and ISiK Formular; UK Core and, for England,
+   the BaRS referral message, built and never sent; AT Core; and HL7 Europe
+   and IPS. Each when its phase comes; the United Kingdom's, Austria's and
+   Europe's only when a customer pays.
 6. `health-report`, optional and later -- one call from a Report definition
    and its data to a document Bundle with its PDF. The only package that may
    take a production dependency on Formancy Report, at an exact released
