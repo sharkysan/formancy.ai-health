@@ -207,35 +207,48 @@ describe('the verify and install jobs’ results', () => {
   })
 })
 
-/** The demo, with a browser gate, and the file its gate wrote in Chromium. */
-function withDemo(root) {
+/** The demo, with a browser gate, and the file its gate wrote in each of `browsers`. */
+function withDemo(root, browsers = ['chromium']) {
   put(root, 'apps/demo/package.json', { name: '@formancy/health-demo', private: true, scripts: { 'test:browser': 'node scripts/browser-test.mjs' } })
-  const gate = { gate: 'apps/demo', asked: 'chromium', startedAt: at(30), finishedAt: at(33), browser: { name: 'chromium', version: '156.0.8078.4', headless: true }, playwright: '1.64.1', planned: ['phone, 360, fr'], passes: 1, made: [], checks: { ok: 3, failed: [] } }
-  put(root, 'apps/demo/test-results/browser-chromium.json', gate)
+  const versions = { chromium: '156.0.8078.4', firefox: '157.0', webkit: '27.2' }
+  for (const browser of browsers) {
+    const gate = { gate: 'apps/demo', asked: browser, startedAt: at(30), finishedAt: at(33), browser: { name: browser, version: versions[browser], headless: true }, playwright: '1.64.1', planned: ['phone, 360, fr'], passes: 1, made: [], checks: { ok: 3, failed: [] } }
+    put(root, `apps/demo/test-results/browser-${browser}.json`, gate)
+  }
   return root
 }
 
 describe('the browser job’s results', () => {
-  // The browser job runs every app's gate; the report judges each from the
-  // file it wrote, so the job's results carry them, under one key,
-  // `browser`, which gates.yml's collect step gives.
-  test('keep each app’s gate in every browser the gates run in', () => {
-    const result = collect({ root: withDemo(workspace()), job: 'browser', ...machine })
-    expect(result).toMatchObject({ key: 'browser', job: 'browser', suites: [], install: null, validator: null, absent: [], missing: [] })
-    expect(result.browserGates.map((gate) => [gate.gate, gate.asked, gate.browser.version, gate.planned])).toEqual([['apps/demo', 'chromium', '156.0.8078.4', ['phone, 360, fr']]])
+  // Each leg of the browser job runs the gate in its one browser (0014);
+  // the report judges each from the file it wrote, so a leg's results carry
+  // that browser's file alone, under the key `browser-<browser>`, which
+  // gates.yml's collect step gives with --variant. Another browser's file
+  // left on the runner is not this leg's to report.
+  test('keep each app’s gate in the browser the leg ran, under that browser’s key', () => {
+    const root = withDemo(workspace(), ['chromium', 'webkit'])
+    const result = collect({ root, job: 'browser', variant: 'webkit', ...machine })
+    expect(result).toMatchObject({ key: 'browser-webkit', job: 'browser', variant: 'webkit', suites: [], install: null, validator: null, absent: [], missing: [] })
+    expect(result.browserGates.map((gate) => [gate.gate, gate.asked, gate.browser.version, gate.planned])).toEqual([['apps/demo', 'webkit', '27.2', ['phone, 360, fr']]])
     // The job builds what the demo imports, so its dist/ is held to every other job's.
     expect(result.dist.map((entry) => entry.package)).toEqual(['@formancy/health-core'])
   })
 
-  // A gate that left nothing -- the build failed before it wrote, or a
-  // browser was added to scripts/browsers.mjs that the gate does not run --
-  // is listed, so the report says what is missing rather than that the app
-  // has no gate.
+  // A leg that names no browser, or one the gates do not run in, would
+  // upload a key the report does not expect, or read another leg's file.
+  test('refuse a browser job that names no browser, or one the gates do not run in', () => {
+    const root = withDemo(workspace())
+    expect(() => collect({ root, job: 'browser', ...machine })).toThrow('--job browser needs --variant <browser>, the browser its leg ran: one of chromium, firefox, webkit')
+    expect(() => collect({ root, job: 'browser', variant: 'opera', ...machine })).toThrow('--job browser --variant opera: opera is no browser the gates run in (chromium, firefox, webkit)')
+  })
+
+  // A gate that left nothing -- the build failed before it wrote, or its
+  // leg ran it in another browser than its own -- is listed, so the
+  // report says what is missing rather than that the app has no gate.
   test('list a gate in a browser that left no results', () => {
     const root = withDemo(workspace())
-    expect(collect({ root, job: 'browser', browsers: ['chromium', 'firefox'], ...machine }).absent).toEqual([{ reader: 'browser', file: 'apps/demo/test-results/browser-firefox.json' }])
+    expect(collect({ root, job: 'browser', variant: 'firefox', ...machine })).toMatchObject({ browserGates: [], absent: [{ reader: 'browser', file: 'apps/demo/test-results/browser-firefox.json' }] })
     rmSync(join(root, 'apps/demo/test-results'), { recursive: true })
-    expect(collect({ root, job: 'browser', ...machine })).toMatchObject({ browserGates: [], absent: [{ reader: 'browser', file: 'apps/demo/test-results/browser-chromium.json' }] })
+    expect(collect({ root, job: 'browser', variant: 'chromium', ...machine })).toMatchObject({ browserGates: [], absent: [{ reader: 'browser', file: 'apps/demo/test-results/browser-chromium.json' }] })
   })
 
   // A file filed under one browser and written by another browser's run, or
@@ -245,9 +258,18 @@ describe('the browser job’s results', () => {
     const root = withDemo(workspace())
     const file = 'apps/demo/test-results/browser-chromium.json'
     put(root, file, { gate: 'apps/demo', asked: 'firefox', startedAt: at(30), browser: null })
-    expect(collect({ root, job: 'browser', ...machine })).toMatchObject({ browserGates: [], missing: [`apps/demo’s gate asked for firefox in its chromium file: ${file}`] })
+    expect(collect({ root, job: 'browser', variant: 'chromium', ...machine })).toMatchObject({ browserGates: [], missing: [`apps/demo’s gate asked for firefox in its chromium file: ${file}`] })
     put(root, file, { gate: 'apps/demo', asked: 'chromium', startedAt: at(30), browser: { name: 'webkit', version: '27.2' } })
-    expect(collect({ root, job: 'browser', ...machine })).toMatchObject({ browserGates: [], missing: [`apps/demo’s gate launched webkit in its chromium file: ${file}`] })
+    expect(collect({ root, job: 'browser', variant: 'chromium', ...machine })).toMatchObject({ browserGates: [], missing: [`apps/demo’s gate launched webkit in its chromium file: ${file}`] })
+  })
+
+  // On a machine every browser of scripts/browsers.mjs is expected, whatever
+  // FORMANCY_BROWSERS said on the way: a run narrowed to one browser is a
+  // report that says the others are missing, never one that passes them.
+  test('expect every browser on a machine', () => {
+    const local = collect({ root: withDemo(workspace(), ['chromium', 'firefox']), local: true, since: at(-1), ...machine, env: {} })
+    expect(local.browserGates.map((gate) => gate.asked)).toEqual(['chromium', 'firefox'])
+    expect(local.absent).toEqual(expect.arrayContaining([{ reader: 'browser', file: 'apps/demo/test-results/browser-webkit.json' }]))
   })
 
   // On a machine, the gate's file is whatever its last run left: yesterday's

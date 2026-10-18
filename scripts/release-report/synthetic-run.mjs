@@ -8,6 +8,8 @@
 // involved -- what the report reads are files the suites, the install gate
 // and the validator gate wrote.
 
+import { FACTS } from '../browsers.mjs'
+
 const T0 = Date.parse('2026-10-17T10:00:00Z')
 
 export const DIST = 'sha256:aaaa111122223333444455556666777788889999aaaabbbbccccddddeeeeffff'
@@ -85,32 +87,42 @@ const validatorJob = () => ({
   dist: dist(),
 })
 
+/** The build Playwright 1.64.1 pins for each browser the gates run in, as tested-on.mjs reads it. */
+const PINS = [
+  { browser: 'chromium', name: 'chromium-headless-shell', revision: '1248', browserVersion: '156.0.8078.4', headless: true },
+  { browser: 'firefox', name: 'firefox', revision: '1555', browserVersion: '157.0', headless: true },
+  { browser: 'webkit', name: 'webkit', revision: '2370', browserVersion: '27.2', headless: true },
+]
+
+/** The checks every pass of the synthetic gate makes, in every browser: 0014's rows' among them, so that each row is held. */
+const CHECKS = ['the first Tab reaches the skip link', 'start: no sideways scroll', ...Object.values(FACTS).flatMap((fact) => fact.heldBy.checks)]
+
 /**
- * The demo's browser gate's file, as gate-results.mjs writes it on a run
- * in which every check passed: two passes planned and made, each with its
- * checks, in the Chromium Playwright pins.
+ * The demo's browser gate's file in `browser`, as gate-results.mjs writes
+ * it on a run in which every check passed: two passes planned and made,
+ * each with the same checks, in the build Playwright pins.
  */
-const browserGate = () => ({
+const browserGate = (browser) => ({
   gate: 'apps/demo',
-  asked: 'chromium',
+  asked: browser,
   startedAt: new Date(T0 + 100_000).toISOString(),
   finishedAt: new Date(T0 + 160_000).toISOString(),
-  browser: { name: 'chromium', version: '156.0.8078.4', headless: true, platform: 'linux', arch: 'x64' },
+  browser: { name: browser, version: PINS.find((pin) => pin.browser === browser).browserVersion, headless: true, platform: 'linux', arch: 'x64' },
   playwright: '1.64.1',
   axe: '4.14.0',
   widths: [320, 360],
   planned: ['reflow, 320, de-CH', 'phone, 360, fr'],
   passes: 2,
   made: [
-    { label: 'reflow, 320, de-CH', width: 320, height: 900, checks: ['the first Tab reaches the skip link', 'start: no sideways scroll'], failed: [] },
-    { label: 'phone, 360, fr', width: 360, height: 900, checks: ['the first Tab reaches the skip link', 'start: no sideways scroll'], failed: [] },
+    { label: 'reflow, 320, de-CH', width: 320, height: 900, checks: [...CHECKS], failed: [] },
+    { label: 'phone, 360, fr', width: 360, height: 900, checks: [...CHECKS], failed: [] },
   ],
-  checks: { ok: 4, failed: [] },
+  checks: { ok: 2 * CHECKS.length, failed: [] },
   measurements: [],
 })
 
-/** The browser job: the demo's gate, after turbo built what the demo imports. */
-const browserJob = () => ({ ...base('browser', 'browser'), browserGates: [browserGate()], dist: dist() })
+/** A leg of the browser job: the demo's gate in its browser, after turbo built what the demo imports. */
+const browserJob = (browser) => ({ ...base(`browser-${browser}`, 'browser'), variant: browser, browserGates: [browserGate(browser)], dist: dist() })
 
 /** What a project of the install gate's records when every step passed: install-test.mjs's entry, `said` its runner's last line. */
 const project = (name, { consumer, steps, installed = {}, resolved, guide = null, said = '' }) => ({
@@ -183,7 +195,7 @@ export function greenRun() {
     dist: dist(),
   }
   return {
-    results: [verify, core, questionnaire, document, corpus, browserJob(), install, validatorJob()],
+    results: [verify, core, questionnaire, document, corpus, ...PINS.map((pin) => browserJob(pin.browser)), install, validatorJob()],
     facts: {
       runtime: [],
       upstream: [
@@ -192,7 +204,7 @@ export function greenRun() {
       ],
       node: { engines: '>=22.13.0', nodeVersion: '22', ci: [{ workflow: 'gates.yml', job: 'verify', version: '22' }], declared: [] },
       packageManager: { name: 'pnpm', version: '12.4.2', declared: 'pnpm@12.4.2' },
-      browser: { playwright: '1.64.1', pins: [{ browser: 'chromium', name: 'chromium-headless-shell', revision: '1248', browserVersion: '156.0.8078.4', headless: true }] },
+      browser: { playwright: '1.64.1', pins: structuredClone(PINS) },
       tooling: [{ name: 'typescript', declared: '~6.0.3', version: '6.0.3' }],
       fhir: '4.0.1',
       validator: { version: '7.0.2', released: '2026-10-15', sha256: JAR, java: 17 },
@@ -211,7 +223,7 @@ export function greenRun() {
     installPlan: structuredClone(INSTALL_PLAN),
     validatorFiles: ['scripts/validator/registers.test.mjs'],
     browserApps: ['apps/demo'],
-    browsers: ['chromium'],
+    browsers: PINS.map((pin) => pin.browser),
     pin: { version: '7.0.2', sha256: JAR, java: 17 },
     registered: ['hl7.fhir.r4.core#4.0.1', 'hl7.fhir.uv.sdc#4.0.0'],
     register: {

@@ -2,6 +2,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { ErrorBoundary } from './error-boundary.js'
 import { madeOf } from './form-step.js'
+import { ReadOutView } from './read-out-view.js'
 import { RefusedStep } from './refused-step.js'
 import { OutcomeView } from './resource.js'
 import { WORDS } from './words/index.js'
@@ -63,6 +64,16 @@ describe('a failure the page did not expect', () => {
     )
     expect(screen.getByText(en.resources.madeBy('@formancy/health-ch'))).toBeDefined()
     expect(screen.getByText(en.resources.failed)).toBeDefined()
+  })
+
+  // A Questionnaire the read-out cannot read whole is read out not at all:
+  // part of a form shown as the resource would be a form it does not say,
+  // and the JSON below it still stands as written.
+  test('of the read-out is said in place of it, and no part of a form is shown', () => {
+    render(<ReadOutView json={'{"resourceType":"Questionnaire","status":"active","item":[{"linkId":"a","type":"url"}]}'} language="en" words={en} targetOf={() => undefined} />)
+    expect(screen.getByText(en.readOut.unread)).toBeDefined()
+    expect(screen.queryByRole('list')).toBeNull()
+    expect(screen.queryByRole('heading')).toBeNull()
   })
 
   // The sentence a screen reader hears after a change says what happened:

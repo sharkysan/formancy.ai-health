@@ -16,6 +16,7 @@
  * reads before they ship.
  */
 import type { FormWords } from '@formancy/core/words'
+import type { ItemType } from '../read-out.js'
 import { de } from './de.js'
 import { en } from './en.js'
 import { fr } from './fr.js'
@@ -35,6 +36,9 @@ export interface Versions {
   readonly chCore: string
   readonly chTerm: string
 }
+
+/** R4's orderings, said in words of a number or of a moment. */
+export type Ordering = '>' | '<' | '>=' | '<='
 
 /** The five inputs the page has refused on purpose. */
 export type OnPurpose = 'version' | 'unmapped' | 'ahv' | 'gln' | 'unproved'
@@ -75,6 +79,44 @@ export interface Words {
     readonly failed: string
   }
   readonly questionnaire: { readonly heading: string; readonly intro: string }
+  /** The Questionnaire read out from its JSON, item by item (0013). */
+  readonly readOut: {
+    readonly heading: string
+    /** What it is read from, and what it is not. */
+    readonly intro: string
+    readonly title: string
+    readonly type: string
+    /** Each item type the read-out reads, in words. */
+    readonly types: Readonly<Record<ItemType, string>>
+    readonly required: string
+    readonly repeats: string
+    readonly yes: string
+    readonly no: string
+    readonly options: string
+    readonly shownWhen: string
+    /** How several conditions join: R4's enableBehavior `all` and `any`. */
+    readonly joined: { readonly all: string; readonly any: string }
+    readonly is: string
+    readonly isNot: string
+    readonly answered: string
+    readonly unanswered: string
+    /** An ordering of a number. */
+    readonly numbers: Readonly<Record<Ordering, string>>
+    /** An ordering of a date, a time, or both. */
+    readonly moments: Readonly<Record<Ordering, string>>
+    /** The heading of an item with no text, which a hidden field is. */
+    readonly noText: string
+    /** Said of a text the resource holds no translation of into the page's language: its own, in `language`. */
+    readonly untranslated: (language: string) => string
+    /** The same, where the resource names no language. */
+    readonly unnamedLanguage: string
+    readonly toField: string
+    /** The way to a field's name: its visible words, then the field's. */
+    readonly toFieldOf: (field: string) => string
+    readonly notShown: string
+    /** What the page says where the read-out stopped: the JSON alone stands. */
+    readonly unread: string
+  }
   readonly response: { readonly heading: string; readonly intro: string }
   readonly document: { readonly heading: string; readonly intro: string; readonly notMade: string }
   readonly letter: {

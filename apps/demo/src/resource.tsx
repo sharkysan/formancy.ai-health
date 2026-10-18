@@ -43,6 +43,8 @@ interface OutcomeProps {
   /** Whether it is, byte for byte, the corpus entry `file`. */
   readonly corpus: boolean
   readonly words: Words
+  /** What the page reads out of the bytes made, above their JSON: the Questionnaire's read-out (0013). */
+  readonly reading?: (json: string) => ReactNode
 }
 
 /** JSON laid out for reading, with the bytes it was laid out from beside it. */
@@ -59,7 +61,7 @@ function Json({ json, label, words }: { readonly json: string; readonly label: s
   )
 }
 
-export function OutcomeView({ outcome, maker, file, name, corpus, words }: OutcomeProps) {
+export function OutcomeView({ outcome, maker, file, name, corpus, words, reading }: OutcomeProps) {
   switch (outcome.kind) {
     case 'refused':
       return <Refusals maker={maker} refusals={outcome.refusals} words={words} />
@@ -72,6 +74,7 @@ export function OutcomeView({ outcome, maker, file, name, corpus, words }: Outco
             {words.resources.madeBy(maker)}
             {corpus ? ` ${words.resources.corpus(file)}` : ''}
           </p>
+          {reading?.(outcome.json)}
           <Json json={outcome.json} label={words.resources.asJson(name)} words={words} />
           <p>
             <Download file={file} bytes={outcome.json} type="application/fhir+json">

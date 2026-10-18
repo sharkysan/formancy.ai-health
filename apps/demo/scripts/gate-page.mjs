@@ -225,9 +225,14 @@ export function declaredFaces(dir = dist) {
  * a state measured before a late face swapped in would measure the
  * fallback. Each face, and not each family: the page asks for every face
  * as it starts (src/faces.ts), so that nothing typed later asks for one.
- * Null when it holds.
+ * In a browser that `forgets` -- 0014's forgetsLoadedFaces, WebKit -- a face
+ * the page loaded and does not draw with is "unloaded" again once it has
+ * drawn: there, every face not loaded is "unloaded", at least one is, or
+ * the row no longer says what the browser does, and each loads again; the
+ * privacy checks after hold that doing so asked for no file. Null when it
+ * holds.
  */
-export async function fontProblem(page, { refused }) {
+export async function fontProblem(page, { refused, forgets = false }) {
   const declared = declaredFaces()
   if (declared.length === 0) return "no stylesheet of the built demo declares a face; the gate reads the faces from dist's @font-face rules"
   const faces = await page.evaluate(async () => {
@@ -239,5 +244,10 @@ export async function fontProblem(page, { refused }) {
   const families = (list) => [...new Set(list.map((face) => face.split(' ')[0]))]
   if (faces.length !== declared.length) return `the page holds ${String(faces.length)} faces, where the built stylesheets declare ${String(declared.length)} (${families(declared).join(', ')})`
   const waiting = faces.filter((face) => face.status !== 'loaded').map((face) => `${face.face}: ${face.status}`)
-  return waiting.length === 0 ? null : `${String(waiting.length)} of ${String(faces.length)} faces did not load as the page started, so text typed in their range would ask for them later: ${waiting.slice(0, 3).join('; ')}`
+  if (!forgets) return waiting.length === 0 ? null : `${String(waiting.length)} of ${String(faces.length)} faces did not load as the page started, so text typed in their range would ask for them later: ${waiting.slice(0, 3).join('; ')}`
+  const otherwise = faces.filter((face) => !['loaded', 'unloaded'].includes(face.status)).map((face) => `${face.face}: ${face.status}`)
+  if (otherwise.length > 0) return `${String(otherwise.length)} of ${String(faces.length)} faces neither loaded nor forgotten: ${otherwise.slice(0, 3).join('; ')}`
+  if (waiting.length === 0) return `every face is loaded once the page has drawn, so 0014's table no longer says what this browser does`
+  const again = await page.evaluate(async () => (await Promise.allSettled([...document.fonts].filter((face) => face.status === 'unloaded').map((face) => face.load()))).filter((result) => result.status !== 'fulfilled' || result.value.status !== 'loaded').length)
+  return again === 0 ? null : `${String(again)} of the ${String(waiting.length)} faces it forgot did not load again`
 }

@@ -6,7 +6,7 @@
 //
 //   node scripts/release-report/collect.mjs --job verify
 //   node scripts/release-report/collect.mjs --job test --package @formancy/health-core
-//   node scripts/release-report/collect.mjs --job browser
+//   node scripts/release-report/collect.mjs --job browser --variant webkit
 //   node scripts/release-report/collect.mjs --job install
 //   node scripts/release-report/collect.mjs --job validator
 //   node scripts/release-report/collect.mjs --local --since 2026-10-17T08:00:00Z
@@ -22,8 +22,9 @@
 // `test-results/vitest.json` and `coverage/coverage-summary.json`, and
 // turbo's `.turbo/runs/*.json` for the task's own start and end, in `test`;
 // in `browser`, each app's browser gate's `test-results/browser-<browser>.json`
-// for every browser of scripts/browsers.mjs, from each app with a
-// `test:browser` script (the demo's, 0012); the install gate's
+// for the browser of the leg's `--variant`, which must be one of
+// scripts/browsers.mjs's (0014), from each app with a `test:browser`
+// script (the demo's, 0012); the install gate's
 // `test-results/install.json` in `install`; in
 // `validator`, the gate's `test-results/validator.json` (scripts/validator.mjs
 // writes it however it ends) and the root `test-results/vitest.json` the
@@ -47,7 +48,9 @@
 // to say.
 //
 // `--local` reads every package of one machine at once, the guards, each
-// app's browser gate, the install gate and the validator gate. Not the
+// app's browser gate in every browser of scripts/browsers.mjs, whatever
+// FORMANCY_BROWSERS said on the way, so a narrowed run is reported as
+// missing a browser, the install gate and the validator gate. Not the
 // registers' run: on one
 // machine the root vitest.json is the guards', and the guards run every
 // case of registers.test.mjs when VALIDATOR_GATE_RAN says the gate ran
@@ -176,7 +179,7 @@ const runner = (env) => ({ node: process.version, platform: process.platform, ar
 const READERS = {
   verify: (read) => read.suite('.', null),
   test: (read, { pkg, packages }) => read.suite(packages.find((entry) => entry.name === pkg).path, pkg),
-  browser: (read) => read.browser(),
+  browser: (read, { variant }) => read.browser([variant]),
   install: (read) => read.install(),
   validator: (read) => {
     read.validator()
@@ -192,6 +195,12 @@ const READERS = {
 export function collect({ root = repo, job, pkg, variant, local = false, since, browsers = BROWSERS, env = process.env, git = defaultGit, now = () => new Date() }) {
   if (!local && READERS[job] === undefined) {
     throw new Error(`collect.mjs reads the ${Object.keys(READERS).join(', ').replace(/, (?=[^,]*$)/, ' and ')} jobs, and has no reader for ${String(job)}: a job the report expects results from needs one here`)
+  }
+  // A leg of the browser job runs the gate in one browser (0014), and
+  // leaves that browser's results under a key of its own.
+  if (!local && job === 'browser') {
+    if (variant === undefined) throw new Error(`--job browser needs --variant <browser>, the browser its leg ran: one of ${browsers.join(', ')}`)
+    if (!browsers.includes(variant)) throw new Error(`--job browser --variant ${variant}: ${variant} is no browser the gates run in (${browsers.join(', ')})`)
   }
   const packages = namedPackages(root)
   const key = local ? 'local' : keyFor({ job, pkg, variant }, packages)
@@ -254,15 +263,15 @@ export function collect({ root = repo, job, pkg, variant, local = false, since, 
       suites.push({ package: name, path, ...normaliseSuite(json, root), testFiles, task: task ?? null, coverage })
     },
     /**
-     * Each app's browser gate in every browser the gates run in. A file
-     * another browser's run wrote -- its launch failed, so no browser names
-     * itself in it -- would be that browser's failure under this one's
-     * name; one that launched another browser would be that browser's
-     * checks.
+     * Each app's browser gate in each of `wanted`: the leg's browser, or on
+     * a machine every browser the gates run in. A file another browser's
+     * run wrote -- its launch failed, so no browser names itself in it --
+     * would be that browser's failure under this one's name; one that
+     * launched another browser would be that browser's checks.
      */
-    browser() {
+    browser(wanted) {
       for (const app of appsWith(root, 'test:browser')) {
-        for (const browser of browsers) {
+        for (const browser of wanted) {
           const shown = `${app}/test-results/browser-${browser}.json`
           if (!existsSync(join(root, shown))) {
             notFound(shown, 'browser')
@@ -305,7 +314,7 @@ export function collect({ root = repo, job, pkg, variant, local = false, since, 
   if (local) {
     for (const entry of packages) read.suite(entry.path, entry.name)
     read.suite('.', null)
-    read.browser()
+    read.browser(browsers)
     read.install()
     read.validator()
     // The guards run the registers' cases here, and one reads the gate's
@@ -322,7 +331,7 @@ export function collect({ root = repo, job, pkg, variant, local = false, since, 
       }
     }
   } else {
-    READERS[job](read, { pkg, packages })
+    READERS[job](read, { pkg, packages, variant })
   }
 
   const dist = publishedPackages(root).flatMap(({ dir, manifest }) => {

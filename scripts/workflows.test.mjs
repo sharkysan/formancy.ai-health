@@ -401,8 +401,10 @@ describe('gates.yml', () => {
   test('gives the report one key per job and package, and no key twice', () => {
     const keys = expectedKeys(gates, namedPackages()).map((entry) => entry.key)
     expect(new Set(keys).size).toBe(keys.length)
-    expect(keys).toEqual(expect.arrayContaining(['verify', 'browser', 'install', 'validator']))
+    expect(keys).toEqual(expect.arrayContaining(['verify', 'install', 'validator']))
     expect(keys).not.toContain('test')
+    // One per leg of the browser job, keyed by its browser (0014).
+    expect(keys.filter((key) => key.startsWith('browser'))).toEqual(['browser-chromium', 'browser-firefox', 'browser-webkit'])
     expect(keys.filter((key) => key.startsWith('test-')).sort()).toEqual(namedPackages().map((entry) => `test-${entry.id}`).sort())
   })
 
@@ -418,26 +420,42 @@ describe('gates.yml', () => {
     expect(changed((workflow) => (collectStep(workflow.jobs.install).run = 'node scripts/release-report/collect.mjs --job verify'))).toThrow('.github/workflows/gates.yml: the install job collects as --job verify, not as itself')
   })
 
-  // The browser job's results are the file the demo's gate writes, so the
-  // gate runs before the collect step, through turbo, which builds what the
-  // demo imports first and never replays the gate (turbo.json); the
-  // Chromium it runs in is the one the installed Playwright pins,
-  // installed before it; and the gate's own file is kept whole beside the
-  // results, for whoever reads a red run.
-  test('runs the demo’s gate after installing Playwright’s Chromium, before it collects, and keeps its file', () => {
-    const browser = gates.jobs.browser.steps
+  // One leg of the browser job per browser (0014). Each leg's results are
+  // the file the demo's gate writes in its browser, so the gate runs before
+  // the collect step, through turbo, which builds what the demo imports
+  // first, never replays the gate and hands it FORMANCY_BROWSERS
+  // (turbo.json); the browser it runs in is the build the installed
+  // Playwright pins, installed before it, with WebKit's system libraries in
+  // WebKit's leg alone; the collect step and the gate's own file are keyed
+  // by the leg's browser, so no leg's upload replaces another's; and every
+  // leg reports, rather than the first red one cancelling the rest.
+  test('runs the demo’s gate in each browser’s leg, after installing that browser, before it collects, and keeps its file', () => {
+    const job = gates.jobs.browser
+    const browser = job.steps
     const at = (command) => browser.findIndex((step) => step.run === command)
-    const install = at('pnpm --filter @formancy/health-demo exec playwright install chromium')
+    expect(job.strategy).toEqual({ 'fail-fast': false, matrix: { browser: ['chromium', 'firefox', 'webkit'] } })
+    expect(job.name).toBe('browser (${{ matrix.browser }})')
+    const install = at('pnpm --filter @formancy/health-demo exec playwright install "$BROWSER"')
+    expect(browser[install].env).toEqual({ BROWSER: '${{ matrix.browser }}' })
+    const deps = browser.findIndex((step) => step.run === 'pnpm --filter @formancy/health-demo exec playwright install-deps webkit')
+    expect(browser[deps].if).toBe("matrix.browser == 'webkit'")
+    expect(browser.filter((step) => /install-deps|--with-deps|apt-get/.test(String(step.run))).length).toBe(1)
     const gate = at('pnpm exec turbo run test:browser --filter=@formancy/health-demo')
+    expect(browser[gate].env).toEqual({ FORMANCY_BROWSERS: '${{ matrix.browser }}' })
     expect(install).toBeGreaterThan(at('pnpm install --frozen-lockfile'))
-    expect(gate).toBeGreaterThan(install)
-    expect(browser.indexOf(collectStep(gates.jobs.browser))).toBeGreaterThan(gate)
-    expect(collectStep(gates.jobs.browser).run).toBe('node scripts/release-report/collect.mjs --job browser')
-    expect(browser.find((step) => step.with?.name === 'browser-results')?.with).toEqual({ name: 'browser-results', path: 'apps/demo/test-results/', 'if-no-files-found': 'error', overwrite: true })
-    expect(gates.jobs.browser['runs-on']).toMatch(/^ubuntu-\d+\.\d+$/)
+    expect(deps).toBeGreaterThan(install)
+    expect(gate).toBeGreaterThan(deps)
+    const collect = collectStep(job)
+    expect(browser.indexOf(collect)).toBeGreaterThan(gate)
+    expect(collect.run).toBe('node scripts/release-report/collect.mjs --job browser --variant "$BROWSER"')
+    expect(collect.env).toEqual({ BROWSER: '${{ matrix.browser }}' })
+    const download = browser.find((step) => String(step.uses).startsWith('actions/cache@') && step.with?.path === '~/.cache/ms-playwright')
+    expect(download.with.key).toBe("playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('pnpm-lock.yaml') }}")
+    expect(browser.find((step) => String(step.with?.name).startsWith('browser-results'))?.with).toEqual({ name: 'browser-results-${{ matrix.browser }}', path: 'apps/demo/test-results/', 'if-no-files-found': 'error', overwrite: true })
+    expect(job['runs-on']).toMatch(/^ubuntu-\d+\.\d+$/)
     const demo = JSON.parse(readFileSync(join(repo, 'apps', 'demo', 'package.json'), 'utf8'))
     expect(demo.scripts['test:browser']).toBe('node scripts/browser-test.mjs')
-    expect(JSON.parse(readFileSync(join(repo, 'turbo.json'), 'utf8')).tasks['test:browser']).toEqual({ dependsOn: ['build'], cache: false })
+    expect(JSON.parse(readFileSync(join(repo, 'turbo.json'), 'utf8')).tasks['test:browser']).toEqual({ dependsOn: ['build'], passThroughEnv: ['FORMANCY_BROWSERS'], cache: false })
   })
 
   // Without --force a suite's results could be a cached replay of another

@@ -68,11 +68,18 @@ for byte, and carries the letter only as the bytes
 [`docs/release/letter.json`](../release/letter.json) registers. It asks
 for every face its stylesheets declare as it starts
 ([`faces.ts`](../../apps/demo/src/faces.ts)), so that nothing shown or
-typed later asks the server for one, and what jsdom cannot see of it its
-browser gate measures in Chromium
+typed later asks the server for one -- in WebKit, while each face's first
+file arrives -- and what jsdom cannot see of it its browser gate measures
+in Chromium, Firefox and WebKit, what they disagree on named and held in
+[`browsers.mjs`](../../scripts/browsers.mjs)'s table and
+[`gate-facts.mjs`](../../apps/demo/scripts/gate-facts.mjs)
 ([`browser-test.mjs`](../../apps/demo/scripts/browser-test.mjs),
-[§10](10-verification.md#102-the-gates)). The packages still have no page
-and no network.
+[§10](10-verification.md#102-the-gates), [0014](../decisions/0014-the-demos-browser-gate-runs-in-chromium-firefox-and-webkit-and-each-fact-the-browsers-disagree-on-is-named-and-held.md)). It reads its Questionnaire out
+above the JSON, from the bytes it shows and never from the form, each
+item leading to the field the form drew for it where formancy's renderer
+draws one with the id its engine mints that takes the keyboard; it renders no Questionnaire
+([0013](../decisions/0013-the-demo-reads-its-questionnaire-out-from-the-bytes-it-shows-and-renders-no-questionnaire.md)).
+The packages still have no page and no network.
 
 The packages the plan proposes next, each depending only on those before
 it, are in [`CLAUDE.md`](../../CLAUDE.md#how-the-pieces-fit); each arrives
@@ -225,7 +232,8 @@ gate. Its own suite and its browser gate hold it instead.
 |---|---|
 | [`src/build/plugin.ts`](../../apps/demo/src/build/plugin.ts) | The build's three modules, read in Node: the corpus's demo referral, the letter's PDF taken through `registeredLetter`, and the facts the page states -- the registers' releases, the notices, CLAUDE.md's sentence -- after holding the page's first resources to the corpus's entries, byte for byte, or stopping the build |
 | [`src/exports.ts`](../../apps/demo/src/exports.ts), [`on-purpose.ts`](../../apps/demo/src/on-purpose.ts) | The one place the page calls the packages, the same in the build: what the sample and the answers make, every resource written by `writeJson`, and the fixed inputs each refused for one thing |
-| [`src/engine.ts`](../../apps/demo/src/engine.ts) | formancy's engine for the form, with a capability source of constants, and formancy's words the page gives its renderer |
+| [`src/engine.ts`](../../apps/demo/src/engine.ts) | formancy's engine for the form, with a capability source of constants; formancy's words the page gives its renderer; and `targetOf`, the control formancy's engine names for a Questionnaire item's key, where its renderer draws one with that id, and whether the form shows it |
+| [`src/read-out.ts`](../../apps/demo/src/read-out.ts), [`read-out-view.tsx`](../../apps/demo/src/read-out-view.tsx) | The Questionnaire read out of the bytes its JSON region shows, by health-core's `readJson`, in the page's language: every item, its text, linkId, type, options and conditions, refused whole where it holds a member or an extension it does not know or cannot be read; drawn as headings, lists and description lists, each item with a button that scrolls its field to the middle of the window and puts the keyboard on it ([0013](../decisions/0013-the-demo-reads-its-questionnaire-out-from-the-bytes-it-shows-and-renders-no-questionnaire.md)) |
 | [`src/demo.tsx`](../../apps/demo/src/demo.tsx), [`form-step.tsx`](../../apps/demo/src/form-step.tsx), [`resource.tsx`](../../apps/demo/src/resource.tsx), [`letter-step.tsx`](../../apps/demo/src/letter-step.tsx), [`refused-step.tsx`](../../apps/demo/src/refused-step.tsx), [`notices.tsx`](../../apps/demo/src/notices.tsx) | The page: the form beside the resources, each with its maker and its corpus file, the letter, the refusals, and what the page says of itself; the answers live in the engine for as long as the page is open |
 | [`src/download.tsx`](../../apps/demo/src/download.tsx), [`pretty.ts`](../../apps/demo/src/pretty.ts) | A download of bytes the page holds, from a Blob, revoked when they change; the JSON laid out for reading, the bytes downloaded as `writeJson` wrote them |
 | [`src/faces.ts`](../../apps/demo/src/faces.ts), [`styles/fonts.css`](../../apps/demo/src/styles/fonts.css), [`styles/demo.css`](../../apps/demo/src/styles/demo.css) | Every face asked for as the page starts; the faces from the build; the layout, with no colour or variable of its own |

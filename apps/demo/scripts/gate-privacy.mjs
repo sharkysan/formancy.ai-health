@@ -17,15 +17,63 @@
 // refuses -- a string handed to innerHTML, a fetch, and what Cloudflare's
 // features inject into a page as it is served -- after the journey, and
 // watching the browser refuse each and say so.
+//
+// What a browser does of its own, which 0014's table names -- a style
+// refused, a font file asked for late -- is told apart from the page's by
+// gate-facts.mjs, and each row held there by a check of its own; the
+// faces WebKit forgets are gate-page.mjs's fontProblem's.
+
+import { heldNextFile, heldSelectStyle, lateOfItsOwn, selectsDrawTheSame, thePagesOwn } from './gate-facts.mjs'
 
 /**
  * Installed before any script of the page runs: every report of the
  * policy, kept in the page's memory for the gate to read. Not in any
- * storage, which the checks below hold empty.
+ * storage, which the checks below hold empty. Beside the directive and what
+ * it blocked, the element it was reported at, by its name -- the document,
+ * where the element was never in it -- and by the order in which elements
+ * were first reported, so that two reports at one element are told from
+ * one at each of two; whether that element holds a style attribute of the
+ * page's own, the sample a policy with 'report-sample' asks for, and where
+ * the browser says it happened: what tells a refusal of the page's from
+ * one of the browser's own (0014).
  */
 export function recordViolations() {
   window.__gateViolations = []
-  document.addEventListener('securitypolicyviolation', (event) => window.__gateViolations.push({ directive: event.effectiveDirective, blocked: event.blockedURI }))
+  const elements = new WeakMap()
+  let next = 0
+  document.addEventListener('securitypolicyviolation', (event) => {
+    const element = event.target instanceof Element ? event.target : null
+    if (element !== null && !elements.has(element)) {
+      elements.set(element, next)
+      next += 1
+    }
+    window.__gateViolations.push({
+      directive: event.effectiveDirective,
+      blocked: event.blockedURI,
+      target: event.target?.nodeName ?? null,
+      element: element === null ? null : elements.get(element),
+      ownStyle: element !== null && element.hasAttribute('style'),
+      sample: event.sample,
+      at: `${event.sourceFile || 'the page'}:${String(event.lineNumber)}`,
+    })
+  })
+}
+
+/** A report as a failure names it. */
+export const saidOf = (entry) => `${entry.directive} refused ${entry.blocked}${entry.target === null ? '' : ` at ${entry.target}`}${entry.sample ? ` (${entry.sample})` : ''}, ${entry.at}`
+
+/**
+ * Every error `page` logs to its console from now on, as its text and the
+ * address the console says it came from: what a person with the console
+ * open sees go wrong, the browser's own refusals among it, which a check
+ * reads before anything is planted.
+ */
+export function consoleErrors(page) {
+  const errors = []
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push({ text: message.text(), url: message.location().url ?? '' })
+  })
+  return errors
 }
 
 const leavesTheBrowser = (address) => !/^(?:blob|data):/.test(address)
@@ -85,13 +133,22 @@ const said = (list) => list.slice(0, 4).join(', ')
  * the journey took and every script it typed; nothing but GETs without a
  * body; no cookie; and nothing in any of the browser's stores.
  */
-export async function privacyChecks(gate, { context, page, watcher, url }) {
+export async function privacyChecks(gate, { context, page, watcher, url, browser, refused = null }) {
   const { check } = gate
   const elsewhere = watcher.requests.filter((request) => !request.address.startsWith(url)).map((request) => request.address)
   for (const address of await hintsOf(page)) if (!address.startsWith(url)) elsewhere.push(`${address} (a hint)`)
   check('the page fetched nothing and hinted no connection outside the built demo, its faces included', elsewhere.length === 0 ? null : said(elsewhere))
-  const late = watcher.requests.filter((request) => request.phase === 'settled').map((request) => `${request.method} ${request.address.replace(url, '')}`)
+  // In the pass that refuses the web fonts, the font files 0014's table
+  // says this browser asks for of its own once text in a face's range is
+  // drawn, each refused by the gate, so that none left the browser; that
+  // row is held beside this check, and everything else asked for late is
+  // the page's.
+  const settled = watcher.requests.filter((request) => request.phase === 'settled')
+  const addresses = settled.map((request) => request.address)
+  const pages = refused === null ? addresses : lateOfItsOwn(browser, { late: addresses, refused }).page
+  const late = settled.filter((request) => pages.includes(request.address)).map((request) => `${request.method} ${request.address.replace(url, '')}`)
   check('once it had settled, the page asked for nothing more, whatever was typed into it, changed, shown or downloaded', late.length === 0 ? null : `it asked for ${said(late)}${late.length > 4 ? ` and ${String(late.length - 4)} more` : ''}`)
+  if (refused !== null) heldNextFile(gate, { browser, late: addresses, refused })
   const sent = watcher.requests.filter((request) => request.method !== 'GET' || request.body).map((request) => `${request.method} ${request.address}`)
   check('and nothing it asked for carried a body or was other than a GET', sent.length === 0 ? null : said(sent))
   check('the page set no cookie', (await context.cookies()).length === 0 && (await page.evaluate(() => document.cookie)) === '' ? null : `cookies: ${(await context.cookies()).map((cookie) => cookie.name).join(', ') || await page.evaluate(() => document.cookie)}`)
@@ -156,20 +213,28 @@ const violations = (page) => page.evaluate(() => window.__gateViolations ?? null
 /**
  * The policy, in force: every file of the build was served with
  * `headers`, what scripts/demo-headers.mjs decides for the address the
- * gate serves it at; nothing the page did was refused; and what the policy
- * refuses, planted after the journey, is refused, each with the browser's
- * report of it -- a string handed to innerHTML, which Trusted Types
- * refuses, a fetch to the page's own origin, and, in the page served again
- * with them in its HTML, an inline script and a script under /cdn-cgi/ of
- * its origin, neither of which runs. Last in a pass, since what it plants
- * is the gate's and not the page's.
+ * gate serves it at; nothing the page did was refused, and its console
+ * logged no error, the whole journey long, but what a row of 0014's table
+ * says `browser` does of its own and, in the pass that refuses the web
+ * fonts, what names a font file the gate refused (`refusedFonts`); that row
+ * held on a page of its own; and what the policy refuses, planted after
+ * the journey, is refused, each with the browser's report of it -- a
+ * string handed to innerHTML, which Trusted Types refuses, a fetch to the
+ * page's own origin, and, in the page served again with them in its HTML,
+ * an inline script and a script under /cdn-cgi/ of its origin, neither of
+ * which runs. Last in a pass, since what it plants is the gate's and not
+ * the page's.
  */
-export async function policyChecks(gate, { context, page, watcher, url, headers }) {
+export async function policyChecks(gate, { context, page, watcher, url, headers, errors, browser, refusedFonts }) {
   const { check } = gate
   const unheaded = watcher.responses.filter((response) => response.status === 200).flatMap((response) => headerProblems(headers, response.headers).map((problem) => `${response.address}: ${problem}`))
   check('every file of the build came with every header scripts/demo-headers.mjs decides for its address', watcher.responses.length > 0 && unheaded.length === 0 ? null : said(unheaded) || 'no response of the built demo was heard')
   const before = await violations(page)
-  check('the page did nothing its policy refused', before !== null && before.length === 0 ? null : before === null ? 'no listener was installed before the page ran' : said(before.map((entry) => `${entry.directive} ${entry.blocked}`)))
+  const pages = thePagesOwn(browser, { reports: before ?? [], errors, refused: refusedFonts })
+  check('the page did nothing its policy refused, but what 0014’s table says this browser refuses of its own', before !== null && pages.reports.length === 0 ? null : before === null ? 'no listener was installed before the page ran' : said(pages.reports.map(saidOf)))
+  check('and its console logged no error, the whole journey long, but that browser’s own and the font files this pass refused', pages.errors.length === 0 ? null : said(pages.errors.map((error) => error.text)))
+  await selectsDrawTheSame(gate, page)
+  await heldSelectStyle(gate, { context, url, headers, browser })
   const parsed = await page.evaluate(() => {
     try {
       document.createElement('div').innerHTML = '<b>planted</b>'

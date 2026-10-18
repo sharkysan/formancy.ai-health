@@ -58,8 +58,8 @@ node scripts/verify-licenses.mjs
 node scripts/dependency-licences.mjs
 pnpm test:e2e:install
 node scripts/validator.mjs --java <path to java 17 or later>
-pnpm --filter @formancy/health-demo exec playwright install chromium   # once, the Chromium Playwright pins
-pnpm --filter @formancy/health-demo test:browser
+pnpm --filter @formancy/health-demo exec playwright install chromium firefox webkit   # once, the builds Playwright pins; WebKit runs on Linux alone
+pnpm --filter @formancy/health-demo test:browser   # every browser this machine runs
 #    and, to read the report of what ran on this machine, "The release report"
 #    below
 
@@ -176,7 +176,9 @@ holds and what fails it). In short:
 - each package's results, held to every test file the checkout holds for
   it, a skip passing only where the validator job's run passed that test;
 - the demo's browser gate, every pass it planned made and every check in
-  it passed, in the Chromium the installed Playwright pins;
+  it passed, in Chromium, Firefox and WebKit at the builds the installed
+  Playwright pins, the same checks in each, and every row of
+  `scripts/browsers.mjs`'s table held by its check;
 - the install gate, each project held to what `scripts/install-hosts.mjs`
   plans, and the validator gate's verdict held to the registers;
 - each tarball's built files against the `dist/` every job built;
@@ -193,7 +195,7 @@ pnpm build
 node scripts/validator.mjs --java <path to java 17 or later>
 VALIDATOR_GATE_RAN=true pnpm test:repo                   # the guards, the registers' every case with them
 pnpm exec turbo run test:coverage --force --summarize   # every package, fresh, with its wall time
-pnpm --filter @formancy/health-demo test:browser        # the demo's browser gate, in the Chromium Playwright pins
+pnpm --filter @formancy/health-demo test:browser        # the demo's browser gate, in every browser this machine runs
 node scripts/install-test.mjs
 node scripts/release-report/collect.mjs --local --since "$since"
 node scripts/release-report/report.mjs --local --allow-missing verify,install,validator
@@ -212,10 +214,13 @@ validator gate's own files are read whatever it allows. On a machine
 without a Java, leave out the validator and its `VALIDATOR_GATE_RAN`: the
 registers' cases that read its downloads skip, and are allowed by
 `--allow-missing validator` alone, which the banner says; on one without
-Chromium, leave out the browser gate and add `browser`. The browser gate
-builds the demo itself, first; with its eight passes it ran 29.7 s by
-its results file's start and finish on a desktop on 18 October 2026
-(Windows 11, Node 24.21.0). A file that is
+the browsers, leave out the browser gate and add `browser`, and on one
+that is not Linux, which runs no WebKit, add `browser` too: the files of
+the browsers that ran are read and held all the same, and the banner says
+the gate was allowed missing, WebKit's file with it (0014). The browser gate builds the demo itself, first; with its eight
+passes in each browser in turn it ran, by its results files' start and
+finish on a desktop on 18 October 2026 (Windows 11, Node 24.21.0), 51.0
+and 51.4 s in Chromium and 85.1 and 76.1 s in Firefox, in two runs. A file that is
 there from before `--since` is refused all the same -- run it again or
 remove it. A release refuses a local report.
 
@@ -319,7 +324,8 @@ The headers should be `scripts/demo-headers.mjs`'s for
 https://formancy.ai/health/, each once, and the page should hold the
 build's one script and no other: a second, from `/cdn-cgi/` or inline, is
 one Cloudflare added, which the policy refuses to run and `no-transform`
-asks it not to add. Then open the page, change an answer, download each
+asks it not to add. Then open the page, read the Questionnaire's read-out
+and press one item's way to its field, change an answer, download each
 file, open the PDF, and follow the footer's link to the notices.
 
 By hand, from a clean checkout, with a Cloudflare login that can edit

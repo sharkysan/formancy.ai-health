@@ -87,6 +87,7 @@ describe('testedOn()', () => {
     const playwright = JSON.parse(readFileSync(join(repo, 'apps', 'demo', 'node_modules', 'playwright', 'package.json'), 'utf8')).version
     expect(facts.browser.playwright).toBe(playwright)
     expect(facts.browser.pins.map((pin) => [pin.browser, pin.name, pin.headless])).toEqual(BROWSERS.map((browser) => [browser, PINNED_AS[browser], LAUNCH_OPTIONS.headless]))
-    for (const pin of facts.browser.pins) expect(pin.browserVersion, pin.name).toMatch(/^\d+\.\d+\.\d+\.\d+$/)
+    // Chromium's four parts, Firefox's and WebKit's two (157.0, 27.2): a version, whatever its browser's shape.
+    for (const pin of facts.browser.pins) expect(pin.browserVersion, pin.name).toMatch(/^\d+(?:\.\d+)+$/)
   })
 })

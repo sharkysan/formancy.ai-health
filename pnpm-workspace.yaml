@@ -34,7 +34,7 @@ catalog:
   # this file's packages.
   yaml: ^2.9.1
 
-  # The demo's browser gate, measured in Chromium (0012).
+  # The demo's browser gate, measured in Chromium, Firefox and WebKit (0012, 0014).
   axe-core: ^4.13.0
   playwright: ^1.63.0
 

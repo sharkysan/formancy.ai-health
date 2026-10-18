@@ -123,6 +123,61 @@ describe("the page's words", () => {
     }
   })
 
+  // The read-out is a reading of the resource below it, and the page says
+  // what it is not, reviewed in each language for its parts: it is read
+  // from the JSON, not from the form; what it does not read is in the JSON
+  // alone, a read-only or a hidden item's flag among it, which an item
+  // read out as a question would otherwise hide; it is no FHIR renderer;
+  // it validates nothing; and Health renders no Questionnaire, which is
+  // where it ends and LHC-Forms and their like begin (0013). A translation
+  // that dropped one would claim more than the page does.
+  const READ_OUT: Readonly<Record<Language, readonly string[]>> = {
+    'de-CH': ['aus dem JSON darunter', 'nicht aus dem Formular', 'Der Rest steht nur im JSON', 'schreibgeschützt', 'verborgen', 'kein FHIR-Renderer', 'validiert nichts', 'zeichnet keinen'],
+    fr: ['du JSON ci-dessous', 'non du formulaire', 'Le reste n’est que dans le JSON', 'lecture seule', 'caché', 'pas un moteur de rendu FHIR', 'ne valide rien', 'n’en dessine aucun'],
+    it: ['dal JSON qui sotto', 'non dal modulo', 'Il resto sta solo nel JSON', 'sola lettura', 'nascosto', 'non è un renderer FHIR', 'non valida nulla', 'non ne disegna nessuno'],
+    en: ['from the JSON below', 'not from the form', 'The rest is in the JSON alone', 'read-only', 'hidden', 'no FHIR renderer', 'validates nothing', 'draws none'],
+  }
+  test.each(LANGUAGES)("hold the read-out's statements of what it is and is not, in %s", (language) => {
+    expect(READ_OUT[language].filter((part) => !WORDS[language].readOut.intro.includes(part))).toEqual([])
+  })
+
+  // The Questionnaire's title is a plain string in formancy's spec 0.5.0,
+  // written untranslated (0006), and the read-out says so of it: the step
+  // that said the Questionnaire was in four languages would say of the
+  // title what the read-out below it denies.
+  const QUESTIONNAIRE: Readonly<Record<Language, readonly string[]>> = {
+    'de-CH': ['seine Items in den vier Sprachen des Formulars', 'sein Titel in der einen Sprache'],
+    fr: ['ses items dans les quatre langues du formulaire', 'son titre dans la seule langue'],
+    it: ['i suoi item nelle quattro lingue del modulo', 'il titolo nell’unica lingua'],
+    en: ['its items in the form’s four languages', 'its title in the one language'],
+  }
+  test.each(LANGUAGES)("say in the Questionnaire's step that its items are in four languages and its title in one, in %s", (language) => {
+    expect(QUESTIONNAIRE[language].filter((part) => !WORDS[language].questionnaire.intro.includes(part))).toEqual([])
+  })
+
+  // "Questionnaire ist kein Formular?": the form's own step says that the
+  // form is what becomes the Questionnaire, item by item, its keys the
+  // linkIds the read-out names, in every language.
+  test('say in the form’s step that the form becomes the Questionnaire, its keys the linkIds', () => {
+    for (const language of LANGUAGES) expect(WORDS[language].form.intro('0.5.0'), language).toMatch(/Questionnaire[^]*linkId/)
+  })
+
+  // WCAG 2.2 SC 2.5.3, Label in Name: a way to a field is named by what it
+  // shows, then the field, so speaking its visible words presses it.
+  test('name each way to a field by its visible words, then the field', () => {
+    for (const language of LANGUAGES) {
+      const { toField, toFieldOf } = WORDS[language].readOut
+      expect(toFieldOf('Fachgebiet').startsWith(toField), language).toBe(true)
+      expect(toFieldOf('Fachgebiet').endsWith('Fachgebiet'), language).toBe(true)
+    }
+  })
+
+  // An untranslated text is said to be, with the language it is in, which
+  // the reader is not reading the page in.
+  test('name the language an untranslated text is in', () => {
+    for (const language of LANGUAGES) expect(WORDS[language].readOut.untranslated('de-CH'), language).toContain('de-CH')
+  })
+
   // The page's language is the form's: a language the page offers and the
   // form's catalogue lacks would draw the form in its default language
   // under another page's words, and the Questionnaire would lack it.

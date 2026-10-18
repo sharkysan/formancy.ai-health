@@ -15,16 +15,18 @@ interface DownloadProps {
 }
 
 export function Download({ file, bytes, type, children }: DownloadProps) {
-  const [href, setHref] = useState<string | undefined>(undefined)
+  const [made, setMade] = useState<{ readonly bytes: string | Uint8Array; readonly type: string; readonly url: string } | undefined>(undefined)
   useEffect(() => {
     // A copy of the bytes the Blob owns, so the page's own are never handed out.
     const url = URL.createObjectURL(new Blob([typeof bytes === 'string' ? bytes : bytes.slice()], { type }))
-    setHref(url)
+    setMade({ bytes, type, url })
     return () => URL.revokeObjectURL(url)
   }, [bytes, type])
-  // Until there is an address, there is no link: a link to nothing would say it downloads.
-  return href === undefined ? null : (
-    <a className="download" href={href} download={file}>
+  // Until there is an address for these bytes, there is no link: a link to
+  // nothing would say it downloads, and one to the bytes before a change is
+  // to an address revoked as the new one is made, which a browser cancels.
+  return made === undefined || made.bytes !== bytes || made.type !== type ? null : (
+    <a className="download" href={made.url} download={file}>
       {children}
     </a>
   )

@@ -331,12 +331,21 @@ The demo is a page, beside the packages and never published, and
 formancy.ai's concept applied as far as a formancy release ships it: the
 workbench and Blueprint of `@formancy/themes`, imported ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)). It
 arrived with the gates that hold it: its jsdom suite, with axe and every
-control's name, and its browser gate in Chromium, which measures what
-jsdom cannot -- reflow down to 320 pixels, contrast, target size, the
-keyboard's path through the form and where each control it presses
-leaves it -- in each of the page's languages
-([`browser-test.mjs`](../../apps/demo/scripts/browser-test.mjs)). A
+control's name, and its browser gate in Chromium, Firefox and WebKit,
+which measures what jsdom cannot -- reflow down to 320 pixels, contrast,
+target size, the keyboard's path through the form and where each control
+it presses leaves it -- in each of the page's languages, every check in
+every browser, what they disagree on named and held, never skipped
+([`browser-test.mjs`](../../apps/demo/scripts/browser-test.mjs), [0014](../decisions/0014-the-demos-browser-gate-runs-in-chromium-firefox-and-webkit-and-each-fact-the-browsers-disagree-on-is-named-and-held.md)). A
 screen reader and a person's eye on the layout are review's.
+
+The demo draws no Questionnaire: it reads its own out, as headings,
+named lists and description lists, from the resource's bytes, each text
+in the page's language or marked with the language it stands in, and each
+item a button to its field, which moves the keyboard and writes nothing in
+the address. A way is offered only where formancy's renderer draws the
+field with the id its engine mints, never guessed at
+([0013](../decisions/0013-the-demo-reads-its-questionnaire-out-from-the-bytes-it-shows-and-renders-no-questionnaire.md)).
 
 ## 8.11 No clinical logic
 

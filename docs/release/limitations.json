@@ -393,7 +393,7 @@
       ]
     },
     "0012": {
-      "reviewed": "sha256:f32aa39edd11f70ad8eaa3eaa9832741d8332f0a19879685b5a584febc504c2a",
+      "reviewed": "sha256:be3d1949f3dde7d7da898d4fcc69b50b4f074882c6728d1325b8088dc4e374a2",
       "limitations": [
         {
           "area": "demo",
@@ -412,7 +412,7 @@
         },
         {
           "area": "demo",
-          "says": "The demo's browser gate runs in Chromium alone, and runs the packages as the demo bundles them from the workspace, not the packed tarballs."
+          "says": "The demo's browser gate runs the packages as the demo bundles them from the workspace, not the packed tarballs."
         },
         {
           "area": "demo",
@@ -441,6 +441,41 @@
         {
           "area": "demo",
           "says": "The demo's refusals are in English as the packages state them, its French and Italian words are translations no native reader has read, and its wording awaits the lawyer's review the first paid release owes."
+        }
+      ]
+    },
+    "0013": {
+      "reviewed": "sha256:241fc084e657cedf8e9655696c5441a29bccc2bede46c35471298b593c8bf470",
+      "limitations": [
+        {
+          "area": "demo",
+          "says": "The demo reads out only the Questionnaire its page made, from its bytes, and none that holds a member or an extension health-questionnaire does not write; it states each item's text, type, required, repeats, options and conditions, not its lengths, bounds, how often it may be answered or its hidden and read-only flags, which its JSON alone shows, as the page says; it renders no Questionnaire and validates nothing.",
+          "heldBy": "apps/demo/src/read-out.test.ts"
+        },
+        {
+          "area": "demo",
+          "says": "The demo's read-out leads to no radio group, set of tick boxes, ranking, matrix, file or signature, since formancy 0.5.0's React renderer draws none of them as a control of the id its engine mints that takes the keyboard, and the page does not guess at the ids it makes of its own.",
+          "heldBy": "apps/demo/src/engine.test.ts"
+        }
+      ]
+    },
+    "0014": {
+      "reviewed": "sha256:5d98bc91a7fa947bcba3cd90a0a838992cb00720e1aa20f5d83e5c8e491945c8",
+      "limitations": [
+        {
+          "area": "demo",
+          "says": "The demo's browser gate runs in Chromium, Firefox and WebKit as Playwright builds them, headless, WebKit as its Linux port and only on Linux: not Safari, not a phone and not a screen reader.",
+          "heldBy": "scripts/browsers.test.mjs"
+        },
+        {
+          "area": "demo",
+          "says": "In WebKit 27.2 the demo logs an error in its console for each select, refusing a style attribute of WebKit's own under the page's policy, which is not loosened for it; the page draws the same without it.",
+          "heldBy": "apps/demo/scripts/gate-facts.test.mjs"
+        },
+        {
+          "area": "demo",
+          "says": "In WebKit 27.2, where a face's woff2 file does not arrive, text later typed in that face's range asks for its woff, so which file is asked for tells the server what kind of text was typed; with the files served, typing asks for nothing in any browser the gate runs.",
+          "heldBy": "apps/demo/scripts/gate-facts.test.mjs"
         }
       ]
     }

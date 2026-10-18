@@ -70,8 +70,9 @@ package targets is decided in the record that brings it.
 
 **Out of version 1**: a server, a page among the packages, sending
 anything, a terminology service, a browser as a host the packed packages
-are claimed for -- the demo's gate runs them in Chromium as the workspace
-builds them, not as a consumer installs them -- and any clinical logic --
+are claimed for -- the demo's gate runs them in Chromium, Firefox and
+WebKit as the workspace builds them, not as a consumer installs them -- and
+any clinical logic --
 a score, a warning, a suggested therapy --
 which would make the product a candidate medical device
 ([`CLAUDE.md`](../../CLAUDE.md#secrets-health-data-and-untrusted-input)).
