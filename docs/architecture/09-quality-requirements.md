@@ -21,12 +21,17 @@ Formancy Health
 │   └── no log, no network
 ├── Reproducible
 │   └── the same input, the same bytes                  ← the host's identity and time
-└── Honest about itself
-    ├── its licence, in every tarball                   ← the terms say what they are
-    ├── no HL7 mark in a name
-    ├── its intended purpose, one sentence in two files
-    ├── a code only of a terminology whose terms allow it
-    └── its architecture's names and links, true of the repository
+├── Honest about itself
+│   ├── its licence, in every tarball                   ← the terms say what they are
+│   ├── no HL7 mark in a name
+│   ├── its intended purpose, one sentence in two files
+│   ├── a code only of a terminology whose terms allow it
+│   └── its architecture's names and links, true of the repository
+└── The demo, beside the packages
+    ├── nothing typed sent or kept
+    ├── what it shows first is the corpus, byte for byte
+    ├── no colour of its own
+    └── usable at 320 pixels, by keyboard, in four languages
 ```
 
 ## 9.2 Scenarios, with what holds each
@@ -65,6 +70,14 @@ Formancy Health
 | Q30 | A package changes so that the getting-started guide's code no longer compiles against the packed packages, or prints other than the guide shows; a block of code escapes the gate, or section 1 installs other than the gate, or saves a package as a range | The install gate fails on the first; `pnpm test:repo` on the second, naming the line | `pnpm test:e2e:install`, [`guide-node.ts`](../../scripts/install-fixture/guide-node.ts); [`getting-started.test.mjs`](../../scripts/getting-started.test.mjs) ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)) |
 | Q31 | A release's SBOM leaves out a published package at the release's version, or an upstream package a consumer's install brings, or names one at another version than the suites loaded, or names a component the install it was read from does not hold, or leaves out one it holds | Refused before it is pinned, signed or attached | [`verify-publish.test.mjs`](../../scripts/release-report/verify-publish.test.mjs), [`pins.test.mjs`](../../scripts/release/pins.test.mjs), [`workflows.test.mjs`](../../scripts/workflows.test.mjs) ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)) |
 | Q32 | CLAUDE.md's sentence saying the product is not intended as a medical device, or the README's *Intended purpose*, is reworded without the other; a link of the README names a file or a heading that is gone | `pnpm test:repo` fails, quoting the sentence or naming the link | [`readme.test.mjs`](../../scripts/readme.test.mjs) ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)) |
+| Q33 | The demo's page, once it has settled, asks anything more of the network -- a face what is typed would need, the answers sent, a file from elsewhere -- sets a cookie, stores anything in the browser or writes what is typed into its address; or the policy it is served under no longer refuses a string handed to `innerHTML`, a fetch, or an inline or `/cdn-cgi/` script injected into its HTML; or it runs React's development build | The browser gate fails, naming what was asked for or kept | the `browser` job; [`gate-privacy.mjs`](../../apps/demo/scripts/gate-privacy.mjs) ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)) |
+| Q34 | The demo scrolls sideways, puts something past an edge, loses a text's contrast, a target's size or the keyboard's path through the form, at a breakpoint of its stylesheets or a theme's, in any of its languages; or the resources the browser makes of the sample are not the corpus's bytes | The browser gate fails, naming the pass and the state | the `browser` job; [`browser-test.mjs`](../../apps/demo/scripts/browser-test.mjs), [`gate-journey.mjs`](../../apps/demo/scripts/gate-journey.mjs) ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)) |
+| Q35 | The demo's browser gate failed a check, did not make a pass it planned, or ran in another browser than the build the installed Playwright pins | The report job fails the run, naming each | the `report` job; [`report.test.mjs`](../../scripts/release-report/report.test.mjs) |
+| Q36 | A build of the demo, Cloudflare's included, would show first a resource that is not the validator corpus's entry of its name, byte for byte, or carry a letter that is not the bytes `docs/release/letter.json` registers | The build stops, and so does the validator gate on that letter, before anything is served or judged | [`plugin.ts`](../../apps/demo/src/build/plugin.ts), [`exports.test.ts`](../../apps/demo/src/exports.test.ts), [`letter.test.mjs`](../../scripts/validator/letter.test.mjs) ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)) |
+| Q37 | The demo's stylesheet states a colour or declares a variable of its own, a colour function over a theme's variable among them, reads one no theme it wears declares, or the themes are imported in another order | The demo's suite fails, naming the rule | [`styles.test.ts`](../../apps/demo/src/styles.test.ts) ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)) |
+| Q38 | The demo's Worker, a route of it or its page's title takes an HL7 mark; the page says something of cookies, tracking or analytics, calls the product open source however it is spelt, or its banner loses one of its three statements | `pnpm test:repo` or the demo's suite fails, quoting it | [`trademark.test.mjs`](../../scripts/trademark.test.mjs), [`words.test.ts`](../../apps/demo/src/words.test.ts) ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)) |
+| Q39 | The deploy would serve the demo anywhere but formancy.ai/health/, from a checkout with changes, under other headers than `scripts/demo-headers.mjs` states for its address, or with a policy that allows a connection, admits a script from outside the build's assets, or drops Trusted Types | `pnpm test:repo` fails; and of a config that is not the demo's or a checkout with changes, `scripts/demo.mjs` refuses before Wrangler runs | [`demo.test.mjs`](../../scripts/demo.test.mjs) ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)) |
+| Q40 | A package the demo bundles ships no licence text, or is under a licence the repository's policy refuses, Formancy Report's among them; or the build stops writing its notices | The build stops, naming the package; `pnpm test:repo` fails on the plugin or the config | [`third-party-notices.test.mjs`](../../scripts/third-party-notices.test.mjs) ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)) |
 
 ## 9.3 Budgets
 

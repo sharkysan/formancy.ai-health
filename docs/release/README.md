@@ -2,7 +2,8 @@
 
 Two kinds of register live here. Those a conformance claim rests on
 ([0005](../decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md)),
-which the validator gate runs on, and those the release report reads
+which the validator gate runs on, the letter's bytes among them, and those
+the release report reads
 ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md),
 as formancy.ai-report 0014 has them). Every one is held by `pnpm test:repo`.
 
@@ -61,6 +62,23 @@ downloads (`ADMITTED_LICENCES` in `scripts/validator/registers.mjs`).
 Held by `scripts/validator/registers.test.mjs`, in `pnpm test:repo` and,
 against the downloads and the run, in the validator job.
 
+### The letter's bytes
+
+**[`letter.json`](letter.json)** registers the referral letter's PDF,
+which health-corpus renders with Formancy Report, by its size and SHA-256,
+and the Report releases that rendered it. It is the PDF the corpus's
+document Bundles carry and the one the demo's build carries into its page,
+and each renders it on a machine of its own: the gate on GitHub's runner,
+the demo's build on Cloudflare's, both through Report's renderer and the
+zlib of that machine's Node. So both take it through
+`scripts/validator/letter.mjs`, which refuses a render of other bytes:
+the gate stops before it writes the corpus, and the build before it writes
+a page, rather than one PDF being judged and another served. A new Report
+release or a changed letter is measured where the gate runs and registered
+in a commit of its own. Held by `scripts/validator/letter.test.mjs`, in
+`pnpm test:repo`, which also renders the letter on its own machine and
+holds `renderedBy` to health-corpus's manifest.
+
 ## The release report
 
 Every run of the gates ends in a report of what that run was tested on and
@@ -90,6 +108,9 @@ last job, `report`, builds the report from all of them
    project resolved it beside what the guide installs, with those a
    consumer's install brings marked shipped;
    Node as each job ran it and the install gate's npm; pnpm and the tools;
+   Playwright and the build it pins for each browser
+   [`scripts/browsers.mjs`](../../scripts/browsers.mjs) names, beside the
+   browser the demo's gate launched and the axe-core it put in the page;
    and the tuple the README's compatibility table states -- the FHIR
    version, the validator the gate pins and the packages it loads -- beside
    the validator the gate ran and the Java it ran on.
@@ -106,15 +127,24 @@ last job, `report`, builds the report from all of them
    loaded, the resources judged, to accept and broken to refuse, the issues
    counted and the warnings accepted by id; and the validator job's run of
    the registers' test after the gate.
-5. **Build identity:** each published package's tarball as the install gate
+5. **Browser:** the demo's browser gate ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)), from the file it writes
+   however it ends, in each browser the gates run in: what it launched, the
+   Playwright that launched it, its checks passed and failed, the passes it
+   made of those it planned, the widths, the axe-core it ran and its wall
+   time. It runs the packages as the workspace builds them, bundled into
+   the demo's page, and never the tarballs, which a derived limitation
+   says.
+6. **Build identity:** each published package's tarball as the install gate
    packed, installed and ran it, by sha256, and the hash of its built files
    against the `dist/` every job built.
-6. **Release gates:** from [`gates.json`](gates.json).
-7. **Known limitations:** those the run shows, as fixed sentences with the
+7. **Release gates:** from [`gates.json`](gates.json). No gate rests on
+   the demo's browser gate, which is evidence about the demo, a page no
+   release publishes.
+8. **Known limitations:** those the run shows, as fixed sentences with the
    run's facts, then those the decision records state, from
    [`limitations.json`](limitations.json).
-8. **How this report was made:** where each section comes from.
-9. **Problems:** what fails the run. Empty on a green run, and the report
+9. **How this report was made:** where each section comes from.
+10. **Problems:** what fails the run. Empty on a green run, and the report
    says so.
 
 ### What fails it
@@ -141,8 +171,15 @@ validator or another JAR than [`validator.json`](validator.json) pins, run
 against another register than [`ig-packages.json`](ig-packages.json),
 loading anything else, or not recording an offline run, each as the gate
 measured it while it ran; the validator job's run of the registers
-failing; the install gate's record or the validator's files in another
-job's results; a gate's file that records no start; a published package whose `dist/` no
+failing; the demo's browser gate leaving no results in a browser
+`scripts/browsers.mjs` names, ending in an error, failing a check, not
+making a pass it planned or making one with no check in it, launching
+another browser or build than the one the installed Playwright pins, or
+otherwise than headless, or run by another Playwright; a browser gate's
+file whose browser, asked for or launched, is not the one it is filed
+under; the install gate's record, a browser gate's file or the
+validator's files in another job's results; a gate's file that records
+no start; a published package whose `dist/` no
 job recorded; two builds of one package that differ, or a tarball whose
 built files are not every job's; a gate whose evidence did not pass, or a
 limitation whose `heldBy` test did not; either register not holding; and,
@@ -228,8 +265,8 @@ file; without the validator, allow it missing, and the cases of the files
 the validator job runs are allowed skipped, as the banner says. A gate
 whose evidence names a job, as `gates.json` says which, has no result on
 a machine, because a job's result is the gates run's `needs`: the report
-says so unless that job is allowed missing. `--allow-missing` names collect's readers -- `verify`, `install`,
-`validator` -- whose files a machine did not write. A local report says
+says so unless that job is allowed missing. `--allow-missing` names collect's readers -- `verify`, `browser`,
+`install`, `validator` -- whose files a machine did not write. A local report says
 "local" at the top, names its commit "with uncommitted changes" when the
 tree held any, names what it allowed missing when it is partial, and a
 release refuses it.

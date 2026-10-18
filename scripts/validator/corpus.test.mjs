@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import { chOrfContext, chOrfDocument } from './ch-orf.mjs'
 import { corpus, documentResponse } from './corpus.mjs'
+import { DEMO_NAMES, demoChOrfContext, demoReferral, demoReferralAnswers, demoReferralContext, demoResponseContext } from './demo-referral.mjs'
 import { intake, intakeContext, intakeResponseContext, intakeRoutine, intakeUrgent, minimal, minimalAnswers, minimalContext, minimalResponseContext } from './forms.mjs'
 
 /**
@@ -82,7 +83,7 @@ const mappedItemTypes = new Set([...FIELD_TYPES, 'number'].flatMap((type) => [on
   const result = exported(form)
   return result.ok ? [...itemTypes(result.questionnaire.item)] : []
 }))
-const forms = [intake, minimal]
+const forms = [intake, minimal, demoReferral]
 
 /** The response `toQuestionnaireResponse` makes of `answers` to `form`; fails the suite when it refuses a corpus submission. */
 function answered(form, answers, context) {
@@ -232,6 +233,36 @@ describe('the corpus of the validator gate', () => {
     expect(result.ok).toBe(true)
     expect(resource('bundle-ch-orf-referral.json')).toEqual(result.bundle)
     expect(resource('bundle-ch-orf-referral.json')).toEqual(chOrfDocument(questionnairePackage, ch))
+  })
+
+  // What the demo shows before anything is changed is what the gate
+  // judged (0012): the demo's Questionnaire, response and CH ORF document
+  // are the packages', made of the demo's referral, never typed into the
+  // corpus; and the response the gate judges alone is the one its CH ORF
+  // document carries, so the page's response and its document show one
+  // resource, judged twice.
+  test("holds the demo's Questionnaire, response and CH ORF document as the packages made them of its referral", () => {
+    const entries = corpus({ core, questionnaire: questionnairePackage, documents, pdf, ch })
+    const resource = (file) => entries.filter((entry) => entry.file === file)[0]?.resource
+    expect(resource('questionnaire-demo-referral.json')).toEqual(exported(demoReferral, demoReferralContext).questionnaire)
+    const response = answered(demoReferral, demoReferralAnswers, { ...demoResponseContext, profiles: [ch.PROFILES.questionnaireResponse] })
+    expect(resource('questionnaireresponse-demo-referral.json')).toEqual(response)
+    const document = ch.toChOrfDocument({ ...demoChOrfContext, response: { fullUrl: DEMO_NAMES.response, questionnaireResponse: response } })
+    expect(document.ok).toBe(true)
+    expect(resource('bundle-ch-orf-demo-referral.json')).toEqual(document.bundle)
+    const carried = resource('bundle-ch-orf-demo-referral.json').entry.find((entry) => entry.fullUrl === DEMO_NAMES.response)?.resource
+    expect(core.writeJson(carried)).toBe(core.writeJson(resource('questionnaireresponse-demo-referral.json')))
+  })
+
+  // The demo shows its form in the languages of its catalogues, and the
+  // Questionnaire carries the languages its host asks for: were the two
+  // to part, the page would offer a language the Questionnaire it shows
+  // beside the form is not in, or leave out one it is.
+  test("holds the demo's form in exactly the languages its host publishes it in, its default first", () => {
+    expect(Object.keys(demoReferral.i18n.messages)).toEqual(demoReferralContext.languages)
+    expect(demoReferral.i18n.defaultLocale).toBe(demoReferralContext.languages[0])
+    const written = core.writeJson(exported(demoReferral, demoReferralContext).questionnaire)
+    for (const language of demoReferralContext.languages.slice(1)) expect(written).toContain(`{"url":"lang","valueCode":"${language}"}`)
   })
 
   // A response is judged by the validator as what it holds: an answer of

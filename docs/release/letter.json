@@ -1,0 +1,10 @@
+{
+  "$comment": "The referral letter's PDF (0008, 0012): what @formancy/health-corpus renders with Formancy Report's Node renderer, by its size and SHA-256. It is the PDF the validator gate judges inside the corpus's document Bundles and the one the demo's build carries into its page, and each refuses a render of other bytes (scripts/validator/letter.mjs), so a machine whose Node, zlib or Report renders the letter otherwise stops the gate or the build rather than one PDF being judged and another served. `renderedBy` is the Report releases health-corpus depends on, which scripts/validator/letter.test.mjs holds to its manifest, with the rest. Measured on 17 October 2026: the PDF the validator job judged in CI run 39070423844 (commit 6c8e96f, ubuntu24 image 20261012.334.1, Node 22.23.3), decoded from the attachment of its bundle-document-pdf-as-data.json, and a render on Windows 11 under Node 24.21.0 were the same 18,938 bytes, of this hash. A new Report release or a changed letter is measured where the gate runs and registered in a commit of its own, with a CHANGELOG line saying why.",
+  "renderedBy": {
+    "@formancy/report-render-pdf": "0.1.0",
+    "@formancy/report-runtime": "0.1.0",
+    "@formancy/report-spec": "0.1.0"
+  },
+  "bytes": 18938,
+  "sha256": "04f0d59540b0353763547477be826be3a8920ce2da5afebc6c5604650de77321"
+}

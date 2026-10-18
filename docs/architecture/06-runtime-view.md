@@ -226,3 +226,59 @@ workspace. A dispatch rehearses everything but `publish`. As of 17 October
 2026 nothing had been released: 0.1.0 is ready to tag, and what a release
 reads that only the maintainer can set is RELEASING.md's
 [Before the first release](../../RELEASING.md#before-the-first-release).
+
+## 6.7 The demo's browser gate walks the page
+
+```
+pnpm --filter @formancy/health-demo test:browser      after the packages are built
+   │
+   ├─ 1. vite build, first, so the page is React's production build, as deployed
+   ├─ 2. the plan: the widths every stylesheet the page wears gives, from 320 px
+   │     to a wide screen, each in one of the page's languages      (gate-page.mjs)
+   │     and the corpus made in Node by the packages as built
+   ├─ 3. vite preview under /health/, with scripts/demo-headers.mjs's headers
+   │     for the address it serves at
+   ├─ 4. Chromium, headless, at the build the installed Playwright pins
+   ├─ 5. a pass per width, in a context of its own: settled, then the head, the
+   │     skip link, the journey with layout and axe at each state  (gate-journey.mjs)
+   │     and what the page asked for and kept, and its policy      (gate-privacy.mjs)
+   │     against what is planted: a markup sink, a fetch, and the page served
+   │     again with an inline script and a /cdn-cgi/ script in its HTML
+   ▼
+apps/demo/test-results/browser-chromium.json, written however the run ends
+```
+
+[`browser-test.mjs`](../../apps/demo/scripts/browser-test.mjs) is the
+runner, as formancy.ai-report's Studio's is; the release report reads its
+file from the `browser` job ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
+
+## 6.8 A visit to the demo
+
+```
+a visitor opens formancy.ai/health/
+   │
+   ├─ 1. static files only -- index.html, one script, one stylesheet, the faces --
+   │     each with scripts/demo-headers.mjs's headers for formancy.ai/health/;
+   │     every face asked for at once; THIRD-PARTY-NOTICES.txt, if its link is followed
+   ├─ 2. the build's modules: the corpus's sample, the letter's bytes, the facts
+   ├─ 3. formancy's engine from the sample's answers, its capabilities constants
+   ├─ 4. made once: the Questionnaire, the letter's two Bundles, the inputs refused
+   │     on purpose, each by the package named beside it
+   ├─ 5. an answer changed ─▶ engine.subscribe ─▶ the response and the CH ORF
+   │     document made again from engine.value(), or every refusal said
+   ├─ 6. a language chosen ─▶ a new engine, from the answers the old one held
+   ├─ 7. a download: the bytes shown, from memory, as a Blob's object URL
+   ▼
+closed or reloaded: the answers are gone, and none was sent
+```
+
+Every resource is made by
+[`exports.ts`](../../apps/demo/src/exports.ts), which the build runs on
+the sample too, holding what it makes to the corpus's entries before the
+page is written ([§5](05-building-blocks.md#formancyhealth-demo-private-the-demo)).
+Nothing in it stores anything, writes what is typed into the address or
+asks the network for anything after the page has settled: the policy
+allows no connection, and the browser gate watches each of these. That
+nothing in the page's own source reads a clock or a random source is a
+search's, not a gate's
+([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).

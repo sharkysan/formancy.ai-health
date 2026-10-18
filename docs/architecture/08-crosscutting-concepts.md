@@ -108,6 +108,18 @@ passed through, and text that is not FHIR JSON may use anything as a name
 so a refusal inside the host's answers to a CH ORF document, below their
 own members, spells a name the host chose there ([0009](../decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)).
 
+The demo is the one place a person types into anything of this
+repository's, so it holds the same line from the other side
+([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
+Its sample is the corpus's, its people synthetic and its identifiers fixed,
+and no field asks for one; the page says that a real patient's data does
+not belong in it, and keeps and sends nothing of what is typed. Its
+refusals on purpose say no digit of the identifiers they refuse
+([`on-purpose.test.ts`](../../apps/demo/src/on-purpose.test.ts)), and an
+error the page catches is said on the page and logged nowhere, since it
+may quote what was typed. What a visitor pastes anyway is theirs, and the
+browser's own services and extensions are beyond the page.
+
 ## 8.4 Untrusted input
 
 Forms, answers, PDFs and the resources a host hands over are untrusted,
@@ -201,6 +213,22 @@ The gate's validator runs with no HTTP at all; a package it would have
 fetched stops it
 ([0005](../decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md)).
 
+The demo's page sends what a visitor types nowhere ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)). The policy it is
+served under allows it no connection and no form action, scripts,
+styles and faces from the build's assets at its own address alone -- not
+from the rest of its origin, where Cloudflare serves the scripts it
+injects -- and no string to become markup or code, by Trusted Types
+([`demo-headers.mjs`](../../scripts/demo-headers.mjs)), and it asks for
+every face its stylesheets declare as it starts
+([`faces.ts`](../../apps/demo/src/faces.ts)): a browser asks for a face
+split by `unicode-range` when text in its range is first drawn, so a face
+asked for later would tell the server what kind of text was typed. Its
+browser gate watches the page, served under those headers, ask for nothing
+once it has settled, whatever it is given to type, and the policy refuse
+a string handed to `innerHTML` and a fetch planted in it, and an inline
+script and a `/cdn-cgi/` script injected into its HTML as it is served
+([`gate-privacy.mjs`](../../apps/demo/scripts/gate-privacy.mjs)).
+
 ## 8.8 Licences, marks and terminology
 
 - **The product's own.** Every package declares `SEE LICENSE IN LICENSE.md`
@@ -243,6 +271,27 @@ fetched stops it
   each code recorded in a decision, which none is, and a host's under a
   domain reserved for examples. A code no corpus resource holds is
   review's.
+- **The demo's page.** It carries HL7's and LOINC's notices word for word,
+  from [`scripts/notices.mjs`](../../scripts/notices.mjs), the one text of
+  each the guards hold `NOTICE` and the READMEs to; names the HL7® FHIR®
+  standard in full where it first names it, in every language; and takes
+  no mark into its Worker's name, its routes or its title, which
+  `scripts/trademark.test.mjs` reads
+  ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
+  What it bundles is held to the policy the dependency-licence guard
+  holds the published packages to, by the build itself:
+  [`third-party-notices.mjs`](../../scripts/third-party-notices.mjs)
+  writes `THIRD-PARTY-NOTICES.txt` beside the page, which its foot links,
+  with every licence and notice file of every package the bundle holds --
+  on 18 October 2026 React, react-dom and scheduler, the CEL interpreter,
+  ajv and uqr under MIT, formancy's core, expressions, React renderer,
+  spec and themes under Apache-2.0 with their NOTICE, and the two IBM
+  Plex faces under OFL-1.1 -- and stops the build on a package with no
+  licence text or under a licence the policy refuses, Formancy Report's
+  among them
+  ([formancy.ai-data 0046](https://github.com/sharkysan/formancy.ai-data/blob/main/docs/decisions/0046-a-built-app-carries-the-licence-and-notice-texts-of-everything-it-bundles.md)).
+  What Vite folds into the bundle as text it cannot see
+  ([§11](11-risks-and-debt.md#113-known-debt)).
 
 ## 8.9 Languages
 
@@ -257,16 +306,37 @@ The form's title is untranslated, since `@formancy/spec` holds it as one
 string. A refusal's words are English and may change; its rule, which a
 host branches on, is the part to say in another language.
 
+The demo speaks de-CH, fr, it and en, opening in the first the browser
+prefers, and its form's Questionnaire carries the same four. The packages'
+refusals stay in English there, as they state them, and so do HL7's and
+LOINC's notices and CLAUDE.md's sentence of what the product is not, each
+marked `lang="en"`. The page gives formancy's renderer the submit
+control's word in every language, and, since formancy 0.5.0 ships no
+Italian words, the required hint too in Italian; under a field the renderer shows its error's code, such
+as `required`, in every language, which is upstream's to word. The
+page's French and Italian were translated, and no native reader has read
+them yet
+([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
+
 ## 8.10 The user interface, and accessibility
 
-There is none: version 1 has no page
-([`CLAUDE.md`](../../CLAUDE.md#there-is-no-page)). What reaches a person
+The packages have none: version 1 has no page of theirs
+([`CLAUDE.md`](../../CLAUDE.md#the-demo-is-the-one-page)). What reaches a person
 is a Questionnaire some other renderer draws, from its items' texts and
 translations; widgets, layouts and the screens of a paged form are not
 carried, so how it is laid out, and how accessible that is, is the
 renderer's ([0006](../decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)).
-A page, if one comes, is formancy.ai's concept applied, as Data's and
-Report's apps are, and arrives with the gates that hold it.
+
+The demo is a page, beside the packages and never published, and
+formancy.ai's concept applied as far as a formancy release ships it: the
+workbench and Blueprint of `@formancy/themes`, imported ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)). It
+arrived with the gates that hold it: its jsdom suite, with axe and every
+control's name, and its browser gate in Chromium, which measures what
+jsdom cannot -- reflow down to 320 pixels, contrast, target size, the
+keyboard's path through the form and where each control it presses
+leaves it -- in each of the page's languages
+([`browser-test.mjs`](../../apps/demo/scripts/browser-test.mjs)). A
+screen reader and a person's eye on the layout are review's.
 
 ## 8.11 No clinical logic
 

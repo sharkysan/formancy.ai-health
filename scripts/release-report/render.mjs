@@ -6,6 +6,8 @@
 // limitation the run shows cannot be left out by somebody forgetting it, and
 // the line per section saying where it comes from.
 
+import { browserName } from '../browsers.mjs'
+
 const code = (text) => `\`${text}\``
 const cell = (text) => String(text ?? '').replaceAll('|', '\\|').replaceAll('\n', ' ')
 const table = (head, rows) => [`| ${head.join(' | ')} |`, `| ${head.map(() => '---').join(' | ')} |`, ...rows.map((row) => `| ${row.map(cell).join(' | ')} |`)].join('\n')
@@ -37,11 +39,16 @@ export function derivedLimitations(report) {
   ]
   if (moved.length > 0) sentences.push(`A clean npm install on ${String(testedOn.installedAt).slice(0, 10)} resolved ${prose(moved)}, which no suite ran.`)
 
-  // Where the packed packages ran: Node alone, since Health has no page.
+  // Where the packed packages ran: Node alone. The demo's browser gate ran
+  // the packages in a browser as the workspace builds them, bundled by
+  // Vite into the demo's page (0012), and never the tarballs; which
+  // browser, from what the gate recorded, and without it, that none did.
+  const launched = testedOn.browsers.map((entry) => `${browserName(entry.name)} ${entry.version}`)
+  const demo = launched.length === 0 ? 'no browser gate ran the demo, which bundles the packages as the workspace builds them' : `the browser gate ran the demo, which bundles the packages as the workspace builds them, in ${prose(launched)} alone`
   sentences.push(
     results.install === null
-      ? 'No install gate ran the packed packages in this run, and no gate runs a package in a browser or another engine.'
-      : `The install gate ran the packed packages under Node ${String(results.install.node)} alone; no gate ran them in a browser or another engine.`,
+      ? `No install gate ran the packed packages in this run; ${demo}; no gate ran the packed packages in a browser.`
+      : `The install gate ran the packed packages under Node ${String(results.install.node)} alone; ${demo}; no gate ran the packed packages in a browser.`,
   )
 
   // What the validator gate judged, and on what.
@@ -106,9 +113,10 @@ const METHOD = [
   ['Subject', 'the GitHub run’s environment (`GITHUB_SHA`, `GITHUB_RUN_ID`), the report job’s `needs`, the root `package.json`’s version, and each job’s results file'],
   [
     'Tested on',
-    '`scripts/release-report/tested-on.mjs` over the checkout -- the published manifests, what is installed, `pnpm-workspace.yaml`’s catalog, every workflow’s `setup-node`, and the tuple `scripts/compatibility.mjs` reads for the README -- the install gate’s `test-results/install.json` for what each project’s clean install resolved, a consumer’s apart from the guide’s, and the validator gate’s `test-results/validator.json` for the validator and the Java it ran',
+    '`scripts/release-report/tested-on.mjs` over the checkout -- the published manifests, what is installed, `pnpm-workspace.yaml`’s catalog, every workflow’s `setup-node`, playwright-core’s `browsers.json` for the build Playwright pins, and the tuple `scripts/compatibility.mjs` reads for the README -- the install gate’s `test-results/install.json` for what each project’s clean install resolved, a consumer’s apart from the guide’s, each browser gate’s own record of the browser it launched, and the validator gate’s `test-results/validator.json` for the validator and the Java it ran',
   ],
   ['Results', 'each package’s `test-results/vitest.json` and `coverage/coverage-summary.json`, turbo’s run summary (`--summarize`), the repository guards’ `test-results/vitest.json`, and the install gate’s `test-results/install.json`, held to the projects `scripts/install-hosts.mjs` plans'],
+  ['Browser', 'each app’s `test-results/browser-<browser>.json`, which its browser gate writes however it ends, for every browser of `scripts/browsers.mjs`'],
   ['Validator', 'the gate’s `test-results/validator.json`, which `scripts/validator.mjs` writes however it ends, held to `docs/release/validator.json` and `docs/release/ig-packages.json`; and the validator job’s `test-results/vitest.json` of the registers’ test, whose passes account for the cases `verify` skips'],
   ['Build identity', '`scripts/release/dist-hash.mjs` over every published package’s `dist/` in every job, and over each tarball’s built files'],
   ['Release gates', '`docs/release/gates.json`, the report job’s `needs`, and `git log` for a document’s last change'],
@@ -144,6 +152,46 @@ function testedOnSection({ testedOn }) {
     `Node: the workspace declares ${testedOn.node.engines === null ? 'nothing' : code(testedOn.node.engines)} and \`.node-version\` ${String(testedOn.node.nodeVersion)}; CI sets up ${prose(ci) || 'nothing'}; this run's jobs ran ${prose(testedOn.node.ran) || 'nothing recorded'}${testedOn.node.install === null ? '' : `, and the install gate ran on ${testedOn.node.install} with npm ${String(testedOn.npm)}`}.`,
     '',
     `${testedOn.packageManager.name} ${testedOn.packageManager.version}, through corepack (${code(testedOn.packageManager.declared)}). Tools, as the workspace loads them: ${testedOn.tooling.map((tool) => `${tool.name} ${tool.version}${tool.declared === null ? '' : ` (${code(tool.declared)})`}`).join(', ')}.`,
+    '',
+    browsersLine(testedOn),
+  ].join('\n')
+}
+
+/** Which browser builds Playwright pins for the gates, and which this run launched, each held to its pin. */
+function browsersLine({ browser, browsers, axe }) {
+  const pins = prose(browser.pins.map((pin) => `${pin.name} ${pin.browserVersion} (revision ${pin.revision}) for ${browserName(pin.browser)}`))
+  const launched = browsers.map((entry) => `${browserName(entry.name)} ${entry.version}${entry.headless === false ? ' headed' : ''}${entry.pin === null ? ' (which no gate here runs)' : entry.version === entry.pin ? '' : ` (not the ${entry.pin} it pins)`}`)
+  return `Browsers: Playwright ${browser.playwright} pins ${pins}; this run launched ${prose(launched) || 'none'}${axe.length === 0 ? '' : `, with axe-core ${prose(axe)} in the page`}.`
+}
+
+/** A launched browser as a cell: its name, version and how it was launched. */
+const launchedCell = (launched) => (launched === null ? 'none' : `${launched.name} ${launched.version}${launched.headless === undefined ? '' : launched.headless ? ', headless' : ', headed'}`)
+
+/** What jsdom cannot see, measured in a browser: each browser gate in each browser, with its checks and the passes it planned and made. */
+function browserSection({ results }) {
+  const gates = results.browserGates
+  return [
+    '## Browser',
+    '',
+    "Each app's browser gate, in every browser the gates run in (`scripts/browsers.mjs`): the demo's (0012), over the page Vite builds, served under the demo's path and headers. A check failed, a pass the gate planned and did not make or made with no check in it, or a browser launched otherwise than Playwright's pin fails the run.",
+    '',
+    gates.length === 0
+      ? 'No browser gate left results in this run.'
+      : table(
+          ['Browser gate', 'Browser', 'Launched', 'Playwright', 'Checks passed', 'Checks failed', 'Passes made of planned', 'Widths', 'axe-core', 'Wall time'],
+          gates.map((gate) => [
+            gate.gate,
+            browserName(gate.asked),
+            launchedCell(gate.browser),
+            gate.playwright ?? 'not recorded',
+            gate.ok,
+            gate.failed.length + (gate.error === null ? 0 : 1),
+            `${String(gate.passes)} of ${String(gate.planned.length)}`,
+            gate.widths.join(', '),
+            gate.axe ?? 'not recorded',
+            seconds(gate.wallMs),
+          ]),
+        ),
   ].join('\n')
 }
 
@@ -268,7 +316,7 @@ function closingSection(report) {
 
 /** Every section after the subject. */
 export function renderContent(report) {
-  return [testedOnSection(report), resultsSection(report), validatorSection(report), identitySection(report), gatesSection(report), closingSection(report)].join('\n\n')
+  return [testedOnSection(report), resultsSection(report), validatorSection(report), browserSection(report), identitySection(report), gatesSection(report), closingSection(report)].join('\n\n')
 }
 
 /** What is being released, as the subject's first line says it. */
@@ -307,10 +355,12 @@ export function renderSummary(report, { section = null, link = null } = {}) {
   const tests = packages.reduce((total, row) => total + row.tests, 0)
   const { install } = report.results
   const gate = report.results.validator.gate
+  const browsers = report.results.browserGates
+  const browserGate = browsers.length === 0 ? 'left no results' : browsers.every((row) => row.error === null && row.failed.length === 0) ? `made ${String(browsers.reduce((total, row) => total + row.ok, 0))} checks in ${String(browsers.reduce((total, row) => total + row.passes, 0))} passes, and none failed` : 'failed'
   return [
     ...(link === null ? [] : [`The full report of the run that gated this: ${link}`, '']),
     ...(section === null ? [] : [`The notes above are CHANGELOG.md’s ${code(section)} section.`, '']),
-    `${String(passed)} of ${String(tests)} tests passed across ${String(packages.length)} packages; the install gate ${install === null ? 'left no results' : install.passed ? 'passed' : 'failed'}; the validator gate ${gate === null ? 'left no results' : gate.passed ? `passed, ${String(gate.resources)} resources judged as the corpus expects` : 'failed'}.`,
+    `${String(passed)} of ${String(tests)} tests passed across ${String(packages.length)} packages; the install gate ${install === null ? 'left no results' : install.passed ? 'passed' : 'failed'}; the validator gate ${gate === null ? 'left no results' : gate.passed ? `passed, ${String(gate.resources)} resources judged as the corpus expects` : 'failed'}; the demo's browser gate ${browserGate}.`,
     '',
     ...derivedLimitations(report).map((sentence) => `- ${sentence}`),
   ].join('\n')

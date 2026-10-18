@@ -1,0 +1,18 @@
+/*
+ * The faces, from the demo's own build rather than a font service, as
+ * formancy.ai-report 0023 serves the Studio's: the page asks no other site
+ * for anything, and the policy it is served under allows no face but its
+ * own (scripts/demo-headers.mjs). The two the workbench and Blueprint name,
+ * --wb-sans and --wb-mono, --fm-sans and --fm-mono: IBM Plex Sans in 400,
+ * 500 and 600, IBM Plex Mono in 400 and 500. Each stylesheet is
+ * Fontsource's, every subset with its unicode-range, so a browser fetches
+ * only the subsets the page's text uses.
+ *
+ * Archivo, the room's display face, arrives with the room's stylesheet,
+ * which names it: nothing here names a face the themes do not.
+ */
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';

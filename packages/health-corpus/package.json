@@ -10,6 +10,10 @@
     ".": {
       "types": "./dist/index.d.mts",
       "default": "./dist/index.mjs"
+    },
+    "./documents": {
+      "types": "./dist/documents.d.mts",
+      "default": "./dist/documents.mjs"
     }
   },
   "scripts": {

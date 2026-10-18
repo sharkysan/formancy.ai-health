@@ -11,8 +11,10 @@
 //   naming another version is not read;
 // - the guide packages from docs/release/ig-packages.json, and the
 //   validator and the Java it needs from docs/release/validator.json;
-// - upstream @formancy/* packages from every workspace manifest, at the
-//   version each pins;
+// - upstream @formancy/* packages from every manifest under packages/, at
+//   the version each pins -- the packages and their test support, never
+//   an app: the demo's formancy renderer and themes (apps/demo, 0012) are
+//   what a page is drawn with, not what the packages are built against;
 // - Node from the root's `engines` and .node-version, which CI runs
 //   (scripts/workflows.test.mjs holds the workflows to it);
 // - TypeScript as the catalog declares it and as the workspace loads it;
@@ -61,17 +63,18 @@ export function fhirVersionIn(source) {
   return found[0]
 }
 
-/** Every @formancy/* package a workspace manifest depends on that is no workspace package, with the version pinned. */
+/** Every @formancy/* package a manifest under packages/ depends on that is no package of this workspace, with the version pinned. */
 function upstream(root) {
-  const manifests = []
-  for (const group of ['packages', 'apps']) {
-    if (!existsSync(join(root, group))) continue
-    for (const name of readdirSync(join(root, group)).sort()) {
-      const file = join(root, group, name, 'package.json')
-      if (existsSync(file)) manifests.push(JSON.parse(readFileSync(file, 'utf8')))
-    }
-  }
-  const local = new Set(manifests.map((manifest) => manifest.name))
+  const read = (group) =>
+    existsSync(join(root, group))
+      ? readdirSync(join(root, group))
+          .sort()
+          .flatMap((name) => (existsSync(join(root, group, name, 'package.json')) ? [JSON.parse(readFileSync(join(root, group, name, 'package.json'), 'utf8'))] : []))
+      : []
+  const manifests = read('packages')
+  // An app is no upstream dependency of anything, but it is of this
+  // workspace: a package depending on one is not upstream either.
+  const local = new Set([...manifests, ...read('apps')].map((manifest) => manifest.name))
   const found = new Map()
   for (const manifest of manifests) {
     for (const field of ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies']) {

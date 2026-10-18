@@ -90,7 +90,8 @@ describe('docs/release/gates.json', () => {
   })
 
   // Each other kind names something a run can produce, or a committed file;
-  // Health has no page, so no app's browser gate is evidence of anything.
+  // the demo's browser gate is evidence about the demo, not about a
+  // release gate, so it is no kind of evidence here.
   test('fails a job or a document that is not there, and an unknown kind', () => {
     expect(problemsWith((gates) => gate(gates, 'G1').evidence.push({ job: 'report' }))).toEqual(["gate G1's evidence: report is not a job of .github/workflows/gates.yml that leaves results"])
     expect(problemsWith((gates) => gate(gates, 'G2').evidence.push({ document: 'docs/release/figures.md' }))).toEqual(["gate G2's evidence: docs/release/figures.md is not a committed file"])

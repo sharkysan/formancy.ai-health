@@ -29,7 +29,7 @@
       ]
     },
     "0002": {
-      "reviewed": "sha256:f595c742d65402921e19bef05618211cce2ac14e62eb18dca8950645b00b75e0",
+      "reviewed": "sha256:972de4949aa496ecf0ceb303212e5df3e50e3dce36f5758b2bdccfd87107af96",
       "limitations": [
         {
           "area": "release",
@@ -37,13 +37,13 @@
           "heldBy": "scripts/upstream-deps.test.mjs"
         },
         {
-          "area": "release",
-          "says": "Health has no page and no user interface, and none ships before formancy releases its admin colours in a package, since nothing of formancy's is copied here."
+          "area": "demo",
+          "says": "The packages have no page and no user interface; Health's one page, the demo, takes its colours from the formancy release its manifest pins and copies none, so they change only when this repository adopts a release."
         }
       ]
     },
     "0003": {
-      "reviewed": "sha256:53305404e8f360995a2121de22c33cf53666804174b79aff97885ce63e37820f",
+      "reviewed": "sha256:abb74a4a6151737b39457e50427bb5e9f72a566730808025eb8286151c0741f9",
       "limitations": [
         {
           "area": "naming",
@@ -97,7 +97,7 @@
       ]
     },
     "0005": {
-      "reviewed": "sha256:1a8671f6e87f11235e2495a31626bc8bebb10abfd6e7ef9adaee7da1192d3c95",
+      "reviewed": "sha256:99197d84d02e5d32cf58d484daa1a6a6309d9185ae0edca03f6cda39f99ea68b",
       "limitations": [
         {
           "area": "conformance",
@@ -233,7 +233,7 @@
       ]
     },
     "0008": {
-      "reviewed": "sha256:320cab22f02dcc0f5b53563a7f5e216925b98e5ee985e9cf32b6cc3df83970d5",
+      "reviewed": "sha256:f37133d43af77998d999be5f21e5584ebe4e99ef5177567dd9d08d4271d528f5",
       "limitations": [
         {
           "area": "documents",
@@ -348,11 +348,11 @@
       ]
     },
     "0010": {
-      "reviewed": "sha256:bfed8e4eb2e805e3b8710c61eb632be203f81eeabc677e56d5345f11b00281e8",
+      "reviewed": "sha256:ae09b1df80c76f6bbc0e4cf5c057f3a35bbba0740446ff5aaa50c2aff0c89132",
       "none": "It documents the architecture and holds the documents to the repository; it costs a contributor an edit per change, and nothing a release ships costs a user, an integrator or an operator anything because of it."
     },
     "0011": {
-      "reviewed": "sha256:711e034bfdacfc0e11066a55a903618e480c97c8a53a05e7ac56dfb49ab969b6",
+      "reviewed": "sha256:2e77463795cb6bb1db2d46f38f55b5cb03d922014a74f62acee89b83ab92ebda",
       "limitations": [
         {
           "area": "release",
@@ -389,6 +389,58 @@
         {
           "area": "release",
           "says": "The publish job had never run before 0.1.0's tag: the workflows test holds its shape and not its behaviour, and the first release is the first run of it."
+        }
+      ]
+    },
+    "0012": {
+      "reviewed": "sha256:f32aa39edd11f70ad8eaa3eaa9832741d8332f0a19879685b5a584febc504c2a",
+      "limitations": [
+        {
+          "area": "demo",
+          "says": "The demo at formancy.ai/health/ is main's, deployed by Cloudflare on every push to main before CI has run on it, so it can be ahead of the latest release, and nothing checks what the address serves.",
+          "heldBy": "scripts/demo.test.mjs"
+        },
+        {
+          "area": "demo",
+          "says": "The demo validates nothing a visitor types: the validator gate judges its sample as the corpus holds it, and a changed answer shows only what the packages accepted or refused.",
+          "heldBy": "apps/demo/src/exports.test.ts"
+        },
+        {
+          "area": "demo",
+          "says": "The demo's letter is the corpus's PDF, rendered by Formancy Report 0.1.0 when the page is built and refused unless it is the registered bytes, so it does not change with the answers, and a build on a machine that renders other bytes deploys nothing.",
+          "heldBy": "scripts/validator/letter.test.mjs"
+        },
+        {
+          "area": "demo",
+          "says": "The demo's browser gate runs in Chromium alone, and runs the packages as the demo bundles them from the workspace, not the packed tarballs."
+        },
+        {
+          "area": "demo",
+          "says": "The demo says nothing about cookies, tracking or analytics, and no gate sees what Cloudflare, which serves it and sees each visitor's IP address, sets or measures on formancy.ai's zone; a script it injected into the page, the page's policy refuses to run.",
+          "heldBy": "apps/demo/src/words.test.ts"
+        },
+        {
+          "area": "demo",
+          "says": "The demo wears formancy's workbench and Blueprint as `@formancy/themes` 0.5.0 ships them, not formancy.ai's room, until a formancy release ships the room.",
+          "heldBy": "apps/demo/src/styles.test.ts"
+        },
+        {
+          "area": "demo",
+          "says": "The demo's notices list every package its bundle holds as modules and every file written beside it, and miss what Vite folds into a chunk or a stylesheet as text, as formancy.ai-data 0046 says; the page held none of that on 18 October 2026.",
+          "heldBy": "scripts/third-party-notices.test.mjs"
+        },
+        {
+          "area": "demo",
+          "says": "The demo links no legal notice and no privacy statement, and whether formancy.ai/health/ owes either is the lawyer's question, not yet decided."
+        },
+        {
+          "area": "demo",
+          "says": "`pnpm demo` serves the page under a policy written for http://localhost:4395/, so opened under another name of the same machine, such as 127.0.0.1, it runs no script.",
+          "heldBy": "scripts/demo.test.mjs"
+        },
+        {
+          "area": "demo",
+          "says": "The demo's refusals are in English as the packages state them, its French and Italian words are translations no native reader has read, and its wording awaits the lawyer's review the first paid release owes."
         }
       ]
     }

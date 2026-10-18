@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
-import { committable, isRelative, linkProblems, linksIn, resolveLink, shown } from './markdown.mjs'
+import { committable, isRelative, linkProblems, linksIn, resolveLink } from './markdown.mjs'
+// The reading of CLAUDE.md's sentence, which the demo's build reads the same way (0012).
+import { flat, intendedPurpose, sectionOf, WHAT_IT_IS } from './purpose.mjs'
 
 /**
  * The README is the page an evaluator, an integrator and a regulator read
@@ -38,44 +40,6 @@ function textOf(file) {
   } catch {
     return undefined
   }
-}
-
-/** Every run of whitespace as one space: a sentence a line break splits is still the sentence. */
-const flat = (text) => text.replace(/\s+/g, ' ').trim()
-
-/** A heading line as GitHub shows one: its level and its text. */
-const HEADING = /^ {0,3}(#{1,6})[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$/
-
-/**
- * The text under `title`'s heading in `markdown`, to the next heading of its
- * level or above, fences and comments blanked. Throws unless exactly one
- * heading has that text: a section nobody wrote holds nothing, and of two,
- * either could be the one a reader finds.
- */
-function sectionOf(markdown, title, file) {
-  const lines = shown(markdown).split('\n')
-  const at = lines.flatMap((line, index) => (HEADING.exec(line)?.[2] === title ? [index] : []))
-  if (at.length !== 1) throw new Error(`${file} has ${String(at.length)} headings "${title}", and this guard reads exactly one`)
-  const level = HEADING.exec(lines[at[0]])[1].length
-  const end = lines.findIndex((line, index) => index > at[0] && (HEADING.exec(line)?.[1].length ?? Infinity) <= level)
-  return lines.slice(at[0] + 1, end === -1 ? lines.length : end).join('\n')
-}
-
-/** The sentences of `text`, whitespace flattened: each ends at a full stop, a question or an exclamation mark before a space and a capital, a mark or a bracket. */
-const sentencesOf = (text) => flat(text).split(/(?<=[.!?])\s+(?=[A-Z*`"(\[])/)
-
-/** CLAUDE.md's section that says what the product is and is not. */
-const WHAT_IT_IS = 'What this is, and what it is not'
-
-/**
- * The sentence of CLAUDE.md's first section that names a medical device.
- * Throws when there is none or more than one: either way, which words the
- * README must hold would be a guess.
- */
-function intendedPurpose(claude) {
-  const naming = sentencesOf(sectionOf(claude, WHAT_IT_IS, 'CLAUDE.md')).filter((sentence) => /medical device/i.test(sentence))
-  if (naming.length !== 1) throw new Error(`CLAUDE.md's "${WHAT_IT_IS}" names a medical device in ${String(naming.length)} sentences, and this guard reads exactly one`)
-  return naming[0]
 }
 
 /** Whether `readme`'s Intended purpose section holds `claude`'s sentence word for word, wherever either's lines break. */

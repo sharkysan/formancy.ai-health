@@ -15,7 +15,11 @@ renderer of PDFs or of forms; and it is not intended as a medical device,
 as the README's [intended purpose](../../README.md#intended-purpose) says
 in CLAUDE.md's words, which no lawyer has read yet
 ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).
-Version 1 has no server, no page and no network.
+Version 1's packages have no server, no page and no network. Beside them,
+never published, is one page: the demo at formancy.ai/health/, which runs
+the packages in a visitor's browser on the corpus's synthetic referral and
+is not the product
+([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
 
 It is sold to the vendors whose software hospitals and practices run, to
 ship inside their own products, on Formancy Data's and Formancy Report's
@@ -50,7 +54,8 @@ submission as a QuestionnaireResponse, a PDF as a DocumentReference in a
 document Bundle, a referral as a CH ORF document, its patient, author and
 orders in CH Core's profiles and its GLN and AHV number held to their check
 digits, and the gate that runs the HL7 FHIR validator over what the
-packages write. 0.1.0, a developer preview of all of it, was ready to tag
+packages write; and beside them the demo, which no release publishes,
+with its browser gate. 0.1.0, a developer preview of the packages, was ready to tag
 and not released on 17 October 2026: the README's [What 0.1.0 is](../../README.md#what-010-is)
 says whom it is for, what it publishes and the gates it is held to.
 
@@ -63,9 +68,11 @@ CH ORF the Questionnaire inside the Bundle, a PDF and the Composition's
 receivers, contacts and other extensions. Which version of a guide a
 package targets is decided in the record that brings it.
 
-**Out of version 1**: a server, a page, sending anything, a terminology
-service, a browser, in which no gate runs the packages, and any clinical
-logic -- a score, a warning, a suggested therapy --
+**Out of version 1**: a server, a page among the packages, sending
+anything, a terminology service, a browser as a host the packed packages
+are claimed for -- the demo's gate runs them in Chromium as the workspace
+builds them, not as a consumer installs them -- and any clinical logic --
+a score, a warning, a suggested therapy --
 which would make the product a candidate medical device
 ([`CLAUDE.md`](../../CLAUDE.md#secrets-health-data-and-untrusted-input)).
 
@@ -77,5 +84,6 @@ which would make the product a candidate medical device
 | The receiving system | Resources that are what they claim, and no claim beyond what a gate showed |
 | The person whose record it is | Their data in the output and in no log, error or fixture |
 | A form's author | Which part of a form cannot be exported, by its path, before a Questionnaire is sent anywhere |
+| A visitor to the demo, deciding whether to build on it | What the packages make of a referral, and what they refuse, in a browser, with nothing they type sent or kept, no claim about the resources it shows beyond what a gate judged, and the licences of what it bundles beside it ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)) |
 | The rightsholder and a licensee | Terms that say what they are, no Apache-2.0 code copied into them, and no HL7 mark in a name |
 | A contributor | Why the obvious simpler thing was not done: the records |

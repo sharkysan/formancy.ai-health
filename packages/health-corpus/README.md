@@ -21,6 +21,14 @@ const pdf = await renderReferral() // the same bytes every time
 const result = referralDocument({ pdf, placement: 'binary' }) // or 'data', and a response beside it
 ```
 
+`@formancy/health-corpus/documents` is the documents alone, without the
+letter's renderer: what the demo bundles into its page, which assembles
+the letter's Bundles in the browser around the PDF its build rendered. It
+is the module the index re-exports, not a copy, and reaches health-core
+and health-document and nothing else, no Report and nothing of Node's;
+`scripts/corpus-documents.test.mjs` reads both from the built `dist/` and
+fails otherwise.
+
 ## What it holds
 
 - **The letter.** `REFERRAL_REPORT`, a report-spec 0 definition in Swiss
@@ -40,7 +48,11 @@ const result = referralDocument({ pdf, placement: 'binary' }) // or 'data', and 
 
 What `scripts/validator/corpus.mjs` takes from the built `dist/`:
 `renderReferral`, `referralDocument`, `referralContext`,
-`referralDocumentContext`, `NAMES` and `PRACTITIONER`.
+`referralDocumentContext`, `NAMES` and `PRACTITIONER`. The gate takes the
+PDF through `scripts/validator/letter.mjs`, which refuses a render that is
+not the bytes `docs/release/letter.json` registers by size and SHA-256:
+the tests here prove the same bytes within one process, and the register
+holds them across the machines that render them.
 
 ## What its tests prove
 

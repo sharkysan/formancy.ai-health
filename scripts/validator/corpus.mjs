@@ -14,7 +14,10 @@
 // PDF in a Binary beside it, and the PDF beside a QuestionnaireResponse of
 // the intake; the CH ORF document `@formancy/health-ch`, as built, makes of
 // a synthetic referral, against CH ORF 3.0.2 on CH Core 6.0.0 (0009,
-// scripts/validator/ch-orf.mjs); and, each broken for one thing, the
+// scripts/validator/ch-orf.mjs); the Questionnaire, the response and the
+// CH ORF document the packages make of the form and the answers the demo
+// at formancy.ai/health/ starts from (0012,
+// scripts/validator/demo-referral.mjs); and, each broken for one thing, the
 // package's output with what a decision of 0006, 0007, 0008 or 0009 left
 // out or refuses put back, so the gate shows why. A response is judged against its Questionnaire,
 // which the gate loads as a definition. **Built by hand** from
@@ -50,6 +53,7 @@
 // validator checks offline.
 
 import { chOrfOutput } from './ch-orf.mjs'
+import { DEMO_NAMES, demoChOrfContext, demoReferral, demoReferralAnswers, demoReferralContext, demoResponseContext } from './demo-referral.mjs'
 import { intake, intakeContext, intakeResponseContext, intakeRoutine, intakeUrgent, minimal, minimalAnswers, minimalContext, minimalResponseContext } from './forms.mjs'
 
 /** The canonical base of the hand-built corpus: IANA's example domain, never fetched. */
@@ -347,6 +351,27 @@ function documentOutput(core, { toQuestionnaireResponse }, { NAMES, referralDocu
 }
 
 /**
+ * The demo's referral (0012), accepted: the Questionnaire
+ * `@formancy/health-questionnaire` makes of the demo's form, the response
+ * it makes of the answers the demo starts with, claiming CH ORF's profile
+ * as the CH ORF document carries it, and that document, which
+ * `@formancy/health-ch` makes of them. What the demo shows before anything
+ * is changed is these, which apps/demo's suite holds byte for byte. The
+ * response is the document's: of the document's patient, by its author's
+ * role, each named by its urn:uuid.
+ */
+function demoOutput({ toQuestionnaire, toQuestionnaireResponse }, ch) {
+  const response = answered(toQuestionnaireResponse, demoReferral, demoReferralAnswers, { ...demoResponseContext, profiles: [ch.PROFILES.questionnaireResponse] })
+  const document = ch.toChOrfDocument({ ...demoChOrfContext, response: { fullUrl: DEMO_NAMES.response, questionnaireResponse: response } })
+  if (!document.ok) throw new Error(`the package refused a corpus document: ${document.refusals.map((refusal) => refusal.message).join('; ')}`)
+  return [
+    { file: 'questionnaire-demo-referral.json', expect: 'accepted', definition: true, resource: exported(toQuestionnaire, demoReferral, demoReferralContext) },
+    { file: 'questionnaireresponse-demo-referral.json', expect: 'accepted', resource: response },
+    { file: 'bundle-ch-orf-demo-referral.json', expect: 'accepted', resource: document.bundle },
+  ]
+}
+
+/**
  * The corpus, built with `core`, health-core's exports; `questionnaire`,
  * health-questionnaire's; `documents`, health-corpus's, which make
  * health-document's Bundles; `pdf`, the PDF health-corpus rendered with
@@ -418,6 +443,7 @@ export function corpus({ core, questionnaire: questionnairePackage, documents, p
     ...responseOutput(core, questionnairePackage),
     ...documentOutput(core, questionnairePackage, documents, pdf),
     ...chOrfOutput(core, questionnairePackage, ch, copy),
+    ...demoOutput(questionnairePackage, ch),
     { file: 'questionnaire.json', expect: 'accepted', definition: true, resource: questionnaire() },
     { file: 'questionnaireresponse.json', expect: 'accepted', resource: questionnaireResponse() },
     { file: 'bundle.json', expect: 'accepted', resource: bundle() },

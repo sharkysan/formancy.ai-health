@@ -13,6 +13,11 @@ it is not intended as a medical device: the packages write what your
 application hands them and compute no clinical result -- no score, no
 clinical warning, no therapy suggested.
 
+To see what the packages make of a referral before installing anything,
+the demo at https://formancy.ai/health/ runs them in your browser on a
+synthetic one, as the README's [Try it](../README.md#try-it) says; this
+guide is what your own application does with them.
+
 Formancy Health is source-available, not open source: evaluating and
 developing with it, as this guide does, is free, and running it in
 production takes a paid licence. The

@@ -31,6 +31,31 @@
 
 import { intake, intakeResponseContext, intakeUrgent } from './forms.mjs'
 
+/**
+ * The synthetic people of the corpus's referrals, as a CH ORF context of
+ * health-ch's holds them, without the entry name each document gives
+ * them: the patient, the practitioner who writes the referral and the
+ * practice the practitioner works at. Every CH ORF document here, the
+ * demo's (scripts/validator/demo-referral.mjs) among them, is about and
+ * by these people, under names of its own.
+ */
+export const CH_ORF_PEOPLE = {
+  patient: {
+    identifier: [{ system: 'urn:oid:2.999.756.1', value: 'P-0001' }],
+    name: { family: 'Beispiel', given: ['Synthetica'] },
+    gender: 'female',
+    birthDate: '1980-02-29',
+  },
+  practitioner: { gln: '9520000000011', name: { family: 'Muster', given: ['Probus'], prefix: ['Dr. med.'] } },
+  organization: { gln: '9520000000028', name: 'Praxis Synthetica' },
+}
+
+/** The Composition's type and category in every CH ORF document here: HL7's own codes, where a host would send CH Term's SNOMED CT ones. */
+export const CH_ORF_CODES = {
+  type: { system: 'http://terminology.hl7.org/CodeSystem/v2-0270', code: 'CN', display: 'Consultation' },
+  category: { system: 'http://terminology.hl7.org/CodeSystem/v3-ActClass', code: 'DOCCLIN', display: 'clinical document' },
+}
+
 /** Each entry's name, and the document's identifier: lowercase urn:uuids, as a host gives them. */
 export const CH_ORF_NAMES = {
   document: 'urn:uuid:9f4b2c71-3e8d-4a6f-b5c0-7d1e2f3a4b00',
@@ -70,23 +95,16 @@ export function chOrfContext(questionnairePackage, ch) {
     composition: {
       fullUrl: CH_ORF_NAMES.composition,
       status: 'final',
-      type: { system: 'http://terminology.hl7.org/CodeSystem/v2-0270', code: 'CN', display: 'Consultation' },
-      category: { system: 'http://terminology.hl7.org/CodeSystem/v3-ActClass', code: 'DOCCLIN', display: 'clinical document' },
+      ...CH_ORF_CODES,
       date: '2026-10-17T10:00:00+02:00',
       title: 'Zuweisung',
       sectionTitle: 'Auftrag',
     },
-    patient: {
-      fullUrl: CH_ORF_NAMES.patient,
-      identifier: [{ system: 'urn:oid:2.999.756.1', value: 'P-0001' }],
-      name: { family: 'Beispiel', given: ['Synthetica'] },
-      gender: 'female',
-      birthDate: '1980-02-29',
-    },
+    patient: { fullUrl: CH_ORF_NAMES.patient, ...CH_ORF_PEOPLE.patient },
     author: {
       fullUrl: CH_ORF_NAMES.role,
-      practitioner: { fullUrl: CH_ORF_NAMES.practitioner, gln: '9520000000011', name: { family: 'Muster', given: ['Probus'], prefix: ['Dr. med.'] } },
-      organization: { fullUrl: CH_ORF_NAMES.organization, gln: '9520000000028', name: 'Praxis Synthetica' },
+      practitioner: { fullUrl: CH_ORF_NAMES.practitioner, ...CH_ORF_PEOPLE.practitioner },
+      organization: { fullUrl: CH_ORF_NAMES.organization, ...CH_ORF_PEOPLE.organization },
     },
     serviceRequests: [{ fullUrl: CH_ORF_NAMES.serviceRequest, placer: { system: 'urn:ietf:rfc:3986', value: CH_ORF_NAMES.order }, status: 'active', intent: 'order', priority: 'urgent', authoredOn: '2026-10-17T10:00:00+02:00' }],
     response: { fullUrl: CH_ORF_NAMES.response, questionnaireResponse: chOrfResponse(questionnairePackage.toQuestionnaireResponse, ch) },

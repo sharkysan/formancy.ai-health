@@ -16,6 +16,7 @@ and why, is
 
 | If you are… | Read |
 |---|---|
+| Trying it first | The README's [Try it](../README.md#try-it): the demo at https://formancy.ai/health/, then [0012](decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md) for what it shows and what it does not |
 | Deciding whether to build on 0.1.0 | The README's [What 0.1.0 is](../README.md#what-010-is), its [Not in 0.1.0](../README.md#not-in-010) and its [Intended purpose](../README.md#intended-purpose), then the release report the release attaches |
 | New to the repository | [Introduction and goals](architecture/01-introduction-and-goals.md), then [Solution strategy](architecture/04-solution-strategy.md) — the ideas everything else follows from |
 | Looking for where something lives | [Building blocks](architecture/05-building-blocks.md) |
@@ -40,12 +41,12 @@ does not have.
 |---|---|
 | [1. Introduction and goals](architecture/01-introduction-and-goals.md) | What Formancy Health is and is not, its quality goals, its scope and who it is for |
 | [2. Constraints](architecture/02-constraints.md) | What was not chosen: FHIR's digits, formancy's doubles and CEL, Report's PDF, HL7's marks, a library with no Node, CH Core's warnings and range, the terminologies' licences |
-| [3. Context and scope](architecture/03-context-and-scope.md) | The host, upstream, the Swiss guides and identifiers, the gate's downloads, and what is outside the boundary |
+| [3. Context and scope](architecture/03-context-and-scope.md) | The host, upstream, the Swiss guides and identifiers, the gate's downloads, the demo's visitor and Cloudflare, and what is outside the boundary |
 | [4. Solution strategy](architecture/04-solution-strategy.md) | The ideas the rest follows from |
-| [5. Building blocks](architecture/05-building-blocks.md) | The layers, what each package may import, then inside each package and beside them |
-| [6. Runtime view](architecture/06-runtime-view.md) | A form, a submission, a document, a CH ORF document, a gate run, a release |
-| [7. Deployment view](architecture/07-deployment-view.md) | What a release publishes and where, what a host needs, where the gates run |
-| [8. Cross-cutting concepts](architecture/08-crosscutting-concepts.md) | Exact values, refusals, health data, untrusted input, identity and the Swiss identifiers, determinism, no network, licences, marks and terminology, languages, the user interface there is not, no clinical logic |
+| [5. Building blocks](architecture/05-building-blocks.md) | The layers, what each package and the demo may import, then inside each and beside them |
+| [6. Runtime view](architecture/06-runtime-view.md) | A form, a submission, a document, a CH ORF document, a gate run, a release, the demo's browser gate, a visit to the demo |
+| [7. Deployment view](architecture/07-deployment-view.md) | What a release publishes and where, what a host needs, the demo and how Cloudflare serves it, where the gates run |
+| [8. Cross-cutting concepts](architecture/08-crosscutting-concepts.md) | Exact values, refusals, health data, untrusted input, identity and the Swiss identifiers, determinism, no network, licences, marks and terminology, languages, the user interface the packages do not have and the demo's, no clinical logic |
 | [9. Quality requirements](architecture/09-quality-requirements.md) | Scenarios, each stated so it can fail, with what fails: arc42's section 10 |
 | [10. Verification](architecture/10-verification.md) | The gates, what each proves, and what it does not: formancy.ai's, not arc42's |
 | [11. Risks and technical debt](architecture/11-risks-and-debt.md) | The larger accepted risks with their records, the known debt, what is planned |

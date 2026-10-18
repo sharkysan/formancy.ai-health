@@ -16,10 +16,12 @@
 //    others.
 // 3. Makes the corpus -- health-questionnaire's Questionnaires and
 //    responses of the synthetic forms, health-document's Bundles of the
-//    referral letter health-corpus renders with Formancy Report,
-//    health-ch's CH ORF document of a synthetic referral, and the
-//    resources built by hand -- checks it, refusing to run on a wrong one,
-//    and writes it with health-core's writeJson.
+//    referral letter health-corpus renders with Formancy Report, refused
+//    unless it is the PDF docs/release/letter.json registers
+//    (scripts/validator/letter.mjs), health-ch's CH ORF documents of the
+//    synthetic referrals, the demo's among them, and the resources built
+//    by hand -- checks it, refusing to run on a wrong one, and writes it
+//    with health-core's writeJson.
 // 4. Runs the validator once over every file, offline: `-tx n/a` (no
 //    terminology server), `-txCache n/a`, and `-no-http-access`, which
 //    refuses every request the validator would make, for a package, a
@@ -39,6 +41,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { fetchVerified, layout, prepareHome, sha256File } from './validator/cache.mjs'
 import { corpus as buildCorpus } from './validator/corpus.mjs'
 import { corpusProblems, judge } from './validator/judge.mjs'
+import { registeredLetter } from './validator/letter.mjs'
 import { readConsole, readOutcomes } from './validator/outcome.mjs'
 import { packageKey, packageProblems, pinProblems, readRegisters, warningProblems } from './validator/registers.mjs'
 
@@ -177,9 +180,11 @@ async function main(argv, startedAt) {
   }
   const core = await built(HEALTH_CORE)
   // The documents' PDF, rendered by Report's renderer as health-corpus
-  // depends on it, once per run: the same report and data give the same bytes.
+  // depends on it, once per run, and refused unless it is the registered
+  // bytes: what is judged here is what the demo serves.
   const documents = await built(HEALTH_CORPUS)
-  const entries = buildCorpus({ core, questionnaire: await built(HEALTH_QUESTIONNAIRE), documents, pdf: await documents.renderReferral(), ch: await built(HEALTH_CH) })
+  const pdf = await registeredLetter(documents.renderReferral)
+  const entries = buildCorpus({ core, questionnaire: await built(HEALTH_QUESTIONNAIRE), documents, pdf, ch: await built(HEALTH_CH) })
   const corpusWrong = corpusProblems(entries)
   if (corpusWrong.length > 0) throw new Error(`the corpus does not hold:\n  - ${corpusWrong.join('\n  - ')}`)
   const work = join(repo, WORK)

@@ -44,6 +44,11 @@ is review's. This section names the larger costs without restating them.
 | **The release report had not run on GitHub by 17 October 2026** | It is built in every test from a synthetic run and was built from one machine's runs; the first pull request run is the first that shows the artefacts arrive as it reads them | [0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md) |
 | **The guide's program is run, not judged** | The install gate compiles and runs it against the packed packages and holds its output to the guide's; that its resources conform is no gate's claim -- the validator judges the corpus, made by the same packages of other synthetic input | [0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md) |
 | **The guide's project and the SBOM resolve on the day** | The guide's Report packages and what they bring, and the SBOM's closure beyond the report's packages, are what npm resolved during the run, unlocked, as the tools are; the report and the SBOM check hold the packages they name to the versions the suites loaded, and the SBOM to npm's lockfile of the install it was read from, which says what was resolved that day and not on another | [0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md) |
+| **The demo is main's, deployed before CI has run on it** | Cloudflare deploys every push to `main`, and no check is required to merge, so a pull request merged red is served; the alternative, a deploy from CI, would put a zone token in GitHub. Nothing checks what the address serves, which `RELEASING.md` checks by hand | [0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md) |
+| **The demo's letter is rendered on Cloudflare's machine** | Its Node, 22.23.2 by Cloudflare's documentation on 18 October 2026, was never measured rendering it; the letter's bytes were, under 22.23.3 and 24.21.0. A Node that renders other bytes stops the build, and the last deployment keeps serving | [0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md) |
+| **The demo says nothing of cookies or tracking, and nothing checks the zone** | By the maintainer's decision: the page says only what it does with what is typed, which its policy and gate hold. What Cloudflare sets or measures on formancy.ai's zone no gate sees; a script it injected, inline or under `/cdn-cgi/`, the policy refuses to run | [0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md) |
+| **The demo wears 0.5.0's workbench and Blueprint, not formancy.ai's room** | No formancy release ships the room; copying it is 0002's rejected alternative. The page moves with the release that ships it, as one import and a version | [0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md), [0002](../decisions/0002-depend-on-upstream-never-copy-it.md) |
+| **A visitor can paste a real patient's data into the demo** | The page says it does not belong there, and sends and keeps nothing; the browser's own services and extensions are beyond it | [0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md) |
 
 ## 11.3 Known debt
 
@@ -107,6 +112,30 @@ is review's. This section names the larger costs without restating them.
   1 MB, a null in an array that lines nothing up, and a uri beyond its
   permissive regex
   ([0004](../decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)).
+- **The demo's browser gate runs Chromium alone**, where formancy.ai-data's
+  runs Firefox and WebKit too, and no screen reader; a browser added to
+  [`scripts/browsers.mjs`](../../scripts/browsers.mjs) is one the report
+  then expects results in. Nothing it measures is what formancy.ai serves,
+  which [`RELEASING.md`](../../RELEASING.md#the-demo-on-formancyai) checks
+  by hand after a deploy ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
+- **The demo's notices miss what Vite folds as text**: a package
+  stylesheet a stylesheet @imports, a file under the inline limit, a
+  constant copied into its user
+  ([formancy.ai-data 0046](https://github.com/sharkysan/formancy.ai-data/blob/main/docs/decisions/0046-a-built-app-carries-the-licence-and-notice-texts-of-everything-it-bundles.md)).
+  The page held none on 18 October 2026, and
+  [`third-party-notices.test.mjs`](../../scripts/third-party-notices.test.mjs)
+  fails the day Vite starts reporting one
+  ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
+- **What the demo's zone does at the edge** -- a cookie Cloudflare sets,
+  a measurement it makes -- no gate sees; a script it injected, the
+  page's policy refuses, which the gate watches on one it injects itself
+  ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
+- **The demo's own source is held by its suite, not by the repository's
+  guards that read the packages**: the exactness guard's clock and random
+  rule, and the identifiers guard over its build, which no commit holds. A
+  search of `apps/demo/src` found no clock, random source or storage on
+  18 October 2026, and the build is made from a corpus that holds no valid
+  AHV number ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
 - **No time budget for the gate**: each run of the `validator` job writes
   its own time, and nothing reads the time or fails on it; the job's
   timeout is the only bound ([§9.3](09-quality-requirements.md#93-budgets)).
@@ -127,6 +156,18 @@ what a package may import. A package not named in [§5](05-building-blocks.md), 
 [`scripts/architecture.test.mjs`](../../scripts/architecture.test.mjs)
 ([0010](../decisions/0010-the-architecture-is-documented-in-arc42s-sections-held-to-the-repository-by-a-guard.md));
 that the record is linked from the section it changes is review's.
+
+Open for the demo ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)): formancy.ai's room, with the first formancy
+release whose exports name it; the French and Italian words, for a native
+reader; the name Cloudflare's dashboard gave the Worker, which must be the
+config's; a link from Formancy Report's healthcare pages, which is
+Report's change to make; whether formancy.ai/health/ owes a legal notice
+or a privacy statement, for visitors in Switzerland, Germany, France and
+Italy whose address Cloudflare sees, which is the lawyer's question and
+the rightsholder's to decide, the page linking neither and formancy.ai
+having neither page on 18 October 2026; and whether `main` should
+require the gates' checks and a pull request, which would keep a red
+gate from being served, since Cloudflare deploys every push.
 
 Open, and the maintainer's to ask ([0009](../decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)):
 

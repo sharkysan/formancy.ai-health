@@ -37,9 +37,10 @@ export const DECISIONS = 'docs/decisions'
  * Where a limitation is met. Closed, so the report's grouping is the
  * register's: the licence, the product's name, FHIR JSON and its numbers,
  * the validator gate's claim, forms, answers, documents, the Swiss pack,
- * and how a release is made and checked.
+ * the demo at formancy.ai/health/ (0012), and how a release is made and
+ * checked.
  */
-export const AREAS = ['licence', 'naming', 'json', 'conformance', 'forms', 'answers', 'documents', 'switzerland', 'release']
+export const AREAS = ['licence', 'naming', 'json', 'conformance', 'forms', 'answers', 'documents', 'switzerland', 'demo', 'release']
 
 /** Every decision record: its number, file, title, Status line and hash. */
 export function readRecords(root = repo) {

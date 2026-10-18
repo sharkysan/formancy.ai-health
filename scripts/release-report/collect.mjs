@@ -1,11 +1,12 @@
 // What one job of a run found, in one file the release report reads (0011;
-// formancy.ai-report 0014's collect, without its browser gate and its
+// formancy.ai-report 0014's collect, with its browser gate and without its
 // pictures, which Health does not have, and with a reader for the
 // validator job, which Report does not; the install gate's projects come
 // whole in its record, which the report holds to install-hosts.mjs).
 //
 //   node scripts/release-report/collect.mjs --job verify
 //   node scripts/release-report/collect.mjs --job test --package @formancy/health-core
+//   node scripts/release-report/collect.mjs --job browser
 //   node scripts/release-report/collect.mjs --job install
 //   node scripts/release-report/collect.mjs --job validator
 //   node scripts/release-report/collect.mjs --local --since 2026-10-17T08:00:00Z
@@ -20,7 +21,10 @@
 // `test-results/vitest.json` in `verify`; a package's
 // `test-results/vitest.json` and `coverage/coverage-summary.json`, and
 // turbo's `.turbo/runs/*.json` for the task's own start and end, in `test`;
-// the install gate's `test-results/install.json` in `install`; in
+// in `browser`, each app's browser gate's `test-results/browser-<browser>.json`
+// for every browser of scripts/browsers.mjs, from each app with a
+// `test:browser` script (the demo's, 0012); the install gate's
+// `test-results/install.json` in `install`; in
 // `validator`, the gate's `test-results/validator.json` (scripts/validator.mjs
 // writes it however it ends) and the root `test-results/vitest.json` the
 // job's run of the registers' test leaves; and in every job, every published
@@ -28,20 +32,23 @@
 // guards' it lists the test files the checkout holds for it (`git ls-files`),
 // so the report can name one the suite did not run. A file it expected and
 // did not find it lists under `absent`, with the reader that expected it --
-// verify, test, install or validator -- so a local report can allow that
-// reader missing, as its banner says; what it found and could not use -- a
-// file from before --since, one that records no start, another run's, a
-// suite turbo replayed or ran without a summary -- under `missing`. The
+// verify, test, browser, install or validator -- so a local report can
+// allow that reader missing, as its banner says; what it found and could
+// not use -- a file from before --since, one that records no start, another
+// run's, a suite turbo replayed or ran without a summary, a gate's file
+// whose browser, asked for or launched, is not the one it is filed under
+// -- under `missing`. The
 // report fails on `absent` unless, on a machine, it allows that reader
 // missing, and on `missing` always.
 //
-// Those four jobs are what gates.yml runs. A job it gains gets a reader in
+// Those five jobs are what gates.yml runs. A job it gains gets a reader in
 // READERS and a section in the report; until then collect refuses it, so the
 // job fails rather than uploading results that look like a job with nothing
 // to say.
 //
-// `--local` reads every package of one machine at once, the guards, the
-// install gate and the validator gate. Not the registers' run: on one
+// `--local` reads every package of one machine at once, the guards, each
+// app's browser gate, the install gate and the validator gate. Not the
+// registers' run: on one
 // machine the root vitest.json is the guards', and the guards run every
 // case of registers.test.mjs when VALIDATOR_GATE_RAN says the gate ran
 // there (RELEASING.md), so it refuses guards that started before the gate's
@@ -57,6 +64,7 @@ import { execFileSync } from 'node:child_process'
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { BROWSERS } from '../browsers.mjs'
 import { coveredPackages } from '../codecov-config.mjs'
 import { distHash, filesUnder } from '../release/dist-hash.mjs'
 import { testFilesOf } from './results.mjs'
@@ -87,6 +95,16 @@ export function keyFor({ job, pkg, variant }, covered) {
 /** coveredPackages() with each package's npm name: what keyFor() keys a package's results by. */
 export function namedPackages(root = repo) {
   return coveredPackages(root).map((entry) => ({ ...entry, name: readJson(join(root, entry.path, 'package.json')).name }))
+}
+
+/** The repository path of every workspace app whose manifest has `script`: the apps with a browser gate. */
+export function appsWith(root, script) {
+  const folder = join(root, 'apps')
+  if (!existsSync(folder)) return []
+  return readdirSync(folder)
+    .sort()
+    .filter((name) => existsSync(join(folder, name, 'package.json')) && readJson(join(folder, name, 'package.json')).scripts?.[script] !== undefined)
+    .map((name) => `apps/${name}`)
 }
 
 /** Every published package -- under packages/, not private -- with its directory and manifest. */
@@ -152,12 +170,13 @@ const runner = (env) => ({ node: process.version, platform: process.platform, ar
 
 /**
  * The readers, by job: what each job of gates.yml leaves for the report.
- * `read` reads one suite, the install gate's record or the validator's
- * files into the result.
+ * `read` reads one suite, the browser gates' files, the install gate's
+ * record or the validator's files into the result.
  */
 const READERS = {
   verify: (read) => read.suite('.', null),
   test: (read, { pkg, packages }) => read.suite(packages.find((entry) => entry.name === pkg).path, pkg),
+  browser: (read) => read.browser(),
   install: (read) => read.install(),
   validator: (read) => {
     read.validator()
@@ -167,9 +186,10 @@ const READERS = {
 
 /**
  * Everything one job (or, locally, one machine) found. Pure over the files
- * under `root`, the `git` it is given, `env` and `now`.
+ * under `root`, the `git` it is given, `env`, `now` and `browsers`, the
+ * browsers the gates run in.
  */
-export function collect({ root = repo, job, pkg, variant, local = false, since, env = process.env, git = defaultGit, now = () => new Date() }) {
+export function collect({ root = repo, job, pkg, variant, local = false, since, browsers = BROWSERS, env = process.env, git = defaultGit, now = () => new Date() }) {
   if (!local && READERS[job] === undefined) {
     throw new Error(`collect.mjs reads the ${Object.keys(READERS).join(', ').replace(/, (?=[^,]*$)/, ' and ')} jobs, and has no reader for ${String(job)}: a job the report expects results from needs one here`)
   }
@@ -199,6 +219,7 @@ export function collect({ root = repo, job, pkg, variant, local = false, since, 
   const checkout = () => (held ??= checkoutFiles(root, git))
 
   const suites = []
+  const browserGates = []
   let install = null
   let validator = null
   const read = {
@@ -232,6 +253,29 @@ export function collect({ root = repo, job, pkg, variant, local = false, since, 
       const testFiles = testFilesOf(checkout(), path, packages.map((entry) => entry.path))
       suites.push({ package: name, path, ...normaliseSuite(json, root), testFiles, task: task ?? null, coverage })
     },
+    /**
+     * Each app's browser gate in every browser the gates run in. A file
+     * another browser's run wrote -- its launch failed, so no browser names
+     * itself in it -- would be that browser's failure under this one's
+     * name; one that launched another browser would be that browser's
+     * checks.
+     */
+    browser() {
+      for (const app of appsWith(root, 'test:browser')) {
+        for (const browser of browsers) {
+          const shown = `${app}/test-results/browser-${browser}.json`
+          if (!existsSync(join(root, shown))) {
+            notFound(shown, 'browser')
+            continue
+          }
+          const result = readJson(join(root, shown))
+          if (!fresh(shown, result.startedAt)) continue
+          if (result.asked !== browser) missing.push(`${app}’s gate asked for ${result.asked === undefined ? 'no browser' : String(result.asked)} in its ${browser} file: ${shown}`)
+          else if (result.browser != null && result.browser.name !== browser) missing.push(`${app}’s gate launched ${String(result.browser.name)} in its ${browser} file: ${shown}`)
+          else browserGates.push(result)
+        }
+      }
+    },
     install() {
       const shown = 'test-results/install.json'
       if (!existsSync(join(root, shown))) return notFound(shown, 'install')
@@ -261,6 +305,7 @@ export function collect({ root = repo, job, pkg, variant, local = false, since, 
   if (local) {
     for (const entry of packages) read.suite(entry.path, entry.name)
     read.suite('.', null)
+    read.browser()
     read.install()
     read.validator()
     // The guards run the registers' cases here, and one reads the gate's
@@ -299,6 +344,7 @@ export function collect({ root = repo, job, pkg, variant, local = false, since, 
     // changes is part of which code ran; a CI checkout is the commit.
     ...(local ? { since: new Date(after).toISOString(), dirty: git(['status', '--porcelain']).trim() !== '' } : {}),
     suites,
+    browserGates,
     install,
     validator,
     dist,
@@ -332,6 +378,6 @@ if (process.argv[1]?.replaceAll('\\', '/').endsWith('scripts/release-report/coll
   if (process.env.GITHUB_OUTPUT !== undefined) appendFileSync(process.env.GITHUB_OUTPUT, `key=${result.key}\n`)
   const validator = result.validator === null ? 'no' : `the validator gate's${result.validator.suite === null ? '' : ' and its registers’ run'}`
   console.log(
-    `${slash(relative(repo, written))}: ${String(result.suites.length)} suite(s), ${result.install === null ? 'no' : 'the'} install gate's record, ${validator} results, ${String(result.dist.length)} dist/${result.absent.length === 0 ? '' : `; not found: ${result.absent.map((entry) => entry.file).join('; ')}`}${result.missing.length === 0 ? '' : `; missing: ${result.missing.join('; ')}`}`,
+    `${slash(relative(repo, written))}: ${String(result.suites.length)} suite(s), ${String(result.browserGates.length)} browser gate(s), ${result.install === null ? 'no' : 'the'} install gate's record, ${validator} results, ${String(result.dist.length)} dist/${result.absent.length === 0 ? '' : `; not found: ${result.absent.map((entry) => entry.file).join('; ')}`}${result.missing.length === 0 ? '' : `; missing: ${result.missing.join('; ')}`}`,
   )
 }

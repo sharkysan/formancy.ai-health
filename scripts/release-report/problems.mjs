@@ -1,13 +1,17 @@
 // What fails the report (0011; formancy.ai-report 0014), for what it shows
-// of results, the install gate, the validator gate, build identity, the
-// release gates and the limitations: one sentence each, written into the
-// report's `problems` and making the job exit 1. Both files are still
-// written, so a red run says why.
+// of results, the browser gate, the install gate, the validator gate,
+// build identity, the release gates and the limitations: one sentence
+// each, written into the report's `problems` and making the job exit 1.
+// Both files are still written, so a red run says why.
 //
 // Pure over a built report. `allowMissing` names what a local, partial
-// report may lack (verify, install, validator), each a reader of
-// collect.mjs: a file that reader did not find and what rests on its job
-// are not problems. A file it found and refused still is. CI allows none.
+// report may lack (verify, browser, install, validator), each a reader of
+// collect.mjs: a file that reader did not find, what rests on its job and,
+// for browser, a gate that left nothing are not problems. A file it found
+// and refused still is. CI allows none.
+
+import { browserName } from '../browsers.mjs'
+import { unmeasured } from './results.mjs'
 
 const list = (items, most = 5) => (items.length <= most ? items.join('; ') : `${items.slice(0, most).join('; ')}; and ${String(items.length - most)} more`)
 
@@ -92,6 +96,59 @@ function installProblems(report, published, allowMissing, plan) {
   // tarball at another is found on the pull request rather than at the tag.
   for (const tarball of install.tarballs) {
     if (tarball.version !== report.subject.version) problems.push(`the install gate packed ${tarball.name} ${String(tarball.version)}, where every published package is at the root manifest’s version, ${report.subject.version}`)
+  }
+  return problems
+}
+
+const mode = (headless) => (headless ? 'headless' : 'headed')
+
+/**
+ * What `which` launched, against the build Playwright pins for that browser
+ * (testedOn's `browser`): one Playwright does not pin, another version,
+ * launched otherwise than scripts/browsers.mjs launches it -- Chromium's
+ * headless shell and its full browser are pinned at one version, so only
+ * how it was launched says which build ran -- or another Playwright than the
+ * checkout installs.
+ */
+function launchProblems(which, launched, ranPlaywright, { playwright, pins }, browsers) {
+  const problems = []
+  const pin = pins.find((entry) => entry.browser === launched.name)
+  if (pin === undefined) problems.push(`${which} launched ${launched.name} ${launched.version}, which no gate here runs: the gates run ${browsers.map(browserName).join(', ')}`)
+  else {
+    if (launched.version !== pin.browserVersion) problems.push(`${which} launched ${launched.name} ${launched.version}, not the ${pin.name} ${pin.browserVersion} Playwright ${playwright} pins`)
+    if (typeof launched.headless !== 'boolean') problems.push(`${which} did not record whether it launched ${launched.name} headless, so whether it ran the ${pin.name} Playwright ${playwright} pins is unknown`)
+    else if (launched.headless !== pin.headless) problems.push(`${which} launched ${launched.name} ${mode(launched.headless)}, where scripts/browsers.mjs launches it ${mode(pin.headless)}: another build than the ${pin.name} Playwright ${playwright} pins`)
+  }
+  if (ranPlaywright !== null && ranPlaywright !== playwright) problems.push(`${which} ran Playwright ${ranPlaywright}, where the checkout installs ${playwright}`)
+  return problems
+}
+
+/**
+ * Every app with a `test:browser` script has its gate in every browser the
+ * gates run in (`browsers`): present, no error, no failed check, every pass
+ * it planned made with a check in it, and the browser it launched the build
+ * Playwright pins for that browser. A check that never ran is skipped, and
+ * skipped is not passed, as in a suite.
+ */
+function gateProblems(report, { browserApps, browsers, allowMissing }) {
+  const problems = []
+  const gates = report.results.browserGates
+  for (const app of browserApps) {
+    for (const browser of browsers) {
+      if (!allowMissing.includes('browser') && !gates.some((gate) => gate.gate === app && gate.asked === browser)) problems.push(`the browser gate of ${app} left no results in ${browserName(browser)}`)
+    }
+  }
+  for (const gate of gates) {
+    const which = `the browser gate of ${gate.gate} in ${browserName(gate.asked)}`
+    if (gate.error !== null) problems.push(`${which} ended with an error: ${gate.error}`)
+    if (gate.failed.length > 0) problems.push(`${which} failed ${String(gate.failed.length)} check(s): ${list(gate.failed)}`)
+    // One that ended in an error stopped where it stopped, for the reason it gives.
+    if (gate.error === null) for (const what of unmeasured(gate)) problems.push(`${which} ${what}`)
+    if (gate.browser === null) {
+      if (gate.error === null) problems.push(`${which} says no browser was launched`)
+      continue
+    }
+    problems.push(...launchProblems(which, gate.browser, gate.playwright, report.testedOn.browser, browsers))
   }
   return problems
 }
@@ -220,11 +277,12 @@ export function releaseGateProblems(gates, allowMissing = []) {
 /**
  * Every problem of what the run shows: what collect did not find or
  * refused, a section in a job that does not leave it, the suites, the
- * install gate against `installPlan`, the validator gate and its job's run
- * of the registers' test against `pin` and `registered`, build identity and
- * the limitations.
+ * browser gate of each of `browserApps` in each of `browsers`, the install
+ * gate against `installPlan`, the validator gate and its job's run of the
+ * registers' test against `pin` and `registered`, build identity and the
+ * limitations.
  */
-export function contentProblems(report, { published, installPlan, pin, registered, allowMissing = [] }) {
+export function contentProblems(report, { published, installPlan, pin, registered, browserApps = [], browsers = [], allowMissing = [] }) {
   return [
     // A file its reader expected and did not find; on a machine, not a
     // problem for a reader the report allows missing, as its banner says.
@@ -237,6 +295,7 @@ export function contentProblems(report, { published, installPlan, pin, registere
     ...published.filter((name) => !report.results.packages.some((row) => row.package === name)).map((name) => `${name} is published and has no suite: it has no test:coverage script, so no job runs its tests`),
     ...report.results.packages.flatMap((row) => suiteProblems(row)),
     ...(report.results.repository.present || !allowMissing.includes('verify') ? suiteProblems(report.results.repository) : []),
+    ...gateProblems(report, { browserApps, browsers, allowMissing }),
     ...installProblems(report, published, allowMissing, installPlan),
     ...validatorProblems(report, { pin, registered, allowMissing }),
     ...identityProblems(report),

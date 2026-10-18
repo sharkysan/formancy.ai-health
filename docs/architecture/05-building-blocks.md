@@ -7,6 +7,10 @@ Dependencies point downward only. Every package below the line marked
 network ([§2](02-constraints.md#technical-constraints)).
 
 ```
+    apps/demo                      private, never published: the demo at
+                                   formancy.ai/health/, the packages run on
+                                   the corpus's synthetic referral in a
+                                   browser
     health-corpus                  private test support, never published:
                                    the referral letter Report renders, and
                                    the documents the validator gate judges
@@ -32,6 +36,7 @@ L0  health-core                    primitives · FHIR JSON · Refusal ·
     scripts/install-test.mjs                     the install gate
     docs/getting-started.md                      the guide it compiles and runs
     scripts/release-report/                      the release report
+    apps/demo/scripts/, scripts/browsers.mjs     the demo's browser gate
 ```
 
 | Package | Published | May import | Record |
@@ -41,6 +46,7 @@ L0  health-core                    primitives · FHIR JSON · Refusal ·
 | `@formancy/health-document` | yes | health-core alone, and no renderer: the PDF is the host's | [0008](../decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md) |
 | `@formancy/health-ch` | yes | health-core, health-document and health-questionnaire; `@formancy/spec` only as a devDependency, for the forms its tests answer | [0009](../decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md) |
 | `@formancy/health-corpus` | no, private | health-core, health-document, and Formancy Report's `report-spec`, `report-runtime` and `report-render-pdf`, each at the exact release the README's [table](../../README.md#what-it-is-built-and-judged-against) names: the only place Report is a dependency | [0008](../decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md), [0002](../decisions/0002-depend-on-upstream-never-copy-it.md) |
+| `@formancy/health-demo` | no, private, served at formancy.ai/health/ | health-core, health-questionnaire, health-document and health-ch; formancy's `@formancy/core`, `@formancy/react`, `@formancy/spec` and `@formancy/themes`, each at the exact release its manifest pins, its stylesheets imported and none copied; React, and the faces from Fontsource; at build, health-corpus, whose letter the build renders and whose `@formancy/health-corpus/documents` the page bundles. Never Formancy Report in the page | [0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md), [0002](../decisions/0002-depend-on-upstream-never-copy-it.md), [0008](../decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md) |
 
 The *May import* column restates the records and the package path in
 [`CLAUDE.md`](../../CLAUDE.md#how-the-pieces-fit), and nothing compares
@@ -49,11 +55,24 @@ and review holds that. That every package is named here, and every module
 and script named as code is a file git would commit, the architecture's
 guard holds ([0010](../decisions/0010-the-architecture-is-documented-in-arc42s-sections-held-to-the-repository-by-a-guard.md)).
 
-**There is no app.** Version 1 has no page, so there is no room, no palette
-and no browser gate; a page, if one ever comes, is formancy.ai's concept
-applied, with its colours from a released formancy package, and arrives
-with the gates that hold it ([`CLAUDE.md`](../../CLAUDE.md#there-is-no-page),
-[0002](../decisions/0002-depend-on-upstream-never-copy-it.md)).
+**One app, the demo.** `apps/demo` is a page, not the product
+([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)): the
+corpus's synthetic referral filled with formancy's React renderer, and
+what the packages make of it, in the visitor's browser. Its colours are
+`@formancy/themes`' as the release its manifest pins ships them, the
+workbench and Blueprint at 0.5.0, imported, and its own stylesheet states
+none and declares no variable
+([0002](../decisions/0002-depend-on-upstream-never-copy-it.md)); its build
+holds the resources it shows first to the validator gate's corpus, byte
+for byte, and carries the letter only as the bytes
+[`docs/release/letter.json`](../release/letter.json) registers. It asks
+for every face its stylesheets declare as it starts
+([`faces.ts`](../../apps/demo/src/faces.ts)), so that nothing shown or
+typed later asks the server for one, and what jsdom cannot see of it its
+browser gate measures in Chromium
+([`browser-test.mjs`](../../apps/demo/scripts/browser-test.mjs),
+[§10](10-verification.md#102-the-gates)). The packages still have no page
+and no network.
 
 The packages the plan proposes next, each depending only on those before
 it, are in [`CLAUDE.md`](../../CLAUDE.md#how-the-pieces-fit); each arrives
@@ -191,7 +210,31 @@ not: the exactness guard, the licence checks and the install gate.
 |---|---|
 | [`referral.ts`](../../packages/health-corpus/src/referral.ts) | A synthetic referral letter in Swiss German, as a Formancy Report definition and its data; nothing in it computes, scores or suggests |
 | [`pdf.ts`](../../packages/health-corpus/src/pdf.ts) | `renderReferral()`: the letter resolved and drawn by Report's released packages, its creation date fixed, so the same bytes each time |
-| [`documents.ts`](../../packages/health-corpus/src/documents.ts) | What a synthetic host says of the letter, and the DocumentReferences and documents health-document makes of it |
+| [`documents.ts`](../../packages/health-corpus/src/documents.ts) | What a synthetic host says of the letter, and the DocumentReferences and documents health-document makes of it; an entry of its own as well, `@formancy/health-corpus/documents`, without the letter's renderer, which the demo bundles: the module the index re-exports, reaching health-core and health-document alone, as built, which [`corpus-documents.test.mjs`](../../scripts/corpus-documents.test.mjs) holds |
+
+### `@formancy/health-demo` (private, the demo)
+
+A page, never packed
+([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
+The guards that read every workspace package walk it -- the trademark,
+size, test matrix and codecov guards -- and those that read only what is
+published do not: the exactness guard, the licence checks and the install
+gate. Its own suite and its browser gate hold it instead.
+
+| Module | Responsibility |
+|---|---|
+| [`src/build/plugin.ts`](../../apps/demo/src/build/plugin.ts) | The build's three modules, read in Node: the corpus's demo referral, the letter's PDF taken through `registeredLetter`, and the facts the page states -- the registers' releases, the notices, CLAUDE.md's sentence -- after holding the page's first resources to the corpus's entries, byte for byte, or stopping the build |
+| [`src/exports.ts`](../../apps/demo/src/exports.ts), [`on-purpose.ts`](../../apps/demo/src/on-purpose.ts) | The one place the page calls the packages, the same in the build: what the sample and the answers make, every resource written by `writeJson`, and the fixed inputs each refused for one thing |
+| [`src/engine.ts`](../../apps/demo/src/engine.ts) | formancy's engine for the form, with a capability source of constants, and formancy's words the page gives its renderer |
+| [`src/demo.tsx`](../../apps/demo/src/demo.tsx), [`form-step.tsx`](../../apps/demo/src/form-step.tsx), [`resource.tsx`](../../apps/demo/src/resource.tsx), [`letter-step.tsx`](../../apps/demo/src/letter-step.tsx), [`refused-step.tsx`](../../apps/demo/src/refused-step.tsx), [`notices.tsx`](../../apps/demo/src/notices.tsx) | The page: the form beside the resources, each with its maker and its corpus file, the letter, the refusals, and what the page says of itself; the answers live in the engine for as long as the page is open |
+| [`src/download.tsx`](../../apps/demo/src/download.tsx), [`pretty.ts`](../../apps/demo/src/pretty.ts) | A download of bytes the page holds, from a Blob, revoked when they change; the JSON laid out for reading, the bytes downloaded as `writeJson` wrote them |
+| [`src/faces.ts`](../../apps/demo/src/faces.ts), [`styles/fonts.css`](../../apps/demo/src/styles/fonts.css), [`styles/demo.css`](../../apps/demo/src/styles/demo.css) | Every face asked for as the page starts; the faces from the build; the layout, with no colour or variable of its own |
+| [`src/words/index.ts`](../../apps/demo/src/words/index.ts) | The page's words in de-CH, fr, it and en, and the language it opens in |
+| [`scripts/demo-headers.mjs`](../../scripts/demo-headers.mjs) | The headers every response carries, decided once as a function of the address the page is served at: the deploy writes them for formancy.ai, `vite preview` and the gate serve them for their own |
+| [`scripts/third-party-notices.mjs`](../../scripts/third-party-notices.mjs) | The build's `THIRD-PARTY-NOTICES.txt`, which the footer links: every package the bundle holds with the licence and notice files it ships, each held to [`dependency-licences.mjs`](../../scripts/dependency-licences.mjs)' policy, or the build stops |
+| [`scripts/demo.mjs`](../../scripts/demo.mjs) | The deploy Workers Builds runs: the config and the build checked, the build staged under `/health/` with `_headers`, the pinned Wrangler run |
+| [`scripts/notices.mjs`](../../scripts/notices.mjs), [`purpose.mjs`](../../scripts/purpose.mjs) | HL7's and LOINC's notices and HL7's marks in a name, and the reading of CLAUDE.md's sentence of what the product is not: one text each, which the guards hold the files to and the build hands the page |
+| [`apps/demo/scripts/browser-test.mjs`](../../apps/demo/scripts/browser-test.mjs), [`gate-page.mjs`](../../apps/demo/scripts/gate-page.mjs), [`gate-journey.mjs`](../../apps/demo/scripts/gate-journey.mjs), [`gate-privacy.mjs`](../../apps/demo/scripts/gate-privacy.mjs), [`gate-results.mjs`](../../apps/demo/scripts/gate-results.mjs) | The browser gate: its plan from the stylesheets' breakpoints, the journey, what the page asked for and kept, and the results file the release report reads ([§6.7](06-runtime-view.md#67-the-demos-browser-gate-walks-the-page)) |
 
 ### Beside the packages: the gates' own code
 
@@ -206,7 +249,8 @@ workflow runs the gate by its path
 |---|---|
 | [`scripts/validator.mjs`](../../scripts/validator.mjs) | The gate: checks the registers, fetches, writes the corpus, runs the validator offline, judges, and writes the verdict at the gitignored path its `RESULTS` names |
 | [`scripts/validator/cache.mjs`](../../scripts/validator/cache.mjs), [`tgz.mjs`](../../scripts/validator/tgz.mjs) | Downloads refused unless their SHA-256 is registered; a package's tarball unpacked by a reader of this repository's, which writes regular files and directories and refuses everything else |
-| [`scripts/validator/corpus.mjs`](../../scripts/validator/corpus.mjs), [`forms.mjs`](../../scripts/validator/forms.mjs), [`ch-orf.mjs`](../../scripts/validator/ch-orf.mjs) | The corpus: what the packages as built make of synthetic forms, submissions, the referral letter and a synthetic referral's CH ORF document, resources built by hand where no package builds one, and the resources broken on purpose |
+| [`scripts/validator/corpus.mjs`](../../scripts/validator/corpus.mjs), [`forms.mjs`](../../scripts/validator/forms.mjs), [`ch-orf.mjs`](../../scripts/validator/ch-orf.mjs), [`demo-referral.mjs`](../../scripts/validator/demo-referral.mjs) | The corpus: what the packages as built make of synthetic forms, submissions, the referral letter and the CH ORF documents of synthetic referrals, the demo's among them, whose data the demo's build hands to its page; resources built by hand where no package builds one, and the resources broken on purpose |
+| [`scripts/validator/letter.mjs`](../../scripts/validator/letter.mjs), [`docs/release/letter.json`](../release/letter.json) | The letter's PDF, refused unless it is the bytes the register names by size and SHA-256, for the gate and the demo's build alike |
 | [`scripts/validator/judge.mjs`](../../scripts/validator/judge.mjs), [`outcome.mjs`](../../scripts/validator/outcome.mjs), [`registers.mjs`](../../scripts/validator/registers.mjs), [`warnings.json`](../../scripts/validator/warnings.json) | The verdict; the validator's output, read; the registers' shape, and `ADMITTED_LICENCES`, the licence a decision admits for one entry alone ([0009](../decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)); each warning accepted, by its message id, with its reason |
 | [`docs/release/validator.json`](../release/validator.json), [`ig-packages.json`](../release/ig-packages.json) | The validator release and every package it loads, each pinned by SHA-256 ([`docs/release/README.md`](../release/README.md)) |
 | [`scripts/install-test.mjs`](../../scripts/install-test.mjs), [`install-hosts.mjs`](../../scripts/install-hosts.mjs), [`scripts/install-fixture/consume.ts`](../../scripts/install-fixture/consume.ts), [`guide-node.ts`](../../scripts/install-fixture/guide-node.ts) | The install gate; its two projects, the consumer's, holding the tarballs alone, and the guide's, holding them beside what the guide installs, each read from the workspace's manifests, under one strict tsconfig; the consumer that knows nothing of the workspace; and the runner that holds the guide's program to the output the guide shows ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)) |

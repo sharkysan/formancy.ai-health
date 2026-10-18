@@ -1,0 +1,298 @@
+// The licence and notice texts of every package the demo bundles, and the
+// policy every one of them is held to (0012): formancy.ai-data 0046, as
+// formancy.ai-report brought it with its Studio, with this repository's
+// licence policy applied to what it lists.
+//
+// A Vite plugin, in apps/demo's config, that writes THIRD-PARTY-NOTICES.txt
+// beside the page's index.html, which the page's footer links. The bundle
+// keeps no licence comment, so without it the code of React, formancy and
+// the rest reaches every browser with none of the texts their licences ask
+// to travel with it: MIT's notice, and for an Apache-2.0 package its NOTICE
+// (section 4(d)). Vite's own `build.license` reads one licence file per
+// package and never a NOTICE.
+//
+// Every module of every chunk, and every file the build writes beside them,
+// is placed, or the build stops:
+//
+// - under node_modules, it belongs to the package directly below the last
+//   node_modules of its path. Each such package is listed once, by name and
+//   version, with the full text of every licence and notice file in its
+//   directory -- a name that begins LICENSE, LICENCE, COPYING or NOTICE in
+//   any case, and is not a script or data by its extension -- and of every
+//   such file in a directory between there and a bundled file of it, where
+//   a package keeps code it vendors under that code's own licence. A
+//   package with no licence text at its root stops the build, naming it;
+//   so does one whose package.json declares a licence
+//   scripts/dependency-licences.mjs's policy refuses, or none: a page this
+//   repository serves is held to the policy its published packages are,
+//   and Formancy Report's packages, source-available, are refused here as
+//   there, so none of Report's code reaches the page;
+// - in this repository and not under node_modules, it is this repository's
+//   own -- a workspace package resolves to its real path here -- and is not
+//   listed: LICENSE.md and NOTICE cover it;
+// - written by the bundler itself, it is one of BUNDLER_MODULES and is not
+//   listed; written by one of the app's own plugins, it is one of the
+//   `ownModules` the app's config names and is not listed either; any other
+//   module a plugin writes stops the build;
+// - a worker, which Vite bundles in a build of its own that runs none of
+//   these plugins, stops the build: the module that imports it with
+//   `?worker`, and the file its code comes back as, which names no source;
+// - a file the build writes is placed by the source files Vite names for
+//   it -- a face a stylesheet @imports is its package's -- and a stylesheet
+//   or source map Vite makes from a chunk is that chunk's; any other file
+//   with no source stops the build;
+// - anywhere else, nothing here can say whose it is, and the build stops.
+//
+// The modules are read as each chunk is rendered, not from the bundle at the
+// end: the CSS step removes a chunk that held only stylesheets, and moves its
+// rules into a stylesheet of their own, by the time the bundle is written.
+//
+// Report's `embedded` notices -- for a font carried inside a bundled
+// script with no licence text of its own beside it -- are not ported: the
+// demo bundles no such script, and a list for nothing would be a list
+// nobody checks. The letter's PDF, which the page's own module carries,
+// embeds a subset of Roboto, as every PDF Formancy Report 0.1.0 renders
+// does (0008): a document made with the face, which the face's OFL-1.1
+// leaves outside its terms ("The requirement for fonts to remain under
+// this license does not apply to any document created using the Font
+// Software"), so no notice is owed for it. Node built-ins and this
+// repository's licence policy only.
+
+import { readdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { declaredLicence, spdxAllows } from './dependency-licences.mjs'
+
+/** The file the build writes beside its index.html. */
+export const NOTICES_FILE = 'THIRD-PARTY-NOTICES.txt'
+
+/** A licence's text, by how its file's name begins: LICENSE, LICENSE.txt, LICENCE.md, COPYING. */
+const LICENCE = /^(licen[cs]e|copying)/i
+
+/** A notice a licence asks to be reproduced, Apache-2.0's above all. */
+const NOTICE = /^notice/i
+
+/**
+ * A script, a stylesheet, JSON, a source map or WebAssembly, by its
+ * extension: code or data, never a licence's text, whatever its name begins
+ * with -- a package's license.js is not its licence.
+ */
+const CODE = /\.(?:[cm]?[jt]sx?|json|map|wasm|css)$/i
+
+/**
+ * The modules the bundler writes into a chunk itself rather than reading
+ * them from a package: Rolldown's runtime helpers and Vite's preload
+ * helpers, the ones formancy.ai-data's apps had with Vite 8.3.3 on
+ * 2026-10-11. They are not listed, and Vite's own licence output lists none
+ * of them either. Any other module whose id begins with `\0` -- the
+ * bundler's mark for one no file holds -- and is not one of the app's
+ * `ownModules` stops the build, so a plugin that writes a library into a
+ * chunk is read before it ships.
+ */
+export const BUNDLER_MODULES = new Set(['\0rolldown/runtime.js', '\0vite/modulepreload-polyfill.js', '\0vite/preload-helper.js'])
+
+/** A module Vite turns into a worker, as its own worker plugin tells them (`?worker`, `?sharedworker`). */
+const WORKER = /[?&](?:worker|sharedworker)(?:&|$)/
+
+const NODE_MODULES = '/node_modules/'
+
+/** A path `/`-separated, as the bundler names modules on every platform. */
+const slashed = (path) => path.replaceAll('\\', '/')
+
+/** A module id as a path: without the query a plugin may add. */
+const pathOf = (id) => slashed(id.split('?')[0])
+
+/** The package directory a path under node_modules belongs to: the one directly below its last node_modules. */
+function packageDirectory(path) {
+  const at = path.lastIndexOf(NODE_MODULES)
+  if (at === -1) return undefined
+  const below = path.slice(at + NODE_MODULES.length).split('/')
+  const name = below[0].startsWith('@') ? `${below[0]}/${below[1]}` : below[0]
+  return `${path.slice(0, at + NODE_MODULES.length)}${name}`
+}
+
+/** A file's text, which must be UTF-8: a byte-order mark is dropped, anything else that is not UTF-8 throws. */
+const utf8 = (bytes) => new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+
+/**
+ * The licence and notice files in one directory of a package, in name
+ * order, each named by `prefix` and its own name; `problems` names any that
+ * is not UTF-8, as package `id`'s.
+ */
+function licenceFiles(directory, prefix, id) {
+  const files = []
+  const problems = []
+  for (const name of readdirSync(directory).sort()) {
+    if ((!LICENCE.test(name) && !NOTICE.test(name)) || CODE.test(name)) continue
+    if (!statSync(join(directory, name)).isFile()) continue
+    try {
+      files.push({ name: `${prefix}${name}`, licence: LICENCE.test(name), text: utf8(readFileSync(join(directory, name))).trimEnd() })
+    } catch {
+      problems.push(`${id}'s ${prefix}${name} is not UTF-8, so it cannot be reproduced as it ships`)
+    }
+  }
+  return { files, problems }
+}
+
+/**
+ * A package as the notices list it, read from its directory: its manifest's
+ * name, version and licence, the licence and notice files at its root, then
+ * those in each directory of `within` -- the directories between its root
+ * and a bundled file of it -- in path order. `problems` says why it cannot be
+ * listed as it ships: no manifest, a licence the policy refuses or none, a
+ * file that is not UTF-8, no licence text.
+ */
+function readPackage(directory, within) {
+  let manifest
+  try {
+    manifest = JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8'))
+  } catch {
+    return { problems: [`${directory} holds a bundled module and no package.json this plugin can read, so its name and terms are unknown`] }
+  }
+  const id = `${String(manifest.name)}@${String(manifest.version)}`
+  const declared = declaredLicence(manifest)
+  const problems = []
+  if (declared === undefined) problems.push(`${id} is bundled and its package.json declares no licence, which grants nothing`)
+  else if (!spdxAllows(declared)) problems.push(`${id} is bundled and is ${declared} by its package.json, which scripts/dependency-licences.mjs's policy refuses`)
+  const own = licenceFiles(directory, '', id)
+  problems.push(...own.problems)
+  const files = [...own.files]
+  for (const inner of [...within].sort()) {
+    const found = licenceFiles(inner, `${inner.slice(directory.length + 1)}/`, id)
+    problems.push(...found.problems)
+    files.push(...found.files)
+  }
+  if (own.problems.length === 0 && !own.files.some((file) => file.licence && file.text.trim() !== '')) {
+    problems.push(`${id} is bundled and ships no licence text: no file at its root whose name begins LICENSE, LICENCE or COPYING, and is not a script or data, holds any`)
+  }
+  return { id, name: String(manifest.name), version: String(manifest.version), declared, files, problems }
+}
+
+/** Packages in the order the notices list them: by name, then by version. */
+const byNameAndVersion = (a, b) => (a.name === b.name ? (a.version < b.version ? -1 : 1) : a.name < b.name ? -1 : 1)
+
+/**
+ * Every package `ids` came from -- the modules of the chunks and the source
+ * files of what is written beside them -- each once, in name and version
+ * order, and what stops them being listed. `workspace` is the directory
+ * whose files outside node_modules are this repository's own; `own` the
+ * ids of the modules the app's plugins write.
+ */
+export function bundledPackages(ids, { workspace, own = new Set() }) {
+  // By its real path, as the bundler names modules: on Windows a directory
+  // reached through an 8.3 name (C:\Users\DBACH~1.BLA) is the same directory
+  // the bundler names by its long one.
+  const repository = `${slashed(realpathSync.native(resolve(workspace))).replace(/\/$/, '')}/`
+  // Each package directory, with the directories below its root that hold a
+  // bundled file of it.
+  const directories = new Map()
+  const problems = []
+  for (const id of ids) {
+    if (id.startsWith('\0')) {
+      if (!BUNDLER_MODULES.has(id) && !own.has(id)) problems.push(`${JSON.stringify(id.slice(1))} is a module a plugin or the bundler wrote, and neither one of the reviewed BUNDLER_MODULES in scripts/third-party-notices.mjs nor one of the app's own`)
+      continue
+    }
+    if (WORKER.test(id)) {
+      problems.push(`${slashed(id)} is a worker, which Vite bundles in a build of its own that this plugin does not see, so what it carries is unknown`)
+      continue
+    }
+    const path = pathOf(id)
+    const directory = packageDirectory(path)
+    if (directory === undefined) {
+      if (!path.startsWith(repository)) problems.push(`${path} is bundled and is neither in a package under node_modules nor this repository's own, so whose it is and under what terms is unknown`)
+      continue
+    }
+    const within = directories.get(directory) ?? new Set()
+    directories.set(directory, within)
+    for (let inner = dirname(path); inner.length > directory.length && inner.startsWith(`${directory}/`); inner = dirname(inner)) within.add(inner)
+  }
+  const packages = new Map()
+  for (const [directory, within] of directories) {
+    const found = readPackage(directory, within)
+    problems.push(...found.problems)
+    if (found.problems.length > 0) continue
+    // One name and version installed twice -- pnpm does, once per set of
+    // peers -- is one package; what the second copy vendors is added.
+    const listed = packages.get(found.id) ?? found
+    if (listed !== found) for (const file of found.files) if (!listed.files.some((each) => each.name === file.name)) listed.files.push(file)
+    packages.set(found.id, listed)
+  }
+  return { packages: [...packages.values()].sort(byNameAndVersion), problems: [...new Set(problems)] }
+}
+
+const RULE = '-'.repeat(80)
+
+/** What the notices say of themselves. */
+const INTRO = [
+  'The packages below are bundled into the files beside this one. Each is',
+  'listed once, by name and version, with the licence its package.json',
+  'declares, and is followed by its licence and notice files as it ships',
+  'them: those at its root, and those in any directory between there and a',
+  'file of it that is bundled, named by their path in the package.',
+  '',
+  "The rest of this build is not listed: the Formancy Health repository's own",
+  "code and data, under the terms of that repository's LICENSE.md and NOTICE,",
+  'which are at the root of its source, not beside this file; and the',
+  'helpers the bundler writes into its output itself.',
+]
+
+/** The notices file's text: what it is, then each package with its files' texts. */
+export function noticesText(packages) {
+  const lines = ['Third-party notices', '', ...INTRO]
+  for (const found of packages) {
+    lines.push('', RULE, `${found.name} ${found.version}`, `Declared licence: ${found.declared}`, `Files: ${found.files.map((file) => file.name).join(', ')}`, RULE)
+    for (const file of found.files) lines.push('', `== ${file.name} ==`, '', file.text)
+  }
+  return `${lines.join('\n')}\n`
+}
+
+/**
+ * The plugin. Build only: the dev server and the app's suite bundle
+ * nothing. `workspace` defaults to this repository's root, found from this
+ * file when the bundle is written, not when the config loads. Among the
+ * plugins Vite runs last, after its CSS step and its page, so it sees the
+ * stylesheets, the page and what the plugins before it write.
+ *
+ * `ownModules`: the ids of the modules the app's own plugins write, each of
+ * them this repository's code.
+ *
+ * @param {{ workspace?: string, ownModules?: readonly string[] }} [options]
+ */
+export function thirdPartyNotices({ workspace, ownModules = [] } = {}) {
+  const own = new Set(ownModules)
+  let root
+  let modules = new Set()
+  let stylesheets = new Set()
+  return {
+    name: 'formancy-health:third-party-notices',
+    apply: 'build',
+    enforce: 'post',
+    configResolved(config) {
+      root = config.root
+    },
+    renderStart() {
+      modules = new Set()
+      stylesheets = new Set()
+    },
+    renderChunk(_code, chunk) {
+      for (const id of chunk.moduleIds) modules.add(id)
+      for (const fileName of chunk.viteMetadata?.importedCss ?? []) stylesheets.add(fileName)
+      return null
+    },
+    generateBundle(_options, bundle) {
+      const items = Object.values(bundle)
+      const maps = new Set(items.flatMap((item) => (item.type === 'chunk' && item.sourcemapFileName ? [item.sourcemapFileName] : [])))
+      const ids = [...modules]
+      const problems = []
+      for (const item of items) {
+        if (item.type === 'chunk' || stylesheets.has(item.fileName) || maps.has(item.fileName)) continue
+        if (item.originalFileNames.length === 0) problems.push(`${item.fileName} is written from no source file Vite names -- a worker's code, which Vite bundles in a build of its own, or a file a plugin emits -- so whose it is is unknown`)
+        for (const name of item.originalFileNames) ids.push(resolve(root, name))
+      }
+      const found = bundledPackages(ids, { workspace: workspace ?? fileURLToPath(new URL('..', import.meta.url)), own })
+      problems.push(...found.problems)
+      if (problems.length > 0) this.error(`${NOTICES_FILE} cannot be written:\n- ${problems.join('\n- ')}`)
+      this.emitFile({ type: 'asset', fileName: NOTICES_FILE, source: new TextEncoder().encode(noticesText(found.packages)) })
+    },
+  }
+}

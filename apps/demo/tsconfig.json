@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    // vite.config.ts names its plugin by its file, as Vite resolves it.
+    "allowImportingTsExtensions": true,
+    // The build reads the repository's own scripts -- the corpus's demo
+    // referral, the letter's register, the notices -- which are plain
+    // JavaScript: their types are inferred from them, and they are not
+    // checked here, as the repository's guards run them.
+    "allowJs": true,
+    // The page runs in a browser and its build in Node: the build plugin,
+    // the configs and the suite need Node's types, and the page's own
+    // modules are held to the browser's by what the browser gate runs.
+    "types": ["vite/client", "node"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "vitest.config.ts"]
+}

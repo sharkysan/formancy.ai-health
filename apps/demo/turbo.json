@@ -1,0 +1,90 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  // The build reads files outside this package -- the corpus's demo
+  // referral and the modules it is made with, the registers of the
+  // validator, the guides and the letter, the notices, CLAUDE.md, the
+  // plugin that writes the third-party notices -- and the suite runs
+  // through the same plugins, and its gate's checks import what the gate
+  // launches the browser with. turbo hashes none of them unless they are
+  // named here, and would replay a page built from an older corpus, or its
+  // suite's pass. src/build/plugin.test.ts derives the lists from what the
+  // build reads and imports, and the suite's test files import, and fails
+  // until they are these.
+  "tasks": {
+    "build": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/CLAUDE.md",
+        "$TURBO_ROOT$/docs/release/ig-packages.json",
+        "$TURBO_ROOT$/docs/release/letter.json",
+        "$TURBO_ROOT$/docs/release/validator.json",
+        "$TURBO_ROOT$/scripts/demo-headers.mjs",
+        "$TURBO_ROOT$/scripts/dependency-licences.mjs",
+        "$TURBO_ROOT$/scripts/markdown.mjs",
+        "$TURBO_ROOT$/scripts/notices.mjs",
+        "$TURBO_ROOT$/scripts/purpose.mjs",
+        "$TURBO_ROOT$/scripts/third-party-notices.mjs",
+        "$TURBO_ROOT$/scripts/validator/ch-orf.mjs",
+        "$TURBO_ROOT$/scripts/validator/corpus.mjs",
+        "$TURBO_ROOT$/scripts/validator/demo-referral.mjs",
+        "$TURBO_ROOT$/scripts/validator/forms.mjs",
+        "$TURBO_ROOT$/scripts/validator/letter.mjs",
+        "$TURBO_ROOT$/scripts/validator/registers.mjs",
+        "$TURBO_ROOT$/scripts/verify-licenses.mjs",
+        "$TURBO_ROOT$/vitest.coverage.ts",
+        "$TURBO_ROOT$/vitest.results.ts"
+      ]
+    },
+    "test": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/CLAUDE.md",
+        "$TURBO_ROOT$/docs/release/ig-packages.json",
+        "$TURBO_ROOT$/docs/release/letter.json",
+        "$TURBO_ROOT$/docs/release/validator.json",
+        "$TURBO_ROOT$/scripts/browsers.mjs",
+        "$TURBO_ROOT$/scripts/demo-headers.mjs",
+        "$TURBO_ROOT$/scripts/dependency-licences.mjs",
+        "$TURBO_ROOT$/scripts/markdown.mjs",
+        "$TURBO_ROOT$/scripts/notices.mjs",
+        "$TURBO_ROOT$/scripts/purpose.mjs",
+        "$TURBO_ROOT$/scripts/third-party-notices.mjs",
+        "$TURBO_ROOT$/scripts/validator/ch-orf.mjs",
+        "$TURBO_ROOT$/scripts/validator/corpus.mjs",
+        "$TURBO_ROOT$/scripts/validator/demo-referral.mjs",
+        "$TURBO_ROOT$/scripts/validator/forms.mjs",
+        "$TURBO_ROOT$/scripts/validator/letter.mjs",
+        "$TURBO_ROOT$/scripts/validator/registers.mjs",
+        "$TURBO_ROOT$/scripts/verify-licenses.mjs",
+        "$TURBO_ROOT$/vitest.coverage.ts",
+        "$TURBO_ROOT$/vitest.results.ts"
+      ]
+    },
+    "test:coverage": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/CLAUDE.md",
+        "$TURBO_ROOT$/docs/release/ig-packages.json",
+        "$TURBO_ROOT$/docs/release/letter.json",
+        "$TURBO_ROOT$/docs/release/validator.json",
+        "$TURBO_ROOT$/scripts/browsers.mjs",
+        "$TURBO_ROOT$/scripts/demo-headers.mjs",
+        "$TURBO_ROOT$/scripts/dependency-licences.mjs",
+        "$TURBO_ROOT$/scripts/markdown.mjs",
+        "$TURBO_ROOT$/scripts/notices.mjs",
+        "$TURBO_ROOT$/scripts/purpose.mjs",
+        "$TURBO_ROOT$/scripts/third-party-notices.mjs",
+        "$TURBO_ROOT$/scripts/validator/ch-orf.mjs",
+        "$TURBO_ROOT$/scripts/validator/corpus.mjs",
+        "$TURBO_ROOT$/scripts/validator/demo-referral.mjs",
+        "$TURBO_ROOT$/scripts/validator/forms.mjs",
+        "$TURBO_ROOT$/scripts/validator/letter.mjs",
+        "$TURBO_ROOT$/scripts/validator/registers.mjs",
+        "$TURBO_ROOT$/scripts/verify-licenses.mjs",
+        "$TURBO_ROOT$/vitest.coverage.ts",
+        "$TURBO_ROOT$/vitest.results.ts"
+      ]
+    }
+  }
+}

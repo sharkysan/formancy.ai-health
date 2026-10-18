@@ -25,10 +25,9 @@ const repo = join(dirname(fileURLToPath(import.meta.url)), '..')
 const BUDGET = 600
 
 /**
- * Where a person writes code: the packages, the apps and the repository's own
- * scripts. A root that does not exist -- `apps`, which a library with no
- * page does not have -- is walked as empty, so a first app would be under the
- * budget from its first file.
+ * Where a person writes code: the packages, the apps -- the demo, 0012 --
+ * and the repository's own scripts. A root that does not exist is walked as
+ * empty, so a first file there is under the budget from the day it lands.
  */
 const ROOTS = ['packages', 'apps', 'scripts']
 
@@ -72,7 +71,8 @@ describe('how big a source file may be', () => {
   // A guard on the guard: the assertion below is about absence, so a walk that
   // found nothing -- a root renamed, an extension pattern that matched no
   // `.tsx` -- would pass it forever. One file of each kind it must see: a
-  // package's source, its build configuration, and a script.
+  // package's source, its build configuration, a script, and the demo's
+  // component, stylesheet and browser gate, which is a script and no test.
   test('is reading the repository at all', () => {
     const paths = sources().map(({ path }) => path)
     expect(paths.length).toBeGreaterThan(10)
@@ -83,6 +83,9 @@ describe('how big a source file may be', () => {
     expect(paths.filter((path) => path.startsWith('packages/health-corpus/src/') && path.endsWith('.ts'))).not.toEqual([])
     expect(paths).toContain('packages/health-core/tsdown.config.ts')
     expect(paths).toContain('scripts/check-cla.mjs')
+    expect(paths).toContain('apps/demo/src/demo.tsx')
+    expect(paths).toContain('apps/demo/src/styles/demo.css')
+    expect(paths).toContain('apps/demo/scripts/browser-test.mjs')
     expect(paths.filter((path) => NOT_SOURCE.test(path))).toEqual([])
   })
 

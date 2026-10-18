@@ -75,6 +75,16 @@ formancy's and Report's released packages at exact versions, copied never
 ([0002](../decisions/0002-depend-on-upstream-never-copy-it.md)); and a name
 that holds no HL7 mark ([0003](../decisions/0003-the-product-name-carries-no-hl7-mark.md)).
 
+The demo follows from the same, as a page beside the product: formancy's
+renderer and themes at the releases its manifest pins, imported, with no
+colour of its own; Report's renderer run at build, never in the page; and
+no claim about the resources it shows that a gate has not judged -- what
+it shows first is the validator gate's corpus, byte for byte, which every
+build checks -- and of what it does with what is typed, only what its
+policy and its browser gate hold; every package it bundles is held to the
+licence policy the published ones are, and its notices served beside it
+([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
+
 ## 6. A country is a package on the generic ones
 
 A country's guides are a package of their own, built on the generic ones,
