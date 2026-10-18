@@ -37,9 +37,10 @@ and its links, and review the rest
 > `pnpm check:pkg` stopped before it checked anything, its pnpm refused by
 > corepack's; publint and attw, run in each package by hand, passed. What
 > is left is the maintainer's -- the secrets the workflows expect, the
-> changelog's 0.1.0 heading, dated the tag's day, through a pull request
-> before the rehearsal, the rehearsal and the tag
-> ([`RELEASING.md`](./RELEASING.md#before-the-first-release)) -- and what
+> rehearsal and the tag
+> ([`RELEASING.md`](./RELEASING.md#before-the-first-release)); the
+> changelog's section is 0.1.0's, dated 18 October 2026, and moves to the
+> tag's day through a pull request if the tag is pushed on another -- and what
 > 0.1.0 holds, and leaves out, is [below](#what-010-is).
 >
 > Built: the licence, the pipeline that proves the packages, as Formancy

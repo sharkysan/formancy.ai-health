@@ -6,11 +6,11 @@ attestation is a statement *by GitHub* about which workflow, at which commit,
 produced a tarball, and only the workflow can make it.
 
 Nothing has been released yet. 0.1.0, a developer preview, is ready to
-tag and not tagged, as the README's Status says on 17 October 2026: the
-manifests say 0.1.0, and what is left is the maintainer's -- the settings
-below, the first pull request run, the changelog's 0.1.0 heading, dated
-the tag's day, through a pull request before the rehearsal (step 2), the
-rehearsal and the tag. The workflow
+tag and not tagged, as the README's Status says on 18 October 2026: the
+manifests say 0.1.0, the changelog's section is 0.1.0's, dated that day
+(step 2), and what is left is the maintainer's -- the settings below, the
+rehearsal and the tag, and the section's date moved to the tag's day,
+through a pull request, if the tag is pushed on another. The workflow
 follows Formancy Report's, release report included (0011, as
 formancy.ai-report 0014), without a server image, because there is no
 server.
@@ -21,19 +21,19 @@ The workflows read what only the maintainer can set, in the repository's
 settings, which [`.github/REPO-METADATA.md`](.github/REPO-METADATA.md)
 records and nothing in the repository can read:
 
-| What | Where | Without it | On 17 October 2026 |
+| What | Where | Without it | On 18 October 2026 |
 |---|---|---|---|
 | `NPM_TOKEN`, an Automation or Granular Access token of an npm account that may publish under `@formancy` ([Secrets](#secrets)) | a secret of the **`npm` environment**, never of the repository | a tag's run is red in `npm-token`, beside the gates, and nothing is signed or published; a rehearsal does not read it | not set |
 | The `npm` environment's deployment policy, tags `v*` alone | the environment's settings | any ref's workflow that names the environment could read the token | set |
 | `CODECOV_TOKEN` | a repository secret, which `ci.yml` passes to `gates.yml` and `release.yml` never does | each package's coverage upload is skipped, visibly; nothing else changes, and a release does not read it | not set |
 | A public repository | the repository's visibility | npm refuses provenance ([Provenance](#provenance)) | public |
 
-The last column was read with `gh api` on 17 October 2026 -- the
+The last column was read with `gh api` on 18 October 2026 -- the
 repository, its secrets, and the `npm` environment, its secrets and its
-deployment branch policy -- and goes stale the day one changes. Neither
-the release report nor the SBOM step had run on GitHub by that day: the
-first pull request run is the report's first there, and the first
-rehearsal the SBOM step's
+deployment branch policy -- and goes stale the day one changes. The
+release report has run on GitHub on every pull request and every push to
+`main` since it arrived; the SBOM step had run on no runner by that day,
+and the first rehearsal is its first run
 ([0011](docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md));
 read both before the tag.
 
@@ -45,7 +45,7 @@ read both before the tag.
 node scripts/bump.mjs 0.1.0
 
 # 2. Rename "## Unreleased" in CHANGELOG.md to the version's heading, dated
-#    the day of the tag -- "## 0.1.0 — 2026-10-17" -- and say what is
+#    the day of the tag -- "## 0.1.0 — 2026-10-18" -- and say what is
 #    knowingly missing; for 0.1.0 the section opens by saying what the
 #    release is and what is not in it, as the README does. What the release
 #    was tested with is the release report's, from the run that gates it;
