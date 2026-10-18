@@ -1,19 +1,22 @@
 // A visitor's way through the demo, in the browser (0012): what the jsdom
 // journey (src/journey.test.tsx) holds of the page's own logic, here held
-// in Chromium, against the page Vite built and the bytes the validator
-// gate's corpus holds, made in Node from the packages as built. The
-// keyboard through the form, the sample as it starts, an answer changed in
-// four scripts, a language switched and back, a required answer cleared
-// and refused, the form submitted both ways, the sample back, the JSON
+// in Chromium, Firefox and WebKit (0014), against the page Vite built and
+// the bytes the validator gate's corpus holds, made in Node from the
+// packages as built. The
+// keyboard through the form, the sample as it starts, the Questionnaire
+// read out and each item's way to its field, an answer changed in four
+// scripts, a language switched and back, a required answer cleared and
+// refused, the form submitted both ways, the sample back, the JSON
 // opened, the refusals on purpose, every download, and the letter's Bundle
 // with its PDF in a Binary.
 //
-// Elements are found by role and accessible name, with three reads of the
+// Elements are found by role and accessible name, with four reads of the
 // DOM and one of text, each because the accessibility tree has no answer:
 // a JSON region's bytes are its `data-json`, what writeJson wrote, since
 // its text is laid out for reading; a refusal's rule is the `<code>` of its
-// list item; and a JSON is opened by its `<summary>`, found by its words,
-// which the tree gives no role a person presses and its group no name.
+// list item; where a focused field and its labels stand is their boxes;
+// and a JSON is opened by its `<summary>`, found by its words, which the
+// tree gives no role a person presses and its group no name.
 
 import { readFileSync } from 'node:fs'
 import { isDeepStrictEqual } from 'node:util'
@@ -137,6 +140,70 @@ function on(page, { language, words, languages, files, pdfFile, expected }) {
       [w.letter.heading, files.letter.data],
     ],
   }
+}
+
+/**
+ * The role each field of the demo's form is drawn with, by its key: what a
+ * way from the read-out lands on. The radio group has no way to it, since
+ * formancy's renderer draws no element of the id its engine mints for it
+ * (src/engine.ts, which engine.test.ts measures).
+ */
+const ROLES = { question: 'textbox', specialty: 'combobox', language: 'radio', interpreter: 'checkbox', interpreter_language: 'textbox', available_from: 'textbox', contact_phone: 'textbox' }
+
+/**
+ * Null where the element with the keyboard's focus and every label of it
+ * stand whole inside the window, its layout viewport, or which do not and
+ * where.
+ */
+const inTheWindow = (page) =>
+  page.evaluate(() => {
+    const control = document.activeElement
+    const labels = [...(control?.labels ?? [])]
+    if (control === null || labels.length === 0) return 'the control has no label'
+    const { clientWidth: width, clientHeight: height } = document.documentElement
+    const out = [control, ...labels].flatMap((part) => {
+      const { top, bottom, left, right } = part.getBoundingClientRect()
+      const name = part === control ? 'the control' : 'its label'
+      return top < 0 || bottom > height || left < 0 || right > width ? [`${name} at ${Math.round(left)},${Math.round(top)} to ${Math.round(right)},${Math.round(bottom)} of ${width} by ${height}`] : []
+    })
+    return out.length === 0 ? null : out.join(', ')
+  })
+
+/**
+ * The Questionnaire read out, as the corpus holds it: every item, by the
+ * text the form gives its field in the pass's language, in the corpus
+ * Questionnaire's order, under the Questionnaire's heading; and each
+ * item's way to its field, pressed from the keyboard, putting the keyboard
+ * on that field, and the field and its label in the window. The items are
+ * read from the corpus's bytes, by health-core's readJson, and the texts
+ * from the form's catalogue: the page's read-out is held to both, and
+ * computed from neither.
+ */
+async function readsOut({ check }, at) {
+  const { page, language, w, files, expected } = at
+  const items = core.readJson(expected.files[files.questionnaire]).item ?? []
+  const labels = items.map(({ linkId }) => labelOf(language, `${linkId}.label`))
+  const list = at.region(w.questionnaire.heading).getByRole('list', { name: w.readOut.heading, exact: true })
+  const headings = await list.getByRole('heading').allTextContents()
+  check('the Questionnaire is read out: every item of the corpus’s, in its order, by the text the form gives its field in the page’s language', items.length > 0 && isDeepStrictEqual(headings, labels) ? null : `the read-out names ${headings.join(', ') || 'nothing'}`)
+  const astray = []
+  const unseen = []
+  for (const [index, { linkId }] of items.entries()) {
+    const way = page.getByRole('button', { name: w.readOut.toFieldOf(labels[index]), exact: true })
+    const role = ROLES[linkId]
+    if (role === undefined) astray.push(`${linkId}: no field of the form the gate knows`)
+    else if (role === 'radio') {
+      if ((await way.count()) !== 0) astray.push(`${linkId}: a way to a radio group, which no element of the engine's id stands for`)
+    } else {
+      await enter(way)
+      const problem = await focused(page, page.getByRole(role, { name: named(language, `${linkId}.label`) }))
+      const out = problem === null ? await inTheWindow(page) : null
+      if (problem !== null) astray.push(`${linkId}: ${problem}`)
+      if (out !== null) unseen.push(`${linkId}: ${out}`)
+    }
+  }
+  check('and each item’s way to its field, pressed from the keyboard, puts the keyboard on the field the form drew for it', astray.length === 0 ? null : astray.join('; '))
+  check('and the field and its label whole inside the window', astray.length === 0 && unseen.length === 0 ? null : unseen.length === 0 ? 'not every way reached its field' : unseen.join('; '))
 }
 
 /** From the form's first field, which has the keyboard, through every field in its order to its submit control. */
@@ -283,6 +350,7 @@ export async function journey(gate, page, { measured, ...options }) {
   await throughTheForm(gate, at)
   await fromTheSample(gate, at)
   await measured('start')
+  await readsOut(gate, at)
   const changed = await change(gate, at)
   await measured('changed')
   await anotherLanguage(gate, at, changed)

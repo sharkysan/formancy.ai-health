@@ -24,7 +24,9 @@
 //     src/links.ts says, and the notices of what it bundles it links to are
 //     the file its build wrote;
 //   - the journey (gate-journey.mjs): the resources the browser makes of
-//     the sample are the validator gate's corpus entries, byte for byte; a
+//     the sample are the validator gate's corpus entries, byte for byte;
+//     the Questionnaire is read out item by item in the page's language,
+//     and each item's way to its field puts the keyboard there; a
 //     change reaches them and the page says so; a change of language keeps
 //     the answers; a required answer cleared is refused; the way back gives
 //     the sample's bytes again; and every download is the bytes shown, the
@@ -34,7 +36,8 @@
 //     had settled, whatever was typed, no cookie was set, nothing was
 //     stored and nothing typed reached its address; every file came with
 //     the headers scripts/demo-headers.mjs decides, and the policy among
-//     them is in force;
+//     them is in force: the browser refused nothing the page did and its
+//     console logged no error, the whole journey long;
 //   - the page runs React's production build, the build a deploy serves;
 //   - every face the page declares had loaded once it settled, and in the
 //     pass that refuses them, none had.
@@ -44,27 +47,35 @@
 // taken, under the path the demo on formancy.ai is served at and with the
 // headers the deploy writes for it, for the gate's address
 // (scripts/demo.mjs, scripts/demo-headers.mjs).
-// Asserted as numbers and computed results, never screenshots. Chromium
-// only, the browser scripts/browsers.mjs names.
+// Asserted as numbers and computed results, never screenshots.
+//
+// In Chromium, Firefox and WebKit, the browsers scripts/browsers.mjs names,
+// each launched by its name, one after the other over the one build served
+// once, every check in every browser (0014, as formancy.ai-data's 0058).
+// FORMANCY_BROWSERS narrows a run, and CI's legs name one browser each;
+// WebKit runs on Linux alone. What the browsers disagree on is that file's
+// table, each row held by a check of one name in every browser
+// (gate-facts.mjs).
 //
 // `pnpm --filter @formancy/health-demo test:browser`, after `pnpm build` has
 // built the packages the demo imports. Each check is printed and kept in
-// test-results/browser-chromium.json (gate-results.mjs), with the passes
-// planned, which the release report reads (collect.mjs --job browser).
+// test-results/browser-<browser>.json (gate-results.mjs), with the passes
+// planned, which the release report reads (collect.mjs --job browser
+// --variant <browser>).
 
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
-import { chromium } from 'playwright'
+import * as playwright from 'playwright'
 import { build, preview, resolveConfig, runnerImport } from 'vite'
-import { LAUNCH_OPTIONS } from '../../../scripts/browsers.mjs'
+import { browserName, FACTS, gateBrowsers, installCommand, LAUNCH_OPTIONS, prose, ranIn } from '../../../scripts/browsers.mjs'
 import { headersFor } from '../../../scripts/demo-headers.mjs'
 import { demoBase, readDemoConfig } from '../../../scripts/demo.mjs'
 import { HL7_NOTICE, LOINC_NOTICE, MARK } from '../../../scripts/notices.mjs'
 import { NOTICES_FILE } from '../../../scripts/third-party-notices.mjs'
 import { corpusBytes, journey } from './gate-journey.mjs'
 import { app, audit, describeFocus, dist, FONT_FILE, fontProblem, measureWidth, passes, reactProblem, recordReact } from './gate-page.mjs'
-import { policyChecks, privacyChecks, recordViolations, watch } from './gate-privacy.mjs'
+import { consoleErrors, policyChecks, privacyChecks, recordViolations, watch } from './gate-privacy.mjs'
 import { gateRecorder } from './gate-results.mjs'
 
 /** How long a state may take to come: Playwright's default, which every wait below runs under. */
@@ -157,8 +168,12 @@ async function keyboard(gate, page, w) {
   check('and the next Tab reaches the first control in it', into ? null : `the focus is on ${await describeFocus(page)}`)
 }
 
-/** One pass: the whole journey at one viewport, in one language, from a context of its own, so nothing one pass left reaches the next. */
-async function pass(gate, browser, { url, headers }, { label, width, height, language, refuseFonts = false }, modules) {
+/**
+ * One pass: the whole journey at one viewport, in one language, from a
+ * context of its own, so nothing one pass left reaches the next, in the
+ * browser `name` names.
+ */
+async function pass(gate, { browser, name }, { url, headers }, { label, width, height, language, refuseFonts = false }, modules) {
   gate.pass({ label, width, height })
   const context = await browser.newContext({ locale: language, viewport: { width, height } })
   await context.addInitScript(recordViolations)
@@ -167,9 +182,18 @@ async function pass(gate, browser, { url, headers }, { label, width, height, lan
   page.setDefaultTimeout(WITHIN)
   const thrown = []
   page.on('pageerror', (error) => thrown.push(error.message))
+  const errors = consoleErrors(page)
   const watcher = watch(page, url)
-  // The fallback stack's pass: every font file refused, wherever it is from.
-  if (refuseFonts) await page.route(FONT_FILE, (route) => route.abort())
+  // The fallback stack's pass: every font file refused, wherever it is
+  // from, each kept by its address, so that what the browser says of it
+  // is told from what the page does.
+  const refused = refuseFonts ? new Set() : null
+  if (refused !== null) {
+    await page.route(FONT_FILE, (route) => {
+      refused.add(route.request().url())
+      return route.abort()
+    })
+  }
   try {
     await page.goto(url, { waitUntil: 'load' })
     await watcher.settle({ within: WITHIN })
@@ -186,59 +210,122 @@ async function pass(gate, browser, { url, headers }, { label, width, height, lan
       expected: modules.expected,
       measured: (state) => measured(gate, page, state),
     })
-    gate.check(refuseFonts ? 'with the web fonts refused, none loaded' : 'every face the page declares had loaded', await fontProblem(page, { refused: refuseFonts }))
+    const faces = FACTS.forgetsLoadedFaces
+    gate.check(refuseFonts ? 'with the web fonts refused, none loaded' : faces.heldBy.checks[0], await fontProblem(page, { refused: refuseFonts, forgets: faces.values[name] === true }))
     gate.check('the page threw nothing', thrown.length === 0 ? null : thrown.slice(0, 3).join('; '))
-    await privacyChecks(gate, { context, page, watcher, url })
-    await policyChecks(gate, { context, page, watcher, url, headers })
+    await privacyChecks(gate, { context, page, watcher, url, browser: name, refused })
+    await policyChecks(gate, { context, page, watcher, url, headers, errors, browser: name, refusedFonts: refused ?? new Set() })
   } finally {
     await context.close()
   }
 }
 
-async function main() {
-  const gate = gateRecorder('apps/demo', { browser: 'chromium', playwright: createRequire(import.meta.url)('playwright/package.json').version })
-  let server
+/** The Playwright that launches every browser: the report holds each launch to the build it pins. */
+const PLAYWRIGHT = createRequire(import.meta.url)('playwright/package.json').version
+
+/** `name` launched by name, or an error that says how to download the build Playwright pins for it. */
+async function launch(name, options) {
+  try {
+    return await playwright[name].launch(options)
+  } catch (error) {
+    const first = (error instanceof Error ? error.message : String(error)).split('\n')[0]
+    throw new Error(`${browserName(name)} did not launch (${first}); \`${installCommand(name)}\` downloads the build Playwright ${PLAYWRIGHT} pins for it`)
+  }
+}
+
+/**
+ * The page as every pass measures it, made once for every browser: the
+ * build first, as `vite build` makes it, then its own modules, the passes,
+ * the corpus, and the build served. Vite sets NODE_ENV for the first config
+ * it resolves when nothing has, and keeps it: the serve config pageModule
+ * resolves, resolved first, made it `development`, and the build after it
+ * bundled React's development build, which no deploy serves (found on 18
+ * October 2026; reactProblem holds it).
+ */
+async function prepare() {
+  await build({ root: app, logLevel: 'warn' })
+  if (!existsSync(join(dist, 'index.html'))) throw new Error('vite build wrote no apps/demo/dist/index.html')
+  const modules = { words: await pageModule('words/index.ts'), exports: await pageModule('exports.ts'), links: await pageModule('links.ts') }
+  const list = passes(modules.words.LANGUAGES)
+  modules.expected = await corpusBytes()
+  // Under the path formancy.ai serves the demo at, with the headers the
+  // deploy writes for it, for this address (0012), so every check below
+  // is of the build as the demo is served: a file asked for by an
+  // absolute path is outside it, and the check on what the page fetched
+  // names it; a file from outside the build's assets is refused.
+  const base = demoBase(readDemoConfig())
+  const { port } = (await resolveConfig({ root: app, logLevel: 'error' }, 'serve', 'production', 'production', true)).preview
+  const url = `http://localhost:${String(port)}${base}`
+  const headers = headersFor(url)
+  const server = await preview({ root: app, base, preview: { headers }, logLevel: 'warn' })
+  const served = server.resolvedUrls?.local ?? []
+  if (!served.includes(url)) {
+    await server.close()
+    throw new Error(`vite preview serves the demo at ${served.join(', ') || 'no local address'}, not at ${url}, the address its policy is written for`)
+  }
+  console.log(`the built demo, served by vite preview at ${url}`)
+  return { modules, list, url, headers, server }
+}
+
+/**
+ * Every pass in one browser, launched by its name, with a record of its
+ * own, written however the run ends: `test-results/browser-<name>.json`.
+ * Null when every check held; otherwise what failed, as a sentence.
+ */
+async function inBrowser(name, { modules, list, url, headers }) {
+  const gate = gateRecorder('apps/demo', { browser: name, playwright: PLAYWRIGHT })
   let browser
   try {
-    // The build first, as `vite build` makes it. Vite sets NODE_ENV for the
-    // first config it resolves when nothing has, and keeps it: the serve
-    // config pageModule resolves, resolved first, made it `development`,
-    // and the build after it bundled React's development build, which no
-    // deploy serves (found on 18 October 2026; reactProblem holds it).
-    await build({ root: app, logLevel: 'warn' })
-    if (!existsSync(join(dist, 'index.html'))) throw new Error('vite build wrote no apps/demo/dist/index.html')
-    const modules = { words: await pageModule('words/index.ts'), exports: await pageModule('exports.ts'), links: await pageModule('links.ts') }
-    const list = passes(modules.words.LANGUAGES)
     gate.plan(list)
-    modules.expected = await corpusBytes()
-    // Under the path formancy.ai serves the demo at, with the headers the
-    // deploy writes for it, for this address (0012), so every check below
-    // is of the build as the demo is served: a file asked for by an
-    // absolute path is outside it, and the check on what the page fetched
-    // names it; a file from outside the build's assets is refused.
-    const base = demoBase(readDemoConfig())
-    const { port } = (await resolveConfig({ root: app, logLevel: 'error' }, 'serve', 'production', 'production', true)).preview
-    const url = `http://localhost:${String(port)}${base}`
-    const headers = headersFor(url)
-    server = await preview({ root: app, base, preview: { headers }, logLevel: 'warn' })
-    const served = server.resolvedUrls?.local ?? []
-    if (!served.includes(url)) throw new Error(`vite preview serves the demo at ${served.join(', ') || 'no local address'}, not at ${url}, the address its policy is written for`)
-    console.log(`the built demo, served by vite preview at ${url}`)
     const options = { ...LAUNCH_OPTIONS }
-    browser = await chromium.launch(options)
+    console.log(`\n== ${browserName(name)}`)
+    browser = await launch(name, options)
     gate.launched(browser, options)
-    for (const each of list) await pass(gate, browser, { url, headers }, each, modules)
+    for (const each of list) await pass(gate, { browser, name }, { url, headers }, each, modules)
     const failures = gate.failures()
-    if (failures.length > 0) throw new Error(`${String(failures.length)} browser check(s) failed:\n  ${failures.join('\n  ')}`)
-    console.log(`\nbrowser checks passed: the demo's whole journey in ${String(list.length)} passes, in ${String(new Set(list.map((each) => each.language)).size)} languages, from ${String(Math.min(...list.map((each) => each.width)))} to ${String(Math.max(...list.map((each) => each.width)))}px wide, for the layout, focus, colour, request and policy facts jsdom cannot represent`)
+    if (failures.length > 0) return `${String(failures.length)} check(s) failed in ${browserName(name)}:\n  ${failures.join('\n  ')}`
+    console.log(`\n${browserName(name)}: the demo's whole journey in ${String(list.length)} passes, in ${String(new Set(list.map((each) => each.language)).size)} languages, from ${String(Math.min(...list.map((each) => each.width)))} to ${String(Math.max(...list.map((each) => each.width)))}px wide, every check held`)
+    return null
   } catch (error) {
     gate.error(error)
-    throw error
+    return `${browserName(name)} stopped: ${error instanceof Error ? error.message : String(error)}`
   } finally {
     await browser?.close()
-    await server?.close()
     gate.write(app)
   }
+}
+
+/**
+ * The gate in every browser FORMANCY_BROWSERS chooses (scripts/browsers.mjs),
+ * one after the other, over one build served once. A page that could not be
+ * made or served is each browser's error, in its own record, so the report
+ * reads why rather than finding nothing.
+ */
+async function main() {
+  const chosen = gateBrowsers()
+  console.log(ranIn(chosen))
+  let prepared
+  try {
+    prepared = await prepare()
+  } catch (error) {
+    for (const name of chosen) {
+      const gate = gateRecorder('apps/demo', { browser: name, playwright: PLAYWRIGHT })
+      gate.error(error)
+      gate.write(app)
+    }
+    throw error
+  }
+  const failed = []
+  try {
+    for (const name of chosen) {
+      const problem = await inBrowser(name, prepared)
+      if (problem !== null) failed.push(problem)
+    }
+  } finally {
+    await prepared.server.close()
+  }
+  if (failed.length > 0) throw new Error(failed.join('\n'))
+  console.log(`\nbrowser checks passed in ${prose(chosen.map(browserName))}, for the layout, focus, colour, request and policy facts jsdom cannot represent`)
 }
 
 try {

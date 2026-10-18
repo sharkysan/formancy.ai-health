@@ -235,6 +235,74 @@ pre {
   margin: 0;
 }
 
+/* The Questionnaire read out: a term beside what it says, nested items indented under their group. */
+.read-out {
+  margin-block: 0.75rem 1rem;
+}
+
+.read-out ol {
+  margin: 0.5rem 0 0;
+  padding-inline-start: 1.25rem;
+}
+
+.read-out ol > li {
+  margin-block-end: 0.75rem;
+}
+
+.read-out h4,
+.read-out h5,
+.read-out h6 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.read-out dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.125rem 0.75rem;
+  margin: 0 0 0.5rem;
+}
+
+.read-out dt {
+  color: var(--wb-muted);
+}
+
+.read-out dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.read-out dd ul {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+}
+
+.read-out dd p,
+.read-out li > p {
+  margin: 0 0 0.25rem;
+}
+
+.untranslated,
+.not-shown {
+  color: var(--wb-muted);
+}
+
+.untranslated {
+  font-size: 0.875rem;
+}
+
+.to-field {
+  min-height: 2rem;
+  padding: 0.25rem 0.75rem;
+  font: inherit;
+  color: var(--wb-signal);
+  background: var(--wb-surface);
+  border: 1px solid var(--wb-signal);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
 .cases {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));

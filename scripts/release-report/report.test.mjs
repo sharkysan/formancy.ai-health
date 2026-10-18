@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+import { FACTS } from '../browsers.mjs'
 import { HOSTS } from '../install-hosts.mjs'
 import { buildReport, installPlanOf } from './report.mjs'
 import { ciJob, copy, DIST, greenCiRun, greenRun, INSTALL_PLAN, job, VALIDATOR_ONLY } from './synthetic-run.mjs'
@@ -233,7 +234,13 @@ describe('the registers’ cases verify skips', () => {
 })
 
 describe('the browser gate', () => {
-  const gate = (inputs) => job(inputs, 'browser').browserGates[0]
+  const gate = (inputs) => job(inputs, 'browser-chromium').browserGates[0]
+  const LEGS = ['browser-chromium', 'browser-firefox', 'browser-webkit']
+  const NAMES = ['Chromium', 'Firefox', 'WebKit']
+  /** `change` made to the gate's record in every browser: a defect of the gate's own, which the comparison of the browsers cannot see. */
+  const everyGate = (change) => (inputs) => {
+    for (const leg of LEGS) change(job(inputs, leg).browserGates[0])
+  }
 
   // A check the gate made and that failed is a claim about the page that
   // does not hold, whatever the job's own result says. No release gate
@@ -251,11 +258,13 @@ describe('the browser gate', () => {
   test('fails the run when it ended in an error, or made fewer passes than it planned', () => {
     expect(withDefect((inputs) => (gate(inputs).error = 'vite build wrote no apps/demo/dist/index.html'))).toEqual(['the browser gate of apps/demo in Chromium ended with an error: vite build wrote no apps/demo/dist/index.html'])
     expect(
-      withDefect((inputs) => {
-        gate(inputs).made.pop()
-        gate(inputs).passes = 1
-      }),
-    ).toEqual(['the browser gate of apps/demo in Chromium did not make 1 of the 2 passes it planned: "phone, 360, fr"'])
+      withDefect(
+        everyGate((each) => {
+          each.made.pop()
+          each.passes = 1
+        }),
+      ),
+    ).toEqual(NAMES.map((name) => `the browser gate of apps/demo in ${name} did not make 1 of the 2 passes it planned: "phone, 360, fr"`))
     // A gate that planned nothing measured nothing it can be held to.
     expect(withDefect((inputs) => (gate(inputs).planned = []))).toEqual(['the browser gate of apps/demo in Chromium planned no pass'])
   })
@@ -264,14 +273,16 @@ describe('the browser gate', () => {
   // made before the first pass -- is a width measured by nobody, though
   // the gate made checks and every pass it planned.
   test('fails the run when a pass it made has no check in it', () => {
-    expect(withDefect((inputs) => (gate(inputs).made[1].checks = []))).toEqual(['the browser gate of apps/demo in Chromium made no check in the pass "phone, 360, fr"'])
+    expect(withDefect(everyGate((each) => (each.made[1].checks = [])))).toEqual(NAMES.map((name) => `the browser gate of apps/demo in ${name} made no check in the pass "phone, 360, fr"`))
     expect(
-      withDefect((inputs) => {
-        const before = { label: null, width: null, height: null, checks: gate(inputs).made.flatMap((entry) => entry.checks), failed: [] }
-        for (const entry of gate(inputs).made) entry.checks = []
-        gate(inputs).made.unshift(before)
-      }),
-    ).toEqual(['the browser gate of apps/demo in Chromium made no check in the passes "reflow, 320, de-CH", "phone, 360, fr"'])
+      withDefect(
+        everyGate((each) => {
+          const before = { label: null, width: null, height: null, checks: each.made.flatMap((entry) => entry.checks), failed: [] }
+          for (const entry of each.made) entry.checks = []
+          each.made.unshift(before)
+        }),
+      ),
+    ).toEqual(NAMES.map((name) => `the browser gate of apps/demo in ${name} made no check in the passes "reflow, 320, de-CH", "phone, 360, fr"`))
   })
 
   // The counts are what the report reads a check's outcome from, and a
@@ -287,22 +298,22 @@ describe('the browser gate', () => {
   // file there but from before --since is refused, allowed or not: it is
   // another run's.
   test('fails the run when it left no results in a browser the gates run in, unless browser is allowed missing', () => {
-    const notRun = (inputs) => Object.assign(job(inputs, 'browser'), { browserGates: [], absent: [{ reader: 'browser', file: 'apps/demo/test-results/browser-chromium.json' }] })
+    const notRun = (inputs) => Object.assign(job(inputs, 'browser-chromium'), { browserGates: [], absent: [{ reader: 'browser', file: 'apps/demo/test-results/browser-chromium.json' }] })
     const none = (allowMissing) =>
       withDefect((inputs) => {
         notRun(inputs)
         inputs.allowMissing = allowMissing
       })
-    expect(none([])).toEqual(['browser: expected and not found: apps/demo/test-results/browser-chromium.json', 'the browser gate of apps/demo left no results in Chromium'])
+    expect(none([])).toEqual(['browser-chromium: expected and not found: apps/demo/test-results/browser-chromium.json', 'the browser gate of apps/demo left no results in Chromium'])
     expect(none(['browser'])).toEqual([])
     const stale = 'stale: apps/demo/test-results/browser-chromium.json started 2026-10-16T10:00:00.000Z, before --since'
     expect(
       withDefect((inputs) => {
         notRun(inputs).absent = []
-        job(inputs, 'browser').missing.push(stale)
+        job(inputs, 'browser-chromium').missing.push(stale)
         inputs.allowMissing = ['browser']
       }),
-    ).toEqual([`browser: expected and not found: ${stale}`])
+    ).toEqual([`browser-chromium: expected and not found: ${stale}`])
   })
 
   // What the page was measured in is the browser Playwright pins; another
@@ -325,14 +336,61 @@ describe('the browser gate', () => {
     ])
   })
 
+  // 0014: every check in every browser. Equal totals pass with different
+  // checks, so the browsers are compared by pass and by name: a WebKit
+  // gate that lacks one of Chromium's checks in one pass and makes one
+  // more in another has Chromium's count and asks other questions.
+  test('fails the run when a browser made another check, or another pass, than the first', () => {
+    const webkit = (inputs) => job(inputs, 'browser-webkit').browserGates[0]
+    expect(
+      withDefect((inputs) => {
+        webkit(inputs).made[0].checks = webkit(inputs).made[0].checks.filter((name) => name !== 'start: no sideways scroll')
+        webkit(inputs).made[1].checks.push('start: no sideways scroll')
+      }),
+    ).toEqual([
+      'the browser gate of apps/demo made "start: no sideways scroll" at "reflow, 320, de-CH" in Chromium and not in WebKit: a check made in one browser and not another is a claim made for that browser by nobody',
+      'the browser gate of apps/demo made "start: no sideways scroll" at "phone, 360, fr" 1 time in Chromium and 2 times in WebKit: a check made in one browser and not another is a claim made for that browser by nobody',
+    ])
+    expect(withDefect((inputs) => (job(inputs, 'browser-firefox').browserGates[0].made[1].label = 'phone, 360, it'))).toEqual([
+      'the browser gate of apps/demo in Firefox did not make 1 of the 2 passes it planned: "phone, 360, fr"',
+      'the browser gate of apps/demo made its passes as "reflow, 320, de-CH", "phone, 360, fr" in Chromium and as "reflow, 320, de-CH", "phone, 360, it" in Firefox: a pass made in one browser and not another is a width measured for that browser by nobody',
+    ])
+    // In order, not as a set: compared as a set, WebKit's passes made the
+    // other way round would compare each check with another pass's -- a
+    // phone's width with a reflow's -- and two browsers that each held a
+    // check in a different pass would agree.
+    expect(withDefect((inputs) => webkit(inputs).made.reverse())).toEqual([
+      'the browser gate of apps/demo made its passes as "reflow, 320, de-CH", "phone, 360, fr" in Chromium and as "phone, 360, fr", "reflow, 320, de-CH" in WebKit: a pass made in one browser and not another is a width measured for that browser by nobody',
+    ])
+    // One that ended in an error stopped where it stopped, and says why.
+    expect(
+      withDefect((inputs) => {
+        webkit(inputs).made.pop()
+        webkit(inputs).error = 'WebKit did not launch'
+      }),
+    ).toEqual(['the browser gate of apps/demo in WebKit ended with an error: WebKit did not launch'])
+  })
+
+  // A row of 0014's table that no check holds is a sentence nobody
+  // measured; the comparison above cannot see a check taken out of the
+  // gate in every browser at once.
+  test('fails the run when a check that holds a row of 0014’s table was made in no pass', () => {
+    const [name] = FACTS.refusesItsOwnSelectStyle.heldBy.checks
+    expect(
+      withDefect((inputs) => {
+        for (const leg of ['browser-chromium', 'browser-firefox', 'browser-webkit']) for (const entry of job(inputs, leg).browserGates[0].made) entry.checks = entry.checks.filter((check) => check !== name)
+      }),
+    ).toEqual(['Chromium', 'Firefox', 'WebKit'].map((browser) => `the browser gate of apps/demo in ${browser} never made "${name}", which holds 0014’s refusesItsOwnSelectStyle: a row no check holds is a sentence nobody measured`))
+  })
+
   // The browser gates' files are read from the job that leaves them: one
   // filed under verify would be the browser job's verdict from a job that
   // never launched a browser.
   test('is read from the browser job alone', () => {
     expect(
       ciDefect((inputs) => {
-        ciJob(inputs, 'verify').browserGates = ciJob(inputs, 'browser').browserGates
-        ciJob(inputs, 'browser').browserGates = []
+        ciJob(inputs, 'verify').browserGates = ciJob(inputs, 'browser-chromium').browserGates
+        ciJob(inputs, 'browser-chromium').browserGates = []
       }),
     ).toEqual(['verify: its results hold a browser gate’s results, which only the browser job leaves', 'the browser gate of apps/demo left no results in Chromium'])
   })
@@ -525,7 +583,7 @@ describe('build identity', () => {
   test('fails the run when two jobs built different dist/ bytes', () => {
     const other = `sha256:${'b'.repeat(64)}`
     expect(withDefect((inputs) => (job(inputs, 'test-health-document').dist[0].distHash = other))).toEqual([
-      `@formancy/health-core: two jobs built different dist/ bytes: verify, test-health-core, test-health-questionnaire, browser, install, validator built ${DIST.slice(0, 19)}; test-health-document built ${other.slice(0, 19)}`,
+      `@formancy/health-core: two jobs built different dist/ bytes: verify, test-health-core, test-health-questionnaire, browser-chromium, browser-firefox, browser-webkit, install, validator built ${DIST.slice(0, 19)}; test-health-document built ${other.slice(0, 19)}`,
     ])
   })
 
@@ -543,7 +601,7 @@ describe('build identity', () => {
   // The tarball is what npm receives; its dist/ must be every job's.
   test('fails the run when a tarball’s dist/ differs from the jobs’', () => {
     expect(withDefect((inputs) => (job(inputs, 'install').install.tarballs[1].distHash = `sha256:${'c'.repeat(64)}`))).toEqual([
-      '@formancy/health-document: the dist/ in its tarball differs from the dist/ built in verify, browser, install, validator',
+      '@formancy/health-document: the dist/ in its tarball differs from the dist/ built in verify, browser-chromium, browser-firefox, browser-webkit, install, validator',
     ])
   })
 })
@@ -604,10 +662,10 @@ describe('a local report', () => {
   // machine's. Results of two commits or two runs describe neither.
   test('fails when its results are of more than one commit or run, or hold one key twice', () => {
     expect(withDefect((inputs) => (job(inputs, 'install').commit = 'decaf'))).toEqual([
-      'the results are of 2 commits, where a report is of one: c0ffee (verify, test-health-core, test-health-questionnaire, test-health-document, test-health-corpus, browser, validator); decaf (install)',
+      'the results are of 2 commits, where a report is of one: c0ffee (verify, test-health-core, test-health-questionnaire, test-health-document, test-health-corpus, browser-chromium, browser-firefox, browser-webkit, validator); decaf (install)',
     ])
     expect(withDefect((inputs) => (job(inputs, 'install').run.id = null))).toEqual([
-      'the results are of 2 runs, where a report is of one: run 42 (verify, test-health-core, test-health-questionnaire, test-health-document, test-health-corpus, browser, validator); a machine (install)',
+      'the results are of 2 runs, where a report is of one: run 42 (verify, test-health-core, test-health-questionnaire, test-health-document, test-health-corpus, browser-chromium, browser-firefox, browser-webkit, validator); a machine (install)',
     ])
     expect(withDefect((inputs) => inputs.results.push(structuredClone(job(inputs, 'verify'))))).toEqual(['the results hold verify 2 times, where a run leaves each key once'])
   })
@@ -626,7 +684,7 @@ describe('a green CI run', () => {
     const report = buildReport(greenCiRun())
     expect(report.problems).toEqual([])
     expect(report.subject).toMatchObject({ version: '0.1.0', release: null, commit: 'c0ffee', run: { id: '42' } })
-    expect(report.subject.jobs.map((entry) => entry.key)).toEqual(['verify', 'test-health-core', 'test-health-questionnaire', 'test-health-document', 'test-health-corpus', 'browser', 'install', 'validator'])
+    expect(report.subject.jobs.map((entry) => entry.key)).toEqual(['verify', 'test-health-core', 'test-health-questionnaire', 'test-health-document', 'test-health-corpus', 'browser-chromium', 'browser-firefox', 'browser-webkit', 'install', 'validator'])
   })
 })
 
@@ -648,12 +706,13 @@ describe('the run', () => {
     ])
   })
 
-  // The browser job is a job of the run like any other: when it left no
-  // artefact, the report says so, and that the demo's gate left nothing.
-  test('fails when the browser job left no artefact, naming what it has no record of', () => {
-    expect(ciDefect((inputs) => (inputs.artefacts = inputs.artefacts.filter((entry) => entry.name !== 'release-results-browser')))).toEqual([
-      'browser: its job left no artefact release-results-browser',
-      'the browser gate of apps/demo left no results in Chromium',
+  // Each leg of the browser job is a job of the run like any other: when
+  // one left no artefact, the report says so, and that the demo's gate left
+  // nothing in that browser (0014).
+  test('fails when a leg of the browser job left no artefact, naming what it has no record of', () => {
+    expect(ciDefect((inputs) => (inputs.artefacts = inputs.artefacts.filter((entry) => entry.name !== 'release-results-browser-webkit')))).toEqual([
+      'browser-webkit: its job left no artefact release-results-browser-webkit',
+      'the browser gate of apps/demo left no results in WebKit',
     ])
   })
 

@@ -364,12 +364,17 @@ as far as a formancy release carries it, its colours from
 (0002), and no README picture. What holds it:
 
 - **Its suite**, in the `test` job, in jsdom: the first resources the
-  corpus's entries byte for byte, the journey by role and name with axe,
-  the stylesheet with no colour or variable of its own, and its words.
+  corpus's entries byte for byte, the Questionnaire read out from the
+  bytes the page shows and never from the form (0013), the journey by
+  role and name with axe, the stylesheet with no colour or variable of its
+  own, and its words.
 - **Its browser gate**, `apps/demo/scripts/browser-test.mjs`, in CI's
-  `browser` job, in the Chromium `scripts/browsers.mjs` names, read by the
+  `browser` job, a leg each in the browsers `scripts/browsers.mjs` names,
+  Chromium, Firefox and WebKit, WebKit on Linux alone (0014), read by the
   release report: React's production build, layout, keyboard, axe, the
-  journey, and what the page asks of the network and keeps.
+  journey, and what the page asks of the network and keeps. Every policy
+  refusal and console error fails it, but what that file's table names a
+  browser doing of its own, each row held by a check.
 - **`scripts/demo.test.mjs`** -- the Worker at one path of formancy.ai,
   what the deploy stages and the policy the headers hold;
   **`scripts/third-party-notices.test.mjs`** -- the notices the build

@@ -1,6 +1,6 @@
 # 0012 — Show the packages at work in a demo at formancy.ai/health/: a synthetic referral filled in the browser, the resources it starts from the validator gate's corpus byte for byte, nothing typed sent or kept, served by a Worker of its own that Cloudflare deploys from main, in the stylesheets a formancy release ships
 
-- **Status:** accepted
+- **Status:** accepted; its Questionnaire read out from the bytes it shows, each item leading to its field, and the page's weight measured again with it, by [0013](0013-the-demo-reads-its-questionnaire-out-from-the-bytes-it-shows-and-renders-no-questionnaire.md); its browser gate run in Chromium, Firefox and WebKit, a leg each, every console error failing it, and what the browsers disagree on named and held -- WebKit 27.2's own refusal of a style on every select, under a policy loosened for none of it, among them -- by [0014](0014-the-demos-browser-gate-runs-in-chromium-firefox-and-webkit-and-each-fact-the-browsers-disagree-on-is-named-and-held.md)
 - **Date:** 2026-10-18
 - **Deciders:** Daniel Bacher
 - **Verified by:** the demo's suite and its browser gate, the validator

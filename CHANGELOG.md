@@ -184,6 +184,71 @@ however a language spells it, and a statement about tracking in each
 language's words, and hold each language's banner to its three
 statements.
 
+**The demo reads its Questionnaire out as the form it is**
+([0013](docs/decisions/0013-the-demo-reads-its-questionnaire-out-from-the-bytes-it-shows-and-renders-no-questionnaire.md)),
+since a reader saw the form drawn and, beside it, a Questionnaire that
+showed only a button for its JSON and a download, and asked whether the
+Questionnaire was a form at all. Above its JSON the page now reads it out
+item by item, in its order and nesting: each item's text in the page's
+language -- the resource's own, marked with its language and said to be,
+where the resource has no translation into the page's -- its linkId, its
+type, whether it is required or repeats, its options, and the conditions
+that show it, in words. It reads the bytes it shows, by health-core's
+`readJson`, and never the form, so it says what the resource says; a
+Questionnaire it cannot read whole it does not read out at all, and that
+includes one with a member or an extension health-questionnaire does not
+write, since an item read out with what changes it passed over -- answers
+from a value set, an expression that shows it -- would be a form the
+resource does not say. A condition names an option by its code system and
+code, as R4 matches it. What it does not read, a read-only or a hidden
+item's flag among it, the page says is in the JSON alone. Each item
+leads by a button to the field the form drew for it, scrolled to the
+middle of the window, since a field's own focus left its label above the
+window, in WebKit at every width; only where formancy's renderer draws a
+control of the id its engine mints that takes the keyboard -- not the
+radio group, whose options take ids of the renderer's own -- and it says
+so where the form does not show the field. The form's step says that the
+form becomes the Questionnaire, its keys the items' linkIds, and the
+Questionnaire's that its title, unlike its items, is in one language; the
+read-out says it is no FHIR renderer and validates nothing, and that
+Formancy Health draws no Questionnaire. The browser gate holds the
+read-out to the corpus's Questionnaire in every pass, and each way to its
+field, with the field and its label in the window. The page's chunk grows
+to 757.21 kB, 224.00 kB gzipped, in the build of 18 October 2026.
+
+**The demo's browser gate runs in Chromium, Firefox and WebKit, and fails
+on a console error the page causes**
+([0014](docs/decisions/0014-the-demos-browser-gate-runs-in-chromium-firefox-and-webkit-and-each-fact-the-browsers-disagree-on-is-named-and-held.md)),
+since WebKit logged two errors on the live page that the gate, in
+Chromium alone, could not see: "Refused to apply a stylesheet because its
+hash, its nonce, or 'unsafe-inline' does not appear in the style-src
+directive". They are WebKit 27.2's own: under a policy that admits no
+inline style it refuses a style attribute of its own,
+`text-overflow:inherit`, on every `<select>`, the page's language bar's
+and the form's, and reports it as the page's -- a page of one select and
+no script does the same, WebKit 26.6 did not, and Chromium and Firefox
+never. The page draws the same without it, and the policy is loosened
+for none of it: no hash, no `'unsafe-hashes'`. The gate now runs every
+check in each of the three, a leg of CI's `browser` job each, WebKit on
+Linux alone; fails on every report of the page's policy and every console
+error, the whole journey long, but those a row of the table names, as
+often as it names them, and, in the pass that refuses the web fonts, the
+errors that name a file the gate itself refused; and names what the
+browsers disagree on in `scripts/browsers.mjs`'s table, each row held by
+a check of one name in every browser: WebKit's own refusal at a select,
+one report of each, so that a style the page sets on a select and takes
+off again is the page's in WebKit too; WebKit forgetting that
+the faces the page loaded and does not draw with are loaded; and, where a
+face's woff2 does not arrive, WebKit asking for its woff only once text
+in its range is drawn, which tells the server what kind of text was
+typed -- a cost the page does not fix yet, said in the README and the
+risks. The select's row is held on a page of one select, whose reports
+are read once a task queued after its load has run, by which every
+browser had given them in every run measured, and not after a fixed wait
+that a slower machine could outrun. The release report reads each leg
+under its browser's key, compares the browsers' checks by pass, in their
+order, and by name, fails a row no check held, and prints the table.
+
 **The README says what 0.1.0 is, what is not in it, and what it is for**
 ([0011](docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)):
 its Status says, on 17 October 2026, that 0.1.0 is ready to tag and not

@@ -2,15 +2,16 @@ import { FORM_WORDS } from '@formancy/core/words'
 import { fromBase64Binary, readJson } from '@formancy/health-core'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, test } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import facts from 'virtual:formancy-health-demo/facts'
 import letter from 'virtual:formancy-health-demo/letter'
 import sample from 'virtual:formancy-health-demo/sample'
 import { Demo } from './demo.js'
 import { byFile, FILES, firstOf, PDF_FILE } from './exports.js'
 import { LINKS } from './links.js'
+import { readOut } from './read-out.js'
 import { unnamed, violations } from './test-accessible.js'
-import { blobAt } from './test-setup.js'
+import { blobAt, scrolled } from './test-setup.js'
 import { LANGUAGES, WORDS, type Language } from './words/index.js'
 
 /**
@@ -22,8 +23,9 @@ import { LANGUAGES, WORDS, type Language } from './words/index.js'
  *
  * Where the accessibility tree cannot answer, it reads the DOM, and says
  * so: a JSON region's bytes are its `data-json`, what writeJson wrote,
- * since its text is laid out for reading; and a link's bytes are the Blob
- * its address names (src/test-setup.ts), as a browser would save them.
+ * since its text is laid out for reading; a link's bytes are the Blob its
+ * address names (src/test-setup.ts), as a browser would save them; and a
+ * text in another language than the page's is known by its `lang`.
  */
 const pdf = fromBase64Binary(letter, 'letter')
 const first = byFile(firstOf(sample, pdf))
@@ -210,6 +212,113 @@ describe('the page in Italian', () => {
     // A guard on the guard: the reading finds a text the form draws.
     expect(found(WORDS.it.form.heading)).toBe(true)
     expect(english.filter(found)).toEqual([])
+  })
+})
+
+describe('the Questionnaire, read out', () => {
+  /** The demo form's label of `key` in `language`, as its catalogue gives it, which the Questionnaire translates. */
+  const label = (language: Language, key: string): string => String(sample.form.i18n?.messages?.[language]?.[`${key}.label`])
+  const keys = sample.form.model.fields.map(({ key }) => key)
+
+  /** The texts of the read-out's item headings, in their order. */
+  const headings = (language: Language): (string | null)[] => {
+    const step = screen.getByRole('region', { name: WORDS[language].questionnaire.heading })
+    return within(within(step).getByRole('list', { name: WORDS[language].readOut.heading }))
+      .getAllByRole('heading')
+      .map((heading) => heading.textContent)
+  }
+
+  // "Questionnaire ist kein Formular?": a reader who sees the Questionnaire
+  // as JSON alone cannot tell it is the form beside it. Read out under its
+  // heading, it names every item by the text the form gives its field, in
+  // the page's language and the form's order; and it is the reading of
+  // the bytes in the JSON region below it, not of the form.
+  test.each(LANGUAGES)('names every item of the Questionnaire shown, in the form’s order, in %s', async (language) => {
+    open(language)
+    expect(headings(language)).toEqual(keys.map((key) => label(language, key)))
+    const shown = readOut(screen.getByRole('region', { name: WORDS[language].resources.asJson(WORDS[language].questionnaire.heading) }).getAttribute('data-json') ?? '', language)
+    expect(shown.ok && shown.items.map(({ text }) => text?.text)).toEqual(headings(language))
+    expect(await audited()).toEqual([])
+  })
+
+  // The engine and the page change language together; a read-out that
+  // stayed in the first would name the items in a language the page no
+  // longer reads in.
+  test('follows a change of language', async () => {
+    const user = userEvent.setup()
+    open()
+    await user.selectOptions(screen.getByRole('combobox', { name: en.language }), 'it')
+    expect(headings('it')).toEqual(keys.map((key) => label('it', key)))
+  })
+
+  // What an item asks, beyond its text: its linkId, its type, its options
+  // by their displays, and the condition that shows it, the question
+  // named by its text and its linkId.
+  test("says each item's linkId, type, options, and the condition that shows it", () => {
+    open()
+    const specialty = screen.getByRole('listitem', { name: label('en', 'specialty') })
+    expect(within(specialty).getByText('specialty')).toBeDefined()
+    expect(within(specialty).getByText(en.readOut.types.choice, { exact: false })).toBeDefined()
+    const options = within(specialty).getByRole('list', { name: en.readOut.options })
+    expect(within(options).getAllByRole('listitem').map((option) => option.textContent)).toEqual(['Dermatology', 'Cardiology', 'Orthopaedics', 'Ophthalmology'])
+    const interpreted = screen.getByRole('listitem', { name: label('en', 'interpreter_language') })
+    const conditions = within(within(interpreted).getByRole('list', { name: en.readOut.shownWhen })).getAllByRole('listitem')
+    expect(conditions.map((condition) => condition.textContent)).toEqual([`${label('en', 'interpreter')} (interpreter) ${en.readOut.is} ${en.readOut.yes}`])
+  })
+
+  // The form's title is written untranslated (0006): on a French page it
+  // is the resource's own German, marked so for a screen reader to read
+  // it in German, and said to be.
+  test("says the title is the resource's own, untranslated, and marks its language", () => {
+    open('fr')
+    const step = screen.getByRole('region', { name: WORDS.fr.questionnaire.heading })
+    expect(within(step).getByText('Zuweisung').getAttribute('lang')).toBe('de-CH')
+    // As written: the default normalizer would read French's no-break space as a space.
+    expect(within(step).getByText(`(${WORDS.fr.readOut.untranslated('de-CH')})`, { normalizer: (text) => text })).toBeDefined()
+  })
+
+  // Each item leads back to the field it came from, by the keyboard: a
+  // way that left the keyboard elsewhere would tie the item to the wrong
+  // field. The radio group has none, since formancy's renderer draws no
+  // element of the id its engine mints for it (engine.test.ts). The field
+  // is scrolled to the middle of the window first and then focused
+  // without a scroll of the browser's own, which left the field's label
+  // above the window, in WebKit at every width (0013); where it then
+  // stands, jsdom, which lays nothing out, cannot say, and the browser
+  // gate measures.
+  test('leads from each item to the field the form drew for it, by the keyboard, scrolled to the middle of the window', async () => {
+    const user = userEvent.setup()
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+    open()
+    const led = keys.filter((key) => key !== 'language')
+    for (const key of led) {
+      screen.getByRole('button', { name: en.readOut.toFieldOf(label('en', key)) }).focus()
+      focus.mockClear()
+      await user.keyboard('{Enter}')
+      // The control the label names, not the read-out's item, which its heading names too.
+      const control = screen.getByLabelText(label('en', key), { selector: 'input, select, textarea' })
+      expect(document.activeElement, key).toBe(control)
+      expect(scrolled().at(-1), key).toEqual({ element: control, options: { block: 'center' } })
+      expect(focus.mock.calls, key).toEqual([[{ preventScroll: true }]])
+    }
+    expect(screen.queryByRole('button', { name: en.readOut.toFieldOf(label('en', 'language')) })).toBeNull()
+    focus.mockRestore()
+  })
+
+  // A field a rule hides is not drawn, and a way to it would lead nowhere:
+  // the item says the form does not show it, and leads to it again once
+  // the form does.
+  test("says when the form does not show an item's field, and leads to it once it does", async () => {
+    const user = userEvent.setup()
+    open()
+    const interpreter = screen.getByRole('checkbox', { name: label('en', 'interpreter') })
+    await user.click(interpreter)
+    const item = screen.getByRole('listitem', { name: label('en', 'interpreter_language') })
+    expect(within(item).queryByRole('button')).toBeNull()
+    expect(within(item).getByText(en.readOut.notShown)).toBeDefined()
+    expect(await audited()).toEqual([])
+    await user.click(interpreter)
+    expect(within(item).getByRole('button', { name: en.readOut.toFieldOf(label('en', 'interpreter_language')) })).toBeDefined()
   })
 })
 

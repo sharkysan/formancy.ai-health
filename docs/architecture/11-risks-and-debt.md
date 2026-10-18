@@ -48,6 +48,7 @@ is review's. This section names the larger costs without restating them.
 | **The demo's letter is rendered on Cloudflare's machine** | Its Node, 22.23.2 by Cloudflare's documentation on 18 October 2026, was never measured rendering it; the letter's bytes were, under 22.23.3 and 24.21.0. A Node that renders other bytes stops the build, and the last deployment keeps serving | [0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md) |
 | **The demo says nothing of cookies or tracking, and nothing checks the zone** | By the maintainer's decision: the page says only what it does with what is typed, which its policy and gate hold. What Cloudflare sets or measures on formancy.ai's zone no gate sees; a script it injected, inline or under `/cdn-cgi/`, the policy refuses to run | [0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md) |
 | **The demo wears 0.5.0's workbench and Blueprint, not formancy.ai's room** | No formancy release ships the room; copying it is 0002's rejected alternative. The page moves with the release that ships it, as one import and a version | [0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md), [0002](../decisions/0002-depend-on-upstream-never-copy-it.md) |
+| **The demo's read-out has no way to a radio group or to tick boxes**, nor to a ranking, a matrix, a file or a signature | formancy 0.5.0's React renderer draws a radio group's and tick boxes' options with ids of its own making and no element of the id its engine mints, a ranking's and a matrix's fieldset with that id and no focus, and a file or a signature with no control of it that takes the keyboard, so the page offers no way rather than guess; a renderer release that changes which do fails `engine.test.ts`, and the way follows. The demo's form has only the radio group | [0013](../decisions/0013-the-demo-reads-its-questionnaire-out-from-the-bytes-it-shows-and-renders-no-questionnaire.md) |
 | **A visitor can paste a real patient's data into the demo** | The page says it does not belong there, and sends and keeps nothing; the browser's own services and extensions are beyond it | [0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md) |
 
 ## 11.3 Known debt
@@ -112,10 +113,19 @@ is review's. This section names the larger costs without restating them.
   1 MB, a null in an array that lines nothing up, and a uri beyond its
   permissive regex
   ([0004](../decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)).
-- **The demo's browser gate runs Chromium alone**, where formancy.ai-data's
-  runs Firefox and WebKit too, and no screen reader; a browser added to
-  [`scripts/browsers.mjs`](../../scripts/browsers.mjs) is one the report
-  then expects results in. Nothing it measures is what formancy.ai serves,
+- **The demo's browser gate runs Chromium, Firefox and WebKit**, WebKit as
+  its Linux port, not Safari, and no screen reader; a browser added to
+  [`scripts/browsers.mjs`](../../scripts/browsers.mjs) is a leg of the
+  `browser` job and one the report then expects results in. In WebKit
+  27.2 the page's console logs an error for each select, WebKit refusing
+  a style of its own under the page's policy, which is not loosened for
+  it; and in WebKit, where a face's woff2 file does not arrive, text
+  later typed in that face's range asks for its woff, which says what
+  kind of text was typed. Each is a row of the browsers' table, held by
+  its check; the second is not fixed: `@fontsource` declares woff2 then
+  woff, and faces of the page's own, woff2 alone, or a second load of
+  each face that failed, would be a change of their own ([0014](../decisions/0014-the-demos-browser-gate-runs-in-chromium-firefox-and-webkit-and-each-fact-the-browsers-disagree-on-is-named-and-held.md)).
+  Nothing it measures is what formancy.ai serves,
   which [`RELEASING.md`](../../RELEASING.md#the-demo-on-formancyai) checks
   by hand after a deploy ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
 - **The demo's notices miss what Vite folds as text**: a package

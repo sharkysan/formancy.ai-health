@@ -7,7 +7,7 @@
  */
 import type { FormEngine } from '@formancy/core'
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { engineFor } from './engine.js'
+import { engineFor, targetOf } from './engine.js'
 import { ErrorBoundary } from './error-boundary.js'
 import { answeredOf, byFile, FILES, firstOf, type Outcome, type Sample } from './exports.js'
 import type { Facts } from './facts.js'
@@ -16,6 +16,7 @@ import { LetterStep } from './letter-step.js'
 import { About, Footer } from './notices.js'
 import { refusedOnPurpose } from './on-purpose.js'
 import { RefusedStep } from './refused-step.js'
+import { ReadOutView } from './read-out-view.js'
 import { OutcomeView, Step } from './resource.js'
 import { LANGUAGES, WORDS, type Language, type Words } from './words/index.js'
 
@@ -142,7 +143,16 @@ function Steps({ sample, pdf, facts, language, words }: StepsProps) {
         <div className="resources">
           <p className="note">{words.resources.intro}</p>
           <Step id="step-questionnaire" heading={words.questionnaire.heading} intro={words.questionnaire.intro}>
-            <OutcomeView outcome={first.questionnaire} maker="@formancy/health-questionnaire" file={FILES.questionnaire} name={words.questionnaire.heading} corpus={isCorpus(FILES.questionnaire, first.questionnaire)} words={words} />
+            <OutcomeView
+              outcome={first.questionnaire}
+              maker="@formancy/health-questionnaire"
+              file={FILES.questionnaire}
+              name={words.questionnaire.heading}
+              corpus={isCorpus(FILES.questionnaire, first.questionnaire)}
+              words={words}
+              // Read out of the bytes the JSON below shows, never of the form; each item leads to the field the form drew for it.
+              reading={(json) => <ReadOutView json={json} language={language} words={words} targetOf={(linkId) => targetOf(form.engine, linkId)} />}
+            />
           </Step>
           <Step id="step-response" heading={words.response.heading} intro={words.response.intro} headingRef={response}>
             <OutcomeView outcome={answered.response} maker="@formancy/health-questionnaire" file={FILES.response} name={words.response.heading} corpus={isCorpus(FILES.response, answered.response)} words={words} />

@@ -47,14 +47,14 @@ export default defineConfig({
     // of the build.
     assetsInlineLimit: 0,
     // Measured with `vite build` (Vite 8.3.4) on 2026-10-18, its source map
-    // read for which package each byte came from: the page is one chunk of
-    // 739.08 kB minified, 217.90 kB gzipped, as Vite reports it --
-    // react-dom 207.0 kB, @formancy/spec 192.2 kB, the CEL interpreter
-    // 82.1 kB, formancy's renderer, engine and expressions 102.2 kB, the
-    // four health packages and health-corpus's documents 61.6 kB, and
-    // 70.8 kB of the page's own, the letter's PDF as base64 among it. The
-    // limit is that with a little room, so a dependency that grows still
-    // warns.
+    // read for which package each byte came from, with the Questionnaire's
+    // read-out (0013): the page is one chunk of 757.21 kB minified,
+    // 224.00 kB gzipped, as Vite reports it -- react-dom 207.0 kB,
+    // @formancy/spec 192.5 kB, the CEL interpreter 82.1 kB, formancy's
+    // renderer, engine and expressions 102.3 kB, the four health packages
+    // and health-corpus's documents 61.7 kB, and 89.5 kB of the page's
+    // own, the letter's PDF as base64 among it. The limit is that with a
+    // little room, so a dependency that grows still warns.
     chunkSizeWarningLimit: 760,
   },
 })

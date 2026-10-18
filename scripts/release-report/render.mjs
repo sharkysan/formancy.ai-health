@@ -6,12 +6,11 @@
 // limitation the run shows cannot be left out by somebody forgetting it, and
 // the line per section saying where it comes from.
 
-import { browserName } from '../browsers.mjs'
+import { BROWSERS, browserName, FACTS, prose } from '../browsers.mjs'
 
 const code = (text) => `\`${text}\``
 const cell = (text) => String(text ?? '').replaceAll('|', '\\|').replaceAll('\n', ' ')
 const table = (head, rows) => [`| ${head.join(' | ')} |`, `| ${head.map(() => '---').join(' | ')} |`, ...rows.map((row) => `| ${row.map(cell).join(' | ')} |`)].join('\n')
-const prose = (items) => (items.length <= 1 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`)
 const seconds = (ms) => (ms === null || ms === undefined || Number.isNaN(ms) ? '' : `${(ms / 1000).toFixed(1)} s`)
 const distinct = (values) => [...new Set(values)]
 
@@ -173,7 +172,7 @@ function browserSection({ results }) {
   return [
     '## Browser',
     '',
-    "Each app's browser gate, in every browser the gates run in (`scripts/browsers.mjs`): the demo's (0012), over the page Vite builds, served under the demo's path and headers. A check failed, a pass the gate planned and did not make or made with no check in it, or a browser launched otherwise than Playwright's pin fails the run.",
+    "Each app's browser gate, in every browser the gates run in (`scripts/browsers.mjs`, 0014): the demo's (0012), over the page Vite builds, served under the demo's path and headers. A check failed, a pass the gate planned and did not make or made with no check in it, a browser launched otherwise than Playwright's pin, a check or a pass made in one browser and not another, or a row of the table below that no check held fails the run.",
     '',
     gates.length === 0
       ? 'No browser gate left results in this run.'
@@ -192,6 +191,24 @@ function browserSection({ results }) {
             seconds(gate.wallMs),
           ]),
         ),
+    '',
+    factsTable(),
+  ].join('\n')
+}
+
+/**
+ * What the browsers disagree on, 0014's table as scripts/browsers.mjs
+ * holds it: each row, what it says, each browser's answer, and the checks
+ * that hold it, which the report has just held made in every browser.
+ */
+function factsTable() {
+  return [
+    "What the browsers disagree on (0014): each row of `scripts/browsers.mjs`'s `FACTS`, each browser's answer, and the checks of the gate that hold it in every browser; where each answer was read and how it was measured is the table's own.",
+    '',
+    table(
+      ['Row', 'Says', ...BROWSERS.map(browserName), 'Held by'],
+      Object.entries(FACTS).map(([id, fact]) => [id, fact.says, ...BROWSERS.map((browser) => String(fact.values[browser])), `${fact.heldBy.gate}: ${fact.heldBy.checks.map((check) => `“${check}”`).join('; ')}`]),
+    ),
   ].join('\n')
 }
 
@@ -356,7 +373,13 @@ export function renderSummary(report, { section = null, link = null } = {}) {
   const { install } = report.results
   const gate = report.results.validator.gate
   const browsers = report.results.browserGates
-  const browserGate = browsers.length === 0 ? 'left no results' : browsers.every((row) => row.error === null && row.failed.length === 0) ? `made ${String(browsers.reduce((total, row) => total + row.ok, 0))} checks in ${String(browsers.reduce((total, row) => total + row.passes, 0))} passes, and none failed` : 'failed'
+  const failedIn = browsers.filter((row) => row.error !== null || row.failed.length > 0).map((row) => browserName(row.asked))
+  const browserGate =
+    browsers.length === 0
+      ? 'left no results'
+      : failedIn.length === 0
+        ? `made ${String(browsers.reduce((total, row) => total + row.ok, 0))} checks in ${String(browsers.reduce((total, row) => total + row.passes, 0))} passes, in ${prose(distinct(browsers.map((row) => browserName(row.asked))))}, and none failed`
+        : `failed in ${prose(distinct(failedIn))}`
   return [
     ...(link === null ? [] : [`The full report of the run that gated this: ${link}`, '']),
     ...(section === null ? [] : [`The notes above are CHANGELOG.md’s ${code(section)} section.`, '']),

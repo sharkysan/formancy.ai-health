@@ -110,7 +110,7 @@ last job, `report`, builds the report from all of them
    Node as each job ran it and the install gate's npm; pnpm and the tools;
    Playwright and the build it pins for each browser
    [`scripts/browsers.mjs`](../../scripts/browsers.mjs) names, beside the
-   browser the demo's gate launched and the axe-core it put in the page;
+   browsers the demo's gate launched and the axe-core it put in the page;
    and the tuple the README's compatibility table states -- the FHIR
    version, the validator the gate pins and the packages it loads -- beside
    the validator the gate ran and the Java it ran on.
@@ -131,9 +131,12 @@ last job, `report`, builds the report from all of them
    however it ends, in each browser the gates run in: what it launched, the
    Playwright that launched it, its checks passed and failed, the passes it
    made of those it planned, the widths, the axe-core it ran and its wall
-   time. It runs the packages as the workspace builds them, bundled into
-   the demo's page, and never the tarballs, which a derived limitation
-   says.
+   time, each leg of the `browser` job's file read under its browser's
+   key; and the table of what the browsers disagree on, each row with each
+   browser's answer and the checks that hold it
+   ([0014](../decisions/0014-the-demos-browser-gate-runs-in-chromium-firefox-and-webkit-and-each-fact-the-browsers-disagree-on-is-named-and-held.md)). It runs the packages as the workspace
+   builds them, bundled into the demo's page, and never the tarballs,
+   which a derived limitation says.
 6. **Build identity:** each published package's tarball as the install gate
    packed, installed and ran it, by sha256, and the hash of its built files
    against the `dist/` every job built.
@@ -175,7 +178,10 @@ failing; the demo's browser gate leaving no results in a browser
 `scripts/browsers.mjs` names, ending in an error, failing a check, not
 making a pass it planned or making one with no check in it, launching
 another browser or build than the one the installed Playwright pins, or
-otherwise than headless, or run by another Playwright; a browser gate's
+otherwise than headless, or run by another Playwright; the browser gate
+making another check in one browser than in another, by pass and name,
+or another list of passes, or making a check that holds a row of
+`scripts/browsers.mjs`'s table in no pass of a browser; a browser gate's
 file whose browser, asked for or launched, is not the one it is filed
 under; the install gate's record, a browser gate's file or the
 validator's files in another job's results; a gate's file that records

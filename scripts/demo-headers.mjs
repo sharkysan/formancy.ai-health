@@ -13,13 +13,17 @@
 // a form that posts. Scripts, styles and faces are the build's own files,
 // from its assets directory and nowhere else, and none is inline: Vite
 // writes none, and React's `style` prop goes through the CSSOM, which the
-// policy does not govern. Not `'self'`, which admits whatever the same
-// origin serves: Cloudflare serves the scripts of the features it injects
-// from `/cdn-cgi/` of the same origin, and a review measured on 18 October
-// 2026 that such a script, admitted, sent what was typed to the origin
-// through an image or a face. Under the build's own directory it is
-// refused, and the gate plants one to watch it refused. `no-transform`
-// asks Cloudflare to inject nothing in the first place.
+// policy does not govern. WebKit 27.2 refuses a style attribute of its own
+// under it, `text-overflow:inherit` on every <select>, and logs an error
+// for each; the policy is not loosened for a style no build of the page
+// writes and that changes nothing it draws (0014). Not `'self'`, which
+// admits whatever the same origin serves: Cloudflare serves the scripts of
+// the features it injects from `/cdn-cgi/` of the same origin, and a
+// review measured on 18 October 2026 that such a script, admitted, sent
+// what was typed to the origin through an image or a face. Under the
+// build's own directory it is refused, and the gate plants one to watch it
+// refused. `no-transform` asks Cloudflare to inject nothing in the first
+// place.
 //
 // Trusted Types: no script of the page may hand a string to a sink that
 // parses it as markup or code -- `innerHTML`, React's

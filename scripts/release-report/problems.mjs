@@ -10,7 +10,7 @@
 // for browser, a gate that left nothing are not problems. A file it found
 // and refused still is. CI allows none.
 
-import { browserName } from '../browsers.mjs'
+import { browserName, FACTS } from '../browsers.mjs'
 import { unmeasured } from './results.mjs'
 
 const list = (items, most = 5) => (items.length <= most ? items.join('; ') : `${items.slice(0, most).join('; ')}; and ${String(items.length - most)} more`)
@@ -123,12 +123,74 @@ function launchProblems(which, launched, ranPlaywright, { playwright, pins }, br
   return problems
 }
 
+const NOBODY_CHECKED = 'a check made in one browser and not another is a claim made for that browser by nobody'
+const NOBODY_MEASURED = 'a pass made in one browser and not another is a width measured for that browser by nobody'
+const passName = (label) => (label === null ? '(before any pass)' : `"${label}"`)
+const times = (count) => `${String(count)} ${count === 1 ? 'time' : 'times'}`
+
+/** How often each check was made in one pass: name -> count. */
+const tally = (checks) => checks.reduce((counts, name) => counts.set(name, (counts.get(name) ?? 0) + 1), new Map())
+
+/**
+ * One app's gates, one per browser in the order the gates run in, compared
+ * with the first (0014, as formancy.ai-data's 0058): the same passes, by
+ * label and in order, and in each pass the same checks by name, as often.
+ * A check's name carries no value of its run, so the names alone say
+ * whether two browsers were asked the same questions; a difference in an
+ * answer is a failed check, never a missing one.
+ */
+function sameChecks(app, ran) {
+  const [first, ...others] = ran
+  const problems = []
+  for (const other of others) {
+    const [a, b] = [first, other].map((gate) => gate.made.map((entry) => entry.label))
+    const [one, two] = [browserName(first.asked), browserName(other.asked)]
+    if (a.join('\0') !== b.join('\0')) {
+      problems.push(`the browser gate of ${app} made its passes as ${a.map(passName).join(', ')} in ${one} and as ${b.map(passName).join(', ')} in ${two}: ${NOBODY_MEASURED}`)
+      continue
+    }
+    for (const [at, entry] of first.made.entries()) {
+      const [counts, theirs] = [tally(entry.checks), tally(other.made[at].checks)]
+      for (const name of new Set([...counts.keys(), ...theirs.keys()])) {
+        const [x, y] = [counts.get(name) ?? 0, theirs.get(name) ?? 0]
+        if (x === y) continue
+        const where = `"${name}" at ${passName(entry.label)}`
+        const said = y === 0 ? `${where} in ${one} and not in ${two}` : x === 0 ? `${where} in ${two} and not in ${one}` : `${where} ${times(x)} in ${one} and ${times(y)} in ${two}`
+        problems.push(`the browser gate of ${app} made ${said}: ${NOBODY_CHECKED}`)
+      }
+    }
+  }
+  return problems
+}
+
+/**
+ * Each row of 0014's FACTS whose `heldBy` names `app`'s gate, against that
+ * gate's run in each browser (`ran`, none in an error): every check the row
+ * names, made in some pass. sameChecks compares the browsers with each
+ * other, so a check taken out of the gate in every browser at once is no
+ * difference there; here it is a row nobody holds.
+ */
+function unheldFacts(app, ran) {
+  const problems = []
+  for (const [id, fact] of Object.entries(FACTS)) {
+    if (fact.heldBy.gate !== app) continue
+    for (const gate of ran) {
+      const made = new Set(gate.made.flatMap((entry) => entry.checks))
+      for (const name of fact.heldBy.checks) {
+        if (!made.has(name)) problems.push(`the browser gate of ${app} in ${browserName(gate.asked)} never made "${name}", which holds 0014’s ${id}: a row no check holds is a sentence nobody measured`)
+      }
+    }
+  }
+  return problems
+}
+
 /**
  * Every app with a `test:browser` script has its gate in every browser the
  * gates run in (`browsers`): present, no error, no failed check, every pass
  * it planned made with a check in it, and the browser it launched the build
- * Playwright pins for that browser. A check that never ran is skipped, and
- * skipped is not passed, as in a suite.
+ * Playwright pins for that browser; and its gates in every browser asked
+ * the same checks, and every row of 0014's table held. A check that never
+ * ran is skipped, and skipped is not passed, as in a suite.
  */
 function gateProblems(report, { browserApps, browsers, allowMissing }) {
   const problems = []
@@ -149,6 +211,11 @@ function gateProblems(report, { browserApps, browsers, allowMissing }) {
       continue
     }
     problems.push(...launchProblems(which, gate.browser, gate.playwright, report.testedOn.browser, browsers))
+  }
+  for (const app of browserApps) {
+    // Gates that ended in an error stopped where they stopped; their error is already a problem.
+    const ran = browsers.flatMap((browser) => gates.filter((gate) => gate.gate === app && gate.asked === browser && gate.error === null))
+    problems.push(...sameChecks(app, ran), ...unheldFacts(app, ran))
   }
   return problems
 }

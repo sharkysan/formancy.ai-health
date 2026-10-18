@@ -75,8 +75,17 @@ and its links, and review the rest
 The demo fills a synthetic Swiss referral in your browser and shows what
 the packages make of it: the Questionnaire, the QuestionnaireResponse,
 the CH ORF document and the letter's document Bundle, with every refusal
-as the packages state it. It is online at https://formancy.ai/health/ and
-runs from a clone, with Node 22.13 or later and corepack:
+as the packages state it. The Questionnaire is read out above its JSON,
+item by item in the page's language -- its text, type, options and when it
+is shown -- from the resource's own bytes and not from the form, each item
+but the patient's language, a radio group formancy's renderer draws no
+control of its engine's id for, leading to the field it came from: the
+form is what becomes the Questionnaire. The read-out is no FHIR renderer
+and validates nothing, and
+Formancy Health draws no Questionnaire
+([0013](./docs/decisions/0013-the-demo-reads-its-questionnaire-out-from-the-bytes-it-shows-and-renders-no-questionnaire.md)). It is online at
+https://formancy.ai/health/ and runs from a clone, with Node 22.13 or
+later and corepack:
 
 ```bash
 git clone https://github.com/sharkysan/formancy.ai-health.git
@@ -97,9 +106,12 @@ own build's files alone, which
 [`scripts/demo.test.mjs`](./scripts/demo.test.mjs) holds the headers to,
 and its browser gate,
 [`apps/demo/scripts/browser-test.mjs`](./apps/demo/scripts/browser-test.mjs),
-watches it in Chromium ask for nothing more once it has settled -- loaded,
-every face in, nothing in flight -- whatever is typed into it, and store
-nothing in the browser. Its foot links the licences and notices of the
+watches it in Chromium, Firefox and WebKit ask for nothing more once it
+has settled -- loaded, every face in, nothing in flight -- whatever is
+typed into it, and store nothing in the browser; in WebKit, that holds
+while each face's first file arrives, and WebKit 27.2 logs an error for
+each select, refusing a style of its own under the page's policy, which
+is not loosened for it ([0014](./docs/decisions/0014-the-demos-browser-gate-runs-in-chromium-firefox-and-webkit-and-each-fact-the-browsers-disagree-on-is-named-and-held.md)). Its foot links the licences and notices of the
 code and faces it bundles, which its build writes beside it. It is the
 demo of the packages, not a product: no page, server or transport ships
 in them.
@@ -175,8 +187,8 @@ open.
 - **A browser.** Every gate that runs the packed packages runs them under
   Node; none runs them in a browser or another engine, so that is not
   claimed. The demo's
-  browser gate runs the packages in Chromium as the workspace builds them,
-  bundled into its page, which is not the tarballs.
+  browser gate runs the packages in Chromium, Firefox and WebKit as the
+  workspace builds them, bundled into its page, which is not the tarballs.
 
 ## Intended purpose
 
@@ -320,13 +332,16 @@ pnpm test
 
 The demo, `apps/demo`, is served built by `pnpm demo`, as [Try it](#try-it)
 says, and is developed with Vite's own server, which applies none of the
-headers. Its browser gate needs the Chromium the installed Playwright
-pins, once per machine:
+headers. Its browser gate runs in Chromium, Firefox and WebKit, WebKit on
+Linux alone, and needs the builds the installed Playwright pins, once per
+machine; `FORMANCY_BROWSERS`, a list such as `chromium,firefox`, narrows a
+run to the browsers it names, and a run with it unset is every browser the
+machine runs:
 
 ```bash
-pnpm --filter @formancy/health-demo dev                                # Vite's server, after pnpm build
-pnpm --filter @formancy/health-demo exec playwright install chromium   # once
-pnpm test:browser                                                      # the demo's browser gate, which builds what it measures
+pnpm --filter @formancy/health-demo dev                                               # Vite's server, after pnpm build
+pnpm --filter @formancy/health-demo exec playwright install chromium firefox webkit   # once; WebKit runs on Linux alone
+pnpm test:browser                                                                     # the demo's browser gate, which builds what it measures
 ```
 
 The gates CI runs, from `.github/workflows/gates.yml`: `pnpm build`,
@@ -339,8 +354,10 @@ JavaScript number or reads a clock; each package's
 the packages, installs them into a plain npm project, type-checks it with
 `skipLibCheck` off and runs it under Node, and does the same with the
 program of the [getting-started guide](./docs/getting-started.md) in a
-project of its own; the demo's browser gate, in Chromium, for what jsdom
-cannot see of its page ([0012](./docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)); `node scripts/validator.mjs`,
+project of its own; the demo's browser gate, in Chromium, Firefox and
+WebKit, a job each, for what jsdom cannot see of its page
+([0012](./docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md),
+[0014](./docs/decisions/0014-the-demos-browser-gate-runs-in-chromium-firefox-and-webkit-and-each-fact-the-browsers-disagree-on-is-named-and-held.md)); `node scripts/validator.mjs`,
 the validator gate below; and the release report, built from what every
 other job found, which fails the run on anything it lists
 ([`docs/release/`](./docs/release/README.md)).
