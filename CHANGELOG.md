@@ -8,7 +8,7 @@ Loosely [Keep a Changelog](https://keepachangelog.com), with reasons attached â€
 a line that says only *what* changed is rarely the line you need six months
 later.
 
-## Unreleased
+## 0.1.0 â€” 2026-10-18
 
 **The first release, a developer preview.** It is for a vendor to evaluate
 Formancy Health and build against it: a CH ORF referral from a formancy
