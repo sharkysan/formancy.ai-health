@@ -249,6 +249,15 @@ that a slower machine could outrun. The release report reads each leg
 under its browser's key, compares the browsers' checks by pass, in their
 order, and by name, fails a row no check held, and prints the table.
 
+**The demo's download links are never pointed at bytes they no longer
+hold.** A link whose bytes changed -- the letter's Bundle, when the PDF
+moves into a Binary -- showed the new file's name over the old bytes'
+address for a moment, an address revoked as the new one was made, and
+Chromium cancelled a download pressed then, as CI's browser gate did on
+18 October 2026. The link now goes when its bytes change and comes back
+with their own address; `download.test.tsx` holds that no link's address
+changes in place.
+
 **The README says what 0.1.0 is, what is not in it, and what it is for**
 ([0011](docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)):
 its Status says, on 17 October 2026, that 0.1.0 is ready to tag and not
