@@ -22,7 +22,12 @@ import { reporters } from './vitest.results'
  * getting-started guide hands every block of code to the install gate,
  * installs what the gate installs and links only to what exists, and the
  * README's intended purpose holds CLAUDE.md's sentence word for word and
- * its links land (0011).
+ * its links land (0011); and the letter's PDF is the bytes its register
+ * names, and health-corpus's documents entry, which the demo bundles,
+ * reaches the workspace's packages alone; and the demo's deploy puts the
+ * build at one path of formancy.ai, under headers whose policy allows the
+ * page no connection, written as the one rule Cloudflare reads, as the
+ * README, REPO-METADATA and RELEASING say (0012).
  *
  * Run as `pnpm test:repo`, and by CI on every pull request. A guard that is not
  * a gate is a comment.

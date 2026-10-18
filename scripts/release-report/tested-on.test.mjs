@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import YAML from 'yaml'
+import { BROWSERS, LAUNCH_OPTIONS, PINNED_AS } from '../browsers.mjs'
 import { facts as compatibility } from '../compatibility.mjs'
 import { packageKey } from '../validator/registers.mjs'
 import { published, setupNodeVersions, testedOn, workspace } from './tested-on.mjs'
@@ -75,5 +76,17 @@ describe('testedOn()', () => {
     ])
     for (const tool of facts.tooling) expect(tool.version, tool.name).toMatch(/^\d+\.\d+\.\d+/)
     expect(facts.packageManager).toMatchObject({ name: 'pnpm', declared: JSON.parse(readFileSync(join(repo, 'package.json'), 'utf8')).packageManager })
+  })
+
+  // The report holds what the demo's browser gate launched to the build the
+  // installed Playwright pins for every browser of scripts/browsers.mjs,
+  // launched as LAUNCH_OPTIONS says: headless Chromium is the headless
+  // shell, pinned beside the full browser at one version, so a pin read
+  // from the full browser would pass a launch of either.
+  test('names the Playwright the demo’s gate loads, and the build it pins for each browser the gates run in', () => {
+    const playwright = JSON.parse(readFileSync(join(repo, 'apps', 'demo', 'node_modules', 'playwright', 'package.json'), 'utf8')).version
+    expect(facts.browser.playwright).toBe(playwright)
+    expect(facts.browser.pins.map((pin) => [pin.browser, pin.name, pin.headless])).toEqual(BROWSERS.map((browser) => [browser, PINNED_AS[browser], LAUNCH_OPTIONS.headless]))
+    for (const pin of facts.browser.pins) expect(pin.browserVersion, pin.name).toMatch(/^\d+\.\d+\.\d+\.\d+$/)
   })
 })

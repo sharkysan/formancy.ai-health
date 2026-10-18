@@ -1,6 +1,6 @@
 # 0010 — Document the architecture in arc42's sections, under formancy.ai's file names, and hold what a test can see of it to the repository by a guard
 
-- **Status:** accepted; its guard reads Markdown through `scripts/markdown.mjs`, fences in quotes and lists as GitHub does, by [0011](0011-a-release-report-is-derived-from-the-run-that-gated-it.md)
+- **Status:** accepted; its guard reads Markdown through `scripts/markdown.mjs`, fences in quotes and lists as GitHub does, by [0011](0011-a-release-report-is-derived-from-the-run-that-gated-it.md); its guard reads the demo's kinds of path, `.css`, `.html` and `.tsx`, by [0012](0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)
 - **Date:** 2026-10-17
 - **Deciders:** Daniel Bacher
 - **Verified by:** `scripts/architecture.test.mjs`, in `pnpm test:repo`,

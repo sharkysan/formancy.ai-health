@@ -1,7 +1,11 @@
 import { defineConfig } from 'tsdown'
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  // `documents` is an entry of its own, the manifest's `./documents`: the
+  // corpus's documents without its letter's renderer, which the demo
+  // bundles into its page (0012). The index re-exports it, so both are
+  // one module, and the page runs the code the validator gate ran.
+  entry: ['src/index.ts', 'src/documents.ts'],
   format: ['esm'],
   dts: true,
   clean: true,

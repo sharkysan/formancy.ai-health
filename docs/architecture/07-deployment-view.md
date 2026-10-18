@@ -18,7 +18,8 @@ token. What a release would publish, and how, is fixed by
 | A CycloneDX SBOM | the GitHub release, signed keyless with cosign | What a consumer installs: the tarballs `check` pinned, installed by npm in a project of their own outside the checkout, with no lifecycle script run and no peer, read by cdxgen with `--required-only` -- the published packages at the release's version, `@formancy/spec` and what it brings. `check` installs no workspace, holds the SBOM to the report -- every published package at the version, every upstream package a consumer's install brings at the version the suites loaded -- and to npm's lockfile of the install it read, no component more or less, and pins it before the signature ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md), as [formancy.ai-report 0017](https://github.com/sharkysan/formancy.ai-report/blob/main/docs/decisions/0017-the-sbom-describes-what-a-consumer-installs.md)); [§11](11-risks-and-debt.md#113-known-debt) says what that leaves |
 | The release notes | the GitHub release's body | This version's section of [`CHANGELOG.md`](../../CHANGELOG.md) and the report's summary, built and measured by the gates' report job ([`scripts/release-notes.mjs`](../../scripts/release-notes.mjs)), and pinned with the report |
 | `@formancy/health-corpus` | nowhere | Private: never packed, never published ([0008](../decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)) |
-| A container image, a server | none | Version 1 is a library |
+| The demo, `apps/demo` | https://formancy.ai/health/, from `main` | Private, never packed: a Cloudflare Worker of static files and no code, built and deployed by Cloudflare's Workers Builds on every push to `main` ([below](#the-demo), [0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)) |
+| A container image, a server | none | Version 1 is a library; the demo serves files and runs no code |
 
 ## Where it runs: inside the host
 
@@ -48,7 +49,10 @@ What a host needs:
   ([§2](02-constraints.md#technical-constraints)), but the install gate
   runs them under Node alone, the Node the README's
   [table](../../README.md#what-it-is-built-and-judged-against) names; no
-  gate runs them in a browser or another engine, so that is not claimed.
+  gate runs the packed packages in a browser or another engine, so that is
+  not claimed. The demo's browser gate runs them in Chromium as its page
+  bundles them from the workspace ([below](#the-demo)), which shows a
+  browser can run them and is not a host's install.
 - **What it supplies**: a form, as `@formancy/spec` reads it, which comes
   with health-questionnaire at the exact version it depends on; a
   submission, as formancy's engine holds it; a PDF's bytes as a
@@ -76,12 +80,60 @@ What a host needs:
   the install gate builds a project of the same packages at the same
   releases, the published ones from their tarballs, and runs the program in it ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).
 
+## The demo
+
+```
+push to main ──▶ Cloudflare Workers Builds: pnpm build, then node scripts/demo.mjs
+                     │  the build refuses a letter that is not the registered bytes;
+                     │  the deploy refuses a checkout with changes, a Worker config
+                     │  that is not the demo's, a page that asks for a file by an
+                     │  absolute path, and a _headers of the build's own
+                     ▼
+                 the demo's Worker: static assets, no code,
+                 routed at formancy.ai/health and formancy.ai/health/*
+                     ├─ _headers     one rule, /*, from scripts/demo-headers.mjs,
+                     │               written for https://formancy.ai/health/
+                     └─ health/      the built demo, THIRD-PARTY-NOTICES.txt beside its page
+
+formancy.ai's own Worker serves everything else, Formancy Report's Studio at /report/ beside it
+```
+
+The demo is built with a relative base, so one build is right under
+`/health/` and at the root of `pnpm demo`; `scripts/demo.mjs` stages it
+under the path read from `apps/demo/wrangler.json`, writes the headers
+`scripts/demo-headers.mjs` decides for the demo's address there as the
+`_headers` file Cloudflare reads
+at the root of what Wrangler uploads, and deploys with the Wrangler it
+pins, as
+[formancy.ai-report 0018](https://github.com/sharkysan/formancy.ai-report/blob/main/docs/decisions/0018-the-studio-demo-is-served-at-formancy-ai-report.md)
+deploys Report's Studio. `pnpm demo` serves the build under the same
+headers, from the same function, written for http://localhost:4395/, and
+the browser gate under those it writes for its own address; the three
+differ in that address alone, since the policy admits the build's
+scripts, styles and faces from there and from nowhere else. The Worker's build settings live in
+Cloudflare's dashboard, recorded by hand in
+[`.github/REPO-METADATA.md`](../../.github/REPO-METADATA.md#the-demos-worker-on-cloudflare)
+and held there to the deploy by
+[`scripts/demo.test.mjs`](../../scripts/demo.test.mjs). What that costs: the
+demo is `main`'s, ahead of any release; a push deploys without waiting for
+that commit's CI; Cloudflare builds on its own machine, whose Node must
+render the letter's registered bytes or the build stops; and nothing in this repository checks
+that a deploy happened or what the address serves, which
+[`RELEASING.md`](../../RELEASING.md#the-demo-on-formancyai) checks by hand
+([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
+
+What the demo needs of a visitor is a browser that runs a module script;
+of Cloudflare, a Worker of its own on formancy.ai's zone, with the build
+settings REPO-METADATA records and no token in GitHub; and of nothing
+else, since the page asks no other site for anything, its faces included.
+
 ## Where the gates run
 
 | Gate | Where | What it needs |
 |---|---|---|
 | `verify`, `test`, `install` | GitHub's `ubuntu-latest`, the Node the README's [table](../../README.md#what-it-is-built-and-judged-against) names, pnpm through corepack | The lockfile; the `test` job's matrix names every package with a suite, which [`scripts/ci-test-jobs.test.mjs`](../../scripts/ci-test-jobs.test.mjs) holds. The install gate reaches the registry, unlocked, for its projects' tools and for what the guide installs beside the tarballs: `@formancy/spec`, and Formancy Report's runtime and renderer with what they bring |
 | `validator` | The same, with Temurin, at the Java the validator's register asks for, from a `setup-java` pinned to a commit | GitHub's release asset and packages.fhir.org, reached only to download what the registers pin; a download cache in CI alone, keyed on the registers and never restored by a release ([0005](../decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md)). The register holds the Swiss guides and what they declare -- `ch.fhir.ig.ch-orf`, `ch.fhir.ig.ch-core`, `ch.fhir.ig.ch-term`, the `hl7.fhir.uv.sdc` release CH ORF is built on, `ihe.formatcode.fhir`, admitted under CC-BY-4.0 for that entry alone, and the `hl7.terminology.r4` releases they name -- each at the release [`ig-packages.json`](../release/ig-packages.json) pins ([0009](../decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)) |
+| `browser` | GitHub's `ubuntu-24.04`, pinned for the fonts and libraries Chromium draws with | The lockfile; the Chromium headless shell the installed Playwright pins, downloaded by `playwright install chromium` without `--with-deps`, its download cached in CI alone by the lockfile; nothing reached from the page, which the gate fails if it asks anything of another origin ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)) |
 | `report` | GitHub's `ubuntu-latest`, after every other job, unless the run was cancelled | The lockfile, installed and not built, and the whole history, for a document's last change; every other job's `release-results-<key>` artefact, each uploaded by that job's collect step however the job ended ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)) |
 | By hand | Any machine with a Java at least as new as the register asks | `pnpm build`, then `node scripts/validator.mjs --java <path>`, which downloads into the cache directory [`.gitignore`](../../.gitignore) keeps out of git; and a report of that machine's runs, as [`RELEASING.md`](../../RELEASING.md#the-release-report) says |
 

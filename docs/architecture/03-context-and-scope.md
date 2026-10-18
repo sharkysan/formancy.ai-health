@@ -22,7 +22,7 @@
 | Party | Exchanges |
 |---|---|
 | **The host** | Calls the packages in its own process. Hands over a form, a submission, a PDF's bytes and the context: a canonical base, the version formancy published, a status, the languages, references by name, dates with their zone. Receives a resource, or every refusal. Sends, stores and signs what it receives, and verifies the identity it names ([`CLAUDE.md`](../../CLAUDE.md#secrets-health-data-and-untrusted-input)) |
-| **formancy** | Defines the form: `@formancy/spec`, at an exact released version, its types and its own validator, which decides what a form means before anything here maps it ([0002](../decisions/0002-depend-on-upstream-never-copy-it.md), [0006](../decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)). A submission is formancy's engine's value, read as data: `@formancy/core` is no dependency ([0007](../decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)) |
+| **formancy** | Defines the form: `@formancy/spec`, at an exact released version, its types and its own validator, which decides what a form means before anything here maps it ([0002](../decisions/0002-depend-on-upstream-never-copy-it.md), [0006](../decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)). A submission is formancy's engine's value, read as data: `@formancy/core` is no package's dependency ([0007](../decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)); the demo's page alone draws a form with `@formancy/core` and `@formancy/react`, and wears `@formancy/themes`, each at an exact release (below) |
 | **Formancy Report** | Renders the PDFs a document carries. No published package depends on it; the private health-corpus renders the corpus's PDF with its released packages ([0008](../decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)). A host may attach a PDF from anywhere |
 | **Formancy Data** | None. Its records reach Health through a host, or through a report Report rendered from them ([0002](../decisions/0002-depend-on-upstream-never-copy-it.md)) |
 | **The receiving system** | Receives what the host sends. Nothing here sends anything, or knows who receives it |
@@ -45,6 +45,31 @@
 | FHIR JSON out, and back in | text, by health-core's `writeJson` and `readJson` | Never `JSON.stringify` or `JSON.parse`, which lose digits and a name given twice ([0004](../decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)) |
 | The gate → GitHub's releases and packages.fhir.org | HTTPS downloads by exact version, refused unless the SHA-256 is the registered one | In CI and by hand only; never from a package ([0005](../decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md)) |
 | The validator → anything | none: `-tx n/a -txCache n/a -no-http-access` | No terminology server and no HTTP at all. A request the validator tries is refused, and the gate fails on a package it could not load ([0005](../decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md)) |
+
+## The demo's context
+
+The demo is a page beside the product, not a host of it
+([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)):
+
+```
+   a visitor's browser                                    Cloudflare, formancy.ai's zone
+   ┌───────────────────────────────────────────────┐     ┌──────────────────────────────┐
+   │  the corpus's synthetic referral, from the    │ GET │  the demo's Worker: static   │
+   │  build ──▶ formancy's React renderer 0.5.0 ──▶│◀────│  files, no code, at /health/ │
+   │  engine.value() ──▶ health-questionnaire,     │     │  and /health, its headers    │
+   │  health-ch, health-document ──▶ FHIR JSON,    │     │  from scripts/demo-headers   │
+   │  shown and downloaded from memory             │     └──────────────────────────────┘
+   │  the letter's PDF: bytes of the build         │       ▲ Workers Builds, from main
+   └───────────────────────────────────────────────┘
+          nothing typed goes anywhere: the policy allows the page no connection
+```
+
+| Party | Exchanges |
+|---|---|
+| **A visitor** | Opens the page, changes the sample's answers, downloads what the packages made. Sends nothing back: the page has no form that posts and no connection to make, and keeps nothing once it is closed |
+| **Cloudflare** | Serves the build from a Worker of its own on formancy.ai's zone, beside formancy.ai's site and Formancy Report's Studio, and builds and deploys it from `main` with the settings `.github/REPO-METADATA.md` records. Sees each request, as any host of a page does; what the zone sets or measures on it, nothing here reads |
+| **formancy** | Draws the form: `@formancy/core` and `@formancy/react` 0.5.0, and the workbench and Blueprint of `@formancy/themes` 0.5.0, imported |
+| **Formancy Report** | Renders the letter once, when the page is built, through health-corpus; its code is not in the page, and the page carries only the bytes `docs/release/letter.json` registers |
 
 ## What is deliberately outside the boundary
 
@@ -69,3 +94,9 @@
 - **Clinical meaning.** No item computes, warns or suggests. A customer's
   form is the customer's, and nothing here checks that it computes no
   clinical result.
+- **A server for the demo.** The demo has none: it serves files and
+  receives nothing a visitor types. A patient's real data has no place in
+  it, which the page says, and it runs no validator on what is typed, which
+  it says too. What Cloudflare's zone does with a request -- a cookie, a
+  measurement, a script it adds -- is the zone's, and the page says nothing
+  about it ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).

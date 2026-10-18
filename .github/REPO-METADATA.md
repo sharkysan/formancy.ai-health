@@ -59,9 +59,46 @@ As formancy.ai-report's, set on 2026-10-16:
 
 ## Website
 
-None. Version 1 is a library with no page, and the *About* field stays empty
-until something of this module's is live. A page of its own, if it ever has
-one, takes an address without HL7's marks in it (0003).
+https://formancy.ai/health/, the demo ([0012](../docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)), once it answers there. The
+address holds no HL7 mark, and neither does the Worker's name (0003):
+
+```bash
+gh repo edit sharkysan/formancy.ai-health --homepage https://formancy.ai/health/
+```
+
+## The demo's Worker on Cloudflare
+
+The demo is a Cloudflare Worker connected to this repository by Workers
+Builds, as formancy.ai-report's Studio is to its own (formancy.ai-report
+0018). Its settings are in Cloudflare's dashboard, under the Worker's
+*Settings › Build*, where nothing here can read them.
+`scripts/demo.test.mjs` holds the Worker, the repository, the root
+directory, the branch, the two commands and the build variables below to
+`apps/demo/wrangler.json`, the packages' manifests and
+`pnpm demo:deploy`. Review holds the rest.
+
+| Setting | Value | Why |
+|---|---|---|
+| Worker | `formancy-health-demo` | The name `apps/demo/wrangler.json` gives it, which must be the dashboard's: Workers Builds deploys the config it builds |
+| Git repository | `sharkysan/formancy.ai-health` | |
+| Production branch | `main` | The demo is main's |
+| Builds for non-production branches | off | A branch's build would upload a version of the Worker from code no review has merged |
+| Root directory | `/` | The workspace's root, where its lockfile is and `pnpm build` builds every package the demo imports |
+| Build command | `pnpm build` | |
+| Deploy command | `node scripts/demo.mjs` | It stages the demo's build under `/health/`, the notices the build wrote among it, writes `_headers` from `scripts/demo-headers.mjs` for https://formancy.ai/health/ beside it, and runs the pinned Wrangler with `apps/demo/wrangler.json` |
+| Build variables | none | Node from `.node-version`, the major every workflow sets up, and no `NODE_VERSION` beside it; pnpm the version `packageManager` names, which the image's pnpm switches to |
+| API token | the one Workers Builds generates | No Cloudflare token is held in GitHub |
+
+The Worker was connected by 18 October 2026, before `main` held the demo:
+its build of that `main` stopped at the deploy command, which found no
+`scripts/demo.mjs`. The first build of a `main` that holds the demo is the
+first that can deploy it.
+
+## Search engines
+
+None. The demo says `noindex`, in an `X-Robots-Tag` on every file it
+serves, which `scripts/demo.test.mjs` holds, and in its page's `robots`
+meta; Health has no page meant to be found ([0012](../docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
 
 ## Secrets the workflows expect
 

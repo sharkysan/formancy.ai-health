@@ -1,6 +1,6 @@
 # 0008 — Assemble a document from the host's resources, the Composition first and only what it refers to, every reference resolved; attach a PDF by its own bytes; and refuse a PDF profile nothing here has proved
 
-- **Status:** accepted; the Composition has a narrative of its titles, the Bundle and the Composition claim the profiles the host names, and a member a context does not name and a hole in a list are refused, by [0009](0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)
+- **Status:** accepted; the Composition has a narrative of its titles, the Bundle and the Composition claim the profiles the host names, and a member a context does not name and a hole in a list are refused, by [0009](0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md); health-corpus's documents given an entry of their own, which the demo's page bundles, and its letter registered by its bytes and carried into that page at build, by [0012](0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)
 - **Date:** 2026-10-17
 - **Deciders:** Daniel Bacher
 - **Verified by:** the tests of `@formancy/health-document`,

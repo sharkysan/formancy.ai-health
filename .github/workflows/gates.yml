@@ -10,13 +10,14 @@ name: Gates
 # all of them and fails the run on anything its `problems` list
 # (scripts/release-report/report.mjs).
 #
-# Four jobs leave results, because four things exist to prove: the build,
+# Five jobs leave results, because five things exist to prove: the build,
 # types, packaging, licences and the repository's guards (`verify`); each
-# package's suite on a runner of its own (`test`); the packed tarballs in a
-# project that is not this one (`install`); and the FHIR resources the
-# packages write, judged by the HL7 FHIR validator against pinned guide
-# packages (`validator`, 0005). A job added here is one the report expects
-# results from: it needs a collect step, and collect.mjs a reader for it.
+# package's suite on a runner of its own (`test`); what jsdom cannot see of
+# the demo, in Chromium (`browser`, 0012); the packed tarballs in a project
+# that is not this one (`install`); and the FHIR resources the packages
+# write, judged by the HL7 FHIR validator against pinned guide packages
+# (`validator`, 0005). A job added here is one the report expects results
+# from: it needs a collect step, and collect.mjs a reader for it.
 #
 # A release runs code from here with its own permissions, so third-party
 # actions are pinned to commit hashes, with the tag in a comment, under
@@ -141,7 +142,7 @@ jobs:
       # Every suite reports, rather than the first failure cancelling the rest.
       fail-fast: false
       matrix:
-        package: ['@formancy/health-core', '@formancy/health-questionnaire', '@formancy/health-document', '@formancy/health-ch', '@formancy/health-corpus']
+        package: ['@formancy/health-core', '@formancy/health-questionnaire', '@formancy/health-document', '@formancy/health-ch', '@formancy/health-corpus', '@formancy/health-demo']
     steps:
       - uses: actions/checkout@v4
 
@@ -205,6 +206,89 @@ jobs:
         with:
           name: release-results-${{ steps.collect.outputs.key }}
           path: release-results/
+          if-no-files-found: error
+          overwrite: true
+
+  # What jsdom cannot see of the demo (0012), measured in Chromium by its
+  # browser gate, apps/demo/scripts/browser-test.mjs: the layout from a wide
+  # screen down to 320 pixels, the keyboard's path, axe's contrast and
+  # target size, the journey against the validator gate's corpus, and what
+  # the page asks of the network and the browser under the headers it is
+  # served with. formancy.ai-report's browser job, without its pictures. On
+  # a pinned image, for the fonts and libraries Chromium draws with.
+  browser:
+    runs-on: ubuntu-24.04
+    # Measured on a desktop on 18 October 2026 (Windows 11, Node 24.21.0):
+    # the gate, its own build of the page and its eight passes, took 27 s
+    # as its record times it and 29 s through pnpm; the bound is for a
+    # download or a runner having a bad day, as formancy.ai-report's is,
+    # whose Studio's gate does more.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable pnpm
+
+      - name: Get pnpm store directory
+        id: pnpm-store
+        run: |
+          store=$(pnpm store path --silent)
+          echo "path=${store}" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        if: inputs.release == ''
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - run: pnpm install --frozen-lockfile
+
+      # Cached by the lockfile, which pins the playwright version the browser
+      # revision is tied to; in CI only, as the store is.
+      - name: Cache the chromium download
+        uses: actions/cache@v4
+        if: inputs.release == ''
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-chromium-${{ hashFiles('pnpm-lock.yaml') }}
+
+      # No `--with-deps`, for formancy.ai's reason, which formancy.ai-report's
+      # and formancy.ai-data's gates keep: it runs apt-get for libraries the
+      # hosted runner already ships, and on formancy.ai that once sat for
+      # nineteen minutes until the job timed out. If a library is ever
+      # missing, Chromium fails to launch and says which; the step timeout is
+      # the backstop.
+      - run: pnpm --filter @formancy/health-demo exec playwright install chromium
+        timeout-minutes: 5
+
+      # turbo builds the packages the demo imports first (turbo.json's
+      # `dependsOn`); the gate then builds and serves the page it measures.
+      # Never cached: a replayed pass measured nothing.
+      - run: pnpm exec turbo run test:browser --filter=@formancy/health-demo
+
+      # What the gate found, for the report: the file it writes under
+      # apps/demo/test-results however its run ends (browser-chromium.json),
+      # and the dist/ of every published package turbo built for the demo.
+      - name: Keep what this job found, for the report
+        id: collect
+        if: ${{ !cancelled() }}
+        run: node scripts/release-report/collect.mjs --job browser
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: release-results-${{ steps.collect.outputs.key }}
+          path: release-results/
+          if-no-files-found: error
+          overwrite: true
+      # The gate's own file, whole, for whoever reads a red run.
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: browser-results
+          path: apps/demo/test-results/
           if-no-files-found: error
           overwrite: true
 
@@ -385,7 +469,7 @@ jobs:
   # checkout keeps the whole history, for a document's last change when a
   # gate's evidence is a document.
   report:
-    needs: [verify, test, install, validator]
+    needs: [verify, test, browser, install, validator]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15

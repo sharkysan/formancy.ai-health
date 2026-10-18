@@ -43,10 +43,146 @@ Not in this release:
   Composition's receivers and contacts and the rest
   [0009](docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)
   refuses.
-- **A page, a server or any transport.**
+- **A page, a server or any transport**, in the packages: the demo below
+  is a page beside them, never published.
 
 The release report of the run that gates this release lists, under "Known
 limitations", what each decision record says a user will meet.
+
+**A demo at https://formancy.ai/health/ shows the packages at work**
+([0012](docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)),
+so that a vendor can try the export without installing anything.
+`apps/demo`, private and never published, is a page in Swiss German,
+French, Italian and English that fills a synthetic Swiss referral with
+formancy's React renderer and shows what the packages make of it in the
+visitor's browser -- the SDC Questionnaire, the QuestionnaireResponse,
+the CH ORF document and the letter's document Bundles -- beside fixed
+inputs each refused for one thing, every refusal as the package states
+it, in English.
+What it shows before anything is changed is the validator gate's corpus,
+byte for byte, which every build checks; what a visitor changes is
+validated by nothing, and the page says so. It says it sends what is
+typed nowhere and keeps none of it, which its policy and its gate hold,
+and nothing about cookies or tracking, which formancy.ai's zone decides
+and nothing here reads. Of conformance it says what CI's validator gate
+judges and that the sample is in its corpus, not that the gate passed on
+the commit the page was built from, since Cloudflare deploys before CI
+runs and `main` requires no check. It takes formancy's `@formancy/core`,
+`@formancy/react` and `@formancy/themes` at exactly 0.5.0, beside the
+`@formancy/spec` 0.5.0 the packages read, for the demo alone: it wears
+the workbench and Blueprint as 0.5.0 ships them, imported and stating no
+colour of its own, until a formancy release ships formancy.ai's room. The
+packages' dependencies do not change, and the README's table of what
+they are built and judged against stays theirs. No HL7 mark names its
+Worker, its routes or its title, which `scripts/trademark.test.mjs` now
+reads as it reads the packages' names
+([0003](docs/decisions/0003-the-product-name-carries-no-hl7-mark.md));
+and the costs a visitor or an operator meets are the release report's
+known limitations under an area of their own, `demo`.
+
+**The validator corpus holds the demo's referral, and the letter's PDF is
+registered by its bytes** ([0012](docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)). The demo at formancy.ai/health/ starts
+from a synthetic referral, `scripts/validator/demo-referral.mjs`, in Swiss
+German, French, Italian and English, about and by the corpus's own
+synthetic people, with no AHV number and no SNOMED CT code; the gate judges
+the Questionnaire, the QuestionnaireResponse and the CH ORF document the
+packages make of it, and accepted all three on 17 October 2026 with no
+warning but the registered ones, so that what the page shows before
+anything is changed is what the gate judged. `docs/release/letter.json`
+registers the referral letter's PDF by its size and SHA-256, and the gate
+now refuses to run on a render of other bytes, as the demo's build refuses
+to ship one: the PDF is rendered by Report's renderer and the zlib of each
+machine's Node, health-corpus's tests prove the same bytes only within one
+process, and CI's validator job, under Node 22.23.3 on Linux, and a
+desktop, under Node 24.21.0 on Windows, rendered the same 18,938 bytes,
+measured the same day. `@formancy/health-corpus/documents` is the
+documents without the letter's renderer, which the demo bundles; a guard
+fails when, as built, it is not the module the index re-exports or reaches
+anything but health-core and health-document.
+
+**The demo is deployed to https://formancy.ai/health/, by a Worker of its
+own** ([0012](docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)), as formancy.ai-report 0018 serves Report's Studio at
+`/report/`. Cloudflare's Workers Builds builds `main` on every push and
+runs `node scripts/demo.mjs`, which stages the built demo under `/health/`
+and deploys it with Wrangler 4.146.0, the version Report's deploy runs;
+so the address is main's demo, which can be ahead of a release, and
+nothing here checks what it serves. The deploy writes for every file the
+headers `scripts/demo-headers.mjs` decides for https://formancy.ai/health/,
+which `pnpm demo` and the gate are served with too, each written for its
+own address: a policy that allows the page no connection and no form
+action, so that what a visitor types is sent nowhere; scripts, styles and
+faces from the build's own assets at that address and nowhere else, not
+the whole origin, since a review measured that a script Cloudflare serves
+under `/cdn-cgi/` of the same origin, admitted, could send what was typed
+there; images from `data:` alone; Trusted Types, so that no string a
+script hands to `innerHTML` becomes markup; `noindex`; and
+`no-transform`, which asks Cloudflare to add no script of its own. So
+`pnpm demo` is to be opened at http://localhost:4395, the address its
+policy names. The deploy refuses a checkout with changes, a Worker
+config that would serve the demo anywhere but that path or answer a
+missing file with a page, a page that asks for a file by an absolute path,
+and a build with a `_headers` of its own, which would be served as a file
+and read as nothing.
+
+**The demo has a browser gate, in a job of its own** ([0012](docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)), as
+formancy.ai-report's Studio has: `pnpm --filter @formancy/health-demo
+test:browser` builds the page first, as `vite build` does, serves it
+under `/health/` with the headers the deploy writes for formancy.ai,
+written for its own address, and walks it in Chromium, at the build the
+installed Playwright pins, at every width its stylesheets' breakpoints
+give, from 320 pixels to a wide screen, each in one of its four
+languages: no sideways scroll, axe's rules, contrast and target size in
+every state, the keyboard's way in and through the form, the resources
+the browser makes of the sample held to the validator gate's corpus byte
+for byte, a change, a language switch, a refusal and the way back, every
+download the bytes shown, and what the page asks of the network and the
+browser. jsdom applies no stylesheet, sends no request and enforces no
+policy, so each of these was until now a claim nobody had checked. Its
+first run found one that did not hold: a browser asks for a face split by
+`unicode-range` only when text in its range is first drawn, so text typed
+in Greek, Cyrillic or Vietnamese, or a JSON opened, asked the server for
+a face after the page had loaded, which tells it what kind of text was
+entered. The page now asks for every face its stylesheets declare as it
+starts -- 28 WOFF2 files, 356 kB in all, in the build of 18 October
+2026 -- so that once it has settled it asks
+for nothing more, whatever is typed, and the gate fails if it does. The
+release report gains a Browser section and the job it reads, and fails a
+run on a check failed, a pass planned and not made, or a browser other
+than the build Playwright pins; no release gate rests on it, since the
+page bundles the packages as the workspace builds them, never the
+tarballs, which a limitation of every report says. A review then found
+the gate had measured another page than Cloudflare serves: Vite sets
+`NODE_ENV` for the first config it resolves, and the gate resolved its
+page's modules before it built, so it built and walked React's
+development build. It builds first now, and checks, by React's own
+report of itself, that the page runs React's production build; and it
+checks that the banner is there once, that nothing typed reaches the
+address, that the notices the foot links to are the file the build
+wrote, and that the policy refuses an inline script and a `/cdn-cgi/`
+script injected into the page as it is served.
+
+**The demo carries the licences and notices of what it bundles**
+([0012](docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)),
+since React's, formancy's and the faces' licences ask their texts to
+travel with every copy and the bundle keeps none. Its build writes
+`THIRD-PARTY-NOTICES.txt` beside the page, which the page's foot links:
+every package the bundle holds, by name and version, with every licence
+and notice file it ships, by `scripts/third-party-notices.mjs`,
+formancy.ai-data 0046's plugin as Report's Studio carries it. Every
+package it lists is held to the licence policy the published packages
+are, so a package with no licence text, or under a licence that policy
+refuses -- Formancy Report's own among them -- stops the build, naming it.
+
+**The demo's words say no more than holds**
+([0012](docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)),
+as a review read them: a change names the two resources it remakes,
+where it said every resource shown had changed; the lead says the
+profiles so far are Switzerland's; the conformance sentence names every
+profile the response is judged against, and what an offline validator
+does not check, as the README does. Its guards read "open source"
+however a language spells it, and a statement about tracking in each
+language's words, and hold each language's banner to its three
+statements.
 
 **The README says what 0.1.0 is, what is not in it, and what it is for**
 ([0011](docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)):
@@ -95,8 +231,8 @@ of the same case, and a skip nothing accounts for fails the run, as a
 failure does. Two registers arrive with it: `docs/release/gates.json`, the
 plan's gates G1 to G7, 0.1.0's dependency-licence guard, trademark guard and
 rehearsal, and the legal review, each with its evidence or the reason it is
-open -- G1 among the open ones, in part, since no gate bundles a package
-for a browser and that no upstream file is copied is review's, so no
+open -- G1 among the open ones, in part, since no gate bundles a package's
+tarball for a browser and that no upstream file is copied is review's, so no
 report prints it passed -- and `docs/release/limitations.json`, what each decision record's
 costs mean to a user, integrator or operator, held to the records by hash,
 so an edited record fails `pnpm test:repo` until it is read again and

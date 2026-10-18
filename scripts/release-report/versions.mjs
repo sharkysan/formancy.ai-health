@@ -5,9 +5,10 @@
 // dependency and upstream package is shown as published, as the suites
 // loaded it, as a consumer's clean `npm install` of the tarballs resolved
 // it -- every version it resolved -- and, apart, as the guide's project
-// resolved it; Node as every job ran it, and the install gate's npm; and
-// the validator the gate pins beside the one it reported, the Java it ran
-// on and what it loaded.
+// resolved it; Node as every job ran it, and the install gate's npm; each
+// browser a browser gate launched, beside the build Playwright pins for
+// it, and the axe-core it put in the page; and the validator the gate pins
+// beside the one it reported, the Java it ran on and what it loaded.
 //
 // A consumer's install is the install gate's projects that build no part
 // of the guide: the tarballs alone, as install-hosts.mjs plans `node`. The
@@ -16,9 +17,26 @@
 // shown as what a consumer's install of the tarballs brings -- the SBOM
 // leaves them out for the same reason (verify-publish.mjs).
 
-import { installOf, validatorOf } from './results.mjs'
+import { browserGatesOf, installOf, validatorOf } from './results.mjs'
 
 const distinct = (values) => [...new Set(values)]
+
+/**
+ * Every browser the run's browser gates launched, by name, version and
+ * how, each with the browser version Playwright pins for it (null for a
+ * browser no gate here runs, which the report then says) and the gates
+ * that launched it.
+ */
+function launchedIn(results, browser) {
+  const seen = new Map()
+  for (const { gate } of browserGatesOf(results)) {
+    if (gate.browser == null) continue
+    const { name, version, headless } = gate.browser
+    const key = `${String(name)} ${String(version)} ${String(headless)}`
+    seen.set(key, { name, version, headless, pin: browser.pins.find((pin) => pin.browser === name)?.browserVersion ?? null, by: distinct([...(seen.get(key)?.by ?? []), `the browser gate of ${gate.gate}`]) })
+  }
+  return [...seen.values()]
+}
 
 /** The install gate's projects, by whether they build the guide: `consumer` for those that do not, `guide` for those that do. */
 const projectsOf = (install, which) => (install?.consumers ?? []).filter((project) => (which === 'guide') === (project.guide != null))
@@ -35,7 +53,7 @@ function freshFor(install, name, which = 'consumer') {
   return distinct(resolved.filter((entry) => entry.name === name).map((entry) => entry.version)).map((version) => ({ version }))
 }
 
-/** The run's Tested on: dependencies range -> loaded -> fresh, upstream with the guide's project's too, Node, npm, pnpm, the tools and the validator. */
+/** The run's Tested on: dependencies range -> loaded -> fresh, upstream with the guide's project's too, Node, npm, pnpm, the browsers, the tools and the validator. */
 export function testedOnInRun({ results, facts }) {
   const install = installOf(results)
   const gate = validatorOf(results)?.gate ?? null
@@ -50,6 +68,10 @@ export function testedOnInRun({ results, facts }) {
     },
     npm: install?.npm ?? null,
     packageManager: facts.packageManager,
+    browser: facts.browser,
+    browsers: launchedIn(results, facts.browser),
+    // The axe-core each browser gate injected into the page, as the page reported it.
+    axe: distinct(browserGatesOf(results).map(({ gate }) => gate.axe)).filter((version) => version != null),
     tooling: facts.tooling,
     fhir: facts.fhir,
     guides: facts.guides,

@@ -1,6 +1,7 @@
 // The report's results (0011; formancy.ai-report 0014): each package's
-// suite, the repository's guards, the validator gate and its job's run of
-// the registers' test, the install gate, and the build identity of every
+// suite, the repository's guards, each app's browser gate in each browser
+// (the demo's, 0012), the validator gate and its job's run of the
+// registers' test, the install gate, and the build identity of every
 // published package.
 //
 // Pure over the run's results. Two times are shown for a suite, each named
@@ -18,8 +19,8 @@
 // counts the skips of the files the validator job runs as allowed. Any other
 // skip is a test that did not run.
 //
-// The install gate's record and the validator's two files are read only
-// from the job that leaves them, or on a machine from its one results file
+// The install gate's record, the browser gates' files and the validator's
+// two files are read only from the job that leaves them, or on a machine from its one results file
 // (LEAVES); found in another job's results, each is a problem and is not
 // read, so a collect that filed one under the wrong job cannot pass it off
 // as that job's.
@@ -36,6 +37,7 @@ const kind = (status) => (status === 'passed' || status === 'failed' ? status : 
  */
 const LEAVES = {
   install: { jobs: ['install', 'local'], held: (result) => result.install != null, what: 'the install gate’s record, which only the install job leaves' },
+  browser: { jobs: ['browser', 'local'], held: (result) => (result.browserGates ?? []).length > 0, what: 'a browser gate’s results, which only the browser job leaves' },
   gate: { jobs: ['validator', 'local'], held: (result) => result.validator?.gate != null, what: 'the validator gate’s file, which only the validator job leaves' },
   registers: { jobs: ['validator', 'local'], held: (result) => result.validator?.suite != null, what: 'the validator job’s run of the registers’ test, which only the validator job leaves' },
 }
@@ -123,6 +125,9 @@ const validatorSuitesOf = (results) => leaving(results, 'registers').flatMap((re
 /** The install gate's record in the run, from the job that leaves it: the first such file that holds one, or null. */
 export const installOf = (results) => leaving(results, 'install').map((result) => result.install).find((entry) => entry != null) ?? null
 
+/** Every browser gate's file in the run, from the job that leaves them, each with the key it came in. */
+export const browserGatesOf = (results) => leaving(results, 'browser').flatMap((result) => (result.browserGates ?? []).map((gate) => ({ gate, job: result.key })))
+
 /** The validator gate's own results file in the run, from the job that leaves it, with the key it came in: the first such file that holds one, or null. */
 export function validatorOf(results) {
   const found = leaving(results, 'gate').find((result) => result.validator?.gate != null)
@@ -130,6 +135,49 @@ export function validatorOf(results) {
 }
 
 const wall = (entry) => Date.parse(entry.finishedAt) - Date.parse(entry.startedAt)
+
+/** One browser gate's run in one browser, as the report shows and judges it. */
+function gateRow(gate, job) {
+  return {
+    gate: gate.gate,
+    asked: gate.asked ?? null,
+    job,
+    ok: gate.checks?.ok ?? 0,
+    failed: gate.checks?.failed ?? [],
+    error: gate.error ?? null,
+    widths: gate.widths ?? [],
+    planned: gate.planned ?? [],
+    passes: gate.passes ?? 0,
+    made: (gate.made ?? []).map((entry) => ({ label: entry.label, width: entry.width, checks: entry.checks ?? [] })),
+    browser: gate.browser ?? null,
+    playwright: gate.playwright ?? null,
+    axe: gate.axe ?? null,
+    wallMs: wall(gate),
+  }
+}
+
+/**
+ * What a browser gate's row says it did not do, which a gate that measured
+ * everything it set out to does: make a check, make one in a pass at a
+ * viewport width, make every pass it planned, and make a check in each pass
+ * it made. The gate walks one journey at every width, so a planned pass not
+ * made, or made with nothing checked in it, is every check of that width
+ * skipped. Each a phrase; none for a gate that did all four. What the gate
+ * planned is its own word: its passes come from the app's stylesheets and
+ * languages, read by the app's gate, and only it can say them.
+ */
+export function unmeasured(row) {
+  const made = new Set(row.made.map((entry) => entry.label))
+  const skipped = row.planned.filter((label) => !made.has(label))
+  const empty = row.made.filter((entry) => entry.width !== null && entry.checks.length === 0).map((entry) => `"${String(entry.label)}"`)
+  return [
+    ...(row.ok + row.failed.length === 0 ? ['made no check'] : []),
+    ...(row.passes === 0 ? ['made no pass at a viewport width'] : []),
+    ...(row.planned.length === 0 ? ['planned no pass'] : []),
+    ...(skipped.length === 0 ? [] : [`did not make ${String(skipped.length)} of the ${String(row.planned.length)} passes it planned: ${skipped.map((label) => `"${label}"`).join(', ')}`]),
+    ...(empty.length === 0 ? [] : [`made no check in ${empty.length === 1 ? 'the pass' : 'the passes'} ${empty.join(', ')}`]),
+  ]
+}
 
 const sortedText = (values) => [...new Set(values)].sort().join('; ')
 
@@ -214,9 +262,9 @@ function projectOf(consumer) {
 }
 
 /**
- * Every package's row, the repository's guards, the validator gate and its
- * job's run of the registers' test, the install gate with each of its
- * projects, what collect did not find (`absent`, by the reader that
+ * Every package's row, the repository's guards, the browser gates, the
+ * validator gate and its job's run of the registers' test, the install gate
+ * with each of its projects, what collect did not find (`absent`, by the reader that
  * expected it) or found and refused (`missing`), a section in a job that
  * does not leave it (`misplaced`), and build identity. `accounted` is
  * accountsOf()'s.
@@ -228,6 +276,7 @@ export function resultsInRun({ results, covered, published, accounted = accounts
   return {
     packages: covered.map((entry) => suiteRow(suites.filter((suite) => suite.package === entry.name), { ...entry, published: published.includes(entry.name) }, { accounted })),
     repository: suiteRow(suites.filter((suite) => suite.package === null), { name: null, path: '.', published: false }, { accounted }),
+    browserGates: browserGatesOf(results).map(({ gate, job }) => gateRow(gate, job)),
     validator: {
       gate: validator === null ? null : validatorRow(validator),
       suite: suiteRow(validatorSuitesOf(results), { name: null, path: '.', published: false }, { checkout: false }),

@@ -1,6 +1,9 @@
 node_modules/
 dist/
 build/
+# build/ above is a build's output. The demo's build plugin is source, in a
+# directory of that name (0012), and is committed.
+!apps/demo/src/build/
 coverage/
 .turbo/
 *.tsbuildinfo
@@ -37,3 +40,8 @@ packages/*/NOTICE
 # The delivery plan this repository started from. Kept locally for reference,
 # never committed: it is a working document, not a record.
 docs/plan.md
+
+# The demo's build staged under its path for Wrangler, and Wrangler's own
+# state (0012). Written by scripts/demo.mjs and removed after it.
+/apps/demo/.cloudflare/
+.wrangler/

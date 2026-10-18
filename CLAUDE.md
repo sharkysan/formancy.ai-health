@@ -15,10 +15,13 @@ a paywall -- stay true without qualification
 whole export is this product, the generic mapping of a form to the SDC
 guide included; formancy itself exports nothing to FHIR.
 
-It is a library. Version 1 has no server, no page and no network: a vendor's
-application calls it, gets FHIR JSON back and sends it itself. It is not an
-EHR, a FHIR server or a terminology service, and it is not intended as a
-medical device. The README's *Intended purpose* holds that sentence word
+It is a library. Its packages have no server, no page and no network: a
+vendor's application calls them, gets FHIR JSON back and sends it itself.
+Beside them, never published and in no release, is one page, the demo at
+formancy.ai/health/, which runs them in a browser on synthetic data
+([0012](docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
+It is not an EHR, a FHIR server or a terminology service, and it is not
+intended as a medical device. The README's *Intended purpose* holds that sentence word
 for word, and `scripts/readme.test.mjs` fails when the two part (0011): a
 change to it here is a change there, in the same pull request, and no
 lawyer has read either yet.
@@ -31,8 +34,10 @@ Four things follow, and three of them have a guard:
   a `workspace:` link or a path
   ([0002](docs/decisions/0002-depend-on-upstream-never-copy-it.md)). Nothing
   is copied, stylesheets included: formancy.ai's admin colours are not
-  copied here, though Data and Report copy them, and a page, if Health ever
-  has one, waits for a formancy release that carries them. A generic
+  copied here, though Data and Report copy them. The demo wears what
+  `@formancy/themes` has released, imported, and formancy.ai's room
+  arrives with the first formancy release whose exports name
+  `./room.css`, as one import and an exact version (0012). A generic
   improvement goes upstream through that repository's own contribution
   rules, not into a patched copy here.
 - **Every package declares the source-available licence**, never Apache-2.0.
@@ -108,7 +113,15 @@ the validator gate judges what the packages write
 `scripts/validator.mjs`, its modules, corpus and synthetic forms in
 `scripts/validator/`, and the registers of what it runs in `docs/release/`;
 and `@formancy/health-corpus`, private test support, renders the PDF the
-documents carry with Formancy Report 0.1.0 (0008). The package path the
+documents carry with Formancy Report 0.1.0 (0008). Beside them too, and
+not product code, `apps/demo`, `@formancy/health-demo`, private: the page
+at formancy.ai/health/ (0012), which fills the corpus's synthetic referral
+with formancy's React renderer and shows what the packages make of it;
+its build reads the corpus, the registers and `scripts/notices.mjs` and
+`scripts/purpose.mjs`, renders the letter through
+`scripts/validator/letter.mjs`, and writes the notices of what it bundles
+with `scripts/third-party-notices.mjs`; `scripts/demo-headers.mjs` decides
+its headers and `scripts/demo.mjs` deploys it. The package path the
 plan proposes, each package depending only on those before it, and split
 further only where a part has its own reason to change:
 
@@ -342,13 +355,36 @@ is the tool for it.
   a therapy: that would make it a candidate medical device (MDR Rule 11, the
   Swiss MepV). Held by review.
 
-## There is no page
+## The demo is the one page
 
-Version 1 has no user interface, so there is no room, no palette, no browser
-gate and no README picture. If Health ever has a page, it is formancy.ai's
-concept applied, as Data's and Report's apps are, with its colours from a
-released formancy package at an exact version (0002), and it arrives with the
-gates that hold it.
+The packages have no user interface. The demo, `apps/demo`, is the one
+page, beside them and in no release (0012): formancy.ai's concept applied
+as far as a formancy release carries it, its colours from
+`@formancy/themes` at an exact version, imported, and none of its own
+(0002), and no README picture. What holds it:
+
+- **Its suite**, in the `test` job, in jsdom: the first resources the
+  corpus's entries byte for byte, the journey by role and name with axe,
+  the stylesheet with no colour or variable of its own, and its words.
+- **Its browser gate**, `apps/demo/scripts/browser-test.mjs`, in CI's
+  `browser` job, in the Chromium `scripts/browsers.mjs` names, read by the
+  release report: React's production build, layout, keyboard, axe, the
+  journey, and what the page asks of the network and keeps.
+- **`scripts/demo.test.mjs`** -- the Worker at one path of formancy.ai,
+  what the deploy stages and the policy the headers hold;
+  **`scripts/third-party-notices.test.mjs`** -- the notices the build
+  writes and the licence policy it holds the bundle to;
+  **`scripts/validator/letter.test.mjs`** -- the letter the registered
+  bytes; **`scripts/corpus-documents.test.mjs`** -- the entry the page
+  imports reaching health-core and health-document alone.
+- `scripts/notices.mjs` and `scripts/purpose.mjs` hold the one text of
+  HL7's and LOINC's notices and the reading of this file's sentence of
+  what the product is not, which the page shows as its build reads them.
+
+It says only what it does with what is typed, and nothing about cookies,
+tracking or analytics. Cloudflare deploys it from `main` on every push.
+Agents run only `node scripts/demo.mjs --dry-run`: never
+`pnpm demo:deploy`, `wrangler login` or `wrangler deploy`.
 
 ## Branch names
 

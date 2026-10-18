@@ -1,0 +1,324 @@
+/*
+ * The demo's layout, and nothing of its own colour (0002, 0012): every
+ * colour is a variable @formancy/themes' workbench.css declares, read with
+ * var(), and none is declared or written here. Blueprint dresses the form
+ * on its sheet, and the workbench the page around it: --wb-signal for what
+ * a person acts on, a link, a button, the focus ring; --wb-ok for what the
+ * page says the system did with the sample; --wb-caution for answers a
+ * visitor changed; --wb-invalid for a refusal. src/styles.test.ts holds it.
+ *
+ * One column, and two above 64rem: the form on the left, the resources it
+ * makes on the right, so a change shows its effect beside it. Breakpoints
+ * in rem, which the browser gate reads. No animation.
+ */
+
+body {
+  margin: 0;
+  font-family: var(--wb-sans);
+  line-height: 1.5;
+  color: var(--wb-ink);
+  background: var(--wb-bench);
+}
+
+a {
+  color: var(--wb-signal);
+}
+
+:focus-visible {
+  outline: 2px solid var(--wb-signal);
+  outline-offset: 2px;
+}
+
+code,
+pre {
+  font-family: var(--wb-mono);
+}
+
+/* ---------------------------------------------------------- the head */
+
+.skip {
+  position: absolute;
+  inset-inline-start: 1rem;
+  inset-block-start: -10rem;
+  padding: 0.5rem 1rem;
+  background: var(--wb-surface);
+  border: 1px solid var(--wb-signal);
+}
+
+.skip:focus {
+  inset-block-start: 0.75rem;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--wb-panel);
+  border-block-end: 1px solid var(--wb-rule);
+}
+
+.bar select {
+  min-height: 2.5rem;
+  padding-inline: 0.5rem;
+  font: inherit;
+  color: var(--wb-ink);
+  background: var(--wb-surface);
+  border: 1px solid var(--wb-rule);
+  border-radius: 3px;
+}
+
+main {
+  box-sizing: border-box;
+  max-width: 90rem;
+  margin-inline: auto;
+  padding: 1.5rem 1rem 2rem;
+}
+
+/* Focused only by the skip link, which says where the keyboard went. */
+main:focus {
+  outline: none;
+}
+
+h1 {
+  margin: 0 0 0.75rem;
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+.lead,
+.banner,
+.note {
+  max-width: 48rem;
+}
+
+.banner {
+  padding: 0.75rem 1rem;
+  background: var(--wb-surface);
+  border: 1px solid var(--wb-rule);
+  border-inline-start: 4px solid var(--wb-caution);
+}
+
+/* ---------------------------------------------------------- the steps */
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 36rem) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.resources {
+  min-width: 0;
+}
+
+.step {
+  box-sizing: border-box;
+  min-width: 0;
+  margin-block-end: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--wb-panel);
+  border: 1px solid var(--wb-rule);
+  border-radius: 4px;
+}
+
+.step h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+
+.step h2:focus {
+  outline: none;
+}
+
+.step h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.wb-sheet {
+  box-sizing: border-box;
+  max-width: none;
+}
+
+.status {
+  font-weight: 500;
+}
+
+.status:focus {
+  outline: none;
+}
+
+.status.sample,
+.made {
+  color: var(--wb-ok);
+}
+
+.status.changed {
+  color: var(--wb-caution);
+}
+
+.refused,
+.failed,
+.refusals {
+  color: var(--wb-invalid);
+}
+
+.refusals {
+  padding-inline-start: 1.25rem;
+  overflow-wrap: anywhere;
+}
+
+.refusals code {
+  font-weight: 500;
+}
+
+.action {
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  font: inherit;
+  font-weight: 500;
+  color: var(--wb-signal);
+  background: var(--wb-surface);
+  border: 1px solid var(--wb-signal);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* A download is a target of its own, not a word in a sentence. */
+.download {
+  display: inline-block;
+  min-height: 1.5rem;
+  padding-block: 0.25rem;
+  overflow-wrap: anywhere;
+}
+
+details summary {
+  min-height: 1.5rem;
+  padding-block: 0.25rem;
+  color: var(--wb-signal);
+  cursor: pointer;
+}
+
+/* The base64 of a PDF and a canonical wrap, and the region scrolls down, never sideways. */
+pre {
+  max-height: 32rem;
+  margin: 0.5rem 0 0;
+  padding: 0.75rem;
+  overflow-y: auto;
+  font-size: 0.8125rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--wb-surface);
+  border: 1px solid var(--wb-rule);
+}
+
+.choice {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--wb-rule);
+}
+
+.choice label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2rem;
+}
+
+.choice input {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  margin: 0;
+}
+
+.cases {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+  gap: 1rem;
+}
+
+.case {
+  min-width: 0;
+  padding: 0.75rem 1rem;
+  background: var(--wb-surface);
+  border: 1px solid var(--wb-rule);
+}
+
+.about p,
+.about blockquote {
+  max-width: 48rem;
+}
+
+.about blockquote {
+  margin-inline: 0;
+  padding-inline-start: 1rem;
+  border-inline-start: 4px solid var(--wb-rule);
+}
+
+/* ---------------------------------------------------------- the foot */
+
+.foot {
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: var(--wb-muted);
+  background: var(--wb-panel);
+  border-block-start: 1px solid var(--wb-rule);
+}
+
+.foot p {
+  max-width: 60rem;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.links a {
+  display: inline-block;
+  min-height: 1.5rem;
+  padding-block: 0.25rem;
+}
+
+/* Said to a screen reader, and drawn nowhere: what the step's own lines already show. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------------------- narrower */
+
+@media (max-width: 64rem) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 40rem) {
+  main {
+    padding-inline: 0.75rem;
+  }
+
+  .step {
+    padding: 0.75rem;
+  }
+
+  .wb-sheet {
+    padding: 1rem 0.75rem;
+  }
+}

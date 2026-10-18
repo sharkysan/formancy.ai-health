@@ -1,6 +1,6 @@
 # 0003 — Name the product Formancy Health: no name of it carries an HL7 mark, and FHIR is named only as the standard
 
-- **Status:** accepted
+- **Status:** accepted; its names held of a page and an address too -- the demo's Worker, its routes and its title -- by [0012](0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)
 - **Date:** 2026-10-16
 - **Deciders:** Daniel Bacher
 - **Verified by:** `scripts/trademark.test.mjs`, in `pnpm test:repo`, which CI

@@ -1,7 +1,8 @@
 // The release report (0011; formancy.ai-report 0014, which is
 // formancy.ai-data 0035's): which run it describes, what that run was tested
-// on, what it found -- each package's suite, the guards, the install gate
-// and the validator gate -- the build identity of every published package,
+// on, what it found -- each package's suite, the guards, the demo's browser
+// gate, the install gate and the validator gate -- the build identity of
+// every published package,
 // the release gates, and the limitations -- derived from the run, then the
 // ones the decision records state -- built from the results every job
 // collected.
@@ -13,7 +14,7 @@
 //
 // and on one machine, after collect.mjs --local --since <ISO instant>:
 //
-//   node scripts/release-report/report.mjs --local [--allow-missing verify,install,validator]
+//   node scripts/release-report/report.mjs --local [--allow-missing verify,browser,install,validator]
 //
 // It writes release-report/release-report.json and release-report.md and
 // exits 1 when anything in `problems` fails the run; both files are written
@@ -27,12 +28,13 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { BROWSERS } from '../browsers.mjs'
 import { HOSTS } from '../install-hosts.mjs'
 import { bodySection, releaseBody } from '../release-notes.mjs'
 import { packageKey, readRegisters } from '../validator/registers.mjs'
 import { expectedKeys, gateJobs, readWorkflow, validatorTestFiles } from '../workflows.mjs'
 import { artefactProblems, readArtefacts, resultsOf } from './artefacts.mjs'
-import { namedPackages } from './collect.mjs'
+import { appsWith, namedPackages } from './collect.mjs'
 import { evaluateGates, evidenceKind, gatesProblems, readGates } from './gates.mjs'
 import { readRecords, readRegister, registerProblems, statedLimitations } from './limitations.mjs'
 import { contentProblems, localResultsProblems, needsProblems, releaseGateProblems } from './problems.mjs'
@@ -96,7 +98,8 @@ export const installPlanOf = (hosts) => Object.entries(hosts).map(([project, hos
  * Both: `jobs` (gates.yml's jobs that leave results), `facts` (testedOn()),
  * `covered` (packages with a suite, `{ path, id, name }`), `published`
  * (names), `installPlan` (installPlanOf()), `validatorFiles` (the test
- * files the validator job runs),
+ * files the validator job runs), `browserApps` (the apps with a browser
+ * gate) and `browsers` (scripts/browsers.mjs's),
  * `pin` (docs/release/validator.json) and `registered` (`id#version` of
  * every package docs/release/ig-packages.json names), the limitations
  * `register` and decision `records`, `gatesRegister` and each document's
@@ -130,7 +133,7 @@ export function buildReport(inputs) {
   report.problems = [
     ...(ci ? needsProblems(inputs.needs, inputs.jobs) : []),
     ...(ci ? artefactProblems(inputs.artefacts, { expected: inputs.expected, commit, runId: inputs.run.id }) : localResultsProblems(results)),
-    ...contentProblems(report, { published: inputs.published, installPlan: inputs.installPlan, pin: inputs.pin, registered: inputs.registered, allowMissing }),
+    ...contentProblems(report, { published: inputs.published, installPlan: inputs.installPlan, pin: inputs.pin, registered: inputs.registered, browserApps: inputs.browserApps, browsers: inputs.browsers, allowMissing }),
     ...gatesProblems(inputs.gatesRegister, { covered: covered.map((entry) => entry.path), jobs: inputs.jobs, exists }).map((problem) => `docs/release/gates.json: ${problem}`),
     ...releaseGateProblems(report.gates, allowMissing),
     ...releaseProblems,
@@ -187,6 +190,8 @@ export function loadInputs(root, resultsDir, { ci = false, allowMissing = [], en
     published: packages.map(({ manifest }) => manifest.name),
     installPlan: installPlanOf(HOSTS),
     validatorFiles: validatorTestFiles(workflow),
+    browserApps: appsWith(root, 'test:browser'),
+    browsers: [...BROWSERS],
     pin: registers.pin,
     registered: registers.packages.map(packageKey),
     register: readRegister(root),

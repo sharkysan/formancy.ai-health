@@ -2,6 +2,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { describe, expect, test } from 'vitest'
+// LOINC's notice, verbatim from its licence: scripts/notices.mjs, which the demo's page renders too.
+import { LOINC_NOTICE } from './notices.mjs'
 import { corpus } from './validator/corpus.mjs'
 
 /**
@@ -48,15 +50,6 @@ const NAMES = ['health-core', 'health-questionnaire', 'health-corpus', 'health-c
 if (!NAMES.every((name) => existsSync(built(name)))) throw new Error('scripts/terminology.test.mjs reads the packages as built: run pnpm build first')
 const [core, questionnaire, documents, ch] = await Promise.all(NAMES.map((name) => import(pathToFileURL(built(name)).href)))
 const entries = corpus({ core, questionnaire, documents, pdf: await documents.renderReferral(), ch })
-
-/**
- * LOINC's notice, verbatim from the licence's clause for "products and
- * services, such as ... software programs ... implementation guides"
- * (https://loinc.org/license/, last updated 6 August 2026, read on
- * 17 October 2026).
- */
-const LOINC_NOTICE =
-  'This material contains content from LOINC (http://loinc.org). LOINC is copyright © Regenstrief Institute, Inc. and the Logical Observation Identifiers Names and Codes (LOINC) Committee and is available at no cost under the license at http://loinc.org/license. LOINC® is a registered United States trademark of Regenstrief Institute, Inc.'
 
 /**
  * Each LOINC code a resource here may hold, why, and the LOINC display

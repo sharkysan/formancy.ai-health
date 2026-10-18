@@ -14,8 +14,9 @@
 //   { "job": "<gates.yml job id>" }            that job's result in the report's needs is success
 //   { "document": "<committed file>" }         stated: shown with its last change, never as passed
 //
-// Formancy Report's fourth, an app's browser gate, is not one here: Health
-// has no page (CLAUDE.md).
+// Formancy Report's fourth, an app's browser gate, is not one here: the
+// demo's browser gate (0012) is evidence about the demo, a page no release
+// publishes, and not about a release gate, so no gate rests on it.
 //
 // A gate with evidence and no reason is "passed" in a run when everything but
 // its documents passed, and "stated" when its only evidence is documents. A

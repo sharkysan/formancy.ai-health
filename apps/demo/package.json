@@ -1,0 +1,48 @@
+{
+  "name": "@formancy/health-demo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Formancy Health's demo, never published: a synthetic referral filled in the browser and what the packages make of it, served at formancy.ai/health/.",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test:coverage": "vitest run --coverage",
+    "test": "vitest run",
+    "test:browser": "node scripts/browser-test.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/archivo": "5.3.0",
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "@fontsource/ibm-plex-sans": "5.3.0",
+    "@formancy/core": "0.5.0",
+    "@formancy/health-ch": "workspace:*",
+    "@formancy/health-core": "workspace:*",
+    "@formancy/health-document": "workspace:*",
+    "@formancy/health-questionnaire": "workspace:*",
+    "@formancy/react": "0.5.0",
+    "@formancy/spec": "0.5.0",
+    "@formancy/themes": "0.5.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@formancy/health-corpus": "workspace:*",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/node": "catalog:",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/coverage-v8": "catalog:",
+    "axe-core": "catalog:",
+    "jsdom": "^30.1.0",
+    "playwright": "catalog:",
+    "typescript": "catalog:",
+    "vite": "^8.3.0",
+    "vitest": "catalog:"
+  }
+}

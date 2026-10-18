@@ -66,6 +66,10 @@ component_management:
       name: packages/health-questionnaire
       paths:
         - packages/health-questionnaire/**
+    - component_id: app-demo
+      name: apps/demo
+      paths:
+        - apps/demo/**
 
 comment:
   # Components first, because "which package" is the question a reader has, and

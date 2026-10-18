@@ -4,6 +4,9 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import YAML from 'yaml'
+// HL7's notice, as its licence page gives it, and its marks in a name:
+// scripts/notices.mjs, which the demo's page renders and its browser gate reads.
+import { HL7_NOTICE, MARK } from './notices.mjs'
 
 /**
  * Nothing names the product with HL7's marks, nothing claims HL7's
@@ -22,26 +25,20 @@ import YAML from 'yaml'
  *   does ("used with the permission of HL7", and the like), which would be a
  *   false statement about this product;
  * - an HL7 mark, `fhir` or `hl7` in any case, in a package's name, in the
- *   licence's title or in the README's first heading.
+ *   licence's title, in the README's first heading, or in the demo's
+ *   Worker, its routes or its page's title (0012).
  *
  * Each is read from the files: every workspace manifest pnpm-workspace.yaml
- * names, the headings as written, and every file git would commit -- tracked,
- * or new and not ignored, so a file is held before its first commit. The
- * checks hold no list of the names they expect; only each guard on a guard
- * names what is there today, to show the walk read it. What none of it can
- * see is review's: the names GitHub keeps outside the tree, which
+ * names, the headings as written, the demo's Worker config and page, and
+ * every file git would commit -- tracked, or new and not ignored, so a file
+ * is held before its first commit. The checks hold no list of the names
+ * they expect; only each guard on a guard names what is there today, to
+ * show the walk read it. What none of it can see is review's: the names
+ * GitHub and Cloudflare keep outside the tree, which
  * .github/REPO-METADATA.md records, and prose that uses FHIR as a brand
  * without holding any of these words.
  */
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..')
-
-/**
- * HL7's notice for a use of its marks without its permission, as the FHIR
- * licence page gives it, R4 and current, read on 16 October 2026
- * (https://hl7.org/fhir/R4/license.html). The only notice this product
- * carries.
- */
-const HL7_NOTICE = 'HL7, FHIR and the FHIR [FLAME DESIGN] are the registered trademarks of Health Level Seven International and their use does not constitute endorsement by HL7.'
 
 /**
  * Where the notice must stand: NOTICE, which every tarball carries, the
@@ -57,9 +54,6 @@ function carrying() {
     })
   return ['NOTICE', 'README.md', ...packages.sort()]
 }
-
-/** An HL7 mark in a name, in any case. */
-const MARK = /fhir|hl7/i
 
 const HL7 = String.raw`(?:HL7|Health\s+Level\s+Seven)`
 
@@ -147,6 +141,28 @@ function workspaceNames() {
     const text = textOf(file)
     return text === undefined ? [] : [{ file, name: String(JSON.parse(text).name ?? '') }]
   })
+}
+
+/** The demo's Worker config and its page (0012). */
+const WORKER = 'apps/demo/wrangler.json'
+const PAGE = 'apps/demo/index.html'
+
+/**
+ * The demo's names, as `{ where, name }`: the Worker's name and every
+ * route's pattern from its config, and the `<title>` its page is served
+ * with. Throws when the page has no title or more than one: a title
+ * nobody wrote is not one without a mark, and of two, either could be the
+ * one a tab shows.
+ */
+function demoNames() {
+  const worker = JSON.parse(readFileSync(join(repo, WORKER), 'utf8'))
+  const titles = [...readFileSync(join(repo, PAGE), 'utf8').matchAll(/<title>([^<]*)<\/title>/g)].map((found) => found[1])
+  if (titles.length !== 1) throw new Error(`${PAGE} has ${String(titles.length)} <title> elements, and this guard reads exactly one`)
+  return [
+    { where: `${WORKER}, its name`, name: String(worker.name ?? '') },
+    ...(worker.routes ?? []).map((route) => ({ where: `${WORKER}, a route`, name: String(typeof route === 'string' ? route : route.pattern) })),
+    { where: `${PAGE}, its title`, name: titles[0] },
+  ]
 }
 
 /** The text of a Markdown file's first heading. Throws when it has none: a title nobody wrote is not one without a mark. */
@@ -276,11 +292,26 @@ describe('the names', () => {
     expect(marked, 'the product is Formancy Health; FHIR names the standard and nothing else (0003)').toEqual([])
   })
 
+  // The demo's names (0012): the Worker's, which Cloudflare's dashboard and
+  // every deployment show; each route, which is an address of formancy.ai;
+  // and the page's title as index.html sends it, which a tab, a bookmark
+  // and a link's preview show before any script has run. Any of them
+  // holding a mark would name a page of this product with it, which 0003
+  // refuses for a page as for a package. The title each language sets once
+  // the page runs, and its heading, the browser gate reads.
+  test("of the demo's Worker, its routes and its page's title hold no HL7 mark", () => {
+    const marked = demoNames()
+      .filter(({ name }) => MARK.test(name))
+      .map(({ where, name }) => `${where}: ${name}`)
+    expect(marked, 'the demo is a page of Formancy Health; FHIR names the standard and nothing else (0003)').toEqual([])
+  })
+
   // A guard on the guard: a walk that found no manifest, or a heading read
   // from the wrong line, would pass the check above by holding nothing to
-  // check. The root, the first package, and the two headings, as the files
-  // hold them today.
-  test('are read from the manifests and the headings themselves', () => {
+  // check. The root, the first package, the demo, and the two headings, as
+  // the files hold them today; and the demo's Worker, both its routes and
+  // its title read, whatever they are named.
+  test('are read from the manifests, the headings and the demo themselves', () => {
     const names = workspaceNames().map(({ name }) => name)
     expect(names[0]).toBe('formancy-health')
     expect(names).toContain('@formancy/health-core')
@@ -288,7 +319,11 @@ describe('the names', () => {
     expect(names).toContain('@formancy/health-document')
     expect(names).toContain('@formancy/health-ch')
     expect(names).toContain('@formancy/health-corpus')
+    expect(names).toContain('@formancy/health-demo')
     expect(firstHeading('LICENSE.md')).toBe('Formancy Health Source-Available Licence')
     expect(firstHeading('README.md')).toBe('Formancy Health')
+    const demo = demoNames()
+    expect(demo.map(({ where }) => where)).toEqual([`${WORKER}, its name`, `${WORKER}, a route`, `${WORKER}, a route`, `${PAGE}, its title`])
+    expect(demo.every(({ name }) => name.trim() !== '')).toBe(true)
   })
 })

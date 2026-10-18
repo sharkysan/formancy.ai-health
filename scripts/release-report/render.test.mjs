@@ -45,10 +45,20 @@ describe('the limitations a run shows', () => {
   })
 
   // The packed packages ran under Node and nowhere else; with no install
-  // gate, nothing ran them at all.
-  test('say the packed packages ran under Node alone, or not at all', () => {
-    expect(derivedLimitations(report())).toContain('The install gate ran the packed packages under Node v22.20.0 alone; no gate ran them in a browser or another engine.')
-    expect(derivedLimitations(report((inputs) => (job(inputs, 'install').install = null)))).toContain('No install gate ran the packed packages in this run, and no gate runs a package in a browser or another engine.')
+  // gate, nothing ran them at all. The demo's browser gate ran the packages
+  // in a browser as the workspace builds them, never the tarballs, and the
+  // sentence says which browser from what the gate recorded, or that none
+  // ran: a reader must not take the browser gate for a gate of the packages.
+  test('say the packed packages ran under Node alone, or not at all, and where the demo ran them as built', () => {
+    expect(derivedLimitations(report())).toContain(
+      'The install gate ran the packed packages under Node v22.20.0 alone; the browser gate ran the demo, which bundles the packages as the workspace builds them, in Chromium 156.0.8078.4 alone; no gate ran the packed packages in a browser.',
+    )
+    expect(derivedLimitations(report((inputs) => (job(inputs, 'install').install = null)))).toContain(
+      'No install gate ran the packed packages in this run; the browser gate ran the demo, which bundles the packages as the workspace builds them, in Chromium 156.0.8078.4 alone; no gate ran the packed packages in a browser.',
+    )
+    expect(derivedLimitations(report((inputs) => (job(inputs, 'browser').browserGates = [])))).toContain(
+      'The install gate ran the packed packages under Node v22.20.0 alone; no browser gate ran the demo, which bundles the packages as the workspace builds them; no gate ran the packed packages in a browser.',
+    )
   })
 
   // A conformance claim is the validator, the registered packages and the
@@ -65,7 +75,7 @@ describe('the limitations a run shows', () => {
   // receives may go unsaid.
   test('say the suites ran the source, and which jobs built the dist/ npm receives', () => {
     const identity = derivedLimitations(report()).find((sentence) => sentence.includes('published dist/'))
-    expect(identity).toBe("Each package's own suites ran its source; the published dist/ was run by the install gate, and each package's is byte-identical to its dist/ built in install, validator and verify, and in every other job that built it (*Build identity* names them).")
+    expect(identity).toBe("Each package's own suites ran its source; the published dist/ was run by the install gate, and each package's is byte-identical to its dist/ built in browser, install, validator and verify, and in every other job that built it (*Build identity* names them).")
     expect(derivedLimitations(report((inputs) => (job(inputs, 'install').install = null)))).toContain("Each package's own suites ran its source; no install gate ran the packed dist/ in this run.")
   })
 })
@@ -186,7 +196,20 @@ describe('the Markdown', () => {
   test('says how each section was made', () => {
     const markdown = renderContent(report())
     const method = markdown.slice(markdown.indexOf('## How this report was made'), markdown.indexOf('## Problems'))
-    for (const section of ['Subject', 'Tested on', 'Results', 'Validator', 'Build identity', 'Release gates', 'Known limitations', 'Problems']) expect(method).toContain(`- **${section}:**`)
+    for (const section of ['Subject', 'Tested on', 'Results', 'Validator', 'Browser', 'Build identity', 'Release gates', 'Known limitations', 'Problems']) expect(method).toContain(`- **${section}:**`)
+  })
+
+  // The Browser section is each gate's own record: what it launched, how
+  // many checks it made and failed, and the passes it made of those it
+  // planned; Tested on holds the browser to the build Playwright pins.
+  test('shows each browser gate, and the browser it launched beside the one Playwright pins', () => {
+    const markdown = renderContent(report())
+    const section = markdown.slice(markdown.indexOf('## Browser'), markdown.indexOf('## Build identity'))
+    expect(section).toContain('| apps/demo | Chromium | chromium 156.0.8078.4, headless | 1.64.1 | 4 | 0 | 2 of 2 | 320, 360 | 4.14.0 | 60.0 s |')
+    expect(markdown).toContain('Browsers: Playwright 1.64.1 pins chromium-headless-shell 156.0.8078.4 (revision 1248) for Chromium; this run launched Chromium 156.0.8078.4, with axe-core 4.14.0 in the page.')
+    const other = renderContent(report((inputs) => (job(inputs, 'browser').browserGates[0].browser.version = '155.0.7999.2')))
+    expect(other).toContain('this run launched Chromium 155.0.7999.2 (not the 156.0.8078.4 it pins)')
+    expect(renderContent(report((inputs) => (job(inputs, 'browser').browserGates = [])))).toContain('No browser gate left results in this run.')
   })
 })
 
@@ -211,6 +234,7 @@ describe('the subject and the summary', () => {
     const summary = renderSummary(report(), { section: 'Unreleased', link: 'https://example.invalid/report.md' })
     expect(summary).toContain('The full report of the run that gated this: https://example.invalid/report.md')
     expect(summary).toContain('The notes above are CHANGELOG.md’s `Unreleased` section.')
-    expect(summary).toContain('5 of 5 tests passed across 4 packages; the install gate passed; the validator gate passed, 2 resources judged as the corpus expects.')
+    expect(summary).toContain("5 of 5 tests passed across 4 packages; the install gate passed; the validator gate passed, 2 resources judged as the corpus expects; the demo's browser gate made 4 checks in 2 passes, and none failed.")
+    expect(renderSummary(report((inputs) => (job(inputs, 'browser').browserGates[0].checks.failed = ['phone, 360, fr: the page set no cookie: cookies: a'])))).toContain("the demo's browser gate failed.")
   })
 })

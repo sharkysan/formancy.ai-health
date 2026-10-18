@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
@@ -39,6 +39,19 @@ describe('the compatibility record', () => {
     const table = render({ ...known, upstream: [{ name: '@formancy/spec', version: '0.5.0', by: ['@formancy/health-questionnaire'] }] })
     expect(table).toContain('| `@formancy/spec` | 0.5.0 | the manifest of `@formancy/health-questionnaire` |')
     expect(table).not.toContain('none yet')
+  })
+
+  // The table says what the packages are built against. The demo draws its
+  // form with formancy's renderer and wears formancy's themes (0012):
+  // listed here, they would read as what the packages need, and a bump of
+  // the demo's alone as a change to the packages' tuple.
+  test('lists no upstream package only the demo depends on', () => {
+    const manifest = (path) => JSON.parse(readFileSync(join(repo, path), 'utf8'))
+    const of = (pkg) => Object.keys({ ...pkg.dependencies, ...pkg.devDependencies })
+    const packages = readdirSync(join(repo, 'packages')).flatMap((name) => (existsSync(join(repo, 'packages', name, 'package.json')) ? of(manifest(`packages/${name}/package.json`)) : []))
+    const demoOnly = of(manifest('apps/demo/package.json')).filter((name) => name.startsWith('@formancy/') && !name.startsWith('@formancy/health-') && !packages.includes(name))
+    expect(demoOnly).toContain('@formancy/react')
+    expect(facts(repo).upstream.filter(({ name }) => demoOnly.includes(name))).toEqual([])
   })
 })
 

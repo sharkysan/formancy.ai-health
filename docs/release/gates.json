@@ -7,7 +7,7 @@
         { "job": "install" },
         { "file": "scripts/upstream-deps.test.mjs" }
       ],
-      "open": "Partly evidenced: the install gate installs and runs every published package's tarball in plain npm projects under Node, and upstream packages are depended on at exact versions; no gate bundles a package for a browser, and that no upstream file is copied, a stylesheet included, is held by review (0002)."
+      "open": "Partly evidenced: the install gate installs and runs every published package's tarball in plain npm projects under Node, and upstream packages are depended on at exact versions; no gate bundles a package's tarball for a browser -- the demo's browser gate runs the packages as the workspace builds them (0012) -- and that no upstream file is copied, a stylesheet included, is held by review (0002)."
     },
     {
       "gate": "G2",
@@ -73,7 +73,7 @@
     },
     {
       "gate": "legal",
-      "open": "Needs a lawyer: LICENSE.md says at the top that no lawyer has reviewed it (0001), and does not say, as the README does, that a customer's product computing a clinical result from its own forms carries the regulatory duty that brings; CLA.md has not been reviewed either; the README's intended purpose is in CLAUDE.md's words, which no lawyer has read (0011); and the trademark position is the maintainer's reading of HL7's pages (0003)."
+      "open": "Needs a lawyer: LICENSE.md says at the top that no lawyer has reviewed it (0001), and does not say, as the README does, that a customer's product computing a clinical result from its own forms carries the regulatory duty that brings; CLA.md has not been reviewed either; the README's intended purpose is in CLAUDE.md's words, which no lawyer has read (0011); the trademark position is the maintainer's reading of HL7's pages (0003); and the demo's page says in four languages what it is and what it does with what is typed, its French and Italian read by no native reader yet (0012)."
     }
   ]
 }

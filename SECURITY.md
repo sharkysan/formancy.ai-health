@@ -21,8 +21,11 @@ standard, inside the application of the vendor that runs it. It is a library:
 it has no server and no network of its own, and the host supplies identity
 and sends what it builds. Forms, answers, questionnaires, profiles,
 implementation guide packages, PDFs and the resources a host hands over are
-untrusted input even when an administrator wrote them. The areas we consider
-highest risk, and are most interested in reports about, follow from that:
+untrusted input even when an administrator wrote them. Beside the packages,
+this repository serves one page, the demo at https://formancy.ai/health/
+([0012](docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)), which runs them in a visitor's browser on synthetic data and is not
+the product. The areas we consider highest risk, and are most interested in
+reports about, follow from that:
 
 - **Health data in diagnostics**: a name, an identifier such as an AHV number
   or a KVNR, an answer, or any other value from a form, a resource or a PDF
@@ -55,6 +58,16 @@ highest risk, and are most interested in reports about, follow from that:
   profile, an implementation guide package or a terminology, or send a
   Bundle anywhere. A canonical and a system URI are identifiers, never
   addresses.
+
+- **The demo's page**: anything that makes it send what a visitor types
+  anywhere -- a request, a beacon, a form that posts -- or keep it; a
+  script, a style or any file but the build's assets that runs or loads
+  under its policy, one Cloudflare injects included; a string that becomes
+  markup or code despite its Trusted Types; a header
+  `scripts/demo-headers.mjs` states for the address that the address does
+  not send; a package in its bundle that its notices do not list; or a
+  resource or refusal the packages did not make, or a statement on it that
+  is not true. A report about it needs no real person's data either.
 
 Nothing in the packages is meant to reach the network. A report that found a
 way to make Formancy Health do so, on anybody's instruction, is in scope and

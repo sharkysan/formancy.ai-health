@@ -22,20 +22,21 @@ when it stops being true; of its prose, a guard holds its install lines
 and its links, and review the rest
 ([0011](./docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).
 
-> **Status, 17 October 2026: 0.1.0, a developer preview, is ready to tag
+> **Status, 18 October 2026: 0.1.0, a developer preview, is ready to tag
 > and not released.** Nothing is on npm and no tag is pushed. The
-> packages' manifests say 0.1.0, and a release report built from one
-> machine's runs that day -- the guards, every package's suite, the install
-> gate and the validator gate -- found no problem, as a partial report:
-> it allowed the verify, install and validator jobs' results missing, as a
-> machine must, so the gates that rest on a job's result are judged only
-> on GitHub ([`RELEASING.md`](./RELEASING.md#the-release-report)). On that
-> machine `pnpm check:pkg` stopped before it checked anything, its pnpm
-> refused by corepack's; publint and attw, run in each package by hand,
-> passed. None of it had run on GitHub that day as 0.1.0 has it: the first
-> pull request run is the release report's first there, and a rehearsal
-> of the release workflow the first of its SBOM step. What is left is the
-> maintainer's -- that run, the secrets the workflows expect, the
+> packages' manifests say 0.1.0. On GitHub the gates ran on `main` on
+> 17 October, at the commit that made 0.1.0 ready, and every job passed,
+> the release report among them; no rehearsal of the release workflow has
+> run, so its SBOM step has run on no runner. A release report built from
+> one machine's runs on 18 October -- the guards, every package's suite,
+> the demo's browser gate, the install gate and the validator gate --
+> found no problem, as a partial report: it allowed the verify, install
+> and validator jobs' results missing, as a machine must, so the gates
+> that rest on a job's result are judged only on GitHub
+> ([`RELEASING.md`](./RELEASING.md#the-release-report)). On that machine
+> `pnpm check:pkg` stopped before it checked anything, its pnpm refused by
+> corepack's; publint and attw, run in each package by hand, passed. What
+> is left is the maintainer's -- the secrets the workflows expect, the
 > changelog's 0.1.0 heading, dated the tag's day, through a pull request
 > before the rehearsal, the rehearsal and the tag
 > ([`RELEASING.md`](./RELEASING.md#before-the-first-release)) -- and what
@@ -64,6 +65,52 @@ and its links, and review the rest
 > and a referral, and resources built by hand. Every run of the gates ends
 > in a release report of what it was tested on and what it found, which a
 > release attaches signed beside an SBOM of what a consumer installs.
+> Beside the packages, and in no release, the demo: a page Cloudflare
+> deploys from `main` to formancy.ai/health/, which runs them in a
+> browser on the corpus's synthetic referral, under a browser gate of its
+> own ([Try it](#try-it)).
+
+## Try it
+
+The demo fills a synthetic Swiss referral in your browser and shows what
+the packages make of it: the Questionnaire, the QuestionnaireResponse,
+the CH ORF document and the letter's document Bundle, with every refusal
+as the packages state it. It is online at https://formancy.ai/health/ and
+runs from a clone, with Node 22.13 or later and corepack:
+
+```bash
+git clone https://github.com/sharkysan/formancy.ai-health.git
+cd formancy.ai-health
+corepack enable
+pnpm install
+pnpm demo
+```
+
+`pnpm demo` builds the packages and the demo, then serves the built demo
+with `vite preview` at http://localhost:4395, under the headers the
+deploy writes for formancy.ai, written for that address: open it there,
+since the policy admits the page's scripts from that address alone. Its
+data is synthetic, and a real patient's does not belong in it. It sends
+what you type nowhere and keeps none of it: the policy it is served under
+allows the page no connection, and its scripts, styles and faces from its
+own build's files alone, which
+[`scripts/demo.test.mjs`](./scripts/demo.test.mjs) holds the headers to,
+and its browser gate,
+[`apps/demo/scripts/browser-test.mjs`](./apps/demo/scripts/browser-test.mjs),
+watches it in Chromium ask for nothing more once it has settled -- loaded,
+every face in, nothing in flight -- whatever is typed into it, and store
+nothing in the browser. Its foot links the licences and notices of the
+code and faces it bundles, which its build writes beside it. It is the
+demo of the packages, not a product: no page, server or transport ships
+in them.
+
+formancy.ai/health/ serves Cloudflare's build of `main`, from a Cloudflare
+Worker of its own beside formancy.ai's site and Formancy Report's Studio.
+Cloudflare
+builds and deploys it on every push to `main`, as
+[RELEASING.md](./RELEASING.md#the-demo-on-formancyai) says. So it is
+main's demo, which can be ahead of the latest release, and nothing in this
+repository checks what the address serves ([0012](./docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
 
 ## What 0.1.0 is
 
@@ -90,8 +137,9 @@ private.
 The gates 0.1.0 is held to are the register's
 ([`docs/release/gates.json`](./docs/release/gates.json)): reuse and
 compatibility, through the install gate over every published package,
-which the register keeps open in part -- no gate bundles a package for a
-browser, and that no upstream file is copied is review's; conformance,
+which the register keeps open in part -- no gate bundles a package's
+tarball for a browser, the demo bundling the packages as the workspace
+builds them, and that no upstream file is copied is review's; conformance,
 through the validator gate; exactness; failing closed, of which the
 register keeps a part open, for refusals no package has a case for yet;
 the dependency licences; HL7's notice and the names; and a clean
@@ -122,9 +170,13 @@ open.
   and contacts, and the rest 0009 lists, each refused rather than left out
   ([0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)).
 - **A page, a server, or any transport.** It is a library; a vendor's
-  application sends what it writes.
-- **A browser.** Every gate runs the packed packages under Node; none runs
-  them in a browser or another engine, so that is not claimed.
+  application sends what it writes. The demo is a page beside the
+  packages, never published, and in no release ([Try it](#try-it)).
+- **A browser.** Every gate that runs the packed packages runs them under
+  Node; none runs them in a browser or another engine, so that is not
+  claimed. The demo's
+  browser gate runs the packages in Chromium as the workspace builds them,
+  bundled into its page, which is not the tarballs.
 
 ## Intended purpose
 
@@ -206,7 +258,12 @@ Core declares, in [0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-re
 `@formancy/health-corpus` is test support, private and never published:
 the referral letter it renders with Formancy Report 0.1.0's released
 packages, the only place Report is a dependency, and the documents the
-validator gate judges.
+validator gate judges. Its `./documents` entry is those documents without
+the letter's renderer, which the demo bundles into its page;
+`scripts/corpus-documents.test.mjs` fails when that entry, as built,
+reaches anything but health-core and health-document, and the demo's
+build stops on any package of Report's that reaches its bundle, since
+its licence is not one the repository's policy allows.
 
 What is planned and not here yet is [Not in 0.1.0](#not-in-010), above.
 
@@ -247,7 +304,8 @@ The product's name carries none of those marks
 FHIR is named here only to say which standard this module implements and
 which resources it produces. `scripts/trademark.test.mjs` fails when the
 sentence above goes missing from this file or from `NOTICE`, or when a
-package's name takes one of the marks.
+package's name, or the demo's Worker, routes or page title, takes one of
+the marks.
 
 ## Development
 
@@ -260,6 +318,17 @@ pnpm build
 pnpm test
 ```
 
+The demo, `apps/demo`, is served built by `pnpm demo`, as [Try it](#try-it)
+says, and is developed with Vite's own server, which applies none of the
+headers. Its browser gate needs the Chromium the installed Playwright
+pins, once per machine:
+
+```bash
+pnpm --filter @formancy/health-demo dev                                # Vite's server, after pnpm build
+pnpm --filter @formancy/health-demo exec playwright install chromium   # once
+pnpm test:browser                                                      # the demo's browser gate, which builds what it measures
+```
+
 The gates CI runs, from `.github/workflows/gates.yml`: `pnpm build`,
 `pnpm typecheck`, `pnpm check:pkg`, `node scripts/verify-licenses.mjs`,
 `node scripts/dependency-licences.mjs` and `pnpm test:repo`, which holds the
@@ -270,7 +339,8 @@ JavaScript number or reads a clock; each package's
 the packages, installs them into a plain npm project, type-checks it with
 `skipLibCheck` off and runs it under Node, and does the same with the
 program of the [getting-started guide](./docs/getting-started.md) in a
-project of its own; `node scripts/validator.mjs`,
+project of its own; the demo's browser gate, in Chromium, for what jsdom
+cannot see of its page ([0012](./docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)); `node scripts/validator.mjs`,
 the validator gate below; and the release report, built from what every
 other job found, which fails the run on anything it lists
 ([`docs/release/`](./docs/release/README.md)).
@@ -301,9 +371,13 @@ the synthetic submissions there, which hold every answer type it writes,
 each judged against its Questionnaire; the document Bundles
 health-document makes of the referral letter health-corpus renders with
 Formancy Report 0.1.0, its PDF in the attachment, in a Binary, and beside
-a QuestionnaireResponse; the CH ORF document health-ch makes of a
-synthetic referral, `scripts/validator/ch-orf.mjs`; and resources built by
-hand where no package builds one. Some are broken on purpose, each for
+a QuestionnaireResponse, the gate refusing to run on a letter that is not
+the bytes [`docs/release/letter.json`](./docs/release/letter.json)
+registers, which are the bytes the demo carries; the CH ORF documents
+health-ch makes of the synthetic referrals in `scripts/validator/ch-orf.mjs`
+and `scripts/validator/demo-referral.mjs`, the second the demo's, whose
+Questionnaire and response are judged on their own too; and resources
+built by hand where no package builds one. Some are broken on purpose, each for
 one thing, and the gate fails unless the validator refuses each for
 exactly that.
 
@@ -336,7 +410,8 @@ a Binary not, and the media type unchecked. Not that a form, a submission
 or a document the corpus lacks would be; nothing about a response that is
 not complete, which the corpus has none of; and nothing about the PDF
 itself, which is no PDF/A and whose pages Report proves. And that the CH
-ORF document health-ch makes of the corpus's referral is accepted against
+ORF documents health-ch makes of the corpus's referrals, and the demo's
+response alone, which claims CH ORF's response profile, are accepted against
 CH ORF 3.0.2 and CH Core 6.0.0, with CH Term 3.3.0, the same way, with no
 error and no warning but dom-6 and CH Core's `gln-startswith76`, which the
 corpus's GLNs under GS1's prefix 952 raise; offline, nothing checks its
@@ -385,7 +460,7 @@ validator loaded, the time it took -- is in that run's
 - [`docs/getting-started.md`](./docs/getting-started.md) — from an empty npm project to a Questionnaire, a QuestionnaireResponse, a document Bundle carrying a Report PDF, and a CH ORF document, under Node; its code is compiled and run against the packed packages by the install gate.
 - [`docs/`](./docs/README.md) — the architecture, as arc42 in formancy.ai's files, whose decisions are the records below, and where to start reading it, by who you are.
 - [`docs/decisions/`](./docs/decisions/README.md) — every decision somebody could helpfully undo, with what verifies it.
-- [`docs/release/`](./docs/release/README.md) — the registers a conformance claim rests on, the validator the gate runs and every package it loads; the two every release report reads, the release gates and each record's known limitations; and what a release report holds and what fails it.
+- [`docs/release/`](./docs/release/README.md) — the registers a conformance claim rests on, the validator the gate runs, every package it loads and the bytes of the letter its documents carry; the two every release report reads, the release gates and each record's known limitations; and what a release report holds and what fails it.
 - [`CHANGELOG.md`](./CHANGELOG.md) — what changed and why.
 - [`CLAUDE.md`](./CLAUDE.md) — the rules a change is held to, and the gates and guards that hold them.
 - [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`CLA.md`](./CLA.md) — contributions are taken under a CLA, checked on every pull request; [`GOVERNANCE.md`](./GOVERNANCE.md) says who decides.

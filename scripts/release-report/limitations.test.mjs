@@ -58,7 +58,7 @@ describe('the register against the records', () => {
     expect(problems({ '0001': { reviewed: HASH('1'), limitations: [] } })).toEqual(['0001 has neither limitations nor none; it needs exactly one'])
     expect(problems({ '0002': { reviewed: HASH('2'), limitations: [line('Still costs.')] } })).toEqual(["0002 is superseded by 0003, so its limitations are a later record's: give it none"])
     expect(problems({ '0001': { reviewed: HASH('1'), limitations: [line('Wrong place.', { area: 'rendering' })] } })).toEqual([
-      "0001's limitation 1 has the area rendering, which is not one of licence, naming, json, conformance, forms, answers, documents, switzerland, release",
+      "0001's limitation 1 has the area rendering, which is not one of licence, naming, json, conformance, forms, answers, documents, switzerland, demo, release",
     ])
     expect(problems({ '0001': { reviewed: HASH('1'), limitations: [line('No full stop')] } })).toEqual(["0001's limitation 1 must say one sentence, ending with a full stop"])
     expect(problems({ '0001': { reviewed: HASH('1'), limitations: [line('A dangling reference refuses the document.')] } })).toEqual(["0003's limitation 1 says what another line already says"])

@@ -58,6 +58,8 @@ node scripts/verify-licenses.mjs
 node scripts/dependency-licences.mjs
 pnpm test:e2e:install
 node scripts/validator.mjs --java <path to java 17 or later>
+pnpm --filter @formancy/health-demo exec playwright install chromium   # once, the Chromium Playwright pins
+pnpm --filter @formancy/health-demo test:browser
 #    and, to read the report of what ran on this machine, "The release report"
 #    below
 
@@ -173,6 +175,8 @@ holds and what fails it). In short:
   version, the validator the gate pins and the one it ran, with its Java;
 - each package's results, held to every test file the checkout holds for
   it, a skip passing only where the validator job's run passed that test;
+- the demo's browser gate, every pass it planned made and every check in
+  it passed, in the Chromium the installed Playwright pins;
 - the install gate, each project held to what `scripts/install-hosts.mjs`
   plans, and the validator gate's verdict held to the registers;
 - each tarball's built files against the `dist/` every job built;
@@ -189,6 +193,7 @@ pnpm build
 node scripts/validator.mjs --java <path to java 17 or later>
 VALIDATOR_GATE_RAN=true pnpm test:repo                   # the guards, the registers' every case with them
 pnpm exec turbo run test:coverage --force --summarize   # every package, fresh, with its wall time
+pnpm --filter @formancy/health-demo test:browser        # the demo's browser gate, in the Chromium Playwright pins
 node scripts/install-test.mjs
 node scripts/release-report/collect.mjs --local --since "$since"
 node scripts/release-report/report.mjs --local --allow-missing verify,install,validator
@@ -206,7 +211,11 @@ result exists only in a gates run; the guards', the install gate's and the
 validator gate's own files are read whatever it allows. On a machine
 without a Java, leave out the validator and its `VALIDATOR_GATE_RAN`: the
 registers' cases that read its downloads skip, and are allowed by
-`--allow-missing validator` alone, which the banner says. A file that is
+`--allow-missing validator` alone, which the banner says; on one without
+Chromium, leave out the browser gate and add `browser`. The browser gate
+builds the demo itself, first; with its eight passes it ran 29.7 s by
+its results file's start and finish on a desktop on 18 October 2026
+(Windows 11, Node 24.21.0). A file that is
 there from before `--since` is refused all the same -- run it again or
 remove it. A release refuses a local report.
 
@@ -258,6 +267,72 @@ entries stay even when a release never happens.
 
 The publish job had not run by 17 October 2026. `scripts/workflows.test.mjs`
 holds its shape; the first tag is the first time it runs.
+
+## The demo on formancy.ai
+
+Cloudflare deploys the demo at https://formancy.ai/health/ on every push
+to `main`, through Workers Builds ([0012](docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)), as formancy.ai-report 0018
+deploys Report's Studio at https://formancy.ai/report/. Its Worker is
+connected to this repository. It builds with `pnpm build` and deploys
+with `node scripts/demo.mjs`, the two halves of `pnpm demo:deploy`, with
+the settings in
+[REPO-METADATA.md](.github/REPO-METADATA.md#the-demos-worker-on-cloudflare).
+So the demo is main's, not the latest release's, and a release needs
+nothing more for it.
+
+`node scripts/demo.mjs` refuses:
+- a checkout with changes;
+- a Worker config in `apps/demo/wrangler.json` that is not the demo's;
+- a missing build;
+- a built page that asks for a file by an absolute path;
+- a build that holds a `_headers` or `_redirects` of its own, and a header
+  `_headers` cannot carry as `scripts/demo-headers.mjs` states it.
+
+Then it writes `_headers` from `scripts/demo-headers.mjs`, for
+https://formancy.ai/health/, at the root of what it uploads, beside the
+build and the `THIRD-PARTY-NOTICES.txt` the build wrote, and deploys
+with the pinned Wrangler, with the commit in
+the deployment's message. The build before it stops on a letter that is
+not the bytes [`docs/release/letter.json`](docs/release/letter.json)
+registers, so a machine whose Node renders other bytes deploys nothing. A
+failed build leaves the last deployment serving. Its log is on the
+Worker's page in Cloudflare's dashboard, and nothing in this repository
+reads it.
+
+The browser gate measures the build under the path and the headers the
+deploy writes, for the gate's own address, in CI's `browser` job; it
+never reads the address. After a deploy, read the build's log on the
+Worker's page: Cloudflare's machine is the first to render the letter on
+its Node, and a build that stopped there -- "the letter health-corpus
+rendered here is not the one docs/release/letter.json registers" --
+deployed nothing, the last deployment still serving. Then check what the
+address serves, by hand; nothing else does:
+
+```bash
+curl -sI https://formancy.ai/health | grep -i '^location:'      # /health/, the path with its slash
+curl -sI https://formancy.ai/health/ | grep -i -E '^(content-security-policy|permissions-policy|referrer-policy|x-content-type-options|x-robots-tag|cache-control):'
+curl -s https://formancy.ai/health/ | grep -o '<script[^>]*>'     # one line, the build's module: src="./assets/index-….js"
+curl -s https://formancy.ai/health/THIRD-PARTY-NOTICES.txt | head -1   # Third-party notices
+```
+
+The headers should be `scripts/demo-headers.mjs`'s for
+https://formancy.ai/health/, each once, and the page should hold the
+build's one script and no other: a second, from `/cdn-cgi/` or inline, is
+one Cloudflare added, which the policy refuses to run and `no-transform`
+asks it not to add. Then open the page, change an answer, download each
+file, open the PDF, and follow the footer's link to the notices.
+
+By hand, from a clean checkout, with a Cloudflare login that can edit
+Workers on formancy.ai's zone:
+
+```bash
+npx --yes wrangler@4.146.0 login     # once per machine
+pnpm demo:deploy
+```
+
+`node scripts/demo.mjs --dry-run`, after `pnpm build`, does everything but
+the upload, with no login. Agents run that, and never the deploy or the
+login.
 
 ## Provenance
 

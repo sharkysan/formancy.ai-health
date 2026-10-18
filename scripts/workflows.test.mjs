@@ -342,13 +342,13 @@ describe('release.yml', () => {
 
 describe('gates.yml', () => {
   // CI and a release both call this, and only this, so a job added beside
-  // these four is one both run; it is added here in the same change, with
+  // these five is one both run; it is added here in the same change, with
   // whatever it proves, a collect step and a reader in collect.mjs. Called
   // with the release named, taking the coverage token alone, and only
   // reading.
-  test('is its four jobs and the report, called with the release named, the coverage token its one secret, reading only', () => {
-    expect(Object.keys(gates.jobs)).toEqual(['verify', 'test', 'install', 'validator', 'report'])
-    expect(gateJobs(gates)).toEqual(['verify', 'test', 'install', 'validator'])
+  test('is its five jobs and the report, called with the release named, the coverage token its one secret, reading only', () => {
+    expect(Object.keys(gates.jobs)).toEqual(['verify', 'test', 'browser', 'install', 'validator', 'report'])
+    expect(gateJobs(gates)).toEqual(['verify', 'test', 'browser', 'install', 'validator'])
     expect(gates.on.workflow_call.inputs.release).toMatchObject({ type: 'string', default: '' })
     expect(gates.on.workflow_call.secrets).toEqual({ CODECOV_TOKEN: { required: false } })
     expect(gates.permissions).toEqual({ contents: 'read' })
@@ -401,7 +401,7 @@ describe('gates.yml', () => {
   test('gives the report one key per job and package, and no key twice', () => {
     const keys = expectedKeys(gates, namedPackages()).map((entry) => entry.key)
     expect(new Set(keys).size).toBe(keys.length)
-    expect(keys).toEqual(expect.arrayContaining(['verify', 'install', 'validator']))
+    expect(keys).toEqual(expect.arrayContaining(['verify', 'browser', 'install', 'validator']))
     expect(keys).not.toContain('test')
     expect(keys.filter((key) => key.startsWith('test-')).sort()).toEqual(namedPackages().map((entry) => `test-${entry.id}`).sort())
   })
@@ -416,6 +416,28 @@ describe('gates.yml', () => {
     }
     expect(changed((workflow) => (workflow.jobs.validator.steps = workflow.jobs.validator.steps.filter((step) => step.id !== 'collect')))).toThrow('.github/workflows/gates.yml: the validator job has no step with id collect, so it leaves nothing for the report')
     expect(changed((workflow) => (collectStep(workflow.jobs.install).run = 'node scripts/release-report/collect.mjs --job verify'))).toThrow('.github/workflows/gates.yml: the install job collects as --job verify, not as itself')
+  })
+
+  // The browser job's results are the file the demo's gate writes, so the
+  // gate runs before the collect step, through turbo, which builds what the
+  // demo imports first and never replays the gate (turbo.json); the
+  // Chromium it runs in is the one the installed Playwright pins,
+  // installed before it; and the gate's own file is kept whole beside the
+  // results, for whoever reads a red run.
+  test('runs the demo’s gate after installing Playwright’s Chromium, before it collects, and keeps its file', () => {
+    const browser = gates.jobs.browser.steps
+    const at = (command) => browser.findIndex((step) => step.run === command)
+    const install = at('pnpm --filter @formancy/health-demo exec playwright install chromium')
+    const gate = at('pnpm exec turbo run test:browser --filter=@formancy/health-demo')
+    expect(install).toBeGreaterThan(at('pnpm install --frozen-lockfile'))
+    expect(gate).toBeGreaterThan(install)
+    expect(browser.indexOf(collectStep(gates.jobs.browser))).toBeGreaterThan(gate)
+    expect(collectStep(gates.jobs.browser).run).toBe('node scripts/release-report/collect.mjs --job browser')
+    expect(browser.find((step) => step.with?.name === 'browser-results')?.with).toEqual({ name: 'browser-results', path: 'apps/demo/test-results/', 'if-no-files-found': 'error', overwrite: true })
+    expect(gates.jobs.browser['runs-on']).toMatch(/^ubuntu-\d+\.\d+$/)
+    const demo = JSON.parse(readFileSync(join(repo, 'apps', 'demo', 'package.json'), 'utf8'))
+    expect(demo.scripts['test:browser']).toBe('node scripts/browser-test.mjs')
+    expect(JSON.parse(readFileSync(join(repo, 'turbo.json'), 'utf8')).tasks['test:browser']).toEqual({ dependsOn: ['build'], cache: false })
   })
 
   // Without --force a suite's results could be a cached replay of another

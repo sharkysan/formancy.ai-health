@@ -15,7 +15,10 @@
     "test:repo": "vitest run --config vitest.repo.config.mts",
     "test:e2e:install": "node scripts/install-test.mjs",
     "typecheck": "turbo run typecheck",
-    "check:pkg": "turbo run check:pkg"
+    "check:pkg": "turbo run check:pkg",
+    "test:browser": "turbo run test:browser",
+    "demo": "pnpm build && pnpm --filter @formancy/health-demo preview",
+    "demo:deploy": "pnpm build && node scripts/demo.mjs"
   },
   "devDependencies": {
     "turbo": "2.11.2",
