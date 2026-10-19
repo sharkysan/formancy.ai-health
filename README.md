@@ -27,11 +27,10 @@ and its links, and review the rest
 > packages' manifests say 0.1.0, and they read forms through formancy
 > 0.6.0, released on 18 October, from whose `@formancy/themes` the demo
 > wears formancy.ai's room ([0015](./docs/decisions/0015-the-demo-wears-formancy-ais-room-imported-from-formancy-0-6-0-and-the-packages-read-forms-through-the-same-release.md)).
-> On GitHub the gates ran on `main` on 17 October, at the commit that
-> first made 0.1.0 ready, and every job passed, the release report among
-> them; they have not run on formancy 0.6.0, which reaches `main` through
-> a pull request whose run is the one to read before a tag. No rehearsal
-> of the release workflow has run, so its SBOM step has run on no runner.
+> On GitHub the gates ran on `main` on 19 October, at the commit that
+> brought formancy 0.6.0, and every job passed, the release report among
+> them. No rehearsal of the release workflow has run, so its SBOM step has
+> run on no runner.
 > A release report built from one machine's runs on 19 October -- the
 > guards, every package's suite, the demo's browser gate in Chromium and
 > Firefox, the install gate and the validator gate -- found no problem,
@@ -44,10 +43,10 @@ and its links, and review the rest
 > Linux image too. On that machine `pnpm check:pkg` passed with pnpm's
 > version check set to warn -- `pnpm_config_pm_on_fail=warn`, passed
 > through turbo with `--env-mode=loose` -- since corepack's pnpm is not
-> the release the manifest pins. What is left is the maintainer's -- the
-> secrets the workflows expect, the rehearsal and the tag
-> ([`RELEASING.md`](./RELEASING.md#before-the-first-release)); the
-> changelog's section is 0.1.0's, dated 18 October 2026, and moves to the
+> the release the manifest pins. The secrets the workflows expect are set
+> ([`RELEASING.md`](./RELEASING.md#before-the-first-release)), and what is
+> left is the maintainer's -- the rehearsal and the tag; the changelog's
+> section is 0.1.0's, dated 19 October 2026, and moves to the
 > tag's day through a pull request if the tag is pushed on another -- and what
 > 0.1.0 holds, and leaves out, is [below](#what-010-is).
 >
