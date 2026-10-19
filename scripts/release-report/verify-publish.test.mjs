@@ -146,14 +146,42 @@ describe('the SBOM', () => {
   })
 
   // No published package has a runtime dependency of its own today; the
-  // first one added is refused when the SBOM leaves it out, or names
-  // another version than the suites loaded, as Report's pdfmake is.
+  // first one added is held where the package that declares it is given
+  // it, in the SBOM's dependency graph, as Report's pdfmake is
+  // (formancy.ai-report 0017): refused when the SBOM records no such
+  // dependency, gives another version than the suites loaded, or names
+  // none at that version.
   test('is refused without a runtime dependency, or with another version of one', () => {
     const { report, sbom } = green()
-    const depending = { ...report, testedOn: { ...report.testedOn, runtime: [{ name: 'left-pad', loaded: '1.3.0' }] } }
-    expect(sbomReportProblems(depending, sbom)).toEqual(['the SBOM names no left-pad, which a published package depends on'])
-    expect(sbomReportProblems(depending, { components: [...sbom.components, { purl: 'pkg:npm/left-pad@1.2.0' }] })).toEqual(['the SBOM names left-pad 1.2.0, where the suites loaded 1.3.0'])
-    expect(sbomReportProblems(depending, { components: [...sbom.components, { purl: 'pkg:npm/left-pad@1.3.0' }] })).toEqual([])
+    const depending = { ...report, testedOn: { ...report.testedOn, runtime: [{ package: '@formancy/health-core', name: 'left-pad', loaded: '1.3.0' }] } }
+    const given = (version, components = [{ purl: `pkg:npm/left-pad@${version}` }]) => ({
+      components: [...sbom.components, ...components],
+      dependencies: [{ ref: 'pkg:npm/@formancy/health-core@0.1.0', dependsOn: [`pkg:npm/left-pad@${version}`] }],
+    })
+    expect(sbomReportProblems(depending, sbom)).toEqual(['the SBOM records no dependency of @formancy/health-core on left-pad'])
+    expect(sbomReportProblems(depending, given('1.2.0'))).toEqual(['the SBOM gives @formancy/health-core left-pad 1.2.0, where its suites loaded 1.3.0'])
+    expect(sbomReportProblems(depending, given('1.3.0', []))).toEqual(['the SBOM names no left-pad 1.3.0, which @formancy/health-core depends on'])
+    expect(sbomReportProblems(depending, given('1.3.0'))).toEqual([])
+  })
+
+  // Formancy Report's 0.2.0 rehearsal was refused for pdfkit's
+  // @noble/hashes 1.8.0 beside report-spec's 2.4.0: a consumer's tree can
+  // hold one name at two versions, the other a dependency of a dependency
+  // no suite's record names. Held by name, a correct SBOM is refused; held
+  // where the declaring package is given it, it passes, and the package
+  // given the other version is still refused.
+  test('reads a runtime dependency as the package that declares it is given it, another at another version beside it', () => {
+    const { report, sbom } = green()
+    const depending = { ...report, testedOn: { ...report.testedOn, runtime: [{ package: '@formancy/health-core', name: 'left-pad', loaded: '1.3.0' }] } }
+    const both = (coreGets) => ({
+      components: [...sbom.components, { purl: 'pkg:npm/left-pad@1.3.0' }, { purl: 'pkg:npm/left-pad@1.2.0' }],
+      dependencies: [
+        { ref: 'pkg:npm/@formancy/health-core@0.1.0', dependsOn: [`pkg:npm/left-pad@${coreGets}`] },
+        { ref: 'pkg:npm/@formancy/spec@0.5.0', dependsOn: ['pkg:npm/left-pad@1.2.0'] },
+      ],
+    })
+    expect(sbomReportProblems(depending, both('1.3.0'))).toEqual([])
+    expect(sbomReportProblems(depending, both('1.2.0'))).toEqual(['the SBOM gives @formancy/health-core left-pad 1.2.0, where its suites loaded 1.3.0'])
   })
 
   // Report's v0.1.0 tag was refused for an SBOM that left out what only the

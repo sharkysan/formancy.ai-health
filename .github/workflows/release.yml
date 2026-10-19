@@ -212,11 +212,12 @@ jobs:
             .
 
       # The SBOM is one, names every package this release publishes at its
-      # version, every runtime dependency and every upstream package a
-      # consumer's install brings -- @formancy/spec, through
-      # health-questionnaire -- and each the report names at the version the
-      # suites loaded; and it names exactly what npm's lockfile of the
-      # install above holds, no tool and no package of another tree.
+      # version and every upstream package a consumer's install brings --
+      # @formancy/spec, through health-questionnaire -- each at a version
+      # the suites loaded; its dependency graph gives each published package
+      # each runtime dependency at the version its suites loaded; and it
+      # names exactly what npm's lockfile of the install above holds, no
+      # tool and no package of another tree.
       - name: The SBOM names what the suites loaded and what the install holds, and is pinned
         id: sbom-checked
         env:

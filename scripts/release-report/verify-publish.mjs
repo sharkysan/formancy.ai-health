@@ -12,9 +12,11 @@
 // one per published package, or not byte for byte the ones the install gate
 // installed and ran; a release body that is missing or longer than GitHub
 // accepts; and an SBOM that leaves out a package this release publishes, at
-// its version, a runtime dependency, or an upstream package a consumer's
-// install of the published packages brings, or names one at another
-// version than the suites loaded (formancy.ai-report 0017); and an SBOM
+// its version, or an upstream package a consumer's install of the published
+// packages brings, or names one at another version than the suites loaded,
+// or whose dependency graph does not give a published package each runtime
+// dependency it declares at the version its suites loaded
+// (formancy.ai-report 0017); and an SBOM
 // that names a component the install it describes does not hold, or leaves
 // out one it holds. The SBOM is made of the tarballs `check` pinned,
 // installed as a consumer installs them, and held to npm's lockfile of that
@@ -91,12 +93,28 @@ export function notesProblems(notes) {
 }
 
 /**
- * The SBOM against the report: every runtime dependency of a published
- * package, and every upstream package the report marks shipped -- one a
- * consumer's install of the published packages brings, directly or through
- * another -- is named; every package this release publishes is named at
- * its version; and every package the report names, shipped or not, is
- * named, where the SBOM names it, at the version the suites loaded.
+ * The SBOM's dependency graph: each package's `name@version` to the
+ * packages, `{ name, version }`, it depends on. cdxgen writes each
+ * reference as the package's URL.
+ */
+function dependencyGraph(sbom) {
+  const graph = new Map()
+  for (const { ref, dependsOn } of sbom?.dependencies ?? []) {
+    const from = npmPurl(ref)
+    if (from !== undefined) graph.set(`${from.name}@${from.version}`, (dependsOn ?? []).map(npmPurl).filter((to) => to !== undefined))
+  }
+  return graph
+}
+
+/**
+ * The SBOM against the report: every upstream package the report marks
+ * shipped -- one a consumer's install of the published packages brings,
+ * directly or through another -- is named; every package this release
+ * publishes is named at its version; every upstream package the report
+ * names, shipped or not, is named, where the SBOM names it, at a version
+ * the suites loaded; and each published package is given each runtime
+ * dependency it declares at the version its suites loaded, read from the
+ * SBOM's dependency graph (formancy.ai-report 0017).
  */
 export function sbomReportProblems(report, sbom) {
   const problems = []
@@ -104,15 +122,25 @@ export function sbomReportProblems(report, sbom) {
   const runtime = report.testedOn?.runtime ?? []
   const upstream = report.testedOn?.upstream ?? []
   const loaded = new Map()
-  const note = (name, version) => loaded.set(name, new Set([...(loaded.get(name) ?? []), version]))
-  for (const entry of runtime) note(entry.name, entry.loaded)
-  for (const entry of upstream) note(entry.name, entry.version)
-  for (const name of [...new Set([...runtime.map((entry) => entry.name), ...upstream.filter((entry) => entry.shipped).map((entry) => entry.name)])]) {
+  for (const entry of upstream) loaded.set(entry.name, new Set([...(loaded.get(entry.name) ?? []), entry.version]))
+  for (const name of new Set(upstream.filter((entry) => entry.shipped).map((entry) => entry.name))) {
     if (!components.some((component) => component.name === name)) problems.push(`the SBOM names no ${name}, which a published package depends on`)
   }
   const version = report.subject?.version
   for (const { package: name } of report.results?.buildIdentity ?? []) {
     if (!components.some((component) => component.name === name && component.version === version)) problems.push(`the SBOM names no ${name} ${String(version)}, which this release publishes`)
+  }
+  // Each runtime dependency as the package that declares it is given it: a
+  // consumer's tree can hold one name at two versions, the other a
+  // dependency of a dependency that no suite's record names.
+  const graph = dependencyGraph(sbom)
+  for (const entry of runtime) {
+    const given = (graph.get(`${entry.package}@${String(version)}`) ?? []).filter((to) => to.name === entry.name)
+    if (given.length === 0) problems.push(`the SBOM records no dependency of ${entry.package} on ${entry.name}`)
+    for (const to of given) {
+      if (to.version !== entry.loaded) problems.push(`the SBOM gives ${entry.package} ${entry.name} ${to.version}, where its suites loaded ${entry.loaded}`)
+      else if (!components.some((component) => component.name === to.name && component.version === to.version)) problems.push(`the SBOM names no ${to.name} ${to.version}, which ${entry.package} depends on`)
+    }
   }
   for (const component of components) {
     const versions = loaded.get(component.name)
