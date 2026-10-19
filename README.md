@@ -22,22 +22,30 @@ when it stops being true; of its prose, a guard holds its install lines
 and its links, and review the rest
 ([0011](./docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).
 
-> **Status, 18 October 2026: 0.1.0, a developer preview, is ready to tag
+> **Status, 19 October 2026: 0.1.0, a developer preview, is ready to tag
 > and not released.** Nothing is on npm and no tag is pushed. The
-> packages' manifests say 0.1.0. On GitHub the gates ran on `main` on
-> 17 October, at the commit that made 0.1.0 ready, and every job passed,
-> the release report among them; no rehearsal of the release workflow has
-> run, so its SBOM step has run on no runner. A release report built from
-> one machine's runs on 18 October -- the guards, every package's suite,
-> the demo's browser gate, the install gate and the validator gate --
-> found no problem, as a partial report: it allowed the verify, install
-> and validator jobs' results missing, as a machine must, so the gates
-> that rest on a job's result are judged only on GitHub
-> ([`RELEASING.md`](./RELEASING.md#the-release-report)). On that machine
-> `pnpm check:pkg` stopped before it checked anything, its pnpm refused by
-> corepack's; publint and attw, run in each package by hand, passed. What
-> is left is the maintainer's -- the secrets the workflows expect, the
-> rehearsal and the tag
+> packages' manifests say 0.1.0, and they read forms through formancy
+> 0.6.0, released on 18 October, from whose `@formancy/themes` the demo
+> wears formancy.ai's room ([0015](./docs/decisions/0015-the-demo-wears-formancy-ais-room-imported-from-formancy-0-6-0-and-the-packages-read-forms-through-the-same-release.md)).
+> On GitHub the gates ran on `main` on 17 October, at the commit that
+> first made 0.1.0 ready, and every job passed, the release report among
+> them; they have not run on formancy 0.6.0, which reaches `main` through
+> a pull request whose run is the one to read before a tag. No rehearsal
+> of the release workflow has run, so its SBOM step has run on no runner.
+> A release report built from one machine's runs on 19 October -- the
+> guards, every package's suite, the demo's browser gate in Chromium and
+> Firefox, the install gate and the validator gate -- found no problem,
+> as a partial report: it allowed the verify, install, validator and
+> browser jobs' results missing, as a machine must, the browser's since
+> that machine runs no WebKit, so the gates that rest on a job's result
+> are judged only on GitHub
+> ([`RELEASING.md`](./RELEASING.md#the-release-report)); the same day the
+> browser gate passed in Chromium, Firefox and WebKit in Playwright's
+> Linux image too. On that machine `pnpm check:pkg` passed with pnpm's
+> version check set to warn -- `pnpm_config_pm_on_fail=warn`, passed
+> through turbo with `--env-mode=loose` -- since corepack's pnpm is not
+> the release the manifest pins. What is left is the maintainer's -- the
+> secrets the workflows expect, the rehearsal and the tag
 > ([`RELEASING.md`](./RELEASING.md#before-the-first-release)); the
 > changelog's section is 0.1.0's, dated 18 October 2026, and moves to the
 > tag's day through a pull request if the tag is pushed on another -- and what
@@ -113,7 +121,11 @@ typed into it, and store nothing in the browser; in WebKit, that holds
 while each face's first file arrives, and WebKit 27.2 logs an error for
 each select, refusing a style of its own under the page's policy, which
 is not loosened for it ([0014](./docs/decisions/0014-the-demos-browser-gate-runs-in-chromium-firefox-and-webkit-and-each-fact-the-browsers-disagree-on-is-named-and-held.md)). Its foot links the licences and notices of the
-code and faces it bundles, which its build writes beside it. It is the
+code and faces it bundles, which its build writes beside it. It is drawn
+in formancy.ai's room, `@formancy/themes`' `room.css` as formancy 0.6.0
+ships it, imported and copied nowhere, the form on Blueprint's own paper
+as formancy.ai's admin previews one
+([0015](./docs/decisions/0015-the-demo-wears-formancy-ais-room-imported-from-formancy-0-6-0-and-the-packages-read-forms-through-the-same-release.md)). It is the
 demo of the packages, not a product: no page, server or transport ships
 in them.
 
@@ -264,7 +276,7 @@ Core declares, in [0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-re
 | Package | What it is |
 | --- | --- |
 | `@formancy/health-core` | The FHIR version the module emits, R4 4.0.1; FHIR R4's primitives, each checked against its type when made, a number held as its digits and bytes as canonical base64; and a writer and a reader of FHIR JSON that keep every digit, give the same bytes for the same input, and refuse an empty value, a null outside an array, a name given twice and a JavaScript number, naming where and never quoting the value ([0004](./docs/decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)). And the readers every package reads a host's context with: each value its own, an object for the members it names and no others, a list at every index, a text with nothing a resource cannot carry ([0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)). No framework, no Node, no network. |
-| `@formancy/health-questionnaire` | A formancy form, read through `@formancy/spec` 0.5.0, as an SDC 4.0.0 Questionnaire: one item per field with its key as the linkId, under the host's canonical base and formancy's published version, its texts translated into each language the host asks for; a visibility rule as `enableWhen` where it is a simple comparison, a computed field read-only, and no FHIRPath. What an item cannot say as the field says it refuses the whole export, every refusal at once, naming where ([0006](./docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)). And a formancy submission of the form as a QuestionnaireResponse to that Questionnaire, walked from its own items: each answer of its item's type, a number answer exactly the double formancy holds, no answer where formancy holds none, a value on a page a skip rule walks past left out, the subject and the author by name from the host; a value of another type, an option not offered, a value past a bound, a name the form does not have, an answer to an item the other answers disable or a member the context does not name refuses it whole ([0007](./docs/decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)). No framework, no Node, no network. |
+| `@formancy/health-questionnaire` | A formancy form, read through `@formancy/spec` 0.6.0, as an SDC 4.0.0 Questionnaire: one item per field with its key as the linkId, under the host's canonical base and formancy's published version, its texts translated into each language the host asks for; a visibility rule as `enableWhen` where it is a simple comparison, a computed field read-only, and no FHIRPath. What an item cannot say as the field says it refuses the whole export, every refusal at once, naming where ([0006](./docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)). And a formancy submission of the form as a QuestionnaireResponse to that Questionnaire, walked from its own items: each answer of its item's type, a number answer exactly the double formancy holds, no answer where formancy holds none, a value on a page a skip rule walks past left out, the subject and the author by name from the host; a value of another type, an option not offered, a value past a bound, a name the form does not have, an answer to an item the other answers disable or a member the context does not name refuses it whole ([0007](./docs/decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)). No framework, no Node, no network. |
 | `@formancy/health-document` | A PDF as an R4 DocumentReference by its own bytes, in the attachment or in a Binary beside it, with their size and SHA-1; declared a plain PDF and checked by its first and last lines, or refused declared PDF/A, which no gate here proves yet. And a document Bundle of the host's resources, its identifier and timestamp the host's, the Composition first and then only what it refers to, every reference resolved before output: a dangling one, an entry nothing reaches, two of one name, an attachment whose size, hash or media type are not its bytes', a member of the context it does not name or a hole in a list refuse it whole, every refusal at once, naming where ([0008](./docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)). Depends on health-core alone. No framework, no Node, no network. |
 | `@formancy/health-ch` | Switzerland: a CH ORF 3.0.2 document of a referral, the Bundle claiming CH ORF's document profile, the Composition with a narrative of its titles, one category and the order-referral section coded LOINC 93037-0, with its LOINC name; the host's patient, author, organisation and orders as CH Core 6.0.0's Patient, PractitionerRole, Practitioner and Organization and CH ORF's ServiceRequest; the host's answers, claiming CH ORF's response profile, about the patient, the Questionnaire by its versioned canonical, copied once and carried as checked. A GLN and an AHV number held to their forms and GS1's check digit, which CH Core only warns of, and a host's own identifier under none of CH Core's systems, in any case; a member the context does not name, a member of the answers health-questionnaire does not write, a status, a gender or a name CH Core does not take refuses it whole, every refusal at once, naming where ([0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)). Built on health-document, health-questionnaire and health-core. Nothing is sent. No framework, no Node, no network. |
 
@@ -462,12 +474,21 @@ for examples.
 | `@formancy/report-render-pdf` | 0.1.0 | the manifest of `@formancy/health-corpus` |
 | `@formancy/report-runtime` | 0.1.0 | the manifest of `@formancy/health-corpus` |
 | `@formancy/report-spec` | 0.1.0 | the manifest of `@formancy/health-corpus` |
-| `@formancy/spec` | 0.5.0 | the manifest of `@formancy/health-ch`, `@formancy/health-questionnaire` |
+| `@formancy/spec` | 0.6.0 | the manifest of `@formancy/health-ch`, `@formancy/health-questionnaire` |
 | Node | `>=22.13.0`; CI runs 22 | the root `engines`; `.node-version` |
 | TypeScript | 6.0.3, declared `~6.0.3` | `pnpm-workspace.yaml` |
 | pnpm | 12.4.2, through corepack | the root `packageManager` |
 
 <!-- end generated -->
+
+Formancy Report 0.1.0 depends on `@formancy/spec` 0.5.0 itself, exactly,
+so the workspace holds both: health-corpus renders the corpus's letter
+through Report's, which only hashes Report's own definitions with it, and
+the packages read forms through 0.6.0. An application that installs
+Report 0.1.0 beside these packages, as the
+[getting-started guide](./docs/getting-started.md)'s project does, holds
+both too, and nothing one makes reaches the other
+([0015](./docs/decisions/0015-the-demo-wears-formancy-ais-room-imported-from-formancy-0-6-0-and-the-packages-read-forms-through-the-same-release.md)).
 
 What a run actually ran -- the Java of the validator job, the packages the
 validator loaded, the time it took -- is in that run's

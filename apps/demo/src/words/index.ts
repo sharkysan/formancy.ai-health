@@ -55,7 +55,7 @@ export interface Words {
   readonly banner: string
   /**
    * The words formancy's renderer draws that the page gives it: the
-   * submit control's, and in Italian, which formancy 0.5.0 does not ship,
+   * submit control's, and in Italian, which formancy 0.6.0 does not ship,
    * every word a form of the demo's field types reaches.
    */
   readonly formancy: FormWords

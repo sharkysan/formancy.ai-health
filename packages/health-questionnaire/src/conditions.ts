@@ -3,7 +3,8 @@
  * every state of the form, and nowhere else.
  *
  * What formancy's engine does, measured on `@formancy/core` 0.5.0 with
- * `@marcbachmann/cel-js` 8.0.0 on 17 October 2026: an unanswered field is
+ * `@marcbachmann/cel-js` 8.0.0 on 17 October 2026, and on 0.6.0, with the
+ * same cel-js, on 19 October: an unanswered field is
  * null; `x == 'a'` is then false, as R4's `=` is with no answer, and
  * `x != 'a'` true. R4's own words for `!=` are garbled; R5's are "no
  * answer is equal", which is true with no answer too; but the HL7

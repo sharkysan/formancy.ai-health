@@ -2,15 +2,22 @@
  * The faces, from the demo's own build rather than a font service, as
  * formancy.ai-report 0023 serves the Studio's: the page asks no other site
  * for anything, and the policy it is served under allows no face but its
- * own (scripts/demo-headers.mjs). The two the workbench and Blueprint name,
- * --wb-sans and --wb-mono, --fm-sans and --fm-mono: IBM Plex Sans in 400,
- * 500 and 600, IBM Plex Mono in 400 and 500. Each stylesheet is
- * Fontsource's, every subset with its unicode-range, so a browser fetches
- * only the subsets the page's text uses.
+ * own (scripts/demo-headers.mjs). The first face of each stack the themes
+ * the page wears name (src/styles.test.ts): the room's --display, Archivo,
+ * for the headings; the workbench's and Blueprint's --wb-sans and
+ * --fm-sans, IBM Plex Sans in 400, 500 and 600; and their --wb-mono and
+ * --fm-mono, IBM Plex Mono in 400 and 500. Each stylesheet is
+ * Fontsource's, every subset with its unicode-range, and the page asks
+ * for every one of them as it starts (src/faces.ts).
  *
- * Archivo, the room's display face, arrives with the room's stylesheet,
- * which names it: nothing here names a face the themes do not.
+ * Archivo is its variable face on the weight axis alone, `wght.css`, not
+ * with the width axis that formancy.ai's admin and Report's Studio import
+ * (`wdth.css`): no rule of the page's sets a width, and since every face
+ * is asked for at the start, the width axis would be 130,032 bytes more
+ * for every visitor -- Fontsource 5.3.0's three files of each, measured
+ * on 18 October 2026 -- for nothing drawn.
  */
+@import '@fontsource-variable/archivo/wght.css';
 @import '@fontsource/ibm-plex-sans/400.css';
 @import '@fontsource/ibm-plex-sans/500.css';
 @import '@fontsource/ibm-plex-sans/600.css';

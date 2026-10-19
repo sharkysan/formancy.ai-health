@@ -55,7 +55,7 @@ The demo is a page beside the product, not a host of it
    a visitor's browser                                    Cloudflare, formancy.ai's zone
    ┌───────────────────────────────────────────────┐     ┌──────────────────────────────┐
    │  the corpus's synthetic referral, from the    │ GET │  the demo's Worker: static   │
-   │  build ──▶ formancy's React renderer 0.5.0 ──▶│◀────│  files, no code, at /health/ │
+   │  build ──▶ formancy's React renderer 0.6.0 ──▶│◀────│  files, no code, at /health/ │
    │  engine.value() ──▶ health-questionnaire,     │     │  and /health, its headers    │
    │  health-ch, health-document ──▶ FHIR JSON,    │     │  from scripts/demo-headers   │
    │  shown and downloaded from memory             │     └──────────────────────────────┘
@@ -68,7 +68,7 @@ The demo is a page beside the product, not a host of it
 |---|---|
 | **A visitor** | Opens the page, changes the sample's answers, downloads what the packages made. Sends nothing back: the page has no form that posts and no connection to make, and keeps nothing once it is closed |
 | **Cloudflare** | Serves the build from a Worker of its own on formancy.ai's zone, beside formancy.ai's site and Formancy Report's Studio, and builds and deploys it from `main` with the settings `.github/REPO-METADATA.md` records. Sees each request, as any host of a page does; what the zone sets or measures on it, nothing here reads |
-| **formancy** | Draws the form: `@formancy/core` and `@formancy/react` 0.5.0, and the workbench and Blueprint of `@formancy/themes` 0.5.0, imported |
+| **formancy** | Draws the form: `@formancy/core` and `@formancy/react` 0.6.0, and the workbench, formancy.ai's room and Blueprint of `@formancy/themes` 0.6.0, imported ([0015](../decisions/0015-the-demo-wears-formancy-ais-room-imported-from-formancy-0-6-0-and-the-packages-read-forms-through-the-same-release.md)) |
 | **Formancy Report** | Renders the letter once, when the page is built, through health-corpus; its code is not in the page, and the page carries only the bytes `docs/release/letter.json` registers |
 
 ## What is deliberately outside the boundary

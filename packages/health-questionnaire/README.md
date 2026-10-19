@@ -28,7 +28,7 @@ if (result.ok) send(writeJson(result.questionnaire))
 else for (const refusal of result.refusals) log(refusal.rule, refusal.path, refusal.language)
 ```
 
-The form is read through `@formancy/spec` 0.5.0, as formancy defines it:
+The form is read through `@formancy/spec` 0.6.0, as formancy defines it:
 a spec version this package does not map (it maps 1 to 4) is refused
 first and alone, and a form formancy's own validator refuses is refused at
 each of its errors' paths. A refusal is health-core's `Refusal`: a `rule`
@@ -103,7 +103,7 @@ Not carried, because they say how a form looks and not what it collects:
 widgets, layouts, a datagrid's columns, a repeater's button labels, an
 option's picture. Nor `renamedFrom`. A translation is R4's `translation`
 extension on the text's element; a text missing in a language asked for is
-refused. The form's title is a plain string in `@formancy/spec` 0.5.0 and
+refused. The form's title is a plain string in `@formancy/spec` 0.6.0 and
 is written untranslated.
 
 ## The answers
@@ -207,7 +207,7 @@ The form is read with formancy's validator, and not with its engine,
 which this package does not depend on: a form the engine would refuse to
 build -- a field keyed with a word CEL reserves, such as `if` or `int`, read
 by a rule -- is exported all the same, though formancy's publish gate,
-by `@formancy/core` 0.5.0's own account of `engineRefusal`, refuses it.
+by `@formancy/core` 0.6.0's own account of `engineRefusal`, refuses it.
 Nothing here checks that a form computes no clinical result: a
 customer's form is the customer's (plan 15.2).
 

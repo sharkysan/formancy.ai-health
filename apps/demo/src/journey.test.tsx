@@ -195,7 +195,7 @@ describe('a visitor changing the answers', () => {
 })
 
 describe('the page in Italian', () => {
-  // formancy 0.5.0 ships no Italian: what its renderer draws would fall
+  // formancy 0.6.0 ships no Italian: what its renderer draws would fall
   // back to English under an Italian page -- its own English, or the
   // English the page gives it -- unless the page gives it Italian.
   test("draws none of formancy's words in English", () => {

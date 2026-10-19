@@ -311,8 +311,9 @@ prefers, and its form's Questionnaire carries the same four. The packages'
 refusals stay in English there, as they state them, and so do HL7's and
 LOINC's notices and CLAUDE.md's sentence of what the product is not, each
 marked `lang="en"`. The page gives formancy's renderer the submit
-control's word in every language, and, since formancy 0.5.0 ships no
-Italian words, the required hint too in Italian; under a field the renderer shows its error's code, such
+control's word in every language, and, since formancy 0.6.0 ships no
+Italian words, as 0.5.0 shipped none, the required hint too in Italian;
+under a field the renderer shows its error's code, such
 as `required`, in every language, which is upstream's to word. The
 page's French and Italian were translated, and no native reader has read
 them yet
@@ -328,11 +329,20 @@ carried, so how it is laid out, and how accessible that is, is the
 renderer's ([0006](../decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)).
 
 The demo is a page, beside the packages and never published, and
-formancy.ai's concept applied as far as a formancy release ships it: the
-workbench and Blueprint of `@formancy/themes`, imported ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)). It
-arrived with the gates that hold it: its jsdom suite, with axe and every
+formancy.ai's concept applied as a formancy release ships it: the room,
+`@formancy/themes/room.css`, imported after its workbench, a dark
+ground and glass panels, violet for what a person acts on and teal for
+what the system did, Archivo for the headings, and the form in Blueprint
+on Blueprint's own paper, as formancy.ai's admin previews one
+([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md), [0015](../decisions/0015-the-demo-wears-formancy-ais-room-imported-from-formancy-0-6-0-and-the-packages-read-forms-through-the-same-release.md)).
+Its own stylesheet states no colour: every one is a variable a theme it
+wears declares, read where the theme declares it, and its script writes
+no style. It arrived with the gates that hold it: its jsdom suite,
+with axe and every
 control's name, and its browser gate in Chromium, Firefox and WebKit,
-which measures what jsdom cannot -- reflow down to 320 pixels, contrast,
+which measures what jsdom cannot -- the room, every variable
+`@formancy/themes/room.css` sets as the browser computes it, reflow down
+to 320 pixels, contrast,
 target size, the keyboard's path through the form and where each control
 it presses leaves it -- in each of the page's languages, every check in
 every browser, what they disagree on named and held, never skipped

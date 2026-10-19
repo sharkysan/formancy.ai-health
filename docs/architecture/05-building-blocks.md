@@ -60,7 +60,10 @@ guard holds ([0010](../decisions/0010-the-architecture-is-documented-in-arc42s-s
 corpus's synthetic referral filled with formancy's React renderer, and
 what the packages make of it, in the visitor's browser. Its colours are
 `@formancy/themes`' as the release its manifest pins ships them, the
-workbench and Blueprint at 0.5.0, imported, and its own stylesheet states
+workbench, formancy.ai's room after it and Blueprint for the form, at
+0.6.0, imported
+([0015](../decisions/0015-the-demo-wears-formancy-ais-room-imported-from-formancy-0-6-0-and-the-packages-read-forms-through-the-same-release.md)),
+and its own stylesheet states
 none and declares no variable
 ([0002](../decisions/0002-depend-on-upstream-never-copy-it.md)); its build
 holds the resources it shows first to the validator gate's corpus, byte
@@ -236,7 +239,7 @@ gate. Its own suite and its browser gate hold it instead.
 | [`src/read-out.ts`](../../apps/demo/src/read-out.ts), [`read-out-view.tsx`](../../apps/demo/src/read-out-view.tsx) | The Questionnaire read out of the bytes its JSON region shows, by health-core's `readJson`, in the page's language: every item, its text, linkId, type, options and conditions, refused whole where it holds a member or an extension it does not know or cannot be read; drawn as headings, lists and description lists, each item with a button that scrolls its field to the middle of the window and puts the keyboard on it ([0013](../decisions/0013-the-demo-reads-its-questionnaire-out-from-the-bytes-it-shows-and-renders-no-questionnaire.md)) |
 | [`src/demo.tsx`](../../apps/demo/src/demo.tsx), [`form-step.tsx`](../../apps/demo/src/form-step.tsx), [`resource.tsx`](../../apps/demo/src/resource.tsx), [`letter-step.tsx`](../../apps/demo/src/letter-step.tsx), [`refused-step.tsx`](../../apps/demo/src/refused-step.tsx), [`notices.tsx`](../../apps/demo/src/notices.tsx) | The page: the form beside the resources, each with its maker and its corpus file, the letter, the refusals, and what the page says of itself; the answers live in the engine for as long as the page is open |
 | [`src/download.tsx`](../../apps/demo/src/download.tsx), [`pretty.ts`](../../apps/demo/src/pretty.ts) | A download of bytes the page holds, from a Blob, revoked when they change; the JSON laid out for reading, the bytes downloaded as `writeJson` wrote them |
-| [`src/faces.ts`](../../apps/demo/src/faces.ts), [`styles/fonts.css`](../../apps/demo/src/styles/fonts.css), [`styles/demo.css`](../../apps/demo/src/styles/demo.css) | Every face asked for as the page starts; the faces from the build; the layout, with no colour or variable of its own |
+| [`src/faces.ts`](../../apps/demo/src/faces.ts), [`styles/fonts.css`](../../apps/demo/src/styles/fonts.css), [`styles/demo.css`](../../apps/demo/src/styles/demo.css) | Every face asked for as the page starts; the faces from the build, Archivo for the room's headings among them; the layout, in the room's variables, with no colour or variable of its own ([0015](../decisions/0015-the-demo-wears-formancy-ais-room-imported-from-formancy-0-6-0-and-the-packages-read-forms-through-the-same-release.md)) |
 | [`src/words/index.ts`](../../apps/demo/src/words/index.ts) | The page's words in de-CH, fr, it and en, and the language it opens in |
 | [`scripts/demo-headers.mjs`](../../scripts/demo-headers.mjs) | The headers every response carries, decided once as a function of the address the page is served at: the deploy writes them for formancy.ai, `vite preview` and the gate serve them for their own |
 | [`scripts/third-party-notices.mjs`](../../scripts/third-party-notices.mjs) | The build's `THIRD-PARTY-NOTICES.txt`, which the footer links: every package the bundle holds with the licence and notice files it ships, each held to [`dependency-licences.mjs`](../../scripts/dependency-licences.mjs)' policy, or the build stops |

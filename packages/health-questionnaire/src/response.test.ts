@@ -198,7 +198,8 @@ describe('the items of a response', () => {
 
   // formancy pads a repeater with empty rows to its minimum, and counts a
   // required one answered by an empty row (measured on @formancy/core
-  // 0.5.0). R4 has no item for a row that holds nothing: the validator
+  // 0.5.0, and again on 0.6.0, 19 October 2026). R4 has no item for a row
+  // that holds nothing: the validator
   // refuses one ("No sub-items found for required group", measured). An
   // empty row is not written; a required repeater whose rows are all
   // empty has no answer, and a completed response is refused for it.
@@ -285,7 +286,8 @@ describe('missing, null and suppressed answers', () => {
   // validator refuses one (Questionnaire_QR_Item_NotEnabled2, measured).
   // formancy's engine clears a field when a visible rule hides it, and one
   // handed in with the form's initial value, and a renderer offers nobody
-  // a hidden field (measured on @formancy/core 0.5.0); a value set while
+  // a hidden field (measured on @formancy/core 0.5.0, and on 0.6.0, which
+  // clears a group's fields with it too); a value set while
   // it is hidden stays (measured in review): a host's, or the two readings
   // of the rule disagree. Omitted, nobody would know which; refused, the
   // host does.
@@ -310,7 +312,8 @@ describe('missing, null and suppressed answers', () => {
 
   // formancy keeps what was typed on a page a skip rule then walks past,
   // so that going back finds it, and neither shows nor validates it
-  // (measured on @formancy/core 0.5.0); R4 gives the disabled page no
+  // (measured on @formancy/core 0.5.0, and again on 0.6.0, 19 October
+  // 2026); R4 gives the disabled page no
   // answer. It is left out: the answers a person submitted are those of
   // the pages they were taken through.
   test('leaves out what a skipped page holds', () => {

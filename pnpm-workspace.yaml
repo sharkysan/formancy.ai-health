@@ -42,8 +42,15 @@ catalog:
 # from this repository's own rightsholder, was released on 16 October 2026
 # and taken by health-corpus the next morning, for the PDFs H06 attaches;
 # each release is named, so a later one waits its day as any other does.
+# formancy 0.6.0, released on 18 October 2026 with formancy.ai's room in
+# @formancy/themes, was taken the same day, for the packages and the demo.
 minimumReleaseAgeExclude:
+  - '@formancy/core@0.6.0'
+  - '@formancy/expressions@0.6.0'
+  - '@formancy/react@0.6.0'
   - '@formancy/report-core@0.1.0'
   - '@formancy/report-render-pdf@0.1.0'
   - '@formancy/report-runtime@0.1.0'
   - '@formancy/report-spec@0.1.0'
+  - '@formancy/spec@0.6.0'
+  - '@formancy/themes@0.6.0'

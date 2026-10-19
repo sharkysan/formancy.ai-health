@@ -13,7 +13,8 @@ const option = (value: string, label: string) => ({ value, label })
 const digits = (value: unknown): unknown => JSON.parse(writeJson(value as never).replace(/:(-?[0-9][0-9.eE+-]*)(?=[,}\]])/g, ':"#$1"'))
 
 describe('each version 1 field type', () => {
-  // Plan 8.1's rows, read against @formancy/spec 0.5.0: a field mapped to
+  // Plan 8.1's rows, read against @formancy/spec 0.5.0, whose field types
+  // 0.6.0's are: a field mapped to
   // the wrong item type collects a different answer -- a textarea as a
   // one-line string, a checkbox as a choice -- and the validator would
   // accept the resource all the same.
@@ -104,7 +105,7 @@ describe('the field types version 1 refuses', () => {
   // back as neither -- exported with no item, or refused for something
   // other than what it is -- would be a field a Questionnaire drops
   // without a word. The five refused are exactly version 1's.
-  test.each([...FIELD_TYPES])("%s, as @formancy/spec 0.5.0 lists it, is one item or refused at its type", (type) => {
+  test.each([...FIELD_TYPES])("%s, as the @formancy/spec it reads lists it, is one item or refused at its type", (type) => {
     const field: FieldDef = { key: 'only', type, label: 'Only' }
     if (['select', 'radio', 'selectboxes', 'ranking', 'matrix'].includes(type)) field.options = [option('a', 'A'), option('b', 'B')]
     if (type === 'matrix') field.rows = [{ value: 'r', label: 'R' }]
@@ -307,8 +308,9 @@ describe('a computed field', () => {
   // formancy computes a field while a visible rule hides it: on
   // @formancy/core 0.5.0 a name typed after the rule hid the field put its
   // computed value in the submission, inside a hidden group too, and the
-  // field showed none (measured in review, 17 October 2026). R4 gives a
-  // disabled item no answer, so every such submission would be refused,
+  // field showed none (measured in review, 17 October 2026, and again on
+  // 0.6.0, 19 October 2026). R4 gives a disabled item no answer, so every
+  // such submission would be refused,
   // `disabled`, though formancy made it: refused here, as clearOnHide off
   // is, where an author can act on it. A page a skip rule walks past keeps
   // every value in formancy, and the response leaves all of them out.

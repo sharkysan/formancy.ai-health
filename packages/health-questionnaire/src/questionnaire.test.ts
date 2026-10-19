@@ -68,7 +68,7 @@ describe('toQuestionnaire', () => {
 
   // A spec release that reads another version would be read here as if
   // the mapping had been decided for it. This fails until somebody has.
-  test('maps exactly the spec versions @formancy/spec 0.5.0 reads', () => {
+  test('maps exactly the spec versions the @formancy/spec it reads reads', () => {
     expect([...SPEC_VERSIONS_MAPPED]).toEqual([...SPEC_VERSIONS])
   })
 

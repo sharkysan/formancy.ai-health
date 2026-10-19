@@ -67,7 +67,7 @@ release it installs, as the gate's project names them, rather than as
 npm's default range:
 
 ```sh guide=node
-npm install --save-exact @formancy/health-core @formancy/health-questionnaire @formancy/health-document @formancy/health-ch @formancy/spec@0.5.0
+npm install --save-exact @formancy/health-core @formancy/health-questionnaire @formancy/health-document @formancy/health-ch @formancy/spec@0.6.0
 ```
 
 `@formancy/spec` is formancy's, under Apache-2.0: the form's types, at the
@@ -82,8 +82,12 @@ renderer, at the release the corpus renders with:
 npm install --save-exact @formancy/report-runtime@0.1.0 @formancy/report-render-pdf@0.1.0
 ```
 
-An application that has its PDF already needs neither: health-document
-takes a PDF's bytes, from wherever they came.
+Report 0.1.0 brings an `@formancy/spec` of its own, 0.5.0, which npm
+installs under `@formancy/report-spec`, beside the 0.6.0 above: Report
+hashes its own definitions with it, and none of its types is the form's,
+so nothing of it reaches the form your program types. An application that
+has its PDF already needs neither: health-document takes a PDF's bytes,
+from wherever they came.
 
 Last, a `tsconfig.json` with the settings the gate type-checks the program
 under -- strict, the library declaration files checked too, and Node's

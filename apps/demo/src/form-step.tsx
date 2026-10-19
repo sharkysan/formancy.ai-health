@@ -1,7 +1,7 @@
 /**
- * Step one: the demo's form, drawn by formancy's React renderer on
- * Blueprint, as a person filling it sees it, and what the page says of the
- * answers it holds.
+ * Step one: the demo's form, drawn by formancy's React renderer in
+ * Blueprint, on Blueprint's paper, as a person filling it sees it, and what
+ * the page says of the answers it holds.
  */
 import type { FormEngine } from '@formancy/core'
 import { FormancyForm, FormancyProvider } from '@formancy/react'
@@ -55,7 +55,8 @@ export function FormStep({ engine, generation, words, formancy, changed, live, s
         already list what is missing. A failed submit moves focus to the
         first invalid field, as formancy's submit does.
       */}
-      <div className="wb-sheet" data-formancy-theme="blueprint">
+      {/* Blueprint on its own paper, as formancy.ai's admin previews a form in the room: the form as the person filling it sees it. */}
+      <div className="paper" data-formancy-theme="blueprint">
         <FormancyProvider key={generation} engine={engine} words={FORMANCY_WORDS}>
           <FormancyForm onSubmit={(outcome) => (outcome.ok ? onComplete() : undefined)} />
         </FormancyProvider>

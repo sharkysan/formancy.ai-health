@@ -92,7 +92,7 @@ describe('a translated form', () => {
     ])
   })
 
-  // The title is a plain string in @formancy/spec 0.5.0, the form's name:
+  // The title is a plain string in @formancy/spec 0.6.0, the form's name:
   // written as it is, in the default language, and never refused for a
   // translation formancy cannot hold.
   test('writes the title untranslated', () => {

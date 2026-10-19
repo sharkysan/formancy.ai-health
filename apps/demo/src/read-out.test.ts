@@ -116,7 +116,7 @@ describe("the demo's Questionnaire, read out", () => {
     expect(item.behaviour).toBeUndefined()
   })
 
-  // The title is a plain string in formancy's spec 0.5.0, written
+  // The title is a plain string in formancy's spec 0.6.0, written
   // untranslated (0006): read in French, it is the resource's own German,
   // and said to be, in the resource's language; in Swiss German it is no
   // stand-in for anything.

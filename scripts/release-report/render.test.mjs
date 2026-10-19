@@ -45,6 +45,52 @@ describe('the limitations a run shows', () => {
     expect(guide).toContain('A clean npm install on 2026-10-17 resolved `@formancy/report-spec` 0.1.1 in the guide’s project (the suites ran 0.1.0), which no suite ran.')
   })
 
+  // The suites can load two versions of one upstream package -- the
+  // packages' `@formancy/spec` 0.6.0, and the 0.5.0 Formancy Report 0.1.0
+  // brings health-corpus (0015). What a clean install resolved at the top
+  // of a project is what the published packages load there, where one
+  // depends on the package: so it is held to the versions the suites ran
+  // them against, the shipped rows, and Report's copy excuses none of it --
+  // held to every row, a consumer handed Report's 0.5.0 would be told
+  // nothing. Held to each row alone, the report told a reader that no
+  // suite ran the 0.6.0 every suite of the packages loads.
+  test('hold what an install resolved of a package a published package depends on to the versions the suites ran the published packages against', () => {
+    const twoLoaded = (inputs) => {
+      for (const project of job(inputs, 'install').install.consumers) for (const entry of project.resolved) if (entry.name === '@formancy/spec') entry.version = '0.6.0'
+      inputs.facts.upstream.find((entry) => entry.name === '@formancy/spec').version = '0.6.0'
+      inputs.facts.upstream.push({ name: '@formancy/spec', version: '0.5.0', declared: null, direct: false, shipped: false })
+    }
+    const resolving = (version, project = 0) =>
+      derivedLimitations(
+        report((inputs) => {
+          twoLoaded(inputs)
+          job(inputs, 'install').install.consumers[project].resolved.find((entry) => entry.name === '@formancy/spec').version = version
+        }),
+      ).filter((sentence) => sentence.startsWith('A clean npm install'))
+    expect(derivedLimitations(report(twoLoaded)).filter((sentence) => sentence.startsWith('A clean npm install'))).toEqual([])
+    expect(resolving('0.6.1')).toEqual(['A clean npm install on 2026-10-17 resolved `@formancy/spec` 0.6.1 (the suites ran 0.6.0), which no suite ran.'])
+    expect(resolving('0.5.0')).toEqual(['A clean npm install on 2026-10-17 resolved `@formancy/spec` 0.5.0 (the suites ran 0.6.0), which no suite ran.'])
+    expect(resolving('0.5.0', 1)).toEqual(['A clean npm install on 2026-10-17 resolved `@formancy/spec` 0.5.0 in the guide’s project (the suites ran 0.6.0), which no suite ran.'])
+  })
+
+  // A package no published package depends on is in a project only for
+  // what the guide installs beside the tarballs -- Report, and the
+  // `@formancy/expressions` 0.5.0 Report brings, beside the 0.6.0 the
+  // demo's engine does -- so any version a suite loaded of it is one a
+  // suite ran; said against one row, the other's would read as never run.
+  test('count what an install resolved of a package no published package depends on as run when any suite loaded it', () => {
+    const guide = (version) =>
+      derivedLimitations(
+        report((inputs) => {
+          inputs.facts.upstream.push({ name: '@formancy/expressions', version: '0.5.0', declared: null, direct: false, shipped: false }, { name: '@formancy/expressions', version: '0.6.0', declared: null, direct: false, shipped: false })
+          job(inputs, 'install').install.consumers[1].resolved.push({ name: '@formancy/expressions', version })
+        }),
+      ).filter((sentence) => sentence.startsWith('A clean npm install'))
+    expect(guide('0.5.0')).toEqual([])
+    expect(guide('0.6.0')).toEqual([])
+    expect(guide('0.4.0')).toEqual(['A clean npm install on 2026-10-17 resolved `@formancy/expressions` 0.4.0 in the guide’s project (the suites ran 0.5.0 and 0.6.0), which no suite ran.'])
+  })
+
   // The packed packages ran under Node and nowhere else; with no install
   // gate, nothing ran them at all. The demo's browser gate ran the packages
   // in a browser as the workspace builds them, never the tarballs, and the
