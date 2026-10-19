@@ -5,9 +5,9 @@ and nowhere else. A release built on a laptop cannot carry provenance — the
 attestation is a statement *by GitHub* about which workflow, at which commit,
 produced a tarball, and only the workflow can make it.
 
-The first release, 0.1.0, a developer preview, was cut on 19 October 2026,
-as the README's Status says: rehearsed on the release commit, then tagged
-there, and published by the tag's run. The workflow
+The first release, 0.1.0, a developer preview, was cut on 19 October 2026:
+rehearsed on the release commit, then tagged there, and published by the
+tag's run. The workflow
 follows Formancy Report's, release report included (0011, as
 formancy.ai-report 0014), without a server image, because there is no
 server.
