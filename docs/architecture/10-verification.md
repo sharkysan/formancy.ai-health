@@ -67,9 +67,9 @@ not hold).
 The claim is the guide and its version, the validator and its version, and
 the corpus, and nothing more ([0005](../decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md));
 the README's [validator gate](../../README.md#the-validator-gate) states it
-in full, and [its table](../../README.md#what-it-is-built-and-judged-against),
+in short, [its table](../../README.md#what-it-is-built-and-judged-against),
 derived by [`scripts/compatibility.mjs`](../../scripts/compatibility.mjs),
-the versions.
+gives the versions, and this section says what the claim does not cover.
 
 For a CH ORF document the corpus is
 [`ch-orf.mjs`](../../scripts/validator/ch-orf.mjs) and the demo's
@@ -130,8 +130,9 @@ What it does not cover:
   recovered, it had not, and run before the registry answers for a version
   just published, it would ask npm to publish that version again
   ([`RELEASING.md`](../../RELEASING.md#if-a-step-after-npm-fails)).
-- **PDF/A**: no gate proves a producer, so every declaration is refused; a
-  gate for it waits for a Report release that writes PDF/A
+- **PDF/A**: no gate proves a producer, so every declaration is refused;
+  Formancy Report, at the release health-corpus renders with, writes none,
+  and veraPDF over the PDFs a Bundle carries arrives with H09
   ([0008](../decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
 - **A browser, for the packages.** The demo's browser gate runs them in
   Chromium, Firefox and WebKit as the workspace builds them, bundled by

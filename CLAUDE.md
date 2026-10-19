@@ -102,8 +102,8 @@ in the attachment or a Binary, and assembles a document Bundle of what its
 Composition refers to, every reference resolved, refusing a PDF/A
 declaration nothing has proved ([0008](docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
 `@formancy/health-ch` writes a CH ORF 3.0.2 document of the host's
-referral, its patient, author and orders in CH Core 6.0.0's profiles and
-the answers health-questionnaire wrote, the Questionnaire by its
+referral, its patient and author in CH Core 6.0.0's profiles, its orders
+in CH ORF's, and the answers health-questionnaire wrote, the Questionnaire by its
 canonical, assembled by health-document, and holds a GLN and an AHV
 number to their check digits, which the validator only warns of
 ([0009](docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)).

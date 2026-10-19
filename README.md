@@ -2,189 +2,118 @@
 
 **Forms and reports, exported to the HL7® FHIR® standard in the formats each country specifies.**
 
-A self-hosted export module for [formancy](https://github.com/sharkysan/formancy.ai)
-and [Formancy Report](https://github.com/sharkysan/formancy.ai-report), for
-the vendors whose software hospitals and practices run. It exports a formancy form
-as a FHIR® R4 `Questionnaire`, a person's answers to it as a
-`QuestionnaireResponse`, and a PDF that Formancy Report rendered in the
-document resource the receiving side's guide asks for, each shaped to the
-profiles a country publishes rather than to FHIR's base resources alone.
-What an export cannot say in the profile it targets, it refuses rather than
-leaves out.
+Formancy Health is a paid, [source-available](#licence-in-one-table) module
+that exports [formancy](https://github.com/sharkysan/formancy.ai) forms, a
+person's answers to them and PDFs, such as those
+[Formancy Report](https://github.com/sharkysan/formancy.ai-report) renders,
+as FHIR® R4 JSON. The JSON is shaped to the profiles a country publishes,
+not to FHIR's base resources alone, starting with Switzerland's. It is for
+the vendors of the software that hospitals and practices run: their
+application calls the packages, gets the JSON back and sends it itself.
 
-**Start with [the getting-started guide](./docs/getting-started.md)**: from
-an empty npm project to a Questionnaire of a formancy form, a
-QuestionnaireResponse of a submission, a document Bundle carrying a PDF
-Formancy Report rendered, and a CH ORF referral, under Node, from synthetic
-data. The install gate compiles its code against the packed packages, runs
-it and holds what it prints to what the guide shows, so its code fails CI
-when it stops being true; of its prose, a guard holds its install lines
-and its links, and review the rest
-([0011](./docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).
+## What it does
+
+- **Exports a formancy form as a Questionnaire** in SDC 4.0.0, HL7's Structured Data Capture guide for forms: one item per field, translated into the languages the host asks for ([0006](./docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)).
+- **Exports a submission as a QuestionnaireResponse** to that Questionnaire, each answer of its item's type ([0007](./docs/decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)).
+- **Carries a PDF in a DocumentReference**, such as one Formancy Report rendered, by its own bytes, and assembles a document Bundle: the Composition first, then only what it refers to, every reference resolved ([0008](./docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
+- **Writes a Swiss referral as a CH ORF 3.0.2 document**, HL7 Switzerland's Order & Referral by Form: the patient and author in the profiles of CH Core 6.0.0, Switzerland's base guide, the orders in CH ORF's, and the answers to the referral's form. A GLN, GS1's number for a practitioner or an organisation, and an AHV number, the Swiss social-insurance number, are refused when their form or check digit is wrong, where the HL7 FHIR validator only warns ([0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)).
+- **Refuses rather than leaves out**: what a profile cannot say refuses the whole export, with every refusal at once, each naming where and never quoting a value ([0006](./docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md) to [0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)).
+- **Keeps every digit**: a decimal travels as its text, so `70.50` stays `70.50`, never through a JavaScript number, and the same input gives the same bytes ([0004](./docs/decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)).
+- **Judged by the HL7 FHIR validator**, in a gate of its own: offline, against pinned guide packages, over what the packages write of a synthetic corpus ([0005](./docs/decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md), [the validator gate](#the-validator-gate)).
+- **A demo at https://formancy.ai/health/** fills a synthetic Swiss referral in your browser and shows what the packages make of it ([Try it](#try-it), [0012](./docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
+
+Planned and not here: PDF/A, and with it documents for Switzerland's
+electronic patient record, the CH EPR, once a gate here proves a producer
+of PDF/A; extraction from a QuestionnaireResponse; and the profiles of
+Germany and then, only when a customer pays for them, of the United
+Kingdom, Austria and Europe, in the order [the formats](#the-formats-it-targets)
+give. [Not in 0.1.0](#not-in-010) lists those, and what 0.1.0 refuses.
 
 > **Status, 19 October 2026: 0.1.0, a developer preview, is released.**
 > Its packages are on npm, with provenance, and
 > [the GitHub release](https://github.com/sharkysan/formancy.ai-health/releases/tag/v0.1.0)
 > carries the signed SBOM and release report of the run that published
-> them. That run, the tag's, passed every job, and a rehearsal of the
-> release workflow before it, on the same commit, every job but
-> `npm-token` and `publish`, which a rehearsal skips; `check`, which holds
-> the SBOM to the report, passed in both. The packages read forms
-> through formancy 0.6.0, released on 18 October, from whose
-> `@formancy/themes` the demo wears formancy.ai's room ([0015](./docs/decisions/0015-the-demo-wears-formancy-ais-room-imported-from-formancy-0-6-0-and-the-packages-read-forms-through-the-same-release.md)).
-> What 0.1.0 holds, and leaves out, is [below](#what-010-is).
->
-> Built: the licence, the pipeline that proves the packages, as Formancy
-> Report's proves its own, and four packages.
-> `@formancy/health-core` names the FHIR version it emits, holds FHIR R4's
-> primitives to their types -- a decimal as its digits, never a JavaScript
-> number, bytes as canonical base64 -- and writes and reads FHIR JSON that
-> keeps every digit. `@formancy/health-questionnaire` exports a formancy
-> form as an SDC 4.0.0 Questionnaire, translated into the languages a host
-> asks for, and a submission of it as a QuestionnaireResponse to that
-> Questionnaire, or refuses either whole. `@formancy/health-document`
-> attaches a PDF's bytes to a DocumentReference and assembles a document
-> Bundle of what its Composition refers to, every reference resolved, and
-> refuses a PDF/A declaration, which nothing here proves yet.
-> `@formancy/health-ch` writes a CH ORF 3.0.2 document of a referral, its
-> patient, author and orders in CH Core 6.0.0's profiles and the answers
-> health-questionnaire wrote, the Questionnaire named by its canonical,
-> and holds a GLN and an AHV number to their check digits, which the
-> validator only warns of. Beside them, the gate that runs the HL7 FHIR
-> validator, offline, against pinned guide packages, over what the
-> packages make of synthetic forms, submissions, a referral letter
-> Formancy Report 0.1.0 renders, in the private `@formancy/health-corpus`,
-> and a referral, and resources built by hand. Every run of the gates ends
-> in a release report of what it was tested on and what it found, which a
-> release attaches signed beside an SBOM of what a consumer installs.
-> Beside the packages, and in no release, the demo: a page Cloudflare
-> deploys from `main` to formancy.ai/health/, which runs them in a
-> browser on the corpus's synthetic referral, under a browser gate of its
-> own ([Try it](#try-it)).
+> them. What 0.1.0 holds is in
+> [the changelog](./CHANGELOG.md#010--2026-10-19), and whom it is for
+> [below](#what-010-is).
+
+**Start with [the getting-started guide](./docs/getting-started.md)**: from
+an empty npm project to a Questionnaire, its response, a document Bundle
+carrying a PDF Formancy Report rendered, and a CH ORF referral, under Node,
+from synthetic data. The install gate compiles and runs its code against
+the packed packages, and holds what it prints to what the guide shows
+([0011](./docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).
 
 ## Try it
 
-The demo fills a synthetic Swiss referral in your browser and shows what
-the packages make of it: the Questionnaire, the QuestionnaireResponse,
-the CH ORF document and the letter's document Bundle, with every refusal
-as the packages state it. The Questionnaire is read out above its JSON,
-item by item in the page's language -- its text, type, options and when it
-is shown -- from the resource's own bytes and not from the form, each item
-but the patient's language, a radio group formancy's renderer draws no
-control of its engine's id for, leading to the field it came from: the
-form is what becomes the Questionnaire. The read-out is no FHIR renderer
-and validates nothing, and
-Formancy Health draws no Questionnaire
-([0013](./docs/decisions/0013-the-demo-reads-its-questionnaire-out-from-the-bytes-it-shows-and-renders-no-questionnaire.md)). It is online at
-https://formancy.ai/health/ and runs from a clone, with Node 22.13 or
-later and corepack:
+The demo is online at https://formancy.ai/health/, and runs from a clone
+with Node 22.13 or later and corepack:
 
 ```bash
 git clone https://github.com/sharkysan/formancy.ai-health.git
 cd formancy.ai-health
-corepack enable
+corepack enable pnpm
 pnpm install
 pnpm demo
 ```
 
-`pnpm demo` builds the packages and the demo, then serves the built demo
-with `vite preview` at http://localhost:4395, under the headers the
-deploy writes for formancy.ai, written for that address: open it there,
-since the policy admits the page's scripts from that address alone. Its
-data is synthetic, and a real patient's does not belong in it. It sends
-what you type nowhere and keeps none of it: the policy it is served under
-allows the page no connection, and its scripts, styles and faces from its
-own build's files alone, which
-[`scripts/demo.test.mjs`](./scripts/demo.test.mjs) holds the headers to,
-and its browser gate,
-[`apps/demo/scripts/browser-test.mjs`](./apps/demo/scripts/browser-test.mjs),
-watches it in Chromium, Firefox and WebKit ask for nothing more once it
-has settled -- loaded, every face in, nothing in flight -- whatever is
-typed into it, and store nothing in the browser; in WebKit, that holds
-while each face's first file arrives, and WebKit 27.2 logs an error for
-each select, refusing a style of its own under the page's policy, which
-is not loosened for it ([0014](./docs/decisions/0014-the-demos-browser-gate-runs-in-chromium-firefox-and-webkit-and-each-fact-the-browsers-disagree-on-is-named-and-held.md)). Its foot links the licences and notices of the
-code and faces it bundles, which its build writes beside it. It is drawn
-in formancy.ai's room, `@formancy/themes`' `room.css` as formancy 0.6.0
-ships it, imported and copied nowhere, the form on Blueprint's own paper
-as formancy.ai's admin previews one
-([0015](./docs/decisions/0015-the-demo-wears-formancy-ais-room-imported-from-formancy-0-6-0-and-the-packages-read-forms-through-the-same-release.md)). It is the
-demo of the packages, not a product: no page, server or transport ships
-in them.
+`pnpm demo` builds the packages and the demo, then serves the built demo at
+http://localhost:4395, under the headers the deploy writes, made for that
+address. Open it there: its policy admits the page's scripts from that
+address alone.
 
-formancy.ai/health/ serves Cloudflare's build of `main`, from a Cloudflare
-Worker of its own beside formancy.ai's site and Formancy Report's Studio.
-Cloudflare
-builds and deploys it on every push to `main`, as
-[RELEASING.md](./RELEASING.md#the-demo-on-formancyai) says. So it is
-main's demo, which can be ahead of the latest release, and nothing in this
-repository checks what the address serves ([0012](./docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
+The page holds a synthetic Swiss referral's form, in German (de-CH),
+French, Italian or English, and shows what the packages make of it and of
+your answers: the Questionnaire, read out item by item above its JSON, the
+QuestionnaireResponse, the CH ORF document, and the document Bundle of a
+referral letter Formancy Report rendered, with every refusal as the
+packages state it. The read-out is no FHIR renderer and validates nothing,
+and Formancy Health draws no Questionnaire
+([0013](./docs/decisions/0013-the-demo-reads-its-questionnaire-out-from-the-bytes-it-shows-and-renders-no-questionnaire.md)).
+
+Its data is synthetic; a real patient's does not belong in it. It sends
+what you type nowhere and keeps none of it. Its policy allows the page no
+connection, and its scripts, styles and faces from its own build's files
+alone, which [`scripts/demo.test.mjs`](./scripts/demo.test.mjs) holds the
+headers to; and the browser gate fails if, in Chromium, Firefox or WebKit,
+the page asks for anything more once it has settled, whatever is typed
+into it, or stores anything in the browser
+([0014](./docs/decisions/0014-the-demos-browser-gate-runs-in-chromium-firefox-and-webkit-and-each-fact-the-browsers-disagree-on-is-named-and-held.md)).
+
+The online demo is `main`'s, deployed on every push to `main`, so it can be
+ahead of the latest release. Nothing in this repository checks what the
+address serves
+([RELEASING.md](./RELEASING.md#the-demo-on-formancyai),
+[0012](./docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
 
 ## What 0.1.0 is
 
-A developer preview, as Formancy Report's 0.1.0 was: for a vendor to
-evaluate Formancy Health and build against it -- a CH ORF referral from a
-formancy form and a person's answers to it, and a document Bundle that
-carries a PDF Formancy Report rendered -- while PDF/A, the EPR and the
-other countries are still to come. It is not yet for a production export of a
-person's record: no lawyer has read the licence, the
-[intended purpose](#intended-purpose) or the trademark position, and the
-release gates that ask for that reading are open.
+A developer preview, for a vendor to evaluate Formancy Health and build
+against it. It is not yet for a production export of a person's record: no
+lawyer has read the licence, the [intended purpose](#intended-purpose) or
+the trademark position, and the release gates that ask for that reading
+are open.
 
 It publishes `@formancy/health-core`, `@formancy/health-questionnaire`,
 `@formancy/health-document` and `@formancy/health-ch`, each at 0.1.0 and
 under the Formancy Health Source-Available Licence
-([0001](./docs/decisions/0001-a-paid-module-in-its-own-repository.md)),
-each described [below](#packages). Besides one another they depend on
-formancy's `@formancy/spec` alone, at the exact version the
-[table](#what-it-is-built-and-judged-against) names, through which
-health-questionnaire reads a form, and on what it brings, which a
-release's SBOM lists; they take no peer. `@formancy/health-corpus` stays
-private.
-
-The gates 0.1.0 is held to are the register's
-([`docs/release/gates.json`](./docs/release/gates.json)): reuse and
-compatibility, through the install gate over every published package,
-which the register keeps open in part -- no gate bundles a package's
-tarball for a browser, the demo bundling the packages as the workspace
-builds them, and that no upstream file is copied is review's; conformance,
-through the validator gate; exactness; failing closed, of which the
-register keeps a part open, for refusals no package has a case for yet;
-the dependency licences; HL7's notice and the names; and a clean
-rehearsal of the release workflow, which no run of the gates can see.
-PDF/A, privacy beyond what the guards hold, customer readiness and the
-legal review belong to later releases. The release report of the run
-that gates a release says which passed in it, and why each open one is
-open.
+([0001](./docs/decisions/0001-a-paid-module-in-its-own-repository.md)).
+Besides one another they depend on formancy's `@formancy/spec` alone, at
+the exact version the [table](#what-it-is-built-and-judged-against) names,
+and need no peer dependency. The release gates it is held to, and why each
+open one is still open, are in
+[`docs/release/gates.json`](./docs/release/gates.json).
 
 ### Not in 0.1.0
 
-- **PDF/A, and with it the CH EPR's MHD document.** No release of Formancy
-  Report writes PDF/A, so health-document refuses every PDF/A declaration
-  ([0008](./docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
+- **PDF/A, and with it the CH EPR's MHD document.** No gate here proves a producer of PDF/A yet, so every PDF/A declaration is refused ([0008](./docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
 - **Extraction**: no resource is extracted from a QuestionnaireResponse.
-- **Germany, the United Kingdom, Austria and Europe.** CH Core and CH ORF
-  are the only national profiles; the [formats](#the-formats-it-targets)
-  say which come next.
-- **File, signature, ranking, matrix and rich-text items.** A form that
-  holds one is refused whole, naming the field
-  ([0006](./docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)).
-- **FHIRPath, anywhere.** A visibility rule beyond a simple comparison
-  refuses the form, a computed field is exported read-only and never as a
-  calculated item, and the dependency-licence guard refuses `fhirpath`
-  today.
-- **Of CH ORF**: the Questionnaire inside the Bundle, which the response
-  names by its canonical instead; and a PDF, the Composition's receivers
-  and contacts, and the rest 0009 lists, each refused rather than left out
-  ([0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)).
-- **A page, a server, or any transport.** It is a library; a vendor's
-  application sends what it writes. The demo is a page beside the
-  packages, never published, and in no release ([Try it](#try-it)).
-- **A browser.** Every gate that runs the packed packages runs them under
-  Node; none runs them in a browser or another engine, so that is not
-  claimed. The demo's
-  browser gate runs the packages in Chromium, Firefox and WebKit as the
-  workspace builds them, bundled into its page, which is not the tarballs.
+- **Germany, the United Kingdom, Austria and Europe.** CH Core and CH ORF are the only national profiles; the [formats](#the-formats-it-targets) say which come next.
+- **File, signature, ranking, matrix and rich-text items**, which refuse the form, naming the field ([0006](./docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)).
+- **FHIRPath, FHIR's expression language, anywhere.** A visibility rule beyond a simple comparison refuses the form, and a computed field is exported read-only, never as a calculated item.
+- **Parts of CH ORF.** The Questionnaire is not put in the Bundle; the response names it by its url and version. A PDF, the Composition's receivers and contacts, and the rest [0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md) lists are refused.
+- **A page, a server, or any transport.** It is a library; a vendor's application sends what it writes. The demo is a page beside the packages, in no release.
+- **A claim for browsers.** Every gate that runs the packed packages runs them under Node, so no other engine is claimed; the demo's browser gate runs them as the workspace builds them, not as published.
 
 ## Intended purpose
 
@@ -226,15 +155,12 @@ Data's and Formancy Report's.
 
 <!-- end generated -->
 
-Why a paid module exists beside an Apache-2.0 project, in a repository of its
-own, on Formancy Data's and Formancy Report's terms and before a lawyer has
-read them, is decision
+Why a paid module exists beside an Apache-2.0 project, on those terms and
+before a lawyer has read them, is decision
 [0001](./docs/decisions/0001-a-paid-module-in-its-own-repository.md).
-
-Where a package here depends on Formancy Report's or Formancy Data's
-packages, those keep their own licence, on the same terms: a host that runs
-it in production needs that product's production licence as well as this
-one's.
+Formancy Report's and Formancy Data's packages keep their own licence, on
+the same terms: a host that runs them in production beside these needs that
+product's production licence as well as this one's.
 
 ## The formats it targets
 
@@ -249,56 +175,38 @@ Switzerland:
 | Austria | AT Core, the HL7® Austria FHIR® Core Implementation Guide | HL7 Austria |
 | Europe | HL7 Europe Base and Core; the International Patient Summary (IPS) | HL7 Europe; HL7 International |
 
-The order is the order of the work. Which version of a guide a package
-targets is decided when the package arrives, in the decision record that
-comes with it: CH ORF 3.0.2 on CH Core 6.0.0, with the CH Term 3.3.0 CH
-Core declares, in [0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md).
+The order is the order of the work. Each guide's version is decided in the
+record that brings it: for Switzerland,
+[0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md),
+CH ORF 3.0.2 on CH Core 6.0.0, with CH Term 3.3.0, HL7 Switzerland's
+terminology guide.
 
 ## Packages
 
 | Package | What it is |
 | --- | --- |
-| `@formancy/health-core` | The FHIR version the module emits, R4 4.0.1; FHIR R4's primitives, each checked against its type when made, a number held as its digits and bytes as canonical base64; and a writer and a reader of FHIR JSON that keep every digit, give the same bytes for the same input, and refuse an empty value, a null outside an array, a name given twice and a JavaScript number, naming where and never quoting the value ([0004](./docs/decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)). And the readers every package reads a host's context with: each value its own, an object for the members it names and no others, a list at every index, a text with nothing a resource cannot carry ([0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)). No framework, no Node, no network. |
-| `@formancy/health-questionnaire` | A formancy form, read through `@formancy/spec` 0.6.0, as an SDC 4.0.0 Questionnaire: one item per field with its key as the linkId, under the host's canonical base and formancy's published version, its texts translated into each language the host asks for; a visibility rule as `enableWhen` where it is a simple comparison, a computed field read-only, and no FHIRPath. What an item cannot say as the field says it refuses the whole export, every refusal at once, naming where ([0006](./docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)). And a formancy submission of the form as a QuestionnaireResponse to that Questionnaire, walked from its own items: each answer of its item's type, a number answer exactly the double formancy holds, no answer where formancy holds none, a value on a page a skip rule walks past left out, the subject and the author by name from the host; a value of another type, an option not offered, a value past a bound, a name the form does not have, an answer to an item the other answers disable or a member the context does not name refuses it whole ([0007](./docs/decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)). No framework, no Node, no network. |
-| `@formancy/health-document` | A PDF as an R4 DocumentReference by its own bytes, in the attachment or in a Binary beside it, with their size and SHA-1; declared a plain PDF and checked by its first and last lines, or refused declared PDF/A, which no gate here proves yet. And a document Bundle of the host's resources, its identifier and timestamp the host's, the Composition first and then only what it refers to, every reference resolved before output: a dangling one, an entry nothing reaches, two of one name, an attachment whose size, hash or media type are not its bytes', a member of the context it does not name or a hole in a list refuse it whole, every refusal at once, naming where ([0008](./docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)). Depends on health-core alone. No framework, no Node, no network. |
-| `@formancy/health-ch` | Switzerland: a CH ORF 3.0.2 document of a referral, the Bundle claiming CH ORF's document profile, the Composition with a narrative of its titles, one category and the order-referral section coded LOINC 93037-0, with its LOINC name; the host's patient, author, organisation and orders as CH Core 6.0.0's Patient, PractitionerRole, Practitioner and Organization and CH ORF's ServiceRequest; the host's answers, claiming CH ORF's response profile, about the patient, the Questionnaire by its versioned canonical, copied once and carried as checked. A GLN and an AHV number held to their forms and GS1's check digit, which CH Core only warns of, and a host's own identifier under none of CH Core's systems, in any case; a member the context does not name, a member of the answers health-questionnaire does not write, a status, a gender or a name CH Core does not take refuses it whole, every refusal at once, naming where ([0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)). Built on health-document, health-questionnaire and health-core. Nothing is sent. No framework, no Node, no network. |
+| [`@formancy/health-core`](./packages/health-core/README.md) | The FHIR version every resource is written for, R4 4.0.1; FHIR R4's primitives, each held to its type; and a writer and a reader of FHIR JSON that keep every digit ([0004](./docs/decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)). |
+| [`@formancy/health-questionnaire`](./packages/health-questionnaire/README.md) | A formancy form, read through `@formancy/spec`, as an SDC 4.0.0 Questionnaire, and a submission of it as a QuestionnaireResponse, each refused whole where it cannot be one ([0006](./docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md), [0007](./docs/decisions/0007-a-formancy-submission-is-a-questionnaireresponse-of-the-same-mapping-refused-whole-where-an-answer-cannot-be-one.md)). |
+| [`@formancy/health-document`](./packages/health-document/README.md) | A PDF's bytes as a DocumentReference, in its attachment or in a Binary beside it, and a document Bundle of what its Composition refers to ([0008](./docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)). |
+| [`@formancy/health-ch`](./packages/health-ch/README.md) | Switzerland: a CH ORF 3.0.2 document of a referral, its patient and author in CH Core 6.0.0's profiles, with a GLN and an AHV number held to their check digits ([0009](./docs/decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)). |
 
-`@formancy/health-corpus` is test support, private and never published:
-the referral letter it renders with Formancy Report 0.1.0's released
-packages, the only place Report is a dependency, and the documents the
-validator gate judges. Its `./documents` entry is those documents without
-the letter's renderer, which the demo bundles into its page;
-`scripts/corpus-documents.test.mjs` fails when that entry, as built,
-reaches anything but health-core and health-document, and the demo's
-build stops on any package of Report's that reaches its bundle, since
-its licence is not one the repository's policy allows.
-
-What is planned and not here yet is [Not in 0.1.0](#not-in-010), above.
-
-A decimal travels as its text. Build one with `decimal('70.50', path)`
-from the text a form or a database gave you, never from a JavaScript
-number: 0.10 cannot be recovered from 0.1, and health-core refuses a
-number rather than guess.
-
-A document's identifier is the host's, and so is keeping it unique across
-documents: the same input gives the same Bundle, identifier included, and
-FHIR's documents page says a document's identifier is never re-used,
-which nothing here can see across a host's documents
-([0008](./docs/decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)).
+None of them has a framework, a Node API or a network call; each package's
+README shows a call of it, and what it does not do or prove. Beside them,
+`@formancy/health-corpus` is private test support: the referral letter it
+renders with Formancy Report 0.1.0, the only place Report is a dependency,
+and the documents the validator gate judges. Neither it nor `apps/demo` is
+published.
 
 ## How it relates to formancy.ai, Formancy Data and Formancy Report
 
 This module **depends on** the released `@formancy/*` packages, at exact
-versions, and copies none of their code, stylesheets included
-([0002](./docs/decisions/0002-depend-on-upstream-never-copy-it.md)). A guard
-refuses a range or a path. A form is formancy's form, read as formancy
-defines it; a report is Formancy Report's definition and the PDF Report
-rendered from it. Neither the form spec nor the report definition grows to
-hold what a profile asks for: that mapping is this module's.
-
-Formancy Report and Formancy Data are both optional. A host that exports only
-forms needs neither, and without Data a host hands over the form and its
-submissions itself. Neither depends on this module.
+versions, and copies none of their code
+([0002](./docs/decisions/0002-depend-on-upstream-never-copy-it.md)). A
+form is formancy's form, and a report is Formancy Report's definition and
+the PDF Report rendered from it; neither grows to hold what a profile asks
+for, since that mapping is this module's. Formancy Report and Formancy Data
+are both optional: a host that exports only forms needs neither, and hands
+over the form and its submissions itself. Neither depends on this module.
 
 ## HL7® and FHIR®
 
@@ -326,73 +234,43 @@ pnpm build
 pnpm test
 ```
 
-The demo, `apps/demo`, is served built by `pnpm demo`, as [Try it](#try-it)
-says, and is developed with Vite's own server, which applies none of the
-headers. Its browser gate runs in Chromium, Firefox and WebKit, WebKit on
-Linux alone, and needs the builds the installed Playwright pins, once per
-machine; `FORMANCY_BROWSERS`, a list such as `chromium,firefox`, narrows a
-run to the browsers it names, and a run with it unset is every browser the
-machine runs:
+The demo, `apps/demo`, is developed on Vite's dev server, which sends none
+of the deploy's headers. Its browser gate runs in Chromium, Firefox and
+WebKit, WebKit on Linux alone. Install the browsers Playwright pins once
+per machine; `FORMANCY_BROWSERS`, such as `chromium,firefox`, narrows a run
+to the ones it names
+([0014](./docs/decisions/0014-the-demos-browser-gate-runs-in-chromium-firefox-and-webkit-and-each-fact-the-browsers-disagree-on-is-named-and-held.md)):
 
 ```bash
 pnpm --filter @formancy/health-demo dev                                               # Vite's server, after pnpm build
-pnpm --filter @formancy/health-demo exec playwright install chromium firefox webkit   # once; WebKit runs on Linux alone
+pnpm --filter @formancy/health-demo exec playwright install chromium firefox webkit   # once per machine
 pnpm test:browser                                                                     # the demo's browser gate, which builds what it measures
 ```
 
-The gates CI runs, from `.github/workflows/gates.yml`: `pnpm build`,
-`pnpm typecheck`, `pnpm check:pkg`, `node scripts/verify-licenses.mjs`,
-`node scripts/dependency-licences.mjs` and `pnpm test:repo`, which holds the
-repository's guards, HL7's notice among them, this README's intended
-purpose and links, and the rule that no package converts a value through a
-JavaScript number or reads a clock; each package's
-`test:coverage` in a job of its own; `pnpm test:e2e:install`, which packs
-the packages, installs them into a plain npm project, type-checks it with
-`skipLibCheck` off and runs it under Node, and does the same with the
-program of the [getting-started guide](./docs/getting-started.md) in a
-project of its own; the demo's browser gate, in Chromium, Firefox and
-WebKit, a job each, for what jsdom cannot see of its page
-([0012](./docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md),
-[0014](./docs/decisions/0014-the-demos-browser-gate-runs-in-chromium-firefox-and-webkit-and-each-fact-the-browsers-disagree-on-is-named-and-held.md)); `node scripts/validator.mjs`,
-the validator gate below; and the release report, built from what every
-other job found, which fails the run on anything it lists
-([`docs/release/`](./docs/release/README.md)).
-Beside them, every pull request's commit authors are checked against the
-CLA, and CodeQL and dependency review run. A release runs the same gates and
-publishes only the tarballs the install gate ran, with provenance, a signed
-SBOM of what a consumer's install of them brings, and the signed report of
-the run that gated it.
-[`CLAUDE.md`](./CLAUDE.md) says what each is for and what the bar is.
+CI runs the gates of `.github/workflows/gates.yml` on every pull request,
+and a release runs them before it publishes only the tarballs its install
+gate ran. Every run ends in a release report of what it found, which fails
+the run on anything it lists
+([0011](./docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md),
+[`docs/release/`](./docs/release/README.md)). [`CLAUDE.md`](./CLAUDE.md)
+gives each gate's command and the bar a change meets;
+[Verification](./docs/architecture/10-verification.md) says what each gate
+proves and what it does not.
 
 ### The validator gate
 
-The HL7 FHIR validator judges the FHIR JSON the packages write, against
-pinned guide packages, offline
+The HL7 FHIR validator checks the FHIR JSON the built packages write of a
+synthetic corpus, `scripts/validator/corpus.mjs`, against pinned guide
+packages, offline
 ([0005](./docs/decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md)).
-The release it runs and every package it loads are fetched by exact version
-and refused unless their SHA-256 is the one
+The validator and every package it loads are fetched by exact version and
+refused unless their SHA-256 is the one
 [`docs/release/validator.json`](./docs/release/validator.json) or
 [`docs/release/ig-packages.json`](./docs/release/ig-packages.json)
-registers; the validator then runs with no terminology server and no HTTP
-access at all. An error fails the gate, and so does a warning that
-`scripts/validator/warnings.json` does not name with the reason it is
-accepted. Every resource of the corpus, `scripts/validator/corpus.mjs`, is
-written by health-core's `writeJson`: the Questionnaires health-questionnaire
-makes of the synthetic forms in `scripts/validator/forms.mjs`, which hold
-every field type and rule it maps, the QuestionnaireResponses it makes of
-the synthetic submissions there, which hold every answer type it writes,
-each judged against its Questionnaire; the document Bundles
-health-document makes of the referral letter health-corpus renders with
-Formancy Report 0.1.0, its PDF in the attachment, in a Binary, and beside
-a QuestionnaireResponse, the gate refusing to run on a letter that is not
-the bytes [`docs/release/letter.json`](./docs/release/letter.json)
-registers, which are the bytes the demo carries; the CH ORF documents
-health-ch makes of the synthetic referrals in `scripts/validator/ch-orf.mjs`
-and `scripts/validator/demo-referral.mjs`, the second the demo's, whose
-Questionnaire and response are judged on their own too; and resources
-built by hand where no package builds one. Some are broken on purpose, each for
-one thing, and the gate fails unless the validator refuses each for
-exactly that.
+registers, and it runs with no terminology server and no HTTP access. An
+error fails the gate, and so does a warning that
+`scripts/validator/warnings.json` does not name with its reason; a
+resource broken on purpose must be refused for exactly what it breaks.
 
 ```bash
 pnpm build                                      # the corpus is written by the package as built
@@ -400,46 +278,20 @@ node scripts/validator.mjs --java <path to java 17 or later>
 ```
 
 It downloads into `.fhir-cache/`, which is never committed, and writes
-`test-results/validator.json`. Offline, the validator checks codes only
-against the code systems the registered packages hold: a code from LOINC,
-SNOMED CT or UCUM, and a language tag, are not checked, and the validator
-says so in a warning the gate refuses until it is registered; a
-translation's language it does not check at all, and a resource's
-language only as far as its own reading of a tag goes, which refuses
-`de-ch` and `zz`. A code from
-a code system nothing knows, a made-up system URI, is only information,
-which the gate accepts; the code systems a Questionnaire names for a
-form's options are such systems. What the gate shows is that the
-Questionnaires health-questionnaire makes of the corpus's forms, and the
-responses it makes of the corpus's submissions, against those
-Questionnaires, are accepted against SDC 4.0.0 on R4 4.0.1 by the HL7 FHIR
-validator 7.0.2, offline, with no error and no warning but the registered
-ones, their option codes and the registration of their language tags
-unchecked -- health-core holds each tag to its form, nothing to the
-registry; and that the documents health-document makes of the corpus's
-PDF are accepted against R4 4.0.1 the same way, the size and SHA-1 of the
-bytes in an attachment recomputed by the validator, those of the bytes in
-a Binary not, and the media type unchecked. Not that a form, a submission
-or a document the corpus lacks would be; nothing about a response that is
-not complete, which the corpus has none of; and nothing about the PDF
-itself, which is no PDF/A and whose pages Report proves. And that the CH
-ORF documents health-ch makes of the corpus's referrals, and the demo's
-response alone, which claims CH ORF's response profile, are accepted against
-CH ORF 3.0.2 and CH Core 6.0.0, with CH Term 3.3.0, the same way, with no
-error and no warning but dom-6 and CH Core's `gln-startswith76`, which the
-corpus's GLNs under GS1's prefix 952 raise; offline, nothing checks its
-Composition's type and category against CH Term's SNOMED CT value sets, a
-made-up SNOMED CT code drawing nothing, nor its LOINC section code beyond
-the pattern that fixes it, and a GLN's or an AHV number's form and check
-digit only draw warnings, which is why health-ch refuses them; no AHV
-number the gate should accept is in the corpus, since a valid one may be
-a person's. The corpus's type and category are HL7's own codes, and it
-holds no SNOMED CT code: `scripts/terminology.test.mjs` holds every code
-system the corpus writes to the terms that admit it, LOINC with its
-recorded display name and its notice in [`NOTICE`](./NOTICE), and
-`scripts/synthetic-identifiers.test.mjs` fails on an AHV number that
-passes its check in any file and on a corpus GLN outside GS1's prefix
-for examples.
+`test-results/validator.json`.
+
+What a pass shows, at the versions the table below names, with no error
+and no warning but the registered ones, is that the validator accepts:
+
+- the Questionnaires and responses health-questionnaire makes of the corpus's forms and submissions, against SDC;
+- the document Bundles health-document makes of the corpus's PDF, against FHIR R4;
+- the CH ORF documents health-ch makes of the corpus's referrals, against CH ORF and CH Core with CH Term.
+
+It does not show that a resource the corpus lacks would pass, nor what
+offline leaves unchecked -- a code from LOINC, SNOMED CT or UCUM, a language tag's
+registration, a media type -- nor the PDF itself:
+[Verification](./docs/architecture/10-verification.md#103-what-a-conformance-claim-covers)
+lists what the claim does not cover.
 
 ### What it is built and judged against
 
@@ -464,27 +316,19 @@ for examples.
 
 <!-- end generated -->
 
-Formancy Report 0.1.0 depends on `@formancy/spec` 0.5.0 itself, exactly,
-so the workspace holds both: health-corpus renders the corpus's letter
-through Report's, which only hashes Report's own definitions with it, and
-the packages read forms through 0.6.0. An application that installs
-Report 0.1.0 beside these packages, as the
-[getting-started guide](./docs/getting-started.md)'s project does, holds
-both too, and nothing one makes reaches the other
-([0015](./docs/decisions/0015-the-demo-wears-formancy-ais-room-imported-from-formancy-0-6-0-and-the-packages-read-forms-through-the-same-release.md)).
-
 What a run actually ran -- the Java of the validator job, the packages the
 validator loaded, the time it took -- is in that run's
 `test-results/validator.json`, uploaded as its `validator-results`.
 
 ## Documents
 
-- [`docs/getting-started.md`](./docs/getting-started.md) — from an empty npm project to a Questionnaire, a QuestionnaireResponse, a document Bundle carrying a Report PDF, and a CH ORF document, under Node; its code is compiled and run against the packed packages by the install gate.
-- [`docs/`](./docs/README.md) — the architecture, as arc42 in formancy.ai's files, whose decisions are the records below, and where to start reading it, by who you are.
+- [`docs/getting-started.md`](./docs/getting-started.md) — from an empty npm project to a CH ORF document, under Node, its code compiled and run by the install gate.
+- [`docs/`](./docs/README.md) — the architecture, in arc42's sections, and where each kind of reader starts.
+- [Glossary](./docs/architecture/12-glossary.md) — SDC, CH Core, CH ORF, GLN, AHV and the other words used here.
 - [`docs/decisions/`](./docs/decisions/README.md) — every decision somebody could helpfully undo, with what verifies it.
-- [`docs/release/`](./docs/release/README.md) — the registers a conformance claim rests on, the validator the gate runs, every package it loads and the bytes of the letter its documents carry; the two every release report reads, the release gates and each record's known limitations; and what a release report holds and what fails it.
+- [`docs/release/`](./docs/release/README.md) — the registers the validator gate runs from, the release gates and the known limitations, and what a release report holds and what fails it.
 - [`CHANGELOG.md`](./CHANGELOG.md) — what changed and why.
 - [`CLAUDE.md`](./CLAUDE.md) — the rules a change is held to, and the gates and guards that hold them.
 - [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`CLA.md`](./CLA.md) — contributions are taken under a CLA, checked on every pull request; [`GOVERNANCE.md`](./GOVERNANCE.md) says who decides.
 - [`SECURITY.md`](./SECURITY.md) — how to report a vulnerability, and what this product considers highest risk.
-- [`RELEASING.md`](./RELEASING.md) — releases are cut by the workflow, with provenance, a signed SBOM and the signed release report; what the maintainer sets before the first.
+- [`RELEASING.md`](./RELEASING.md) — how a release is cut, with provenance, a signed SBOM and the signed release report.

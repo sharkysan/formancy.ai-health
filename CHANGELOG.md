@@ -10,6 +10,34 @@ later.
 
 ## Unreleased
 
+**The README says what Formancy Health does before anything else.** It
+opened with a status that restated, package by package, what the packages
+and the validator gate do, and its Try it, its package table and its
+validator gate ran to paragraphs the decision records, the package READMEs
+and the architecture already hold. It now opens with what the module is and
+a list of what it does, each line with its decision record and each term
+a newcomer meets -- SDC, CH Core, CH ORF, a GLN, an AHV number -- said in a
+few words where it first appears, then what is planned and not in 0.1.0,
+and a short dated status that links here; its documents list links the
+glossary. The detail it dropped is in the decision records, 0.1.0's
+section below, the package READMEs, the getting-started guide, the
+architecture -- verification's §10.3 for what the validator gate's claim
+does not cover -- `RELEASING.md` for how 0.1.0 was rehearsed and
+published, and `CLAUDE.md`. The intended purpose, HL7's notice, the
+licence table and both generated blocks are as they were, and every
+heading another document links to is still there.
+`CLAUDE.md`'s map of the packages put a referral's orders in CH Core's
+profiles; it now says CH ORF's, which `profiles.ts` names.
+
+**Why a PDF/A declaration is refused is said as 0008 says it: no gate here
+proves a producer of PDF/A.** The README, release gate G4, which every
+release report prints, the known limitations and the architecture said
+instead that no Formancy Report release writes PDF/A, which stopped being
+true on 19 October 2026 with Report 0.2.0, which draws the final render of
+an e-invoice as a PDF/A-3b (formancy.ai-report 0031). Nothing refused changes:
+health-corpus renders with Report 0.1.0, which writes none, and every
+PDF/A declaration is refused as before.
+
 **A release's SBOM check reads which version each published package is
 given.** It held every copy of a runtime dependency's name to the one
 version the suites loaded. Formancy Report's 0.2.0 rehearsal was refused

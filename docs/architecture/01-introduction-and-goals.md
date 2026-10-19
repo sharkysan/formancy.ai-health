@@ -48,20 +48,21 @@ refusals.
 
 ## Scope
 
-**Built**, as the [README](../../README.md)'s status says: the FHIR R4
-primitives and FHIR JSON, a formancy form as an SDC Questionnaire, a
-submission as a QuestionnaireResponse, a PDF as a DocumentReference in a
-document Bundle, a referral as a CH ORF document, its patient, author and
-orders in CH Core's profiles and its GLN and AHV number held to their check
-digits, and the gate that runs the HL7 FHIR validator over what the
-packages write; and beside them the demo, which no release publishes,
-with its browser gate. 0.1.0, a developer preview of the packages, was
-released on 19 October 2026: the README's [What 0.1.0 is](../../README.md#what-010-is)
-says whom it is for, what it publishes and the gates it is held to.
+**Built**, as the README's [What it does](../../README.md#what-it-does)
+says: the FHIR R4 primitives and FHIR JSON, a formancy form as an SDC
+Questionnaire, a submission as a QuestionnaireResponse, a PDF as a
+DocumentReference in a document Bundle, a referral as a CH ORF document,
+its patient and author in CH Core's profiles, its orders in CH ORF's and
+its GLN and AHV number held to their check digits, and the gate that runs
+the HL7 FHIR validator over what the packages write; and beside them the
+demo, which no release publishes, with its browser gate. 0.1.0, a
+developer preview of the packages, was released on 19 October 2026: the
+README's [What 0.1.0 is](../../README.md#what-010-is) says whom it is for,
+what it publishes and where the gates it is held to are.
 
 **Not in 0.1.0**, as the README's [list](../../README.md#not-in-010) has
-it: PDF/A, and with it the CH EPR's MHD document, which wait for a Report
-release that writes PDF/A; extraction from a QuestionnaireResponse;
+it: PDF/A, and with it the CH EPR's MHD document, which wait for a gate
+here that proves a producer of PDF/A; extraction from a QuestionnaireResponse;
 Germany's, the United Kingdom's, Austria's and HL7 Europe's profiles; file,
 signature, ranking, matrix and rich-text items; FHIRPath anywhere; and of
 CH ORF the Questionnaire inside the Bundle, a PDF and the Composition's

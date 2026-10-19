@@ -149,7 +149,8 @@ is review's. This section names the larger costs without restating them.
 ## 11.4 Open, and planned
 
 What the README lists as [not in 0.1.0](../../README.md#not-in-010):
-PDF/A once Report writes it, and the MHD provide Bundle and CH EPR with it;
+PDF/A once a gate here proves its producer, and the MHD provide Bundle and
+CH EPR with it;
 extraction from a QuestionnaireResponse; Germany's, the United Kingdom's,
 Austria's and HL7 Europe's profiles; file, signature, ranking, matrix and
 rich-text items; FHIRPath; of CH ORF the Questionnaire inside the Bundle, a

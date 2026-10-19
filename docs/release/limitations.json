@@ -237,7 +237,7 @@
       "limitations": [
         {
           "area": "documents",
-          "says": "Every PDF/A declaration is refused, so no CH EPR or ePA document can be made until a Formancy Report release writes PDF/A and a gate here proves it.",
+          "says": "Every PDF/A declaration is refused, so no CH EPR or ePA document can be made until a gate here proves a producer of PDF/A.",
           "heldBy": "packages/health-document/src/pdf.test.ts"
         },
         {
