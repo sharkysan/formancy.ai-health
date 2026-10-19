@@ -5,13 +5,9 @@ and nowhere else. A release built on a laptop cannot carry provenance — the
 attestation is a statement *by GitHub* about which workflow, at which commit,
 produced a tarball, and only the workflow can make it.
 
-Nothing has been released yet. 0.1.0, a developer preview, is ready to
-tag and not tagged, as the README's Status says on 19 October 2026: the
-manifests say 0.1.0, the changelog's section is 0.1.0's, dated that day
-(step 2), the settings below are set, and what is left is the
-maintainer's -- the rehearsal and the tag, and the section's date moved to
-the tag's day, through a pull request, if the tag is pushed on another.
-The workflow
+The first release, 0.1.0, a developer preview, was cut on 19 October 2026,
+as the README's Status says: rehearsed on the release commit, then tagged
+there, and published by the tag's run. The workflow
 follows Formancy Report's, release report included (0011, as
 formancy.ai-report 0014), without a server image, because there is no
 server.
@@ -31,12 +27,12 @@ records and nothing in the repository can read:
 
 The last column was read with `gh api` on 19 October 2026 -- the
 repository, its secrets, and the `npm` environment, its secrets and its
-deployment branch policy -- and goes stale the day one changes. The
+deployment branch policy -- and goes stale the day one changes; 0.1.0's
+tag read the token the same day, in `npm-token` and `publish`. The
 release report has run on GitHub on every pull request and every push to
-`main` since it arrived; the SBOM step had run on no runner by that day,
-and the first rehearsal is its first run
-([0011](docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md));
-read both before the tag.
+`main` since it arrived, and the SBOM step on a runner first in 0.1.0's
+rehearsal, then in its tag's run, `check` accepting the SBOM both times
+([0011](docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).
 
 ## Cutting one
 
@@ -258,11 +254,19 @@ what it named.
 
 ## If a step after npm fails
 
-Only the GitHub release comes after npm. Run the failed `publish` job again.
-`scripts/release/publish.mjs` skips every version npm already holds with the
-same bytes, refuses one npm holds with other bytes, and the release is then
-created. Signatures are logged in Rekor before npm is reached, and those
-entries stay even when a release never happens.
+Only the GitHub release comes after npm. Wait until
+`npm view <name>@<version> dist.integrity` answers for every package, then
+run the failed `publish` job again. `scripts/release/publish.mjs` skips
+every version npm already holds with the same bytes, refuses one npm holds
+with other bytes, and the release is then created. Before the registry
+answers for a version, `publish.mjs` reads its 404 as a version npm does
+not hold and calls `npm publish` for it again, and what npm says to that
+had not been seen by 19 October 2026. 0.1.0's took minutes: npm said of
+each package, between 19:50:41 and 19:50:56 UTC that day, that it "may
+take a few minutes to become available", and the registry dates each
+0.1.0 between 19:51:32 and 19:53:29 UTC. Signatures are logged in Rekor
+before npm is reached, and those entries stay even when a release never
+happens.
 
 | Step | What cannot be taken back | Can fail on | Already done when it fails |
 |---|---|---|---|
@@ -271,8 +275,11 @@ entries stay even when a release never happens.
 | `npm-publish` | each version number on npm, forever | the registry; any one of the packages | the signatures |
 | `github-release` | nothing: a release can be edited or deleted | the GitHub API | npm |
 
-The publish job had not run by 17 October 2026. `scripts/workflows.test.mjs`
-holds its shape; the first tag is the first time it runs.
+By 19 October 2026 the publish job had run once, for 0.1.0 that day, and
+every step of it succeeded. So the path above, a `publish` run again over
+versions npm already holds, had not run by then: `scripts/workflows.test.mjs`
+holds the job's shape, and `scripts/release/publish.test.mjs` what it
+decides about a version the registry holds.
 
 ## The demo on formancy.ai
 
@@ -368,6 +375,7 @@ branch or tag cannot read it, where a repository secret could be read by a
 workflow on any branch a collaborator pushes. The environment and its policy
 are repository settings ([REPO-METADATA.md](.github/REPO-METADATA.md)).
 `scripts/workflows.test.mjs` holds that the jobs name the environment.
-Nothing here can check that the policy is set, or the token; on 17 October
+Nothing here can check that the policy is set, or the token; on 19 October
 2026, read with `gh api`, the policy admits tags `v*` alone and the
-environment holds no secret ([Before the first release](#before-the-first-release)).
+environment holds `NPM_TOKEN`, which 0.1.0's tag read that day
+([Before the first release](#before-the-first-release)).

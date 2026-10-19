@@ -388,7 +388,7 @@
         },
         {
           "area": "release",
-          "says": "The publish job had never run before 0.1.0's tag: the workflows test holds its shape and not its behaviour, and the first release is the first run of it."
+          "says": "By 19 October 2026 the publish job had run once, for 0.1.0, where every step succeeded; run again over versions npm already holds, which is how a release recovers from a failed GitHub release, it had not run, and run before the registry answers for a version just published it calls npm publish for that version again, with an answer not seen by then, so RELEASING.md waits for npm view to answer first; the workflows test holds its shape and not its behaviour."
         }
       ]
     },

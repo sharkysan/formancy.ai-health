@@ -41,7 +41,7 @@ is review's. This section names the larger costs without restating them.
 | **CH Term at the release CH Core's range answers** | The validator cannot load CH Core otherwise; a receiver with a newer CH Term may judge a host's codes otherwise | [0009](../decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md) |
 | **One maintainer, and no required status check** | Stated in [`GOVERNANCE.md`](../../GOVERNANCE.md): a red check is stopped by a maintainer reading it, not by the ruleset | -- |
 | **The verify job skips the registers' cases that read the validator's downloads** | `verify` has neither the downloads nor a Java; the validator job runs the file again after the gate, and the release report accounts for each skip by that job's pass of the same test, by name, failing the run on any skip it cannot account for | [0005](../decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md), [0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md) |
-| **The release report had not run on GitHub by 17 October 2026** | It is built in every test from a synthetic run and was built from one machine's runs; the first pull request run is the first that shows the artefacts arrive as it reads them | [0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md) |
+| **The publish job had run once by 19 October 2026, and never over versions npm already holds** | 0.1.0's run published every package and created the release, every step succeeding; a release whose GitHub release fails is recovered by running `publish` again, which skips what npm holds with the same bytes, and that path is held by the workflows test's shape and `publish.test.mjs`'s decisions alone. Run before the registry answers for a version just published -- 0.1.0's took minutes -- `publish.mjs` reads the 404 as a version npm does not hold and calls `npm publish` for it again, with an answer not seen by that day, so [`RELEASING.md`](../../RELEASING.md#if-a-step-after-npm-fails) waits for `npm view` to answer first | [0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md) |
 | **The guide's program is run, not judged** | The install gate compiles and runs it against the packed packages and holds its output to the guide's; that its resources conform is no gate's claim -- the validator judges the corpus, made by the same packages of other synthetic input | [0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md) |
 | **The guide's project and the SBOM resolve on the day** | The guide's Report packages and what they bring, and the SBOM's closure beyond the report's packages, are what npm resolved during the run, unlocked, as the tools are; the report and the SBOM check hold the packages they name to the versions the suites loaded, and the SBOM to npm's lockfile of the install it was read from, which says what was resolved that day and not on another | [0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md) |
 | **The demo is main's, deployed before CI has run on it** | Cloudflare deploys every push to `main`, and no check is required to merge, so a pull request merged red is served; the alternative, a deploy from CI, would put a zone token in GitHub. Nothing checks what the address serves, which `RELEASING.md` checks by hand | [0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md) |
@@ -54,14 +54,6 @@ is review's. This section names the larger costs without restating them.
 
 ## 11.3 Known debt
 
-- **The SBOM's step had not run on a runner by 17 October 2026.** Its
-  commands ran by hand on one machine, on the install gate's tarballs, and
-  gave the SBOM the check accepts, against the report and against npm's
-  lockfile of that install; the old step's, cdxgen over the checkout, gave
-  one it refuses
-  ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).
-  The first rehearsal is the first run of
-  [`release.yml`](../../.github/workflows/release.yml)'s new step.
 - **The licence does not say a customer's regulatory duty.** Plan 15.2
   asks both the licence and the README to say that a customer's product
   computing a clinical result from its own forms carries the regulatory
@@ -90,7 +82,7 @@ is review's. This section names the larger costs without restating them.
 - **Settings nothing in the repository can read**: that a merged branch is
   deleted by the merge, `main`'s ruleset, the `npm` environment's policy of
   `v*` tags alone, which keeps the npm token from any other ref, and the
-  two secrets a run reads, neither of them set on 17 October 2026.
+  two secrets a run reads, both of them set on 19 October 2026.
   [`.github/REPO-METADATA.md`](../../.github/REPO-METADATA.md) records
   them, [`RELEASING.md`](../../RELEASING.md#before-the-first-release) says
   what was read with `gh api` that day, and review holds them.

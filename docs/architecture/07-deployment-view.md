@@ -2,20 +2,23 @@
 
 ## What exists today
 
-As of 17 October 2026 nothing is released. 0.1.0, a developer preview, is ready to tag
-([README](../../README.md#what-010-is)), and what a release reads that
-only the maintainer can set -- `NPM_TOKEN` in the `npm` environment, whose
-policy admits tags `v*` alone, `CODECOV_TOKEN`, a public repository -- is
-[`RELEASING.md`](../../RELEASING.md#before-the-first-release)'s, as read
-with `gh api` on 17 October 2026: the policy and the visibility set, neither
-token. What a release would publish, and how, is fixed by
+0.1.0, a developer preview, was released on 19 October 2026
+([README](../../README.md#what-010-is)): its packages on npm with
+provenance, and
+[the GitHub release](https://github.com/sharkysan/formancy.ai-health/releases/tag/v0.1.0)
+with the SBOM and the release report, each signed. What the workflows read
+that only the maintainer can set -- `NPM_TOKEN` in the `npm` environment,
+whose policy admits tags `v*` alone, `CODECOV_TOKEN`, a public repository
+-- is [`RELEASING.md`](../../RELEASING.md#before-the-first-release)'s, as
+read with `gh api` on 19 October 2026: each of them set. What a release
+publishes, and how, is fixed by
 [`.github/workflows/release.yml`](../../.github/workflows/release.yml):
 
 | Artefact | Where | Notes |
 |---|---|---|
-| Every workspace package whose manifest is not private | npm, under `@formancy/health-*`, with provenance | Exactly the tarballs the install gate packed, installed and ran, held to the install gate's record in the release report and pinned by SHA-256 before anything is published. Each declares `SEE LICENSE IN LICENSE.md` and carries `LICENSE.md` and `NOTICE`, which [`scripts/sync-licenses.mjs`](../../scripts/sync-licenses.mjs) copies in at `pnpm build`, and [`scripts/verify-licenses.mjs`](../../scripts/verify-licenses.mjs) and [`scripts/release/pins.mjs`](../../scripts/release/pins.mjs) refuse otherwise ([0001](../decisions/0001-a-paid-module-in-its-own-repository.md)) |
+| Every workspace package whose manifest is not private | npm, under `@formancy/health-*`, with provenance | Exactly the tarballs the install gate packed, installed and ran, held to the install gate's record in the release report and pinned by SHA-256 before anything is published. Each declares `SEE LICENSE IN LICENSE.md` and carries `LICENSE.md` and `NOTICE`, which [`scripts/sync-licenses.mjs`](../../scripts/sync-licenses.mjs) copies in at `pnpm build`, and [`scripts/verify-licenses.mjs`](../../scripts/verify-licenses.mjs) and [`scripts/release/pins.mjs`](../../scripts/release/pins.mjs) refuse otherwise ([0001](../decisions/0001-a-paid-module-in-its-own-repository.md)). Read from the registry on 19 October 2026, each package lists beside 0.1.0 a version nothing here publishes, `0.0.0-stage`: a stub npm wrote at the package's first publish, two files and a few hundred bytes, described as "Temporary package placeholder for staged publishing", with no `license` field; `latest` is 0.1.0 |
 | The release report, as Markdown and as JSON | the GitHub release, each signed keyless with cosign; on every pull request, the run's summary and its `release-report` artefact | What the run that gated the release was tested on, what each job found, the validator gate's verdict held to the registers, each tarball's build identity, the release gates and the known limitations ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md), [`docs/release/`](../release/README.md)). A build output of that run, never committed; `check` refuses one that is not that run's, green and whole, and pins it |
-| A CycloneDX SBOM | the GitHub release, signed keyless with cosign | What a consumer installs: the tarballs `check` pinned, installed by npm in a project of their own outside the checkout, with no lifecycle script run and no peer, read by cdxgen with `--required-only` -- the published packages at the release's version, `@formancy/spec` and what it brings. `check` installs no workspace, holds the SBOM to the report -- every published package at the version, every upstream package a consumer's install brings at the version the suites loaded -- and to npm's lockfile of the install it read, no component more or less, and pins it before the signature ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md), as [formancy.ai-report 0017](https://github.com/sharkysan/formancy.ai-report/blob/main/docs/decisions/0017-the-sbom-describes-what-a-consumer-installs.md)); [§11](11-risks-and-debt.md#113-known-debt) says what that leaves |
+| A CycloneDX SBOM | the GitHub release, signed keyless with cosign | What a consumer installs: the tarballs `check` pinned, installed by npm in a project of their own outside the checkout, with no lifecycle script run and no peer, read by cdxgen with `--required-only` -- the published packages at the release's version, `@formancy/spec` and what it brings. `check` installs no workspace, holds the SBOM to the report -- every published package at the version, every upstream package a consumer's install brings at the version the suites loaded -- and to npm's lockfile of the install it read, no component more or less, and pins it before the signature ([0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md), as [formancy.ai-report 0017](https://github.com/sharkysan/formancy.ai-report/blob/main/docs/decisions/0017-the-sbom-describes-what-a-consumer-installs.md)); [§11](11-risks-and-debt.md#112-the-larger-accepted-risks) says what that leaves |
 | The release notes | the GitHub release's body | This version's section of [`CHANGELOG.md`](../../CHANGELOG.md) and the report's summary, built and measured by the gates' report job ([`scripts/release-notes.mjs`](../../scripts/release-notes.mjs)), and pinned with the report |
 | `@formancy/health-corpus` | nowhere | Private: never packed, never published ([0008](../decisions/0008-a-document-is-a-bundle-of-what-it-refers-to-and-a-pdf-its-own-bytes-never-an-unproved-pdf-a.md)) |
 | The demo, `apps/demo` | https://formancy.ai/health/, from `main` | Private, never packed: a Cloudflare Worker of static files and no code, built and deployed by Cloudflare's Workers Builds on every push to `main` ([below](#the-demo), [0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)) |

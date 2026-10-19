@@ -222,8 +222,10 @@ publish    what was downloaded is, byte for byte, what check pinned, and the
 is [0011](../decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)'s:
 every run of the gates ends in one, a pull request's included; so is the
 SBOM's making, from what a consumer installs rather than from the
-workspace. A dispatch rehearses everything but `publish`. As of 17 October
-2026 nothing had been released: 0.1.0 is ready to tag, and what a release
+workspace. A dispatch rehearses everything but `npm-token` and `publish`.
+0.1.0 went this way on 19 October 2026, on one commit: a rehearsal, green
+in every job it runs, then the tag's run, green in every job, `publish`
+among them; what a release
 reads that only the maintainer can set is RELEASING.md's
 [Before the first release](../../RELEASING.md#before-the-first-release).
 

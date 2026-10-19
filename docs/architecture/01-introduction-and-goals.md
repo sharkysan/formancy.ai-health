@@ -55,8 +55,8 @@ document Bundle, a referral as a CH ORF document, its patient, author and
 orders in CH Core's profiles and its GLN and AHV number held to their check
 digits, and the gate that runs the HL7 FHIR validator over what the
 packages write; and beside them the demo, which no release publishes,
-with its browser gate. 0.1.0, a developer preview of the packages, was ready to tag
-and not released on 17 October 2026: the README's [What 0.1.0 is](../../README.md#what-010-is)
+with its browser gate. 0.1.0, a developer preview of the packages, was
+released on 19 October 2026: the README's [What 0.1.0 is](../../README.md#what-010-is)
 says whom it is for, what it publishes and the gates it is held to.
 
 **Not in 0.1.0**, as the README's [list](../../README.md#not-in-010) has
