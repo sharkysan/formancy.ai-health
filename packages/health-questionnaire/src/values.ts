@@ -4,7 +4,7 @@
  * Decided once, here, for all three (0006, 0007).
  *
  * - **A number** in a formancy form is a JavaScript number: `min`, `max`
- *   and `step` are typed `number` by `@formancy/spec` 0.5.0, and an answer
+ *   and `step` are typed `number` by `@formancy/spec` 0.6.0, and an answer
  *   is a JSON number. So a bound or an answer reaches this package as a
  *   double, and its text is the shortest that reads back as that double,
  *   which is the value formancy holds and compares: `0.10` in the form's

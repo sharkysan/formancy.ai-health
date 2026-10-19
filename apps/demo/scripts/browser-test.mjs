@@ -39,6 +39,10 @@
 //     them is in force: the browser refused nothing the page did and its
 //     console logged no error, the whole journey long;
 //   - the page runs React's production build, the build a deploy serves;
+//   - the page is in formancy.ai's room (0015): every custom property
+//     @formancy/themes' room.css sets, as installed, holds its value on
+//     :root -- the workbench's among them, which the room must come after
+//     -- in the room's colour scheme, on its ground;
 //   - every face the page declares had loaded once it settled, and in the
 //     pass that refuses them, none had.
 //
@@ -74,7 +78,7 @@ import { demoBase, readDemoConfig } from '../../../scripts/demo.mjs'
 import { HL7_NOTICE, LOINC_NOTICE, MARK } from '../../../scripts/notices.mjs'
 import { NOTICES_FILE } from '../../../scripts/third-party-notices.mjs'
 import { corpusBytes, journey } from './gate-journey.mjs'
-import { app, audit, describeFocus, dist, FONT_FILE, fontProblem, measureWidth, passes, reactProblem, recordReact } from './gate-page.mjs'
+import { app, audit, describeFocus, dist, FONT_FILE, fontProblem, measureWidth, passes, reactProblem, recordReact, roomProblem } from './gate-page.mjs'
 import { consoleErrors, policyChecks, privacyChecks, recordViolations, watch } from './gate-privacy.mjs'
 import { gateRecorder } from './gate-results.mjs'
 
@@ -198,6 +202,7 @@ async function pass(gate, { browser, name }, { url, headers }, { label, width, h
     await page.goto(url, { waitUntil: 'load' })
     await watcher.settle({ within: WITHIN })
     gate.check('the page runs React’s production build, the one a deploy serves', await reactProblem(page))
+    gate.check('the page is in formancy.ai’s room: every variable room.css sets holds on :root, the workbench’s among them, drawn dark on the room’s ground', await roomProblem(page))
     const w = modules.words.WORDS[language]
     await head(gate, page, { language, w, links: modules.links.LINKS })
     await keyboard(gate, page, w)

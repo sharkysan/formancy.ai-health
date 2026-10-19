@@ -23,8 +23,8 @@ Published at 0.1.0: `@formancy/health-core`, `health-questionnaire`,
 the Formancy Health Source-Available Licence, which no lawyer has reviewed
 yet ([0001](docs/decisions/0001-a-paid-module-in-its-own-repository.md)).
 Besides one another they depend on one package, at an exact version:
-formancy's `@formancy/spec`, at the release the README's table names and
-the release report's Tested on shows. They take no peer, and run under
+formancy's `@formancy/spec`, 0.6.0, the release the README's table names
+and the release report's Tested on shows. They take no peer, and run under
 Node in every gate and nowhere else. `@formancy/health-corpus`, which
 renders its PDF with Formancy Report's released packages, stays private.
 
@@ -49,6 +49,53 @@ Not in this release:
 The release report of the run that gates this release lists, under "Known
 limitations", what each decision record says a user will meet.
 
+**formancy 0.6.0: the packages read forms through it, and the demo wears
+formancy.ai's room** ([0015](docs/decisions/0015-the-demo-wears-formancy-ais-room-imported-from-formancy-0-6-0-and-the-packages-read-forms-through-the-same-release.md)).
+formancy 0.6.0, released on 18 October 2026, publishes formancy.ai's
+admin palette as `@formancy/themes/room.css`, which 0012 said the demo
+would wear the day a release shipped it, and the maintainer asked why the
+demo looked unlike Report's Studio beside it. The demo now imports the room
+after the workbench, as its header asks, where it wore 0.5.0's light
+workbench and Blueprint: the dark ground, glass panels, violet for what a
+visitor acts on and teal for what the packages did, Archivo for its
+headings, and still no colour of its own. The form stays in Blueprint, on
+Blueprint's own white paper, as formancy.ai's admin previews a form. Its
+browser gate now checks, in every pass and every browser, that each
+variable `room.css` sets holds on the page, compared as colours; and axe's
+contrast, decided in every state the journey reaches, held the dark page
+in Chromium, Firefox and WebKit, the read-out, the refusals on purpose,
+the downloads and the notices among it. Its suite now holds that the
+page's script writes no style, since a copy of the room's values set from
+a script would pass the gate's check of them, and that Blueprint's
+variables are read only inside Blueprint's scope. The packages move with it:
+health-questionnaire depends on `@formancy/spec` 0.6.0, exactly, since the
+demo bundles it beside formancy's engine, which depends on 0.6.0, and two
+copies of the form's spec in one page would read one form twice; the
+demo's suite now fails when the page's dependencies bring two copies of a
+formancy package, which no exact pin could see. So a
+consumer meets `@formancy/spec` 0.6.0. Its spec version is 4, as 0.5.0's
+was, and its validator decides as 0.5.0's did -- the corpus's 50
+resources are the same bytes made with either, and the validator gate
+judged them as its corpus expects. formancy 0.6.0's engine writes a
+computed field only by its rule, enforces a repeater's bounds and clears
+the fields of a group a rule hides; every behaviour of its engine the
+mapping rests on was measured again on 0.6.0 and is as 0.5.0 had it.
+Formancy Report 0.1.0 depends on `@formancy/spec` 0.5.0, exactly: so
+health-corpus, private, keeps that copy beside the packages', and so does
+an application that installs Report 0.1.0 beside Health 0.1.0, as the
+getting-started guide's project does. Report only hashes its own
+definitions with its copy and names none of its types, so nothing one
+copy makes reaches the other, and the letter it renders is the registered
+bytes. The release report, which lists the package at both versions,
+now holds what a clean install resolved of a package the published
+packages depend on to the versions the suites ran them against, so
+Report's 0.5.0 excuses nothing a consumer meets, and what it resolved of
+one they do not depend on to any version a suite loaded: it had said
+that no suite ran the 0.6.0 every suite of the packages loads. In the
+build of 19 October 2026 the page is 765.31 kB, 226.39 kB
+gzipped, 8.1 kB more for 0.6.0, and asks for 31 faces, 437 kB, as it
+starts, Archivo's three among them.
+
 **A demo at https://formancy.ai/health/ shows the packages at work**
 ([0012](docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)),
 so that a vendor can try the export without installing anything.
@@ -68,12 +115,11 @@ and nothing here reads. Of conformance it says what CI's validator gate
 judges and that the sample is in its corpus, not that the gate passed on
 the commit the page was built from, since Cloudflare deploys before CI
 runs and `main` requires no check. It takes formancy's `@formancy/core`,
-`@formancy/react` and `@formancy/themes` at exactly 0.5.0, beside the
-`@formancy/spec` 0.5.0 the packages read, for the demo alone: it wears
-the workbench and Blueprint as 0.5.0 ships them, imported and stating no
-colour of its own, until a formancy release ships formancy.ai's room. The
-packages' dependencies do not change, and the README's table of what
-they are built and judged against stays theirs. No HL7 mark names its
+`@formancy/react` and `@formancy/themes` at exactly 0.6.0, beside the
+`@formancy/spec` 0.6.0 the packages read, for the demo alone, and wears
+formancy.ai's room as 0.6.0 ships it, imported and stating no colour of
+its own (above). The README's table of what the packages are built and
+judged against stays theirs. No HL7 mark names its
 Worker, its routes or its title, which `scripts/trademark.test.mjs` now
 reads as it reads the packages' names
 ([0003](docs/decisions/0003-the-product-name-carries-no-hl7-mark.md));
@@ -144,7 +190,8 @@ in Greek, Cyrillic or Vietnamese, or a JSON opened, asked the server for
 a face after the page had loaded, which tells it what kind of text was
 entered. The page now asks for every face its stylesheets declare as it
 starts -- 28 WOFF2 files, 356 kB in all, in the build of 18 October
-2026 -- so that once it has settled it asks
+2026, and 31, 437 kB, since the room's Archivo joined them (above) -- so
+that once it has settled it asks
 for nothing more, whatever is typed, and the gate fails if it does. The
 release report gains a Browser section and the job it reads, and fails a
 run on a check failed, a pass planned and not made, or a browser other
@@ -670,8 +717,9 @@ a text missing in a language asked for. A visibility rule is `enableWhen`
 only where both say the same on an untouched form; a computed field is
 read-only, never a calculated item; no FHIRPath is written.
 
-**The first upstream dependency: `@formancy/spec` 0.5.0, exact**
-([0002](docs/decisions/0002-depend-on-upstream-never-copy-it.md)), for
+**The first upstream dependency: `@formancy/spec`, exact** -- 0.5.0
+when it arrived, 0.6.0 in this release (above)
+([0002](docs/decisions/0002-depend-on-upstream-never-copy-it.md)) -- for
 health-questionnaire alone: a form means what formancy's own types and
 validator say, so it is read through them and never re-implemented. It
 brings `ajv` and `@noble/hashes`, MIT both, which the dependency-licence

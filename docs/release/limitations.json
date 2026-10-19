@@ -29,7 +29,7 @@
       ]
     },
     "0002": {
-      "reviewed": "sha256:972de4949aa496ecf0ceb303212e5df3e50e3dce36f5758b2bdccfd87107af96",
+      "reviewed": "sha256:4cb33ad08368b0c23b093388862f7293ee9ac9dc592a1e9482a51c9ea030da3e",
       "limitations": [
         {
           "area": "release",
@@ -393,7 +393,7 @@
       ]
     },
     "0012": {
-      "reviewed": "sha256:be3d1949f3dde7d7da898d4fcc69b50b4f074882c6728d1325b8088dc4e374a2",
+      "reviewed": "sha256:bd1a2c0c039c89006a7d694bc67290451b82427e63d8588848ce318f49361428",
       "limitations": [
         {
           "area": "demo",
@@ -418,11 +418,6 @@
           "area": "demo",
           "says": "The demo says nothing about cookies, tracking or analytics, and no gate sees what Cloudflare, which serves it and sees each visitor's IP address, sets or measures on formancy.ai's zone; a script it injected into the page, the page's policy refuses to run.",
           "heldBy": "apps/demo/src/words.test.ts"
-        },
-        {
-          "area": "demo",
-          "says": "The demo wears formancy's workbench and Blueprint as `@formancy/themes` 0.5.0 ships them, not formancy.ai's room, until a formancy release ships the room.",
-          "heldBy": "apps/demo/src/styles.test.ts"
         },
         {
           "area": "demo",
@@ -454,7 +449,7 @@
         },
         {
           "area": "demo",
-          "says": "The demo's read-out leads to no radio group, set of tick boxes, ranking, matrix, file or signature, since formancy 0.5.0's React renderer draws none of them as a control of the id its engine mints that takes the keyboard, and the page does not guess at the ids it makes of its own.",
+          "says": "The demo's read-out leads to no radio group, set of tick boxes, ranking, matrix, file or signature, since formancy's React renderer, 0.5.0's and 0.6.0's alike, draws none of them as a control of the id its engine mints that takes the keyboard, and the page does not guess at the ids it makes of its own.",
           "heldBy": "apps/demo/src/engine.test.ts"
         }
       ]
@@ -476,6 +471,28 @@
           "area": "demo",
           "says": "In WebKit 27.2, where a face's woff2 file does not arrive, text later typed in that face's range asks for its woff, so which file is asked for tells the server what kind of text was typed; with the files served, typing asks for nothing in any browser the gate runs.",
           "heldBy": "apps/demo/scripts/gate-facts.test.mjs"
+        }
+      ]
+    },
+    "0015": {
+      "reviewed": "sha256:83ee253a514dc0e158482fd30a5ad95a9514bbe65ae6bf4eeac1504502be5674",
+      "limitations": [
+        {
+          "area": "demo",
+          "says": "The demo wears formancy.ai's room as `@formancy/themes` 0.6.0 ships it, imported and copied nowhere, so its colours change only when this repository adopts a release that moves them, and are held to that package's `room.css`, not to formancy.ai's admin, which formancy holds to it.",
+          "heldBy": "apps/demo/scripts/gate-page.test.mjs"
+        },
+        {
+          "area": "demo",
+          "says": "The demo's form stands on Blueprint's white paper in the dark room, as formancy.ai's admin previews a form, so it is drawn as a person filling it sees it and not in the room's colours."
+        },
+        {
+          "area": "demo",
+          "says": "Every visitor's browser asks for every face the demo declares as the page starts, the room's Archivo among them: 31 WOFF2 files, 437,032 bytes in the build of 19 October 2026, so that nothing typed later asks for one."
+        },
+        {
+          "area": "forms",
+          "says": "The packages read forms through `@formancy/spec` 0.6.0, and Formancy Report 0.1.0 depends on 0.5.0, so an application that installs Report 0.1.0 beside them holds both copies; Report hashes its own definitions with its copy and names none of its types, so nothing one copy makes reaches the other."
         }
       ]
     }

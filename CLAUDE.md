@@ -34,12 +34,12 @@ Four things follow, and three of them have a guard:
   a `workspace:` link or a path
   ([0002](docs/decisions/0002-depend-on-upstream-never-copy-it.md)). Nothing
   is copied, stylesheets included: formancy.ai's admin colours are not
-  copied here, though Data and Report copy them. The demo wears what
-  `@formancy/themes` has released, imported, and formancy.ai's room
-  arrives with the first formancy release whose exports name
-  `./room.css`, as one import and an exact version (0012). A generic
-  improvement goes upstream through that repository's own contribution
-  rules, not into a patched copy here.
+  copied here, though Data copies them; Report imports them as this
+  repository does (formancy.ai-report 0034). The demo wears
+  formancy.ai's room as `@formancy/themes` releases it, `room.css`
+  imported after the workbench at the exact version its manifest pins
+  (0012, 0015). A generic improvement goes upstream through that
+  repository's own contribution rules, not into a patched copy here.
 - **Every package declares the source-available licence**, never Apache-2.0.
   `scripts/verify-licenses.mjs` refuses a manifest that says otherwise and a
   tarball without `LICENSE.md` and `NOTICE`. The realistic mistake is a
@@ -92,7 +92,7 @@ JavaScript number -- writes and reads FHIR JSON exactly, by a writer and a
 parser of its own, and holds the one `Refusal` every package refuses with
 ([0004](docs/decisions/0004-fhir-json-is-written-and-read-exactly-with-primitives-of-its-own.md)).
 `@formancy/health-questionnaire` exports a formancy form, read through
-`@formancy/spec` 0.5.0, as an SDC 4.0.0 Questionnaire, or refuses it whole
+`@formancy/spec` 0.6.0, as an SDC 4.0.0 Questionnaire, or refuses it whole
 ([0006](docs/decisions/0006-a-formancy-form-is-an-sdc-questionnaire-refused-whole-where-it-cannot-be-one.md)),
 and a submission of it as a QuestionnaireResponse walked from that
 Questionnaire's own mapping

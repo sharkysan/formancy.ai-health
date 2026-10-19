@@ -104,7 +104,8 @@ describe('a number answer', () => {
   })
 
   // formancy's step admits 2.0000001 on a step of one, within its
-  // tolerance of a millionth of a step (measured on @formancy/core 0.5.0);
+  // tolerance of a millionth of a step (measured on @formancy/core 0.5.0,
+  // and again on 0.6.0, 19 October 2026);
   // R4's integer does not. Refused, never rounded to 2. And a whole number
   // past R4's 32 bits, which formancy's number admits, is refused, never
   // wrapped.
@@ -127,7 +128,8 @@ describe('an answer the Questionnaire could not hold', () => {
   // formancy's engine holds a number field's value to a number only when
   // the field has a bound or a step, and a text field's, a checkbox's, a
   // hidden field's and a static text's not at all (measured on
-  // @formancy/core 0.5.0: 42 in a text field, 'abc' in a number field,
+  // @formancy/core 0.5.0, and again on 0.6.0, 19 October 2026: 42 in a
+  // text field, 'abc' in a number field,
   // 'yes' in a checkbox, 7 in a hidden field and a value under a static
   // text each validate there). Each would be an answer of the wrong type,
   // and is refused at its path.
@@ -153,7 +155,8 @@ describe('an answer the Questionnaire could not hold', () => {
   })
 
   // formancy's date shape does not check the calendar (2026-02-30
-  // validates on @formancy/core 0.5.0), and R4's date does; a date and
+  // validates on @formancy/core 0.5.0 and 0.6.0), and R4's date does; a
+  // date and
   // time is always UTC in formancy, so one with an offset is no formancy
   // answer; a time is HH:MM.
   test.each([
@@ -192,7 +195,7 @@ describe('an answer the Questionnaire could not hold', () => {
 })
 
 describe('no answer', () => {
-  // formancy's own reading of "no answer", @formancy/core 0.5.0's
+  // formancy's own reading of "no answer", @formancy/core 0.5.0's and 0.6.0's
   // `unanswered`: absent, null, a text of nothing but spaces, an empty
   // list. R4 has no null answer and no empty one, and FHIR JSON no empty
   // string: each is an item not written, and a response with none has no

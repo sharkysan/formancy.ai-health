@@ -38,6 +38,84 @@ export function stylesheets(root = app) {
   })
 }
 
+/**
+ * What @formancy/themes' room.css, as installed, sets on :root: each custom
+ * property by its name, with every `var()` of another of its own read
+ * through to that one's value, as a browser computes it, and the colour
+ * scheme it is drawn for (0015). Read from the package the manifest pins,
+ * never written here, so a release that moves a colour moves what the gate
+ * expects with it.
+ */
+export function roomOf(root = app) {
+  const css = readFileSync(createRequire(join(root, 'package.json')).resolve('@formancy/themes/room.css'), 'utf8').replaceAll(/\/\*[\s\S]*?\*\//g, '')
+  const declared = Object.fromEntries([...css.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)].map(([, name, value]) => [name, value.trim()]))
+  const through = (value, seen) => value.replaceAll(/var\(\s*(--[\w-]+)\s*\)/g, (whole, name) => (declared[name] === undefined || seen.includes(name) ? whole : through(declared[name], [...seen, name])))
+  const variables = Object.fromEntries(Object.entries(declared).map(([name, value]) => [name, through(value, [name])]))
+  return { variables, scheme: /color-scheme\s*:\s*([^;]+);/.exec(css)?.[1]?.trim() ?? null }
+}
+
+/** A byte, 0 to 255, of a colour's channel or alpha written as a number or a percentage of `whole`. */
+const byte = (written, whole) => Math.round(written.endsWith('%') ? (Number(written.slice(0, -1)) / 100) * 255 : (Number(written) / whole) * 255)
+
+/**
+ * Each colour of `value` -- #rgb, #rgba, #rrggbb, #rrggbbaa, rgb() or
+ * rgba(), with commas or without -- as #rrggbbaa, its alpha to the byte, as
+ * a minifier writes it: Vite's Lightning CSS builds an rgb() with a
+ * percentage alpha, room.css's --glass among them, as eight hex digits,
+ * the same colour in other words. A colour in another form is left as it
+ * is, and compared as written.
+ */
+export function canonicalColours(value) {
+  const hex = (bytes) => `#${bytes.map((each) => each.toString(16).padStart(2, '0')).join('')}`
+  return value
+    .replaceAll(/#([\da-f]{3,8})(?![\da-f])/gi, (whole, digits) => {
+      if (digits.length === 3 || digits.length === 4) return `${hex([...digits].map((digit) => Number.parseInt(digit + digit, 16)))}${digits.length === 3 ? 'ff' : ''}`
+      if (digits.length === 6 || digits.length === 8) return `#${digits.toLowerCase()}${digits.length === 6 ? 'ff' : ''}`
+      return whole
+    })
+    .replaceAll(/rgba?\(([^()]*)\)/gi, (whole, args) => {
+      const parts = args.split(/[\s,/]+/).filter((part) => part !== '')
+      if (parts.length !== 3 && parts.length !== 4) return whole
+      const bytes = [...parts.slice(0, 3).map((part) => byte(part, 255)), parts.length === 4 ? byte(parts[3], 1) : 255]
+      return bytes.every((each) => Number.isInteger(each) && each >= 0 && each <= 255) ? hex(bytes) : whole
+    })
+}
+
+/** A custom property's value as the gate compares it: its colours as #rrggbbaa, one quote, one space, none inside a bracket, as browsers and minifiers write a token list differently. */
+const tokens = (value) =>
+  canonicalColours(value)
+    .replaceAll('"', "'")
+    .replaceAll(/\s+/g, ' ')
+    .replaceAll(/\s*,\s*/g, ', ')
+    .replaceAll(/\(\s+/g, '(')
+    .replaceAll(/\s+\)/g, ')')
+    .trim()
+
+/**
+ * Whether the page, as built and served, is in formancy.ai's room: every
+ * custom property room.css sets holds its value on :root -- the
+ * workbench's --wb-* among them, which a workbench loaded after the room
+ * would turn light again, as room.css's header warns -- :root is drawn in
+ * its colour scheme, and what is behind the page is its --ground. jsdom
+ * applies no stylesheet and computes no custom property, so this is the
+ * browser's to say. Null when it holds; otherwise every property that is
+ * not so, and what it holds instead.
+ */
+export async function roomProblem(page, room = roomOf()) {
+  const names = Object.keys(room.variables)
+  if (names.length === 0 || room.scheme === null) return 'the installed room.css sets no custom property or no colour scheme, so the gate has nothing to hold the page to'
+  const ground = canonicalColours(room.variables['--ground'] ?? '')
+  if (!/^#[\da-f]{8}$/.test(ground)) return `room.css's --ground is ${String(room.variables['--ground'])}, not a colour the gate compares with what the page computes`
+  const held = await page.evaluate((each) => {
+    const style = getComputedStyle(document.documentElement)
+    return { values: Object.fromEntries(each.map((name) => [name, style.getPropertyValue(name)])), scheme: style.colorScheme, ground: getComputedStyle(document.body).backgroundColor }
+  }, names)
+  const wrong = names.filter((name) => tokens(held.values[name] ?? '') !== tokens(room.variables[name])).map((name) => `${name} is ${JSON.stringify(held.values[name] ?? '')}, not ${room.variables[name]}`)
+  if (held.scheme !== room.scheme) wrong.push(`:root is drawn ${JSON.stringify(held.scheme)}, not ${room.scheme}`)
+  if (canonicalColours(held.ground) !== ground) wrong.push(`the page's ground is ${held.ground}, not --ground's ${String(room.variables['--ground'])}`)
+  return wrong.length === 0 ? null : `${String(wrong.length)} of the room's ${String(names.length + 2)} not so: ${wrong.slice(0, 4).join('; ')}`
+}
+
 /** Every width breakpoint of `css`, in CSS pixels, by which side of it a rule takes: `max` or `min`. A unit the gate cannot turn into pixels is refused. */
 export function breakpointsOf(css) {
   const found = { max: [], min: [] }

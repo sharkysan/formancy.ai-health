@@ -54,7 +54,10 @@ What a host needs:
   WebKit as its page bundles them from the workspace ([below](#the-demo)),
   which shows a browser can run them and is not a host's install.
 - **What it supplies**: a form, as `@formancy/spec` reads it, which comes
-  with health-questionnaire at the exact version it depends on; a
+  with health-questionnaire at the exact version it depends on, 0.6.0 in
+  0.1.0 -- a host that runs Formancy Report 0.1.0 too holds Report's own
+  0.5.0 beside it, which hashes only Report's definitions
+  ([0015](../decisions/0015-the-demo-wears-formancy-ais-room-imported-from-formancy-0-6-0-and-the-packages-read-forms-through-the-same-release.md)); a
   submission, as formancy's engine holds it; a PDF's bytes as a
   `Uint8Array`; and the context each export names, in its package's
   README. For a CH ORF document, the referral's patient, author and orders

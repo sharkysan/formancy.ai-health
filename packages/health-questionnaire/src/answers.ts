@@ -2,8 +2,9 @@
  * One field's value in a formancy submission as the answers of its item
  * (0007): of the item's type, as the Questionnaire states it, or refused.
  *
- * What formancy holds, read on `@formancy/core` 0.5.0 on 17 October 2026.
- * `@formancy/spec` 0.5.0 types no submission: an answer is whatever the
+ * What formancy holds, read on `@formancy/core` 0.5.0 on 17 October 2026,
+ * and on 0.6.0 again on 19 October. `@formancy/spec` 0.6.0 types no
+ * submission: an answer is whatever the
  * engine's value holds at the field's data path. The engine checks less
  * than the types its own expression checker assumes (text a string,
  * number a double, checkbox a bool, hidden a string): a number field
@@ -25,7 +26,8 @@
  *   and a text's length in UTF-16 units, as both formancy and the
  *   validator count it.
  *
- * "No answer" is formancy's own (`unanswered` in `@formancy/core` 0.5.0):
+ * "No answer" is formancy's own (`unanswered` in `@formancy/core` 0.6.0,
+ * as in 0.5.0):
  * absent, null, a text of nothing but whitespace, an empty list. R4 has no
  * null answer and no empty list, so each is an item with no answer. A
  * checkbox left false is answered false, as it is formancy's value.
@@ -37,7 +39,7 @@ import type { QuestionnaireItem } from './resource.js'
 import type { QuestionnaireResponseAnswer, ResponseCoding } from './response-resource.js'
 import { dateOf, dateTimeOf, decimalOf, integerOf, timeOf } from './values.js'
 
-/** Whether formancy holds no answer in `value`, as `@formancy/core` 0.5.0's `unanswered` reads one -- but a checkbox's false, which is an answer. */
+/** Whether formancy holds no answer in `value`, as `@formancy/core`'s `unanswered` reads one, 0.5.0's and 0.6.0's -- but a checkbox's false, which is an answer. */
 export function unanswered(value: unknown): boolean {
   if (value === undefined || value === null) return true
   if (typeof value === 'string') return value.trim() === ''

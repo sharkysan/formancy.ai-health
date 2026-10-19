@@ -97,9 +97,9 @@ describe('docs/getting-started.md', () => {
       // Beside a published package, what the gate installs is pinned,
       // as the gate pins it: an unpinned one is whatever npm finds.
       expect(Object.keys(host.with).filter((package_) => !pinned.some((install) => install.name === package_)), `${name} pins`).toEqual([])
-      // And saved as the gate saves it, exactly: npm saves `@formancy/spec@0.5.0`
-      // as `^0.5.0`, and a reader's next install without the lockfile takes
-      // 0.5.1 beside health-questionnaire's 0.5.0 -- two copies of the form's
+      // And saved as the gate saves it, exactly: npm saves `@formancy/spec@0.6.0`
+      // as `^0.6.0`, and a reader's next install without the lockfile takes
+      // 0.6.1 beside health-questionnaire's 0.6.0 -- two copies of the form's
       // types, the thing section 1 warns of.
       expect(application.filter((install) => !install.exact).map((install) => install.name), `${name} saves exactly`).toEqual([])
     }

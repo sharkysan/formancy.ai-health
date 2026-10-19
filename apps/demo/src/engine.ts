@@ -9,7 +9,7 @@ import { LANGUAGES, WORDS } from './words/index.js'
 
 /**
  * What `now()`, `today()` and `random()` say to the form's rules: fixed,
- * and read by nothing. formancy 0.5.0's `createFormEngine` refuses a form
+ * and read by nothing. formancy 0.6.0's `createFormEngine` refuses a form
  * with logic rules and no capability source -- the engine never reads an
  * ambient clock, so that a server can replay a submission -- and the demo's
  * form has one rule, `interpreter == true`, which reads none of them. The
@@ -49,7 +49,7 @@ export interface FieldTarget {
 
 /**
  * The field types, and the types with a widget, as `type/widget`, that
- * formancy 0.5.0's React renderer draws as a control of the id its engine
+ * formancy 0.6.0's React renderer draws as a control of the id its engine
  * mints which takes the keyboard's focus: measured on the DOM it draws of
  * every field type and widget formancy's spec has (engine.test.ts). No
  * other has one to lead to: a radio group's and a set of tick boxes'

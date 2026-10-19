@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@formancy/health-core": "workspace:*",
-    "@formancy/spec": "0.5.0"
+    "@formancy/spec": "0.6.0"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "catalog:",

@@ -1,6 +1,6 @@
 # 0002 — Depend on released formancy, Formancy Report and Formancy Data packages at exact versions; never copy them, stylesheets included
 
-- **Status:** accepted; its page waits for no stylesheet formancy has not released, and wears `@formancy/themes` 0.5.0's workbench and Blueprint until a release ships formancy.ai's room, by [0012](0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)
+- **Status:** accepted; its page waits for no stylesheet formancy has not released, and wears `@formancy/themes` 0.5.0's workbench and Blueprint until a release ships formancy.ai's room, by [0012](0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md); formancy.ai's room imported, `room.css` from formancy 0.6.0, the release that ships it, by [0015](0015-the-demo-wears-formancy-ais-room-imported-from-formancy-0-6-0-and-the-packages-read-forms-through-the-same-release.md)
 - **Date:** 2026-10-16
 - **Deciders:** Daniel Bacher
 - **Verified by:** `scripts/upstream-deps.mjs`, through

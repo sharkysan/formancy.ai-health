@@ -32,7 +32,7 @@ const unequal = (key: string, answer: string) =>
 describe('a visibility rule', () => {
   // formancy shows `x == 'a'` when x is 'a' and hides it otherwise,
   // unanswered included, and so does R4's `=`. Measured on @formancy/core
-  // 0.5.0.
+  // 0.5.0, and again on 0.6.0, 19 October 2026.
   test.each([
     ["country == 'CH'", `"enableWhen":[{"question":"country","operator":"=","answerCoding":${coding('country', 'CH')}}]`],
     ['consent == true', '"enableWhen":[{"question":"consent","operator":"=","answerBoolean":true}]'],
@@ -100,7 +100,8 @@ describe('a visibility rule', () => {
 
   // CEL reads a number literal as the double nearest it: on
   // @formancy/core 0.5.0, `weight == 0.30000000000000001` shows its field
-  // for an answer of 0.3 (measured 17 October 2026). R4 compares the
+  // for an answer of 0.3 (measured 17 October 2026, and on 0.6.0 on 19
+  // October). R4 compares the
   // digits, and would hide it. Fifteen significant digits are as many as
   // every double keeps, so a literal of more, or one so small that a
   // double keeps fewer, may mean another number in each, and is refused.
@@ -131,7 +132,8 @@ describe('a visibility rule', () => {
     ['a string for a number', "age == '18'"],
     ['an empty string', "reason == ''"],
     // formancy shows `reason == '  '` for an answer of two spaces
-    // (measured on @formancy/core 0.5.0 in review, 17 October 2026), and
+    // (measured on @formancy/core 0.5.0 in review, 17 October 2026, and on
+    // 0.6.0 on 19 October), and
     // its `unanswered` reads that answer as none, which the response
     // therefore never writes (0007): R4's `=` would hide the item
     // formancy showed, and refuse what was typed into it.

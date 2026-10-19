@@ -59,7 +59,7 @@ export function refusedOnPurpose(sample: Sample, pdf: Uint8Array): readonly Refu
   const documentWith = (change: (context: Sample['chOrfContext']) => Sample['chOrfContext']) =>
     said(() => toChOrfDocument({ ...change(sample.chOrfContext), response: { fullUrl: sample.names.response, questionnaireResponse: response } }))
   return [
-    // A spec version no formancy release has written: 0.5.0's is 4.
+    // A spec version no formancy release has written: 0.6.0's is 4, as 0.5.0's was.
     { id: 'version', maker: '@formancy/health-questionnaire', said: questionnaireWith({ specVersion: '5' as FormSchema['specVersion'] }) },
     // A `!=` under `&&` (0007): the unanswered case of the `!=` would need
     // an enableWhen nested in another, which SDC has not.

@@ -1,5 +1,5 @@
 /**
- * The page in Italian, addressed as "voi". formancy 0.5.0 ships no
+ * The page in Italian, addressed as "voi". formancy 0.6.0 ships no
  * Italian, so the words its renderer draws for the demo's form are given
  * here too (`formancy`), and an Italian page draws none of them in English.
  */

@@ -141,7 +141,7 @@ describe("the page's words", () => {
     expect(READ_OUT[language].filter((part) => !WORDS[language].readOut.intro.includes(part))).toEqual([])
   })
 
-  // The Questionnaire's title is a plain string in formancy's spec 0.5.0,
+  // The Questionnaire's title is a plain string in formancy's spec 0.6.0,
   // written untranslated (0006), and the read-out says so of it: the step
   // that said the Questionnaire was in four languages would say of the
   // title what the read-out below it denies.
@@ -159,7 +159,7 @@ describe("the page's words", () => {
   // form is what becomes the Questionnaire, item by item, its keys the
   // linkIds the read-out names, in every language.
   test('say in the form’s step that the form becomes the Questionnaire, its keys the linkIds', () => {
-    for (const language of LANGUAGES) expect(WORDS[language].form.intro('0.5.0'), language).toMatch(/Questionnaire[^]*linkId/)
+    for (const language of LANGUAGES) expect(WORDS[language].form.intro('0.6.0'), language).toMatch(/Questionnaire[^]*linkId/)
   })
 
   // WCAG 2.2 SC 2.5.3, Label in Name: a way to a field is named by what it

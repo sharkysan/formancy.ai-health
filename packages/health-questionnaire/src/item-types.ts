@@ -4,7 +4,8 @@
  * read it, and so do the conditions, which write an answer of the type its
  * question has.
  *
- * Read against `@formancy/spec` 0.5.0's field types and R4's
+ * Read against `@formancy/spec` 0.5.0's field types, which 0.6.0's are,
+ * and R4's
  * QuestionnaireItemType (https://hl7.org/fhir/R4/valueset-item-type.html,
  * read on 17 October 2026). A type with no item that says what it
  * collects is `undefined`, and refused.

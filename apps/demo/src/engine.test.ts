@@ -9,7 +9,7 @@ import { engineFor, FIXED_CAPABILITIES, targetOf } from './engine.js'
 import { LANGUAGES } from './words/index.js'
 
 /**
- * formancy 0.5.0's engine over the demo's form, as the page builds it: what
+ * formancy 0.6.0's engine over the demo's form, as the page builds it: what
  * it needs to start, and what it holds of the sample. The corpus's response
  * is made of the sample's answers as written in demo-referral.mjs; the page
  * makes its own of what the engine holds of them, so the two must be one.
@@ -28,8 +28,11 @@ describe("the demo's engine", () => {
     expect([FIXED_CAPABILITIES.now(), FIXED_CAPABILITIES.today(), FIXED_CAPABILITIES.random()]).toEqual([1_792_224_000_000, '2026-10-17', 0])
   })
 
-  // Measured with formancy 0.5.0 on 17 October 2026: the engine hands back
-  // the sample's answers unchanged in every language. An engine that
+  // Measured with formancy 0.5.0 on 17 October 2026, and with 0.6.0, whose
+  // engine replaces a value handed in for a computed field with its rule's
+  // and clears the fields of a group a rule hides (the demo's form has no
+  // computed field and no group), on 19 October: the engine hands back the
+  // sample's answers unchanged in every language. An engine that
   // normalised one -- a date, the hidden field -- would make the page's
   // first response other bytes than the corpus's.
   test("holds the sample's answers as written, in every language", () => {
@@ -91,7 +94,7 @@ describe("the way from the Questionnaire's read-out to a field", () => {
   })
 
   // Read from the DOM, which is what is measured: for every field type
-  // formancy 0.5.0's spec has, containers included, and every widget,
+  // formancy 0.6.0's spec has, containers included, and every widget,
   // whether its React renderer draws an element of the engine's id that
   // takes the keyboard. A radio group's options take ids of the renderer's
   // own making and its fieldset none (read in its RadioGroupField on 18

@@ -30,12 +30,29 @@ export function derivedLimitations(report) {
   else if (ranged.length === 0) sentences.push('Every runtime dependency is published at an exact version, the one the suites ran.')
   else sentences.push(`${prose(ranged.map((entry) => code(entry.name)))} ${ranged.length === 1 ? 'is' : 'are'} published as a range; the suites ran the version${ranged.length === 1 ? '' : 's'} *Tested on* names, and an install may resolve another.`)
   // Every version a clean install resolved that the suites did not load: a
-  // consumer's, then the guide's project's, said as the guide's.
-  const past = (entry, fresh, where) => fresh.filter((version) => version.version !== (entry.loaded ?? entry.version)).map((version) => `${code(entry.name)} ${version.version}${where} (the suites ran ${entry.loaded ?? entry.version})`)
-  const moved = [
-    ...[...testedOn.runtime, ...testedOn.upstream].flatMap((entry) => past(entry, entry.fresh, '')),
-    ...testedOn.upstream.flatMap((entry) => past(entry, entry.guide ?? [], ' in the guide’s project')),
-  ]
+  // consumer's, then the guide's project's, said as the guide's. The
+  // suites may load one package at two versions -- the packages'
+  // `@formancy/spec` and the one Formancy Report brings health-corpus
+  // (0015). What an install resolved at the top of a project is what the
+  // published packages load there wherever one depends on the package, so
+  // it is held to the versions they ran against, its shipped rows (a
+  // runtime dependency is one by what it is); a package none depends on is
+  // there for what the guide installs beside them, and is held to every
+  // row of it. Each version is said once, against those it is held to.
+  const past = (entries, freshOf, where) => {
+    const ships = new Set(entries.filter((entry) => entry.shipped !== false).map((entry) => entry.name))
+    const loaded = new Map()
+    for (const entry of entries) {
+      if (ships.has(entry.name) && entry.shipped === false) continue
+      loaded.set(entry.name, distinct([...(loaded.get(entry.name) ?? []), entry.loaded ?? entry.version]).sort())
+    }
+    return [...loaded].flatMap(([name, versions]) =>
+      distinct(entries.filter((entry) => entry.name === name).flatMap((entry) => (freshOf(entry) ?? []).map((version) => version.version)))
+        .filter((version) => !versions.includes(version))
+        .map((version) => `${code(name)} ${version}${where} (the suites ran ${prose(versions)})`),
+    )
+  }
+  const moved = [...past([...testedOn.runtime, ...testedOn.upstream], (entry) => entry.fresh, ''), ...past(testedOn.upstream, (entry) => entry.guide, ' in the guide’s project')]
   if (moved.length > 0) sentences.push(`A clean npm install on ${String(testedOn.installedAt).slice(0, 10)} resolved ${prose(moved)}, which no suite ran.`)
 
   // Where the packed packages ran: Node alone. The demo's browser gate ran

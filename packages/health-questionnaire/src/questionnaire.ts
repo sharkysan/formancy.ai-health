@@ -2,7 +2,7 @@
  * A formancy form as an SDC Questionnaire for FHIR R4, or refused whole
  * (0006).
  *
- * The form is read through `@formancy/spec` 0.5.0, as formancy defines it:
+ * The form is read through `@formancy/spec` 0.6.0, as formancy defines it:
  * a version this package does not read is refused before anything else,
  * since nothing is known about what it means, and a form formancy's own
  * validator refuses is refused with each of its errors' paths. Then every
@@ -29,7 +29,7 @@ import { ruleEffects } from './rules.js'
 import { Texts } from './texts.js'
 
 /**
- * The form spec versions this package maps: those `@formancy/spec` 0.5.0
+ * The form spec versions this package maps: those `@formancy/spec` 0.6.0
  * reads, each a superset of the one before (its `SPEC_VERSIONS`). Listed
  * here rather than read from the spec, so that a spec release that reads
  * another fails this package's test until somebody has decided what it

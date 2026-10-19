@@ -7,7 +7,7 @@
  * refused where it has none, naming the property:
  *
  * - `required` is `required`, where formancy and R4 mean the same by it:
- *   an answer is there (`unanswered` in `@formancy/core` 0.5.0). Where
+ *   an answer is there (`unanswered` in `@formancy/core` 0.5.0 and 0.6.0). Where
  *   they do not, it is refused (REQUIRED_REFUSED).
  * - `label` is `text`, with its translations (texts.ts).
  * - `maxLength` is `maxLength`, `minLength` the `minLength` extension;

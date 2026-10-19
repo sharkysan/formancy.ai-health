@@ -22,7 +22,7 @@
  * formancy's `resolvedLocale`, no region falls back to its language, so a
  * form with `de` has no `de-CH`.
  *
- * The form's title is a plain string in `@formancy/spec` 0.5.0, so it is
+ * The form's title is a plain string in `@formancy/spec` 0.6.0, so it is
  * written in the default language and never translated: it is the form's
  * name, not a question anybody answers.
  */

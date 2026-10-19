@@ -2,13 +2,17 @@
 // modules, the language the browser prefers, and the page.
 //
 // formancy's workbench first, the panes and controls formancy's tools are
-// drawn with, as @formancy/themes 0.5.0 ships it, light; then Blueprint,
-// which dresses the form on its sheet; then the faces, from this build.
-// Imported, never copied (0002, 0012): the page's own stylesheet states
-// no colour and declares no variable, and wears formancy.ai's room the day
-// a formancy release ships room.css, as one import here and a version in
-// the manifest. styles.test.ts holds the order and the rest.
+// drawn with, light as it ships; then formancy.ai's room, the admin's dark
+// bench, which sets the workbench's colours to its own and must come
+// after it, since both say :root; then Blueprint, which dresses the form
+// on its paper, as the admin's previews are; then the faces, from this
+// build. Each as @formancy/themes ships it at the release the manifest
+// pins, imported, never copied (0002, 0012, 0015): the page's own
+// stylesheet states no colour and declares no variable. styles.test.ts
+// holds the order and the rest, and the browser gate the room as the
+// browser computes it.
 import '@formancy/themes/workbench.css'
+import '@formancy/themes/room.css'
 import '@formancy/themes/blueprint.css'
 import './styles/fonts.css'
 import './styles/demo.css'
