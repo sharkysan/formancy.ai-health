@@ -8,6 +8,19 @@ Loosely [Keep a Changelog](https://keepachangelog.com), with reasons attached â€
 a line that says only *what* changed is rarely the line you need six months
 later.
 
+## Unreleased
+
+**A release's SBOM check reads which version each published package is
+given.** It held every copy of a runtime dependency's name to the one
+version the suites loaded. Formancy Report's 0.2.0 rehearsal was refused
+for that on a correct SBOM: the install held `@noble/hashes` twice,
+report-spec's 2.4.0 and the 1.8.0 pdfkit brings (formancy.ai-report
+0017). No published package here has a runtime dependency of its own, so
+nothing was refused here; the first one added is now held where the
+package that declares it is given it, in the SBOM's dependency graph, and
+an SBOM that records no such dependency is refused. Upstream packages are
+still held by name.
+
 ## 0.1.0 â€” 2026-10-19
 
 **The first release, a developer preview.** It is for a vendor to evaluate
