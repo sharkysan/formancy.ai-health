@@ -102,10 +102,11 @@ meta; Health has no page meant to be found ([0012](../docs/decisions/0012-a-demo
 
 ## Secrets the workflows expect
 
-Neither was set on 17 October 2026, and both are the maintainer's to add before the first
-release ([`RELEASING.md`](../RELEASING.md#before-the-first-release)): read
-with `gh api` on 17 October 2026, the repository holds no secret and the
-`npm` environment none, its deployment policy admitting tags `v*` alone.
+Both were set by the maintainer on 19 October 2026
+([`RELEASING.md`](../RELEASING.md#before-the-first-release)): read with
+`gh api` that day, the repository holds `CODECOV_TOKEN` and the `npm`
+environment `NPM_TOKEN`, its deployment policy admitting tags `v*` alone,
+and 0.1.0's tag read the npm token the same day.
 
 | Secret | Used by | Without it |
 |---|---|---|

@@ -15,9 +15,9 @@ import { collectStep, expectedKeys, gateJobs, readWorkflow, validatorTestFiles }
  * holds `contents: read` and no secret, and pins what it checked; and
  * everything permanent is in one job behind one condition, which publishes
  * only what was pinned, with npm, which nothing can undo, as late as it can
- * be. This holds the shape, not the behaviour: the publish job has never run
- * here, and a rehearsal exercises
- * everything else.
+ * be. This holds the shape, not the behaviour: by 19 October 2026 the
+ * publish job had run once, for 0.1.0, and a rehearsal exercises everything
+ * else.
  */
 const gates = readWorkflow(undefined, '.github/workflows/gates.yml')
 const ci = readWorkflow(undefined, '.github/workflows/ci.yml')

@@ -22,33 +22,17 @@ when it stops being true; of its prose, a guard holds its install lines
 and its links, and review the rest
 ([0011](./docs/decisions/0011-a-release-report-is-derived-from-the-run-that-gated-it.md)).
 
-> **Status, 19 October 2026: 0.1.0, a developer preview, is ready to tag
-> and not released.** Nothing is on npm and no tag is pushed. The
-> packages' manifests say 0.1.0, and they read forms through formancy
-> 0.6.0, released on 18 October, from whose `@formancy/themes` the demo
-> wears formancy.ai's room ([0015](./docs/decisions/0015-the-demo-wears-formancy-ais-room-imported-from-formancy-0-6-0-and-the-packages-read-forms-through-the-same-release.md)).
-> On GitHub the gates ran on `main` on 19 October, at the commit that
-> brought formancy 0.6.0, and every job passed, the release report among
-> them. No rehearsal of the release workflow has run, so its SBOM step has
-> run on no runner.
-> A release report built from one machine's runs on 19 October -- the
-> guards, every package's suite, the demo's browser gate in Chromium and
-> Firefox, the install gate and the validator gate -- found no problem,
-> as a partial report: it allowed the verify, install, validator and
-> browser jobs' results missing, as a machine must, the browser's since
-> that machine runs no WebKit, so the gates that rest on a job's result
-> are judged only on GitHub
-> ([`RELEASING.md`](./RELEASING.md#the-release-report)); the same day the
-> browser gate passed in Chromium, Firefox and WebKit in Playwright's
-> Linux image too. On that machine `pnpm check:pkg` passed with pnpm's
-> version check set to warn -- `pnpm_config_pm_on_fail=warn`, passed
-> through turbo with `--env-mode=loose` -- since corepack's pnpm is not
-> the release the manifest pins. The secrets the workflows expect are set
-> ([`RELEASING.md`](./RELEASING.md#before-the-first-release)), and what is
-> left is the maintainer's -- the rehearsal and the tag; the changelog's
-> section is 0.1.0's, dated 19 October 2026, and moves to the
-> tag's day through a pull request if the tag is pushed on another -- and what
-> 0.1.0 holds, and leaves out, is [below](#what-010-is).
+> **Status, 19 October 2026: 0.1.0, a developer preview, is released.**
+> Its packages are on npm, with provenance, and
+> [the GitHub release](https://github.com/sharkysan/formancy.ai-health/releases/tag/v0.1.0)
+> carries the signed SBOM and release report of the run that published
+> them. That run, the tag's, passed every job, and a rehearsal of the
+> release workflow before it, on the same commit, every job but
+> `npm-token` and `publish`, which a rehearsal skips; `check`, which holds
+> the SBOM to the report, passed in both. The packages read forms
+> through formancy 0.6.0, released on 18 October, from whose
+> `@formancy/themes` the demo wears formancy.ai's room ([0015](./docs/decisions/0015-the-demo-wears-formancy-ais-room-imported-from-formancy-0-6-0-and-the-packages-read-forms-through-the-same-release.md)).
+> What 0.1.0 holds, and leaves out, is [below](#what-010-is).
 >
 > Built: the licence, the pipeline that proves the packages, as Formancy
 > Report's proves its own, and four packages.

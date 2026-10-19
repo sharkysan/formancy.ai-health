@@ -16,8 +16,8 @@ import { packageTarball } from './test-archive.mjs'
  * green and whole (0011; formancy.ai-report 0014). Every job of a run can
  * write to its artefacts, so the job that holds the npm token takes
  * nobody's word for what it was handed. The functions pure; the command
- * line run as the release runs it, on files this file writes. The release
- * has never run, and RELEASING.md says so.
+ * line run as the release runs it, on files this file writes. 0.1.0's
+ * rehearsal and its release have run them, and they refused nothing.
  */
 const CORE = { name: '@formancy/health-core', version: '0.1.0', license: LICENSE_FIELD }
 const tarball = (manifest = CORE, options) => ({ path: 'release-tarballs/formancy-health-core-0.1.0.tgz', bytes: packageTarball(manifest, options) })
