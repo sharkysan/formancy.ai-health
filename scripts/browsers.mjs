@@ -35,6 +35,16 @@
 /** Every browser the gates run in, by Playwright's name for it, in the order the legs and the report list them. */
 export const BROWSERS = Object.freeze(['chromium', 'firefox', 'webkit'])
 
+/**
+ * The one browser the README's pictures of the demo are taken in, and
+ * checked in by CI's browser job, in this browser's leg alone (0016):
+ * Chromium, whose canvas encodes the WebP the README shows, as
+ * formancy.ai-report's and formancy.ai-data's pictures are taken. collect.mjs
+ * reads the pictures' check in this leg, and the report holds its launch to
+ * this browser's pin.
+ */
+export const PICTURES_BROWSER = 'chromium'
+
 /** The variable the gate reads, and turbo.json passes to test:browser (browsers.test.mjs holds the two). */
 export const VARIABLE = 'FORMANCY_BROWSERS'
 

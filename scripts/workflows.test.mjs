@@ -458,6 +458,24 @@ describe('gates.yml', () => {
     expect(JSON.parse(readFileSync(join(repo, 'turbo.json'), 'utf8')).tasks['test:browser']).toEqual({ dependsOn: ['build'], passThroughEnv: ['FORMANCY_BROWSERS'], cache: false })
   })
 
+  // The README's pictures (0016), walked again on the page the gate built
+  // and held to the text they were recorded showing. In the one browser
+  // they are taken in, its leg alone (browsers.test.mjs holds the
+  // condition to PICTURES_BROWSER); after the gate, whose turbo run built
+  // the page, and run when the gate failed too, so a red gate does not hide
+  // the pictures' answer; before the collect step, which reads the file the
+  // check writes in apps/demo/test-results, uploaded with the gate's; and
+  // the check, never a retake, which would write pictures in CI.
+  test('checks the README’s pictures in Chromium’s leg, after the gate and before it collects', () => {
+    const browser = gates.jobs.browser.steps
+    const pictures = browser.filter((step) => String(step.run ?? '').includes('pictures'))
+    expect(pictures.map((step) => step.run)).toEqual(['node scripts/pictures.mjs --check'])
+    const at = browser.indexOf(pictures[0])
+    expect(at).toBeGreaterThan(browser.findIndex((step) => step.run === 'pnpm exec turbo run test:browser --filter=@formancy/health-demo'))
+    expect(at).toBeLessThan(browser.indexOf(collectStep(gates.jobs.browser)))
+    expect(pictures[0].if).toContain('!cancelled()')
+  })
+
   // Without --force a suite's results could be a cached replay of another
   // commit's; without --summarize nothing records its own start and end.
   test('runs each package fresh, with its own timing, the package from the environment', () => {

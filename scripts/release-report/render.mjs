@@ -7,6 +7,7 @@
 // the line per section saying where it comes from.
 
 import { BROWSERS, browserName, FACTS, prose } from '../browsers.mjs'
+import { unwalked } from './results.mjs'
 
 const code = (text) => `\`${text}\``
 const cell = (text) => String(text ?? '').replaceAll('|', '\\|').replaceAll('\n', ' ')
@@ -59,7 +60,9 @@ export function derivedLimitations(report) {
   // the packages in a browser as the workspace builds them, bundled by
   // Vite into the demo's page (0012), and never the tarballs; which
   // browser, from what the gate recorded, and without it, that none did.
-  const launched = testedOn.browsers.map((entry) => `${browserName(entry.name)} ${entry.version}`)
+  // The gates' launches alone: the README pictures' check walks the page
+  // too, and is no gate that ran the packages (0016).
+  const launched = distinct(results.browserGates.filter((gate) => gate.browser !== null).map((gate) => `${browserName(gate.browser.name)} ${gate.browser.version}`))
   const demo = launched.length === 0 ? 'no browser gate ran the demo, which bundles the packages as the workspace builds them' : `the browser gate ran the demo, which bundles the packages as the workspace builds them, in ${prose(launched)} alone`
   sentences.push(
     results.install === null
@@ -132,7 +135,7 @@ const METHOD = [
     '`scripts/release-report/tested-on.mjs` over the checkout -- the published manifests, what is installed, `pnpm-workspace.yaml`’s catalog, every workflow’s `setup-node`, playwright-core’s `browsers.json` for the build Playwright pins, and the tuple `scripts/compatibility.mjs` reads for the README -- the install gate’s `test-results/install.json` for what each project’s clean install resolved, a consumer’s apart from the guide’s, each browser gate’s own record of the browser it launched, and the validator gate’s `test-results/validator.json` for the validator and the Java it ran',
   ],
   ['Results', 'each package’s `test-results/vitest.json` and `coverage/coverage-summary.json`, turbo’s run summary (`--summarize`), the repository guards’ `test-results/vitest.json`, and the install gate’s `test-results/install.json`, held to the projects `scripts/install-hosts.mjs` plans'],
-  ['Browser', 'each app’s `test-results/browser-<browser>.json`, which its browser gate writes however it ends, for every browser of `scripts/browsers.mjs`'],
+  ['Browser', 'each app’s `test-results/browser-<browser>.json`, which its browser gate writes however it ends, for every browser of `scripts/browsers.mjs`; and each app’s `test-results/pictures.json`, which its README pictures’ check writes however it ends, in the browser the pictures are taken in, held to the scenes `scripts/pictures/scenes.json` gives the app'],
   ['Validator', 'the gate’s `test-results/validator.json`, which `scripts/validator.mjs` writes however it ends, held to `docs/release/validator.json` and `docs/release/ig-packages.json`; and the validator job’s `test-results/vitest.json` of the registers’ test, whose passes account for the cases `verify` skips'],
   ['Build identity', '`scripts/release/dist-hash.mjs` over every published package’s `dist/` in every job, and over each tarball’s built files'],
   ['Release gates', '`docs/release/gates.json`, the report job’s `needs`, and `git log` for a document’s last change'],
@@ -183,7 +186,7 @@ function browsersLine({ browser, browsers, axe }) {
 /** A launched browser as a cell: its name, version and how it was launched. */
 const launchedCell = (launched) => (launched === null ? 'none' : `${launched.name} ${launched.version}${launched.headless === undefined ? '' : launched.headless ? ', headless' : ', headed'}`)
 
-/** What jsdom cannot see, measured in a browser: each browser gate in each browser, with its checks and the passes it planned and made. */
+/** What jsdom cannot see, measured in a browser: each browser gate in each browser, with its checks and the passes it planned and made, and each app's README pictures' check. */
 function browserSection({ results }) {
   const gates = results.browserGates
   return [
@@ -210,6 +213,26 @@ function browserSection({ results }) {
         ),
     '',
     factsTable(),
+    '',
+    picturesTable(results.pictures),
+  ].join('\n')
+}
+
+/**
+ * Each app's README pictures' check (0016): the scenes it walked of those
+ * scripts/pictures/scenes.json gives the app, the ones it did not, and the
+ * pictures whose page now says something else.
+ */
+function picturesTable(pictures) {
+  return [
+    "Each app's README pictures' check, in the browser the pictures are taken in (`scripts/browsers.mjs`'s `PICTURES_BROWSER`, 0016), held to every scene `scripts/pictures/scenes.json` gives the app. An error, a scene not walked or walked that scenes.json does not give, a picture whose page now says something else, or a browser launched otherwise than Playwright's pin for that browser fails the run.",
+    '',
+    pictures.length === 0
+      ? 'No pictures’ check left results in this run.'
+      : table(
+          ['Pictures’ check', 'Launched', 'Playwright', 'Scenes walked of scenes.json’s', 'Not walked', 'Problems found', 'Wall time'],
+          pictures.map((check) => [check.app, launchedCell(check.browser), check.playwright ?? 'not recorded', `${String(check.walked.length)} of ${String(check.planned.length)}`, unwalked(check).join(', ') || 'none', check.problems.length, seconds(check.wallMs)]),
+        ),
   ].join('\n')
 }
 

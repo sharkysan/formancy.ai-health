@@ -1,0 +1,163 @@
+{
+  "demo-form": {
+    "file": "docs/images/readme/demo-form.webp",
+    "captured": "2026-10-20",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 2,
+    "locale": "en-US",
+    "timezone": "UTC",
+    "css": {
+      "width": 608,
+      "height": 1076
+    },
+    "bytes": 133928,
+    "sha256": "d9c36172e02811fe5592bac8038240ce6e45aee7554bf6ca3011b1a4873b6f2c",
+    "look": {
+      "platform": "win32-x64",
+      "playwright": "1.64.1",
+      "chromium": "156.0.8078.4",
+      "fonts": {
+        "Archivo": "v25",
+        "IBM Plex Mono": "v20",
+        "IBM Plex Sans": "v23"
+      }
+    },
+    "data": "the corpus’s synthetic demo referral, as the demo’s build carries it",
+    "stylesheet": "sha256 0b16909714d16665bf0eb921850cb6db63ffb13af4e7d6f4284bf9181c34e784 of the stylesheets src/main.tsx imports, the themes as installed among them",
+    "text": {
+      "Form": "- region \"The form\":\n  - heading \"The form\" [level=2]\n  - paragraph: \"A synthetic referral, drawn by formancy’s React renderer 0.6.0. This form is what becomes the Questionnaire among the resources: each field an item, its key the item’s linkId. Change an answer, and the resources are made again from what you entered.\"\n  - text: Question for the specialist*\n  - textbox \"Question for the specialist*\": Synthetische Fragestellung, ohne klinische Bedeutung\n  - text: Specialty*\n  - combobox \"Specialty*\":\n    - option\n    - option \"Dermatology\" [selected]\n    - option \"Cardiology\"\n    - option \"Orthopaedics\"\n    - option \"Ophthalmology\"\n  - group \"The patient's language\":\n    - text: The patient's language\n    - radio \"Deutsch\"\n    - text: Deutsch\n    - radio \"Français\" [checked]\n    - text: Français\n    - radio \"Italiano\"\n    - text: Italiano\n    - radio \"English\"\n    - text: English\n  - text: An interpreter is needed\n  - checkbox \"An interpreter is needed\" [checked]\n  - text: Language to interpret\n  - textbox \"Language to interpret\": Französisch\n  - text: Appointment possible from\n  - textbox \"Appointment possible from\": 2026-11-02\n  - text: Practice phone for questions\n  - textbox \"Practice phone for questions\": 000 000 00 00\n  - button \"To the resources\"\n  - paragraph: \"The sample’s answers, unchanged: every resource shown is an entry of the synthetic corpus that CI’s validator gate judges, byte for byte.\"\n  - status: The QuestionnaireResponse and the CH ORF document are made from your answers."
+    }
+  },
+  "demo-changed": {
+    "file": "docs/images/readme/demo-changed.webp",
+    "captured": "2026-10-20",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 2,
+    "locale": "en-US",
+    "timezone": "UTC",
+    "css": {
+      "width": 840,
+      "height": 855
+    },
+    "bytes": 119564,
+    "sha256": "0eceedb527a9769c5c796affd3fbbc89c74d5d2627004cb07a2411f5bd09e2f6",
+    "look": {
+      "platform": "win32-x64",
+      "playwright": "1.64.1",
+      "chromium": "156.0.8078.4",
+      "fonts": {
+        "Archivo": "v25",
+        "IBM Plex Mono": "v20",
+        "IBM Plex Sans": "v23"
+      }
+    },
+    "data": "the corpus’s synthetic demo referral, as the demo’s build carries it",
+    "stylesheet": "sha256 0b16909714d16665bf0eb921850cb6db63ffb13af4e7d6f4284bf9181c34e784 of the stylesheets src/main.tsx imports, the themes as installed among them",
+    "text": {
+      "Response": "- region \"The answers, as a QuestionnaireResponse\":\n  - heading \"The answers, as a QuestionnaireResponse\" [level=2]\n  - paragraph: The answers to that Questionnaire, claiming CH ORF’s profile for a response, as the CH ORF document carries them.\n  - paragraph: Made by @formancy/health-questionnaire.\n  - group:\n    - text: Show the JSON\n    - region \"The answers, as a QuestionnaireResponse as JSON\": \"{ \\\"resourceType\\\": \\\"QuestionnaireResponse\\\", \\\"meta\\\": { \\\"profile\\\": [ \\\"http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaireresponse|4.0.0\\\", \\\"http://fhir.ch/ig/ch-orf/StructureDefinition/ch-orf-questionnaireresponse|3.0.2\\\" ] }, \\\"questionnaire\\\": \\\"https://forms.synthetic.invalid/Questionnaire/demo-referral|1\\\", \\\"status\\\": \\\"completed\\\", \\\"subject\\\": { \\\"reference\\\": \\\"urn:uuid:d3a1e5c2-7b4f-4c9e-a6d8-2f1b3c4d5e02\\\" }, \\\"authored\\\": \\\"2026-10-17T10:00:00+02:00\\\", \\\"author\\\": { \\\"reference\\\": \\\"urn:uuid:d3a1e5c2-7b4f-4c9e-a6d8-2f1b3c4d5e05\\\" }, \\\"source\\\": { \\\"reference\\\": \\\"urn:uuid:d3a1e5c2-7b4f-4c9e-a6d8-2f1b3c4d5e02\\\" }, \\\"item\\\": [ { \\\"linkId\\\": \\\"question\\\", \\\"answer\\\": [ { \\\"valueString\\\": \\\"Geänderte synthetische Fragestellung\\\" } ] }, { \\\"linkId\\\": \\\"specialty\\\", \\\"answer\\\": [ { \\\"valueCoding\\\": { \\\"system\\\": \\\"https://forms.synthetic.invalid/Questionnaire/demo-referral/specialty\\\", \\\"code\\\": \\\"dermatology\\\", \\\"display\\\": \\\"Dermatologie\\\" } } ] }, { \\\"linkId\\\": \\\"language\\\", \\\"answer\\\": [ { \\\"valueCoding\\\": { \\\"system\\\": \\\"https://forms.synthetic.invalid/Questionnaire/demo-referral/language\\\", \\\"code\\\": \\\"fr\\\", \\\"display\\\": \\\"Français\\\" } } ] }, { \\\"linkId\\\": \\\"interpreter\\\", \\\"answer\\\": [ { \\\"valueBoolean\\\": true } ] }, { \\\"linkId\\\": \\\"interpreter_language\\\", \\\"answer\\\": [ { \\\"valueString\\\": \\\"Französisch\\\" } ] }, { \\\"linkId\\\": \\\"available_from\\\", \\\"answer\\\": [ { \\\"valueDate\\\": \\\"2026-11-02\\\" } ] }, { \\\"linkId\\\": \\\"contact_phone\\\", \\\"answer\\\": [ { \\\"valueString\\\": \\\"000 000 00 00\\\" } ] } ] }\"\n  - paragraph:\n    - link \"Download questionnaireresponse-demo-referral.json\":\n      - /url: blob:http://demo.invalid/<uuid>"
+    }
+  },
+  "demo-refused": {
+    "file": "docs/images/readme/demo-refused.webp",
+    "captured": "2026-10-20",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 2,
+    "locale": "en-US",
+    "timezone": "UTC",
+    "css": {
+      "width": 840,
+      "height": 505
+    },
+    "bytes": 117592,
+    "sha256": "447dd83a420b78f6a238c18417c23d79bb9195bf03cb411682a2de317a6894fe",
+    "look": {
+      "platform": "win32-x64",
+      "playwright": "1.64.1",
+      "chromium": "156.0.8078.4",
+      "fonts": {
+        "Archivo": "v25",
+        "IBM Plex Mono": "v20",
+        "IBM Plex Sans": "v23"
+      }
+    },
+    "data": "the corpus’s synthetic demo referral, as the demo’s build carries it",
+    "stylesheet": "sha256 0b16909714d16665bf0eb921850cb6db63ffb13af4e7d6f4284bf9181c34e784 of the stylesheets src/main.tsx imports, the themes as installed among them",
+    "text": {
+      "Response": "- region \"The answers, as a QuestionnaireResponse\":\n  - heading \"The answers, as a QuestionnaireResponse\" [level=2]\n  - paragraph: The answers to that Questionnaire, claiming CH ORF’s profile for a response, as the CH ORF document carries them.\n  - paragraph: \"Refused by @formancy/health-questionnaire:\"\n  - list:\n    - listitem:\n      - code: required\n      - text: \"answers.question: its item is required, and a completed response holds no answer to it that R4 counts\"",
+      "Document": "- region \"The referral, as a CH ORF document\":\n  - heading \"The referral, as a CH ORF document\" [level=2]\n  - paragraph: \"The referral and its answers as a CH ORF document. Its patient, author and order are synthetic and fixed: no field asks for an identifier. It carries the Questionnaire by its canonical, not inside, and no PDF: the letter is a document of its own.\"\n  - paragraph: \"Not made: the answers are refused, and a CH ORF document carries them.\""
+    }
+  },
+  "demo-on-purpose": {
+    "file": "docs/images/readme/demo-on-purpose.webp",
+    "captured": "2026-10-20",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 2,
+    "locale": "en-US",
+    "timezone": "UTC",
+    "css": {
+      "width": 1440,
+      "height": 753
+    },
+    "bytes": 300824,
+    "sha256": "371701a110e6dc4ba92a2828dad5afdc4689e314355240833d2b31f65488ec12",
+    "look": {
+      "platform": "win32-x64",
+      "playwright": "1.64.1",
+      "chromium": "156.0.8078.4",
+      "fonts": {
+        "Archivo": "v25",
+        "IBM Plex Mono": "v20",
+        "IBM Plex Sans": "v23"
+      }
+    },
+    "data": "the corpus’s synthetic demo referral, as the demo’s build carries it",
+    "stylesheet": "sha256 0b16909714d16665bf0eb921850cb6db63ffb13af4e7d6f4284bf9181c34e784 of the stylesheets src/main.tsx imports, the themes as installed among them",
+    "text": {
+      "Refused": "- region \"Refused on purpose\":\n  - heading \"Refused on purpose\" [level=2]\n  - paragraph: Fixed inputs, each broken in one way and run here through the package that refuses it. Nothing in them is typed by you, and every refusal is the package’s own.\n  - article \"A form in a spec version nothing here reads\":\n    - heading \"A form in a spec version nothing here reads\" [level=3]\n    - paragraph: The form says it is written in version 5 of formancy’s spec.\n    - paragraph: \"Refused by @formancy/health-questionnaire:\"\n    - list:\n      - listitem:\n        - code: version\n        - text: \"form.specVersion: it is written in a version of its format that nothing here reads\"\n  - article \"A rule the mapping cannot say\":\n    - heading \"A rule the mapping cannot say\" [level=3]\n    - paragraph: \"The form shows the language to interpret only when an interpreter is needed and the patient’s language is not German: a != under &&, which an SDC enableWhen cannot say for a question left unanswered.\"\n    - paragraph: \"Refused by @formancy/health-questionnaire:\"\n    - list:\n      - listitem:\n        - code: unmapped\n        - text: \"form.logic.rules[0].cel: nothing in the resource says what it says, and nothing here approximates it\"\n  - article \"An AHV number whose check digit is wrong\":\n    - heading \"An AHV number whose check digit is wrong\" [level=3]\n    - paragraph: The patient carries an AHV number whose last digit is not the one its other digits give.\n    - paragraph: \"Refused by @formancy/health-ch:\"\n    - list:\n      - listitem:\n        - code: check-digit\n        - text: \"context.patient.ahvn13: its check digit is not the one its identifier system computes from its other digits\"\n  - article \"A GLN whose check digit is wrong\":\n    - heading \"A GLN whose check digit is wrong\" [level=3]\n    - paragraph: The practitioner’s GLN ends in a digit its other digits do not give.\n    - paragraph: \"Refused by @formancy/health-ch:\"\n    - list:\n      - listitem:\n        - code: check-digit\n        - text: \"context.author.practitioner.gln: its check digit is not the one its identifier system computes from its other digits\"\n  - article \"The letter declared PDF/A-2b\":\n    - heading \"The letter declared PDF/A-2b\" [level=3]\n    - paragraph: The letter’s PDF is declared PDF/A-2b, which no gate here has proved Formancy Report makes.\n    - paragraph: \"Refused by @formancy/health-document:\"\n    - list:\n      - listitem:\n        - code: unproved\n        - text: \"pdf.profile: it declares a PDF profile that no gate here has proved its producer makes, and a declaration is never taken on trust: until one is proved, only a plain PDF is attached\""
+    }
+  },
+  "demo-read-out": {
+    "file": "docs/images/readme/demo-read-out.webp",
+    "captured": "2026-10-20",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 2,
+    "locale": "en-US",
+    "timezone": "UTC",
+    "css": {
+      "width": 840,
+      "height": 2011
+    },
+    "bytes": 340686,
+    "sha256": "d982ed0032e1e5756a6b957a7609f7d8b7b591a8f1dc648ff5e67d4a5225e08d",
+    "look": {
+      "platform": "win32-x64",
+      "playwright": "1.64.1",
+      "chromium": "156.0.8078.4",
+      "fonts": {
+        "Archivo": "v25",
+        "IBM Plex Mono": "v20",
+        "IBM Plex Sans": "v23"
+      }
+    },
+    "data": "the corpus’s synthetic demo referral, as the demo’s build carries it",
+    "stylesheet": "sha256 0b16909714d16665bf0eb921850cb6db63ffb13af4e7d6f4284bf9181c34e784 of the stylesheets src/main.tsx imports, the themes as installed among them",
+    "text": {
+      "Questionnaire": "- region \"The Questionnaire\":\n  - heading \"The Questionnaire\" [level=2]\n  - paragraph: \"An SDC Questionnaire of the form: its items in the form’s four languages, its title in the one language the form gives it. It does not depend on the answers.\"\n  - paragraph: Made by @formancy/health-questionnaire. It is the corpus entry questionnaire-demo-referral.json, byte for byte.\n  - heading \"What the Questionnaire says\" [level=3]\n  - paragraph: \"Read from the JSON below, the resource health-questionnaire wrote, not from the form: each item in its order and nesting, its text in this page’s language, its type, whether it is required or repeats, its options, and when it is shown. The rest is in the JSON alone, among it whether an item is read-only or hidden, its length and bounds, and how often it may be answered. This is no FHIR renderer and validates nothing: Formancy Health makes Questionnaires of formancy forms, and draws none.\"\n  - term: Title\n  - definition: \"Zuweisung (not translated into English in the Questionnaire: its own text, in de-CH)\"\n  - list \"What the Questionnaire says\":\n    - listitem \"Question for the specialist\":\n      - heading \"Question for the specialist\" [level=4]\n      - term:\n        - code: linkId\n      - definition:\n        - code: question\n      - term: Type\n      - definition:\n        - text: a longer text (\n        - code: text\n        - text: )\n      - term: Required\n      - definition: \"yes\"\n      - term: Repeats\n      - definition: \"no\"\n      - paragraph:\n        - 'button \"To the field in the form: Question for the specialist\"': To the field in the form\n    - listitem \"Specialty\":\n      - heading \"Specialty\" [level=4]\n      - term:\n        - code: linkId\n      - definition:\n        - code: specialty\n      - term: Type\n      - definition:\n        - text: a choice among options (\n        - code: choice\n        - text: )\n      - term: Required\n      - definition: \"yes\"\n      - term: Repeats\n      - definition: \"no\"\n      - term: Options\n      - definition:\n        - list \"Options\":\n          - listitem: Dermatology\n          - listitem: Cardiology\n          - listitem: Orthopaedics\n          - listitem: Ophthalmology\n      - paragraph:\n        - 'button \"To the field in the form: Specialty\"': To the field in the form\n    - listitem \"The patient's language\":\n      - heading \"The patient's language\" [level=4]\n      - term:\n        - code: linkId\n      - definition:\n        - code: language\n      - term: Type\n      - definition:\n        - text: a choice among options (\n        - code: choice\n        - text: )\n      - term: Required\n      - definition: \"no\"\n      - term: Repeats\n      - definition: \"no\"\n      - term: Options\n      - definition:\n        - list \"Options\":\n          - listitem: Deutsch\n          - listitem: Français\n          - listitem: Italiano\n          - listitem: English\n    - listitem \"An interpreter is needed\":\n      - heading \"An interpreter is needed\" [level=4]\n      - term:\n        - code: linkId\n      - definition:\n        - code: interpreter\n      - term: Type\n      - definition:\n        - text: yes or no (\n        - code: boolean\n        - text: )\n      - term: Required\n      - definition: \"no\"\n      - term: Repeats\n      - definition: \"no\"\n      - paragraph:\n        - 'button \"To the field in the form: An interpreter is needed\"': To the field in the form\n    - listitem \"Language to interpret\":\n      - heading \"Language to interpret\" [level=4]\n      - term:\n        - code: linkId\n      - definition:\n        - code: interpreter_language\n      - term: Type\n      - definition:\n        - text: a short text (\n        - code: string\n        - text: )\n      - term: Required\n      - definition: \"no\"\n      - term: Repeats\n      - definition: \"no\"\n      - term: Shown when\n      - definition:\n        - list \"Shown when\":\n          - listitem:\n            - text: An interpreter is needed (\n            - code: interpreter\n            - text: ) is yes\n      - paragraph:\n        - 'button \"To the field in the form: Language to interpret\"': To the field in the form\n    - listitem \"Appointment possible from\":\n      - heading \"Appointment possible from\" [level=4]\n      - term:\n        - code: linkId\n      - definition:\n        - code: available_from\n      - term: Type\n      - definition:\n        - text: a date (\n        - code: date\n        - text: )\n      - term: Required\n      - definition: \"no\"\n      - term: Repeats\n      - definition: \"no\"\n      - paragraph:\n        - 'button \"To the field in the form: Appointment possible from\"': To the field in the form\n    - listitem \"Practice phone for questions\":\n      - heading \"Practice phone for questions\" [level=4]\n      - term:\n        - code: linkId\n      - definition:\n        - code: contact_phone\n      - term: Type\n      - definition:\n        - text: a short text (\n        - code: string\n        - text: )\n      - term: Required\n      - definition: \"no\"\n      - term: Repeats\n      - definition: \"no\"\n      - paragraph:\n        - 'button \"To the field in the form: Practice phone for questions\"': To the field in the form\n  - group: Show the JSON\n  - paragraph:\n    - link \"Download questionnaire-demo-referral.json\":\n      - /url: blob:http://demo.invalid/<uuid>"
+    }
+  }
+}

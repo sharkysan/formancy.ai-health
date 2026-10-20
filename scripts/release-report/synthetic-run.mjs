@@ -8,7 +8,7 @@
 // involved -- what the report reads are files the suites, the install gate
 // and the validator gate wrote.
 
-import { FACTS } from '../browsers.mjs'
+import { FACTS, PICTURES_BROWSER } from '../browsers.mjs'
 
 const T0 = Date.parse('2026-10-17T10:00:00Z')
 
@@ -29,6 +29,7 @@ const base = (key, job) => ({
   collectedAt: new Date(T0 + 3_600_000).toISOString(),
   suites: [],
   browserGates: [],
+  pictures: [],
   install: null,
   validator: null,
   dist: [],
@@ -121,8 +122,27 @@ const browserGate = (browser) => ({
   measurements: [],
 })
 
-/** A leg of the browser job: the demo's gate in its browser, after turbo built what the demo imports. */
-const browserJob = (browser) => ({ ...base(`browser-${browser}`, 'browser'), variant: browser, browserGates: [browserGate(browser)], dist: dist() })
+/** The scenes scripts/pictures/scenes.json gives the demo, as report.mjs's scenesOf reads them; two are enough to miss one. */
+const SCENES = { 'apps/demo': ['demo-form', 'demo-refused'] }
+
+/**
+ * The demo's README pictures' check, as scripts/pictures/session.mjs writes
+ * it on a walk in which every part said what its picture was recorded
+ * saying (0016): every scene walked, in the build Playwright pins.
+ */
+const picturesCheck = () => ({
+  check: 'pictures',
+  app: 'apps/demo',
+  startedAt: new Date(T0 + 170_000).toISOString(),
+  finishedAt: new Date(T0 + 172_000).toISOString(),
+  playwright: '1.64.1',
+  browser: { name: PICTURES_BROWSER, version: PINS.find((pin) => pin.browser === PICTURES_BROWSER).browserVersion, headless: true },
+  walked: [...SCENES['apps/demo']],
+  problems: [],
+})
+
+/** A leg of the browser job: the demo's gate in its browser, after turbo built what the demo imports, and in the pictures' browser their check. */
+const browserJob = (browser) => ({ ...base(`browser-${browser}`, 'browser'), variant: browser, browserGates: [browserGate(browser)], pictures: browser === PICTURES_BROWSER ? [picturesCheck()] : [], dist: dist() })
 
 /** What a project of the install gate's records when every step passed: install-test.mjs's entry, `said` its runner's last line. */
 const project = (name, { consumer, steps, installed = {}, resolved, guide = null, said = '' }) => ({
@@ -224,6 +244,8 @@ export function greenRun() {
     validatorFiles: ['scripts/validator/registers.test.mjs'],
     browserApps: ['apps/demo'],
     browsers: PINS.map((pin) => pin.browser),
+    pictureApps: ['apps/demo'],
+    scenes: structuredClone(SCENES),
     pin: { version: '7.0.2', sha256: JAR, java: 17 },
     registered: ['hl7.fhir.r4.core#4.0.1', 'hl7.fhir.uv.sdc#4.0.0'],
     register: {

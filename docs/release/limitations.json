@@ -352,7 +352,7 @@
       "none": "It documents the architecture and holds the documents to the repository; it costs a contributor an edit per change, and nothing a release ships costs a user, an integrator or an operator anything because of it."
     },
     "0011": {
-      "reviewed": "sha256:2e77463795cb6bb1db2d46f38f55b5cb03d922014a74f62acee89b83ab92ebda",
+      "reviewed": "sha256:ab3c31d517cd5c64da72ac4108f0a93906560aedb89dbb3716ce30dd4098e1e4",
       "limitations": [
         {
           "area": "release",
@@ -393,7 +393,7 @@
       ]
     },
     "0012": {
-      "reviewed": "sha256:bd1a2c0c039c89006a7d694bc67290451b82427e63d8588848ce318f49361428",
+      "reviewed": "sha256:96721cf73d807cdc082c44101cdd6e536b24a8a62e6683e564450b9bd03189a1",
       "limitations": [
         {
           "area": "demo",
@@ -455,7 +455,7 @@
       ]
     },
     "0014": {
-      "reviewed": "sha256:5d98bc91a7fa947bcba3cd90a0a838992cb00720e1aa20f5d83e5c8e491945c8",
+      "reviewed": "sha256:a51e4e8b4a04f8a05cd505ef9c68b3508e83a29205b339896253645d34c67cd5",
       "limitations": [
         {
           "area": "demo",
@@ -493,6 +493,35 @@
         {
           "area": "forms",
           "says": "The packages read forms through `@formancy/spec` 0.6.0, and Formancy Report 0.1.0 depends on 0.5.0, so an application that installs Report 0.1.0 beside them holds both copies; Report hashes its own definitions with its copy and names none of its types, so nothing one copy makes reaches the other."
+        }
+      ]
+    },
+    "0016": {
+      "reviewed": "sha256:0425841fec4545cd6f98a5360038755ac01306309eef52ecfc2789dc7ef69c12",
+      "limitations": [
+        {
+          "area": "demo",
+          "says": "The README's pictures of the demo are held to the text their sections say, not to their pixels: a change of colour or layout alone, a theme release among them, leaves every check passing, and the check only notices that the stylesheets changed; whether a picture still looks like the page is a person's look.",
+          "heldBy": "scripts/pictures/record.test.mjs"
+        },
+        {
+          "area": "demo",
+          "says": "The README pictures the demo in Chromium alone: not in Firefox or WebKit, which its browser gate runs too.",
+          "heldBy": "scripts/browsers.test.mjs"
+        },
+        {
+          "area": "demo",
+          "says": "The README pictures the demo in English, the language the pictures' locale opens it in, and not in its other three.",
+          "heldBy": "scripts/pictures/camera.test.mjs"
+        },
+        {
+          "area": "demo",
+          "says": "The README pictures the demo at one width past every breakpoint, 1440 pixels, and not at a phone's width; nothing holds the width but the record of each picture."
+        },
+        {
+          "area": "demo",
+          "says": "Every README picture of the demo is taken on one machine's look, its platform, Playwright, Chromium and faces, which `docs/images/readme/captured.json` records with each picture: the pictures show the page as that machine drew it, and a retake on another look retakes them all.",
+          "heldBy": "scripts/pictures/record.test.mjs"
         }
       ]
     }

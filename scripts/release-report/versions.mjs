@@ -7,7 +7,8 @@
 // it -- every version it resolved -- and, apart, as the guide's project
 // resolved it; Node as every job ran it, and the install gate's npm; each
 // browser a browser gate launched, beside the build Playwright pins for
-// it, and the axe-core it put in the page; and the validator the gate pins
+// it, and the axe-core it put in the page, and each browser a README
+// pictures' check launched (0016); and the validator the gate pins
 // beside the one it reported, the Java it ran on and what it loaded.
 //
 // A consumer's install is the install gate's projects that build no part
@@ -17,23 +18,27 @@
 // shown as what a consumer's install of the tarballs brings -- the SBOM
 // leaves them out for the same reason (verify-publish.mjs).
 
-import { browserGatesOf, installOf, validatorOf } from './results.mjs'
+import { browserGatesOf, installOf, picturesOf, validatorOf } from './results.mjs'
 
 const distinct = (values) => [...new Set(values)]
 
 /**
- * Every browser the run's browser gates launched, by name, version and
- * how, each with the browser version Playwright pins for it (null for a
- * browser no gate here runs, which the report then says) and the gates
- * that launched it.
+ * Every browser the run's browser gates and README pictures' checks
+ * launched, by name, version and how, each with the browser version
+ * Playwright pins for it (null for a browser no gate here runs, which the
+ * report then says) and the gates and checks that launched it.
  */
 function launchedIn(results, browser) {
   const seen = new Map()
-  for (const { gate } of browserGatesOf(results)) {
-    if (gate.browser == null) continue
-    const { name, version, headless } = gate.browser
+  const launches = [
+    ...browserGatesOf(results).map(({ gate }) => ({ launched: gate.browser, by: `the browser gate of ${gate.gate}` })),
+    ...picturesOf(results).map(({ check }) => ({ launched: check.browser, by: `the pictures’ check of ${check.app}` })),
+  ]
+  for (const { launched, by } of launches) {
+    if (launched == null) continue
+    const { name, version, headless } = launched
     const key = `${String(name)} ${String(version)} ${String(headless)}`
-    seen.set(key, { name, version, headless, pin: browser.pins.find((pin) => pin.browser === name)?.browserVersion ?? null, by: distinct([...(seen.get(key)?.by ?? []), `the browser gate of ${gate.gate}`]) })
+    seen.set(key, { name, version, headless, pin: browser.pins.find((pin) => pin.browser === name)?.browserVersion ?? null, by: distinct([...(seen.get(key)?.by ?? []), by]) })
   }
   return [...seen.values()]
 }

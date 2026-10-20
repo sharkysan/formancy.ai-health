@@ -1,7 +1,11 @@
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, test } from 'vitest'
 import { FACTS } from '../browsers.mjs'
 import { HOSTS } from '../install-hosts.mjs'
-import { buildReport, installPlanOf } from './report.mjs'
+import { readScenes, REPO } from '../pictures/record.mjs'
+import { buildReport, installPlanOf, loadInputs } from './report.mjs'
 import { ciJob, copy, DIST, greenCiRun, greenRun, INSTALL_PLAN, job, VALIDATOR_ONLY } from './synthetic-run.mjs'
 
 /**
@@ -393,6 +397,107 @@ describe('the browser gate', () => {
         ciJob(inputs, 'browser-chromium').browserGates = []
       }),
     ).toEqual(['verify: its results hold a browser gate’s results, which only the browser job leaves', 'the browser gate of apps/demo left no results in Chromium'])
+  })
+})
+
+describe('the README pictures’ check', () => {
+  const check = (inputs) => job(inputs, 'browser-chromium').pictures[0]
+
+  // A check that left nothing is pictures held by nobody (0016): the README
+  // would go on saying its pictures are checked in a run that walked none.
+  // A local report may say it did not run the browser job, as its banner
+  // says.
+  test('fails the run when it left no results, unless browser is allowed missing', () => {
+    const none = (allowMissing) =>
+      withDefect((inputs) => {
+        Object.assign(job(inputs, 'browser-chromium'), { pictures: [], absent: [{ reader: 'browser', file: 'apps/demo/test-results/pictures.json' }] })
+        inputs.allowMissing = allowMissing
+      })
+    expect(none([])).toEqual(['browser-chromium: expected and not found: apps/demo/test-results/pictures.json', 'the pictures’ check of apps/demo left no results'])
+    expect(none(['browser'])).toEqual([])
+  })
+
+  // What the report holds the check to is scenes.json, read by the report,
+  // not the check's word: a scene it did not walk is a picture whose
+  // caption nothing held in this run. Watched failing with the scene
+  // dropped from the walk and problems.mjs reading the check's own list.
+  test('fails the run when it did not walk a scene scenes.json gives its app', () => {
+    expect(withDefect((inputs) => check(inputs).walked.pop())).toEqual(['the pictures’ check of apps/demo did not walk demo-refused, which scripts/pictures/scenes.json pictures, so nothing held that picture'])
+    // One that stopped says why, rather than every scene after the one it stopped at.
+    expect(
+      withDefect((inputs) => {
+        check(inputs).walked = ['demo-form']
+        check(inputs).error = 'demo-refused: the response refused never came'
+      }),
+    ).toEqual(['the pictures’ check of apps/demo ended with an error: demo-refused: the response refused never came'])
+  })
+
+  // The check's own answer: a section that no longer says what its picture
+  // was recorded saying, or a caption that quotes what it does not. Counted
+  // as problems: one stale picture gives two -- its part's diff and its
+  // caption's quote of that part -- and a count of pictures would say two
+  // pictures where one went stale.
+  test('fails the run when it found a picture no longer showing the page, counting problems and not pictures', () => {
+    const found = 'demo-refused, part Response: the page now says something else than its picture'
+    expect(withDefect((inputs) => (check(inputs).problems = [found]))).toEqual([`the pictures’ check of apps/demo found 1 problem(s) with the README’s pictures: ${found}`])
+    const misquote = 'demo-refused: “Not made” is not inside one name or value of what the part Document says, so the caption quotes what its picture does not show'
+    expect(withDefect((inputs) => (check(inputs).problems = [found, misquote]))).toEqual([`the pictures’ check of apps/demo found 2 problem(s) with the README’s pictures: ${found}; ${misquote}`])
+  })
+
+  // A walk of scenes this scenes.json does not have is another checkout's
+  // pictures; an app given no scene has a check that holds nothing.
+  test('fails the run when it walked a scene scenes.json does not give its app, or the app has none', () => {
+    expect(withDefect((inputs) => check(inputs).walked.push('demo-gone'))).toEqual(['the pictures’ check of apps/demo walked demo-gone, which scripts/pictures/scenes.json does not give apps/demo: it walked another checkout’s scenes'])
+    expect(
+      withDefect((inputs) => {
+        inputs.scenes = { 'apps/demo': [] }
+        check(inputs).walked = []
+      }),
+    ).toEqual(['the pictures’ check of apps/demo had no scene to walk: scripts/pictures/scenes.json gives apps/demo none'])
+  })
+
+  // The pictures are taken, and checked, in Chromium alone, as the build
+  // Playwright pins for it: another browser, though pinned too, walked a
+  // page in a browser no picture was taken in.
+  test('fails the run when it launched another browser than the pictures are taken in, or another build than Playwright pins', () => {
+    expect(withDefect((inputs) => (check(inputs).browser.version = '155.0.7999.2'))).toEqual(['the pictures’ check of apps/demo launched chromium 155.0.7999.2, not the chromium-headless-shell 156.0.8078.4 Playwright 1.64.1 pins'])
+    expect(withDefect((inputs) => (check(inputs).browser = { name: 'firefox', version: '157.0', headless: true }))).toEqual(['the pictures’ check of apps/demo launched firefox, where the README’s pictures are taken in chromium alone (scripts/browsers.mjs)'])
+  })
+
+  // What the report holds the check to is read from this checkout, by the
+  // same loadInputs a run's report reads it with: the apps with a pictures
+  // script, and each one's scenes of scenes.json. Without the apps, or
+  // with scenesOf matching no scene to its app, every case above would
+  // still pass on the synthetic run while a real report held the check to
+  // nothing. Watched failing with `pictureApps` left out of loadInputs, and
+  // with scenesOf matching `scene.app` to the app's path as it stands.
+  test('is held to the scenes this checkout’s scenes.json gives each app with a pictures script', () => {
+    const results = mkdtempSync(join(tmpdir(), 'report-inputs-'))
+    try {
+      const inputs = loadInputs(REPO, results)
+      const ofDemo = readScenes()
+        .filter((scene) => scene.app === 'demo')
+        .map((scene) => scene.id)
+      expect(ofDemo.length).toBeGreaterThan(0)
+      expect(inputs.pictureApps).toEqual(['apps/demo'])
+      expect(inputs.scenes).toEqual({ 'apps/demo': ofDemo })
+      // The synthetic run's scenes are this scenes.json's, so every case above is of scenes that exist.
+      expect(ofDemo).toEqual(expect.arrayContaining(greenRun().scenes['apps/demo']))
+    } finally {
+      rmSync(results, { recursive: true, force: true })
+    }
+  })
+
+  // The check's file is read from the job that leaves it: one filed under
+  // verify would be the browser job's verdict from a job that launched no
+  // browser.
+  test('is read from the browser job alone', () => {
+    expect(
+      ciDefect((inputs) => {
+        ciJob(inputs, 'verify').pictures = ciJob(inputs, 'browser-chromium').pictures
+        ciJob(inputs, 'browser-chromium').pictures = []
+      }),
+    ).toEqual(['verify: its results hold a pictures’ check’s results, which only the browser job leaves', 'the pictures’ check of apps/demo left no results'])
   })
 })
 

@@ -10,6 +10,25 @@ later.
 
 ## Unreleased
 
+**The README shows the demo, in pictures a script takes and the gates
+hold to the text they show** (0016). The README said what the demo does
+and showed nothing of it, since a picture nothing checks shows a page that
+may no longer exist. It now opens with the QuestionnaireResponse the demo
+makes again from a changed answer, its JSON shown, and *Try it* shows the
+form as it opens, a required answer cleared and refused, the inputs
+refused on purpose and the Questionnaire read out: whole sections of
+states the page reaches, taken by `node scripts/pictures.mjs` in Chromium
+from the built page, on its synthetic referral alone, each caption quoting
+only what those sections say. Formancy Report's pipeline, adapted: the
+scenes in `scripts/pictures/scenes.json`, each section's accessibility
+text in `docs/images/readme/captured.json`, and the README's two regions
+rendered from both, which `pnpm test:repo` holds. CI's browser job walks
+every scene again in its Chromium leg and fails when a section says
+something else, and the release report fails a run whose check did not
+walk a scene. What nothing checks is the pixels: a change of colour or
+layout alone needs a look, and the pictures weigh 1,012,594 bytes, as taken
+on 20 October 2026.
+
 **The README says what Formancy Health does before anything else.** It
 opened with a status that restated, package by package, what the packages
 and the validator gate do, and its Try it, its package table and its

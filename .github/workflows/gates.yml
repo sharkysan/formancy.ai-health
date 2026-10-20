@@ -217,8 +217,10 @@ jobs:
   # target size, the journey against the validator gate's corpus, and what
   # the page asks of the network and the browser under the headers it is
   # served with, every check in every browser, and what the browsers
-  # disagree on held by the table in scripts/browsers.mjs. On a pinned
-  # image, for the fonts and libraries the browsers draw with.
+  # disagree on held by the table in scripts/browsers.mjs. In Chromium's
+  # leg, the README's pictures of the demo too, walked again and held to the
+  # text they were recorded showing (0016). On a pinned image, for the fonts
+  # and libraries the browsers draw with.
   browser:
     name: browser (${{ matrix.browser }})
     runs-on: ubuntu-24.04
@@ -302,10 +304,24 @@ jobs:
         env:
           FORMANCY_BROWSERS: ${{ matrix.browser }}
 
-      # What the gate found, for the report: the file it writes under
-      # apps/demo/test-results however its run ends (browser-<browser>.json),
-      # and the dist/ of every published package turbo built for the demo,
-      # under the key browser-<browser>.
+      # The README's pictures (0016), walked on the page the gate built, in
+      # the one browser they are taken in (scripts/browsers.mjs's
+      # PICTURES_BROWSER, which browsers.test.mjs holds this condition to).
+      # They were taken on another machine; --check compares their text
+      # alone, with the web fonts refused, so the platform's look does not
+      # enter it. Run when the gate failed too, so a red gate does not hide
+      # the pictures' answer; the leg fails all the same. Measured on
+      # 20 October 2026, the check's own record of its walk of five scenes:
+      # 1.1 s on the desktop above, and 1.0 s in Playwright's Linux image
+      # v1.63.0-noble with 1.64.1's Chromium installed in it.
+      - run: node scripts/pictures.mjs --check
+        if: ${{ !cancelled() && matrix.browser == 'chromium' }}
+
+      # What the gate and, in Chromium's leg, the pictures' check found, for
+      # the report: the files each writes under apps/demo/test-results
+      # however its run ends (browser-<browser>.json, pictures.json), and the
+      # dist/ of every published package turbo built for the demo, under the
+      # key browser-<browser>.
       - name: Keep what this job found, for the report
         id: collect
         if: ${{ !cancelled() }}

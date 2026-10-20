@@ -1,7 +1,8 @@
 // The release report (0011; formancy.ai-report 0014, which is
 // formancy.ai-data 0035's): which run it describes, what that run was tested
 // on, what it found -- each package's suite, the guards, the demo's browser
-// gate, the install gate and the validator gate -- the build identity of
+// gate and its README pictures' check, the install gate and the validator
+// gate -- the build identity of
 // every published package,
 // the release gates, and the limitations -- derived from the run, then the
 // ones the decision records state -- built from the results every job
@@ -30,11 +31,12 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { BROWSERS } from '../browsers.mjs'
 import { HOSTS } from '../install-hosts.mjs'
+import { readScenes } from '../pictures/record.mjs'
 import { bodySection, releaseBody } from '../release-notes.mjs'
 import { packageKey, readRegisters } from '../validator/registers.mjs'
 import { expectedKeys, gateJobs, readWorkflow, validatorTestFiles } from '../workflows.mjs'
 import { artefactProblems, readArtefacts, resultsOf } from './artefacts.mjs'
-import { appsWith, namedPackages } from './collect.mjs'
+import { appsWith, appsWithPictures, namedPackages } from './collect.mjs'
 import { evaluateGates, evidenceKind, gatesProblems, readGates } from './gates.mjs'
 import { readRecords, readRegister, registerProblems, statedLimitations } from './limitations.mjs'
 import { contentProblems, localResultsProblems, needsProblems, releaseGateProblems } from './problems.mjs'
@@ -91,6 +93,13 @@ function releaseOf(report, { release = '', version, changelog, run, repository }
 export const installPlanOf = (hosts) => Object.entries(hosts).map(([project, host]) => ({ project, steps: host.steps.map((step) => step.name), guide: host.guide?.kind ?? null }))
 
 /**
+ * The scene ids scripts/pictures/scenes.json (`scenes`) gives each of
+ * `apps`, app paths, in its order: what each app's pictures' check must
+ * walk (0016), read by the report rather than taken from the check.
+ */
+export const scenesOf = (scenes, apps) => Object.fromEntries(apps.map((app) => [app, scenes.filter((scene) => `apps/${scene.app}` === app).map((scene) => scene.id)]))
+
+/**
  * The report, from `inputs`. Locally (`mode` absent or `local`): `results`,
  * the one machine's collected results, and `allowMissing`. In CI (`mode:
  * 'ci'`): `artefacts` as the report job downloaded them, `expected`
@@ -99,7 +108,8 @@ export const installPlanOf = (hosts) => Object.entries(hosts).map(([project, hos
  * `covered` (packages with a suite, `{ path, id, name }`), `published`
  * (names), `installPlan` (installPlanOf()), `validatorFiles` (the test
  * files the validator job runs), `browserApps` (the apps with a browser
- * gate) and `browsers` (scripts/browsers.mjs's),
+ * gate) and `browsers` (scripts/browsers.mjs's), `pictureApps` (the apps
+ * with README pictures) and `scenes` (scenesOf() for them),
  * `pin` (docs/release/validator.json) and `registered` (`id#version` of
  * every package docs/release/ig-packages.json names), the limitations
  * `register` and decision `records`, `gatesRegister` and each document's
@@ -121,7 +131,7 @@ export function buildReport(inputs) {
     subject: subjectOf(inputs, results),
     gateJobs: [...inputs.jobs],
     testedOn: testedOnInRun({ results, facts }),
-    results: resultsInRun({ results, covered, published: inputs.published, accounted }),
+    results: resultsInRun({ results, covered, published: inputs.published, accounted, scenes: inputs.scenes ?? {} }),
     limitations: {
       registerProblems: registerProblems(register, records, { covered: covered.map((entry) => entry.path), exists }),
       stated: statedLimitations({ register, records, outcome, repository, commit }),
@@ -133,7 +143,7 @@ export function buildReport(inputs) {
   report.problems = [
     ...(ci ? needsProblems(inputs.needs, inputs.jobs) : []),
     ...(ci ? artefactProblems(inputs.artefacts, { expected: inputs.expected, commit, runId: inputs.run.id }) : localResultsProblems(results)),
-    ...contentProblems(report, { published: inputs.published, installPlan: inputs.installPlan, pin: inputs.pin, registered: inputs.registered, browserApps: inputs.browserApps, browsers: inputs.browsers, allowMissing }),
+    ...contentProblems(report, { published: inputs.published, installPlan: inputs.installPlan, pin: inputs.pin, registered: inputs.registered, browserApps: inputs.browserApps, browsers: inputs.browsers, pictureApps: inputs.pictureApps, allowMissing }),
     ...gatesProblems(inputs.gatesRegister, { covered: covered.map((entry) => entry.path), jobs: inputs.jobs, exists }).map((problem) => `docs/release/gates.json: ${problem}`),
     ...releaseGateProblems(report.gates, allowMissing),
     ...releaseProblems,
@@ -192,6 +202,8 @@ export function loadInputs(root, resultsDir, { ci = false, allowMissing = [], en
     validatorFiles: validatorTestFiles(workflow),
     browserApps: appsWith(root, 'test:browser'),
     browsers: [...BROWSERS],
+    pictureApps: appsWithPictures(root),
+    scenes: scenesOf(readScenes(), appsWithPictures(root)),
     pin: registers.pin,
     registered: registers.packages.map(packageKey),
     register: readRegister(root),

@@ -27,7 +27,10 @@ import { reporters } from './vitest.results'
  * reaches the workspace's packages alone; and the demo's deploy puts the
  * build at one path of formancy.ai, under headers whose policy allows the
  * page no connection, written as the one rule Cloudflare reads, as the
- * README, REPO-METADATA and RELEASING say (0012).
+ * README, REPO-METADATA and RELEASING say (0012); and the README's pictures
+ * of the demo are what their record says was taken, every caption quoting
+ * only what its sections said, and the README's regions are rendered from
+ * them (0016).
  *
  * Run as `pnpm test:repo`, and by CI on every pull request. A guard that is not
  * a gate is a comment.

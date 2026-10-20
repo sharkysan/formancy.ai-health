@@ -357,6 +357,14 @@ the address. A way is offered only where formancy's renderer draws the
 field with the id its engine mints, never guessed at
 ([0013](../decisions/0013-the-demo-reads-its-questionnaire-out-from-the-bytes-it-shows-and-renders-no-questionnaire.md)).
 
+The README shows the page in pictures a script takes, never a hand
+([0016](../decisions/0016-the-readmes-pictures-of-the-demo-are-taken-by-a-script-and-held-to-the-text-they-show.md)): whole sections of states the page reaches, in
+Chromium at 1440 pixels and in English, each caption quoting only what
+those sections say, as Playwright's accessibility text records it. What a
+caption quotes is the text a person reads, so a picture is held to its
+words and a screen reader's names, and not to its pixels: how it looks is
+a person's eye on the retake.
+
 ## 8.11 No clinical logic
 
 No template, fixture or generated item computes a score, raises a warning or

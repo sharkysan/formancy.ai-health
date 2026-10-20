@@ -263,6 +263,23 @@ describe('the Markdown', () => {
     expect(renderContent(report((inputs) => { for (const leg of ['browser-chromium', 'browser-firefox', 'browser-webkit']) job(inputs, leg).browserGates = [] }))).toContain('No browser gate left results in this run.')
   })
 
+  // The README pictures' check (0016), as its own file says it: what it
+  // launched, the scenes it walked of those scenes.json gives its app, the
+  // ones it did not, and what it found; where that file is read from; and
+  // its launch among the browsers Tested on holds to their pins.
+  test('shows the README pictures’ check, the scenes it walked of scenes.json’s, and its launch among the browsers', () => {
+    const markdown = renderContent(report())
+    const section = markdown.slice(markdown.indexOf('## Browser'), markdown.indexOf('## Build identity'))
+    // Problems, not pictures: one stale picture gives its part's diff and
+    // its caption's misquote, and a column of pictures would say two.
+    expect(section).toContain('| Pictures’ check | Launched | Playwright | Scenes walked of scenes.json’s | Not walked | Problems found | Wall time |')
+    expect(section).toContain('| apps/demo | chromium 156.0.8078.4, headless | 1.64.1 | 2 of 2 | none | 0 | 2.0 s |')
+    expect(markdown).toContain('`test-results/pictures.json`')
+    expect(renderContent(report((inputs) => job(inputs, 'browser-chromium').pictures[0].walked.pop()))).toContain('| apps/demo | chromium 156.0.8078.4, headless | 1.64.1 | 1 of 2 | demo-refused | 0 | 2.0 s |')
+    expect(renderContent(report((inputs) => (job(inputs, 'browser-chromium').pictures[0].browser.version = '155.0.7999.2')))).toContain('Chromium 155.0.7999.2 (not the 156.0.8078.4 it pins)')
+    expect(renderContent(report((inputs) => (job(inputs, 'browser-chromium').pictures = [])))).toContain('No pictures’ check left results in this run.')
+  })
+
   // 0014's table, as the run held it: a reader of the report sees each fact
   // the browsers disagree on, each browser's answer and the checks that
   // hold it, from scripts/browsers.mjs and nowhere else.

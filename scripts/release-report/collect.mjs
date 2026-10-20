@@ -1,8 +1,8 @@
 // What one job of a run found, in one file the release report reads (0011;
-// formancy.ai-report 0014's collect, with its browser gate and without its
-// pictures, which Health does not have, and with a reader for the
-// validator job, which Report does not; the install gate's projects come
-// whole in its record, which the report holds to install-hosts.mjs).
+// formancy.ai-report 0014's collect, with its browser gate and its README
+// pictures' check (0016), and with a reader for the validator job, which
+// Report does not have; the install gate's projects come whole in its
+// record, which the report holds to install-hosts.mjs).
 //
 //   node scripts/release-report/collect.mjs --job verify
 //   node scripts/release-report/collect.mjs --job test --package @formancy/health-core
@@ -24,7 +24,10 @@
 // in `browser`, each app's browser gate's `test-results/browser-<browser>.json`
 // for the browser of the leg's `--variant`, which must be one of
 // scripts/browsers.mjs's (0014), from each app with a `test:browser`
-// script (the demo's, 0012); the install gate's
+// script (the demo's, 0012), and, in the leg of the browser the README's
+// pictures are taken in (PICTURES_BROWSER), each app's pictures' check's
+// `test-results/pictures.json`, from each app with a pictures script
+// (0016); the install gate's
 // `test-results/install.json` in `install`; in
 // `validator`, the gate's `test-results/validator.json` (scripts/validator.mjs
 // writes it however it ends) and the root `test-results/vitest.json` the
@@ -48,7 +51,8 @@
 // to say.
 //
 // `--local` reads every package of one machine at once, the guards, each
-// app's browser gate in every browser of scripts/browsers.mjs, whatever
+// app's browser gate in every browser of scripts/browsers.mjs and its
+// pictures' check, whatever
 // FORMANCY_BROWSERS said on the way, so a narrowed run is reported as
 // missing a browser, the install gate and the validator gate. Not the
 // registers' run: on one
@@ -67,8 +71,9 @@ import { execFileSync } from 'node:child_process'
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { BROWSERS } from '../browsers.mjs'
+import { BROWSERS, PICTURES_BROWSER } from '../browsers.mjs'
 import { coveredPackages } from '../codecov-config.mjs'
+import { picturedApps } from '../pictures/record.mjs'
 import { distHash, filesUnder } from '../release/dist-hash.mjs'
 import { testFilesOf } from './results.mjs'
 
@@ -109,6 +114,14 @@ export function appsWith(root, script) {
     .filter((name) => existsSync(join(folder, name, 'package.json')) && readJson(join(folder, name, 'package.json')).scripts?.[script] !== undefined)
     .map((name) => `apps/${name}`)
 }
+
+/**
+ * The repository path of every workspace app with README pictures, as the
+ * README's guard finds them (scripts/pictures/record.mjs, 0016): by the
+ * pictures script, not by a manifest's script, since the check runs as
+ * `node scripts/pictures.mjs --check` from the root.
+ */
+export const appsWithPictures = (root) => picturedApps(root).map((app) => `apps/${app}`)
 
 /** Every published package -- under packages/, not private -- with its directory and manifest. */
 function publishedPackages(root) {
@@ -229,6 +242,7 @@ export function collect({ root = repo, job, pkg, variant, local = false, since, 
 
   const suites = []
   const browserGates = []
+  const pictures = []
   let install = null
   let validator = null
   const read = {
@@ -267,7 +281,9 @@ export function collect({ root = repo, job, pkg, variant, local = false, since, 
      * a machine every browser the gates run in. A file another browser's
      * run wrote -- its launch failed, so no browser names itself in it --
      * would be that browser's failure under this one's name; one that
-     * launched another browser would be that browser's checks.
+     * launched another browser would be that browser's checks. Where
+     * `wanted` holds the browser the README's pictures are taken in, each
+     * app's pictures' check too, which only that leg runs (0016).
      */
     browser(wanted) {
       for (const app of appsWith(root, 'test:browser')) {
@@ -283,6 +299,16 @@ export function collect({ root = repo, job, pkg, variant, local = false, since, 
           else if (result.browser != null && result.browser.name !== browser) missing.push(`${app}’s gate launched ${String(result.browser.name)} in its ${browser} file: ${shown}`)
           else browserGates.push(result)
         }
+      }
+      if (!wanted.includes(PICTURES_BROWSER)) return
+      for (const app of appsWithPictures(root)) {
+        const shown = `${app}/test-results/pictures.json`
+        if (!existsSync(join(root, shown))) {
+          notFound(shown, 'browser')
+          continue
+        }
+        const result = readJson(join(root, shown))
+        if (fresh(shown, result.startedAt)) pictures.push(result)
       }
     },
     install() {
@@ -354,6 +380,7 @@ export function collect({ root = repo, job, pkg, variant, local = false, since, 
     ...(local ? { since: new Date(after).toISOString(), dirty: git(['status', '--porcelain']).trim() !== '' } : {}),
     suites,
     browserGates,
+    pictures,
     install,
     validator,
     dist,
@@ -387,6 +414,6 @@ if (process.argv[1]?.replaceAll('\\', '/').endsWith('scripts/release-report/coll
   if (process.env.GITHUB_OUTPUT !== undefined) appendFileSync(process.env.GITHUB_OUTPUT, `key=${result.key}\n`)
   const validator = result.validator === null ? 'no' : `the validator gate's${result.validator.suite === null ? '' : ' and its registers’ run'}`
   console.log(
-    `${slash(relative(repo, written))}: ${String(result.suites.length)} suite(s), ${String(result.browserGates.length)} browser gate(s), ${result.install === null ? 'no' : 'the'} install gate's record, ${validator} results, ${String(result.dist.length)} dist/${result.absent.length === 0 ? '' : `; not found: ${result.absent.map((entry) => entry.file).join('; ')}`}${result.missing.length === 0 ? '' : `; missing: ${result.missing.join('; ')}`}`,
+    `${slash(relative(repo, written))}: ${String(result.suites.length)} suite(s), ${String(result.browserGates.length)} browser gate(s), ${String(result.pictures.length)} pictures' check(s), ${result.install === null ? 'no' : 'the'} install gate's record, ${validator} results, ${String(result.dist.length)} dist/${result.absent.length === 0 ? '' : `; not found: ${result.absent.map((entry) => entry.file).join('; ')}`}${result.missing.length === 0 ? '' : `; missing: ${result.missing.join('; ')}`}`,
   )
 }
