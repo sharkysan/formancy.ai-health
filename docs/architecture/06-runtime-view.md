@@ -300,3 +300,35 @@ allows no connection, and the browser gate watches each of these. That
 nothing in the page's own source reads a clock or a random source is a
 search's, not a gate's
 ([0012](../decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
+
+## 6.9 The README's pictures are taken, and checked
+
+```
+node scripts/pictures.mjs [--check]                   after pnpm build
+   │
+   ├─ 1. scripts/pictures/scenes.json: each scene, its caption, what it quotes
+   ├─ 2. apps/demo/scripts/pictures.mjs, in Chromium alone (PICTURES_BROWSER):
+   │     the built page served from dist under /health/ with
+   │     scripts/demo-headers.mjs's headers, on an origin nothing resolves,
+   │     1440 px wide, en-US, past every breakpoint gate-page.mjs reads;
+   │     with --check, every font file refused
+   ├─ 3. one act per scene, in order, by role and name: the page as it opens;
+   │     the question changed and the response's JSON shown; the question
+   │     cleared; back to the sample, the refusals on purpose; the read-out
+   ├─ 4. at each, every section's accessibility text read
+   │       capture: whole sections clipped, refused if anything else is
+   │       drawn in the clip, shot until it settles, encoded as WebP; each
+   │       caption held to the new text before anything is written
+   │       --check: the text compared with captured.json, each caption
+   │       held to it, each picture to its bytes
+   ▼
+capture: docs/images/readme/<scene>.webp and captured.json, then README.md's
+two regions written by scripts/pictures/readme.mjs
+--check: apps/demo/test-results/pictures.json, written however it ends
+```
+
+CI runs `--check` in the browser job's Chromium leg, after the gate, and
+the release report holds what it walked to every scene `scenes.json` gives
+the demo; `pnpm test:repo` holds the README's regions, the pictures' bytes
+and every caption to the record without a browser
+([0016](../decisions/0016-the-readmes-pictures-of-the-demo-are-taken-by-a-script-and-held-to-the-text-they-show.md)).

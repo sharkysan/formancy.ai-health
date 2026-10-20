@@ -1,8 +1,8 @@
 // The report's results (0011; formancy.ai-report 0014): each package's
 // suite, the repository's guards, each app's browser gate in each browser
-// (the demo's, 0012), the validator gate and its job's run of the
-// registers' test, the install gate, and the build identity of every
-// published package.
+// (the demo's, 0012) and its README pictures' check (0016), the validator
+// gate and its job's run of the registers' test, the install gate, and the
+// build identity of every published package.
 //
 // Pure over the run's results. Two times are shown for a suite, each named
 // for what it is: the task's wall time from turbo's run summary, and
@@ -19,8 +19,8 @@
 // counts the skips of the files the validator job runs as allowed. Any other
 // skip is a test that did not run.
 //
-// The install gate's record, the browser gates' files and the validator's
-// two files are read only from the job that leaves them, or on a machine from its one results file
+// The install gate's record, the browser gates' and the pictures' checks'
+// files and the validator's two files are read only from the job that leaves them, or on a machine from its one results file
 // (LEAVES); found in another job's results, each is a problem and is not
 // read, so a collect that filed one under the wrong job cannot pass it off
 // as that job's.
@@ -38,6 +38,7 @@ const kind = (status) => (status === 'passed' || status === 'failed' ? status : 
 const LEAVES = {
   install: { jobs: ['install', 'local'], held: (result) => result.install != null, what: 'the install gate’s record, which only the install job leaves' },
   browser: { jobs: ['browser', 'local'], held: (result) => (result.browserGates ?? []).length > 0, what: 'a browser gate’s results, which only the browser job leaves' },
+  pictures: { jobs: ['browser', 'local'], held: (result) => (result.pictures ?? []).length > 0, what: 'a pictures’ check’s results, which only the browser job leaves' },
   gate: { jobs: ['validator', 'local'], held: (result) => result.validator?.gate != null, what: 'the validator gate’s file, which only the validator job leaves' },
   registers: { jobs: ['validator', 'local'], held: (result) => result.validator?.suite != null, what: 'the validator job’s run of the registers’ test, which only the validator job leaves' },
 }
@@ -128,6 +129,9 @@ export const installOf = (results) => leaving(results, 'install').map((result) =
 /** Every browser gate's file in the run, from the job that leaves them, each with the key it came in. */
 export const browserGatesOf = (results) => leaving(results, 'browser').flatMap((result) => (result.browserGates ?? []).map((gate) => ({ gate, job: result.key })))
 
+/** Every pictures' check's file in the run, from the job that leaves them, each with the key it came in. */
+export const picturesOf = (results) => leaving(results, 'pictures').flatMap((result) => (result.pictures ?? []).map((check) => ({ check, job: result.key })))
+
 /** The validator gate's own results file in the run, from the job that leaves it, with the key it came in: the first such file that holds one, or null. */
 export function validatorOf(results) {
   const found = leaving(results, 'gate').find((result) => result.validator?.gate != null)
@@ -155,6 +159,28 @@ function gateRow(gate, job) {
     wallMs: wall(gate),
   }
 }
+
+/**
+ * One app's README pictures' check (0016), as the report shows and judges
+ * it: `planned` is every scene scripts/pictures/scenes.json gives the app,
+ * which the report reads itself rather than take the check's word for.
+ */
+function picturesRow({ check, job }, planned) {
+  return {
+    app: check.app,
+    job,
+    planned: [...planned],
+    walked: check.walked ?? [],
+    problems: check.problems ?? [],
+    error: check.error ?? null,
+    browser: check.browser ?? null,
+    playwright: check.playwright ?? null,
+    wallMs: wall(check),
+  }
+}
+
+/** The scenes of scenes.json a pictures' check was to walk and did not: each a picture held by nobody in this run. */
+export const unwalked = (row) => row.planned.filter((id) => !row.walked.includes(id))
 
 /**
  * What a browser gate's row says it did not do, which a gate that measured
@@ -263,13 +289,14 @@ function projectOf(consumer) {
 
 /**
  * Every package's row, the repository's guards, the browser gates, the
- * validator gate and its job's run of the registers' test, the install gate
- * with each of its projects, what collect did not find (`absent`, by the reader that
- * expected it) or found and refused (`missing`), a section in a job that
- * does not leave it (`misplaced`), and build identity. `accounted` is
- * accountsOf()'s.
+ * pictures' checks -- each held to `scenes`, scenes.json's scene ids by app
+ * path -- the validator gate and its job's run of the registers' test, the
+ * install gate with each of its projects, what collect did not find
+ * (`absent`, by the reader that expected it) or found and refused
+ * (`missing`), a section in a job that does not leave it (`misplaced`), and
+ * build identity. `accounted` is accountsOf()'s.
  */
-export function resultsInRun({ results, covered, published, accounted = accountsOf(results) }) {
+export function resultsInRun({ results, covered, published, accounted = accountsOf(results), scenes = {} }) {
   const suites = suitesOf(results)
   const install = installOf(results)
   const validator = validatorOf(results)
@@ -277,6 +304,7 @@ export function resultsInRun({ results, covered, published, accounted = accounts
     packages: covered.map((entry) => suiteRow(suites.filter((suite) => suite.package === entry.name), { ...entry, published: published.includes(entry.name) }, { accounted })),
     repository: suiteRow(suites.filter((suite) => suite.package === null), { name: null, path: '.', published: false }, { accounted }),
     browserGates: browserGatesOf(results).map(({ gate, job }) => gateRow(gate, job)),
+    pictures: picturesOf(results).map((found) => picturesRow(found, scenes[found.check.app] ?? [])),
     validator: {
       gate: validator === null ? null : validatorRow(validator),
       suite: suiteRow(validatorSuitesOf(results), { name: null, path: '.', published: false }, { checkout: false }),

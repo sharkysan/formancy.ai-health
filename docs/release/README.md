@@ -136,7 +136,13 @@ last job, `report`, builds the report from all of them
    browser's answer and the checks that hold it
    ([0014](../decisions/0014-the-demos-browser-gate-runs-in-chromium-firefox-and-webkit-and-each-fact-the-browsers-disagree-on-is-named-and-held.md)). It runs the packages as the workspace
    builds them, bundled into the demo's page, and never the tarballs,
-   which a derived limitation says.
+   which a derived limitation says. Then the README pictures' check, from
+   the file it writes however it ends in the Chromium leg: what it
+   launched, the scenes it walked of those
+   [`scenes.json`](../../scripts/pictures/scenes.json) gives the demo,
+   read by the report, those it did not, and how many problems it found,
+   each a part whose page now says something else or a caption quoting
+   what its parts do not say ([0016](../decisions/0016-the-readmes-pictures-of-the-demo-are-taken-by-a-script-and-held-to-the-text-they-show.md)).
 6. **Build identity:** each published package's tarball as the install gate
    packed, installed and ran it, by sha256, and the hash of its built files
    against the `dist/` every job built.
@@ -183,8 +189,12 @@ making another check in one browser than in another, by pass and name,
 or another list of passes, or making a check that holds a row of
 `scripts/browsers.mjs`'s table in no pass of a browser; a browser gate's
 file whose browser, asked for or launched, is not the one it is filed
-under; the install gate's record, a browser gate's file or the
-validator's files in another job's results; a gate's file that records
+under; the README pictures' check leaving no results, ending in an error,
+finding a picture whose page says something else, not walking a scene
+`scenes.json` gives the demo or walking one it does not, or launching
+another browser than Chromium or another build than Playwright pins; the
+install gate's record, a browser gate's or a pictures' check's file or
+the validator's files in another job's results; a gate's file that records
 no start; a published package whose `dist/` no
 job recorded; two builds of one package that differ, or a tarball whose
 built files are not every job's; a gate whose evidence did not pass, or a

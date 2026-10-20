@@ -1,6 +1,6 @@
 # 0014 — Run the demo's browser gate in Chromium, Firefox and WebKit, a leg each, every check in every browser and every console error the page causes a failure; name and hold each fact the browsers disagree on, WebKit's own refusal of a style on every select among them, and loosen the policy for none
 
-- **Status:** accepted
+- **Status:** accepted; the README's pictures of the demo taken, and checked in the browser job's Chromium leg alone, `scripts/browsers.mjs`'s `PICTURES_BROWSER`, by [0016](0016-the-readmes-pictures-of-the-demo-are-taken-by-a-script-and-held-to-the-text-they-show.md)
 - **Date:** 2026-10-18
 - **Deciders:** Daniel Bacher
 - **Verified by:** the repository's guards, the release report's tests, the

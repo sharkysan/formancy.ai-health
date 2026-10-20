@@ -158,7 +158,7 @@ function spansIn(markdown) {
  * the repository holds. A test below fails when git would commit a file of
  * another kind.
  */
-const EXTENSIONS = new Set(['.css', '.html', '.json', '.md', '.mjs', '.mts', '.ts', '.tsx', '.yaml', '.yml'])
+const EXTENSIONS = new Set(['.css', '.html', '.json', '.md', '.mjs', '.mts', '.ts', '.tsx', '.webp', '.yaml', '.yml'])
 
 /**
  * Whether a code span is a path: segments of letters, digits, `_`, `.`, `-`

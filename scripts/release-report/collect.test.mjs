@@ -282,6 +282,47 @@ describe('the browser job’s results', () => {
   })
 })
 
+/** The demo's pictures script, and the file its check wrote as scripts/pictures/session.mjs writes it, unless `written` is false. */
+function withPictures(root, { written = true } = {}) {
+  put(root, 'apps/demo/scripts/pictures.mjs', '// the demo’s README pictures\n')
+  if (written) {
+    put(root, 'apps/demo/test-results/pictures.json', { check: 'pictures', app: 'apps/demo', startedAt: at(34), finishedAt: at(35), playwright: '1.64.1', browser: { name: 'chromium', version: '156.0.8078.4', headless: true }, walked: ['demo-form'], problems: [] })
+  }
+  return root
+}
+
+describe('the pictures’ check', () => {
+  // The README's pictures are checked in Chromium's leg alone (0016): that
+  // leg's results carry the check's file beside the gate's, and another
+  // leg, which runs no check, expects none. An app has pictures when it has
+  // a pictures script, as the README's guard finds it.
+  test('is kept in the leg of the browser the pictures are taken in, and expected in no other', () => {
+    const root = withPictures(withDemo(workspace(), ['chromium', 'firefox']))
+    const chromium = collect({ root, job: 'browser', variant: 'chromium', ...machine })
+    expect(chromium.pictures.map((check) => [check.app, check.walked])).toEqual([['apps/demo', ['demo-form']]])
+    expect(chromium.absent).toEqual([])
+    expect(collect({ root, job: 'browser', variant: 'firefox', ...machine })).toMatchObject({ pictures: [], absent: [] })
+  })
+
+  // A check that left nothing -- it stopped before it wrote, or its step
+  // never ran -- is listed under the browser reader, so the report says
+  // the pictures were held by nobody rather than that there are none.
+  test('is listed when it left no results, in that leg and on a machine', () => {
+    const root = withPictures(withDemo(workspace()), { written: false })
+    expect(collect({ root, job: 'browser', variant: 'chromium', ...machine })).toMatchObject({ pictures: [], absent: [{ reader: 'browser', file: 'apps/demo/test-results/pictures.json' }] })
+    expect(collect({ root, local: true, since: at(-1), ...machine, env: {} }).absent).toEqual(expect.arrayContaining([{ reader: 'browser', file: 'apps/demo/test-results/pictures.json' }]))
+  })
+
+  // Yesterday's green check read as today's would hold the pictures to a
+  // page nobody walked.
+  test('is read on a machine, and refused from before --since', () => {
+    expect(collect({ root: withPictures(withDemo(workspace())), local: true, since: at(-1), ...machine, env: {} }).pictures).toHaveLength(1)
+    const stale = collect({ root: withPictures(withDemo(workspace())), local: true, since: at(34.5), ...machine, env: {} })
+    expect(stale.pictures).toEqual([])
+    expect(stale.missing).toEqual(expect.arrayContaining([`stale: apps/demo/test-results/pictures.json started ${at(34)}, before --since`]))
+  })
+})
+
 describe('the validator job’s results', () => {
   // The validator job leaves two things the report reads: the gate's own
   // file, which says what it ran, loaded and judged, and the run of the

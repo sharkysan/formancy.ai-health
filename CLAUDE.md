@@ -121,7 +121,9 @@ its build reads the corpus, the registers and `scripts/notices.mjs` and
 `scripts/purpose.mjs`, renders the letter through
 `scripts/validator/letter.mjs`, and writes the notices of what it bundles
 with `scripts/third-party-notices.mjs`; `scripts/demo-headers.mjs` decides
-its headers and `scripts/demo.mjs` deploys it. The package path the
+its headers and `scripts/demo.mjs` deploys it; and `scripts/pictures.mjs`,
+with `scripts/pictures/` and `apps/demo/scripts/pictures.mjs`, takes the
+README's pictures of it (0016). The package path the
 plan proposes, each package depending only on those before it, and split
 further only where a part has its own reason to change:
 
@@ -251,7 +253,11 @@ and the document says what. Three shapes, in order of preference:
    `scripts/readme.test.mjs` fails when the README's *Intended purpose*
    stops holding the sentence above that says what the product is not,
    word for word, or a relative link of the README, or the heading it
-   names, no longer lands (0011). The architecture's guard, the guide's and
+   names, no longer lands (0011); `scripts/pictures/readme.test.mjs` fails
+   when the README's pictures are not what `scripts/pictures/scenes.json`
+   and `docs/images/readme/captured.json` render, a picture is not the
+   bytes its record names, or a caption quotes what its sections did not
+   say when it was taken (0016). The architecture's guard, the guide's and
    the README's read Markdown through one module, `scripts/markdown.mjs`.
    All of them run as `pnpm test:repo`, and CI runs that — **a guard that
    is not a gate is a comment.**
@@ -361,7 +367,8 @@ The packages have no user interface. The demo, `apps/demo`, is the one
 page, beside them and in no release (0012): formancy.ai's concept applied
 as far as a formancy release carries it, its colours from
 `@formancy/themes` at an exact version, imported, and none of its own
-(0002), and no README picture. What holds it:
+(0002), and pictured in the README by a script alone (0016). What holds
+it:
 
 - **Its suite**, in the `test` job, in jsdom: the first resources the
   corpus's entries byte for byte, the Questionnaire read out from the
@@ -385,6 +392,19 @@ as far as a formancy release carries it, its colours from
 - `scripts/notices.mjs` and `scripts/purpose.mjs` hold the one text of
   HL7's and LOINC's notices and the reading of this file's sentence of
   what the product is not, which the page shows as its build reads them.
+- **The README's pictures** (0016): every picture is whole sections of a
+  state the page reaches, taken by `node scripts/pictures.mjs` in
+  Chromium from the built page, never by hand, on the synthetic referral
+  alone, and a caption quotes only text those sections hold.
+  `scripts/pictures/readme.test.mjs` in `pnpm test:repo` holds the
+  README's regions, the pictures' bytes and every caption to
+  `docs/images/readme/captured.json`; `node scripts/pictures.mjs --check`,
+  in the Chromium leg of the `browser` job, walks every scene again and
+  fails when a section says something else, and the release report fails
+  a run whose check did not walk a scene `scripts/pictures/scenes.json`
+  gives. A change to what a picture shows is retaken with
+  `node scripts/pictures.mjs`, and each new picture looked at before it is
+  committed: nothing checks its pixels.
 
 It says only what it does with what is typed, and nothing about cookies,
 tracking or analytics. Cloudflare deploys it from `main` on every push.
@@ -519,6 +539,12 @@ exactly what CI does:
     or a resource otherwise than the corpus expects, ran another validator
     or JAR or another register than `docs/release/` pins, loaded anything
     else, or did not run offline;
+  - the demo's browser gate failed a check, stopped, or made fewer passes
+    than it planned, in any browser of `scripts/browsers.mjs`; or the
+    README pictures' check left nothing, did not walk a scene
+    `scripts/pictures/scenes.json` gives, found a picture whose page says
+    something else, or ran in another browser or build than Playwright
+    pins for Chromium;
   - two builds of one package differ, or a tarball's built files are not
     every job's;
   - a release gate's evidence or a limitation's `heldBy` test did not pass.
@@ -553,7 +579,10 @@ and `security.yml` runs CodeQL and dependency review.
   needs from a `setup-java` pinned to a commit, holds the registers after
   the gate with none of their cases skipped, collects after that, caches
   only downloads and only in CI, fetches and runs nothing
-  but through the script, and uploads its results however it ends.
+  but through the script, and uploads its results however it ends;
+- the `browser` job checks the README's pictures in Chromium's leg alone,
+  after the gate and before it collects, and only checks: a retake never
+  runs in CI.
 
 Locally, run the same commands for what you changed.
 
@@ -577,6 +606,10 @@ Locally, run the same commands for what you changed.
   one sentence and no other, or the guard cannot tell which it holds.
 - After a file the README links is renamed, or a heading it names reworded,
   the README's link follows it.
+- After a caption in `scripts/pictures/scenes.json` changes, run
+  `node scripts/pictures/readme.mjs --write`; after what a picture shows
+  changes, `node scripts/pictures.mjs`, which retakes it and writes the
+  README (`pnpm build` first).
 - A new decision record needs its entry in `docs/release/limitations.json`:
   the costs a user, integrator or operator meets, or why it has none. An
   edited one needs a re-read and

@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
-import { BROWSERS, FACTS, gateBrowsers, installCommand, PINNED_AS, ranIn, VARIABLE } from './browsers.mjs'
+import { BROWSERS, FACTS, gateBrowsers, installCommand, PICTURES_BROWSER, PINNED_AS, ranIn, VARIABLE } from './browsers.mjs'
 import { readWorkflow } from './workflows.mjs'
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -37,6 +37,18 @@ describe('BROWSERS', () => {
   // the report holds a launch to must be the build the launch starts.
   test('pins each browser as the build its launch starts', () => {
     expect(PINNED_AS).toEqual({ chromium: 'chromium-headless-shell', firefox: 'firefox', webkit: 'webkit' })
+  })
+})
+
+describe('PICTURES_BROWSER', () => {
+  // The README's pictures are taken, and checked in CI, in one browser
+  // (0016). One the gates do not run in would be launched with no pin to
+  // hold it to; a check in no leg, or in every leg, would be the pictures
+  // held by nobody, or a leg failing for a browser it was never taken in.
+  test('is one of BROWSERS, and the one leg of the browser job that checks the pictures', () => {
+    expect(BROWSERS).toContain(PICTURES_BROWSER)
+    const checks = readWorkflow().jobs.browser.steps.filter((step) => String(step.run ?? '').startsWith('node scripts/pictures.mjs'))
+    expect(checks.map((step) => step.if)).toEqual([`\${{ !cancelled() && matrix.browser == '${PICTURES_BROWSER}' }}`])
   })
 })
 

@@ -175,7 +175,10 @@ holds and what fails it). In short:
 - the demo's browser gate, every pass it planned made and every check in
   it passed, in Chromium, Firefox and WebKit at the builds the installed
   Playwright pins, the same checks in each, and every row of
-  `scripts/browsers.mjs`'s table held by its check;
+  `scripts/browsers.mjs`'s table held by its check; and the README's
+  pictures of the demo walked again in Chromium, every scene
+  `scripts/pictures/scenes.json` gives, each saying what it was taken
+  saying ([0016](docs/decisions/0016-the-readmes-pictures-of-the-demo-are-taken-by-a-script-and-held-to-the-text-they-show.md));
 - the install gate, each project held to what `scripts/install-hosts.mjs`
   plans, and the validator gate's verdict held to the registers;
 - each tarball's built files against the `dist/` every job built;
@@ -193,6 +196,7 @@ node scripts/validator.mjs --java <path to java 17 or later>
 VALIDATOR_GATE_RAN=true pnpm test:repo                   # the guards, the registers' every case with them
 pnpm exec turbo run test:coverage --force --summarize   # every package, fresh, with its wall time
 pnpm --filter @formancy/health-demo test:browser        # the demo's browser gate, in every browser this machine runs
+node scripts/pictures.mjs --check                       # the README's pictures, in Chromium
 node scripts/install-test.mjs
 node scripts/release-report/collect.mjs --local --since "$since"
 node scripts/release-report/report.mjs --local --allow-missing verify,install,validator
@@ -214,7 +218,9 @@ registers' cases that read its downloads skip, and are allowed by
 the browsers, leave out the browser gate and add `browser`, and on one
 that is not Linux, which runs no WebKit, add `browser` too: the files of
 the browsers that ran are read and held all the same, and the banner says
-the gate was allowed missing, WebKit's file with it (0014). The browser gate builds the demo itself, first; with its eight
+the gate was allowed missing, WebKit's file with it (0014); the pictures'
+check is the browser reader's too, and its file is read whenever it is
+there (0016). The browser gate builds the demo itself, first; with its eight
 passes in each browser in turn it ran, by its results files' start and
 finish on a desktop on 18 October 2026 (Windows 11, Node 24.21.0), 51.0
 and 51.4 s in Chromium and 85.1 and 76.1 s in Firefox, in two runs. A file that is

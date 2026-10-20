@@ -1,5 +1,6 @@
 // What fails the report (0011; formancy.ai-report 0014), for what it shows
-// of results, the browser gate, the install gate, the validator gate,
+// of results, the browser gate and the README pictures' check (0016), the
+// install gate, the validator gate,
 // build identity, the release gates and the limitations: one sentence
 // each, written into the report's `problems` and making the job exit 1.
 // Both files are still written, so a red run says why.
@@ -7,11 +8,12 @@
 // Pure over a built report. `allowMissing` names what a local, partial
 // report may lack (verify, browser, install, validator), each a reader of
 // collect.mjs: a file that reader did not find, what rests on its job and,
-// for browser, a gate that left nothing are not problems. A file it found
+// for browser, a gate or a pictures' check that left nothing are not
+// problems. A file it found
 // and refused still is. CI allows none.
 
-import { browserName, FACTS } from '../browsers.mjs'
-import { unmeasured } from './results.mjs'
+import { browserName, FACTS, PICTURES_BROWSER } from '../browsers.mjs'
+import { unmeasured, unwalked } from './results.mjs'
 
 const list = (items, most = 5) => (items.length <= most ? items.join('; ') : `${items.slice(0, most).join('; ')}; and ${String(items.length - most)} more`)
 
@@ -220,6 +222,39 @@ function gateProblems(report, { browserApps, browsers, allowMissing }) {
   return problems
 }
 
+/**
+ * Every app with README pictures has its pictures' check (0016): present,
+ * no error, every scene scenes.json gives the app walked and no other,
+ * nothing found -- a part that says something else than its picture, or a
+ * caption that quotes what its parts do not say -- and the browser it
+ * walked in the one the pictures are taken in, the build Playwright pins
+ * for it. The scenes are scenes.json's, read by the report (results.mjs's
+ * `planned`), not the check's word for them.
+ */
+function picturesProblems(report, { pictureApps, browsers, allowMissing }) {
+  const problems = []
+  const checks = report.results.pictures
+  for (const app of pictureApps) {
+    if (!allowMissing.includes('browser') && !checks.some((check) => check.app === app)) problems.push(`the pictures’ check of ${app} left no results`)
+  }
+  for (const check of checks) {
+    const which = `the pictures’ check of ${check.app}`
+    if (check.error !== null) problems.push(`${which} ended with an error: ${check.error}`)
+    // Problems, not pictures: one stale picture gives its part's diff and its caption's misquote.
+    if (check.problems.length > 0) problems.push(`${which} found ${String(check.problems.length)} problem(s) with the README’s pictures: ${list(check.problems)}`)
+    // One that ended in an error stopped where it stopped, for the reason it gives.
+    const skipped = unwalked(check)
+    if (check.error === null && skipped.length > 0) problems.push(`${which} did not walk ${skipped.join(', ')}, which scripts/pictures/scenes.json pictures, so nothing held ${skipped.length === 1 ? 'that picture' : 'those pictures'}`)
+    const strays = check.walked.filter((id) => !check.planned.includes(id))
+    if (strays.length > 0) problems.push(`${which} walked ${strays.join(', ')}, which scripts/pictures/scenes.json does not give ${check.app}: it walked another checkout’s scenes`)
+    if (check.planned.length === 0) problems.push(`${which} had no scene to walk: scripts/pictures/scenes.json gives ${check.app} none`)
+    if (check.browser === null) continue
+    if (check.browser.name !== PICTURES_BROWSER) problems.push(`${which} launched ${check.browser.name}, where the README’s pictures are taken in ${PICTURES_BROWSER} alone (scripts/browsers.mjs)`)
+    else problems.push(...launchProblems(which, check.browser, check.playwright, report.testedOn.browser, browsers))
+  }
+  return problems
+}
+
 const sorted = (keys) => [...keys].sort().join(', ')
 
 /**
@@ -344,12 +379,13 @@ export function releaseGateProblems(gates, allowMissing = []) {
 /**
  * Every problem of what the run shows: what collect did not find or
  * refused, a section in a job that does not leave it, the suites, the
- * browser gate of each of `browserApps` in each of `browsers`, the install
- * gate against `installPlan`, the validator gate and its job's run of the
+ * browser gate of each of `browserApps` in each of `browsers`, the
+ * pictures' check of each of `pictureApps`, the install gate against
+ * `installPlan`, the validator gate and its job's run of the
  * registers' test against `pin` and `registered`, build identity and the
  * limitations.
  */
-export function contentProblems(report, { published, installPlan, pin, registered, browserApps = [], browsers = [], allowMissing = [] }) {
+export function contentProblems(report, { published, installPlan, pin, registered, browserApps = [], browsers = [], pictureApps = [], allowMissing = [] }) {
   return [
     // A file its reader expected and did not find; on a machine, not a
     // problem for a reader the report allows missing, as its banner says.
@@ -363,6 +399,7 @@ export function contentProblems(report, { published, installPlan, pin, registere
     ...report.results.packages.flatMap((row) => suiteProblems(row)),
     ...(report.results.repository.present || !allowMissing.includes('verify') ? suiteProblems(report.results.repository) : []),
     ...gateProblems(report, { browserApps, browsers, allowMissing }),
+    ...picturesProblems(report, { pictureApps, browsers, allowMissing }),
     ...installProblems(report, published, allowMissing, installPlan),
     ...validatorProblems(report, { pin, registered, allowMissing }),
     ...identityProblems(report),

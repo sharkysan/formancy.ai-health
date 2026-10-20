@@ -1,6 +1,6 @@
 # 0011 — Derive a release report from the run that gated the release, hold the validator gate to the registers in it, and say what it did not test; compile and run the getting-started guide in the install gate; make the SBOM of what a consumer installs; and say in the README what 0.1.0 is, what is not in it, and what it is for, in CLAUDE.md's words
 
-- **Status:** accepted; its report reads a fifth job, `browser`, the demo's gate, and its register's areas gain `demo`, by [0012](0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)
+- **Status:** accepted; its report reads a fifth job, `browser`, the demo's gate, and its register's areas gain `demo`, by [0012](0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md); its report reads the README pictures' check in the browser job's Chromium leg, and fails a run in which it did not walk a scene `scripts/pictures/scenes.json` gives, by [0016](0016-the-readmes-pictures-of-the-demo-are-taken-by-a-script-and-held-to-the-text-they-show.md)
 - **Date:** 2026-10-17
 - **Deciders:** Daniel Bacher
 - **Verified by:** the `report` job in `.github/workflows/gates.yml`, which
