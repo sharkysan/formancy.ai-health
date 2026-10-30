@@ -140,8 +140,18 @@ export interface Words {
     readonly affiliation: string
     readonly licence: string
   }
-  /** The footer's links: the repository, its licence, and the notices of what the page bundles. */
-  readonly footer: { readonly repository: string; readonly licence: string; readonly notices: string }
+  /**
+   * The footer's links: the repository, its licence, the notices of what the
+   * page bundles, and formancy.ai's legal notice and privacy notice, whose
+   * words say the pages they open are in English.
+   */
+  readonly footer: {
+    readonly repository: string
+    readonly licence: string
+    readonly notices: string
+    readonly legal: string
+    readonly privacy: string
+  }
   /** What the page says when something throws that no package refuses with. */
   readonly broken: string
 }
