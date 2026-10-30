@@ -22,6 +22,7 @@ import { REFERRAL_DATA, REFERRAL_MAX_PAGES, REFERRAL_OPTIONS, REFERRAL_REPORT } 
  */
 export async function renderReferral(data: ReportData = REFERRAL_DATA): Promise<Uint8Array> {
   const resolution = resolveReport(REFERRAL_REPORT, data, REFERRAL_OPTIONS)
-  if (!resolution.ok) throw new Error(`Report refused the corpus's referral: ${resolution.errors.map((error) => `${error.stage} ${error.code} at ${error.path}`).join('; ')}`)
+  if (!resolution.ok)
+    throw new Error(`Report refused the corpus's referral: ${resolution.errors.map((error) => `${error.stage} ${error.code} at ${error.path}`).join('; ')}`)
   return renderPdf(resolution.document, { maxPages: REFERRAL_MAX_PAGES })
 }

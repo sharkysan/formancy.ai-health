@@ -41,7 +41,14 @@ import type { Plugin } from 'vite'
 import { HL7_NOTICE, LOINC_NOTICE } from '../../../../scripts/notices.mjs'
 import { intendedPurpose } from '../../../../scripts/purpose.mjs'
 import { corpus } from '../../../../scripts/validator/corpus.mjs'
-import { DEMO_NAMES, demoChOrfContext, demoReferral, demoReferralAnswers, demoReferralContext, demoResponseContext } from '../../../../scripts/validator/demo-referral.mjs'
+import {
+  DEMO_NAMES,
+  demoChOrfContext,
+  demoReferral,
+  demoReferralAnswers,
+  demoReferralContext,
+  demoResponseContext,
+} from '../../../../scripts/validator/demo-referral.mjs'
 import { LETTER, registeredLetter } from '../../../../scripts/validator/letter.mjs'
 import { IG_PACKAGES, VALIDATOR_PIN } from '../../../../scripts/validator/registers.mjs'
 import { byFile, FILES, firstOf, type Outcome, type Sample } from '../exports.js'
@@ -77,7 +84,14 @@ export const outsideReads = (): readonly string[] => [...read].sort()
  * JSON, which is how the module carries it.
  */
 export function sampleOf(): Sample {
-  const sample = { form: demoReferral, questionnaireContext: demoReferralContext, responseContext: demoResponseContext, chOrfContext: demoChOrfContext, answers: demoReferralAnswers, names: { response: DEMO_NAMES.response } }
+  const sample = {
+    form: demoReferral,
+    questionnaireContext: demoReferralContext,
+    responseContext: demoResponseContext,
+    chOrfContext: demoChOrfContext,
+    answers: demoReferralAnswers,
+    names: { response: DEMO_NAMES.response },
+  }
   return JSON.parse(JSON.stringify(sample)) as Sample
 }
 
@@ -121,7 +135,10 @@ export function sampleProblems(first: ReadonlyMap<string, Outcome>, entries: rea
  */
 export function corpusFiles(first: ReadonlyMap<string, Outcome>, entries: readonly CorpusEntry[]): string[] {
   const problems = sampleProblems(first, entries)
-  if (problems.length > 0) throw new Error(`the demo's first resources are not the validator corpus's, so the page would claim what the gate never judged:\n  - ${problems.join('\n  - ')}`)
+  if (problems.length > 0)
+    throw new Error(
+      `the demo's first resources are not the validator corpus's, so the page would claim what the gate never judged:\n  - ${problems.join('\n  - ')}`,
+    )
   return [...first.keys()]
 }
 
@@ -129,7 +146,10 @@ export function corpusFiles(first: ReadonlyMap<string, Outcome>, entries: readon
 export function pinned(packages: readonly { id: string; version: string; loadedAs: string }[], id: string, loadedAs?: string): string {
   const found = packages.filter((entry) => entry.id === id && (loadedAs === undefined || entry.loadedAs === loadedAs))
   const [only, ...more] = found
-  if (only === undefined || more.length > 0) throw new Error(`${IG_PACKAGES} registers ${String(found.length)} packages ${id}${loadedAs === undefined ? '' : ` loaded as ${loadedAs}`}, and the page names exactly one`)
+  if (only === undefined || more.length > 0)
+    throw new Error(
+      `${IG_PACKAGES} registers ${String(found.length)} packages ${id}${loadedAs === undefined ? '' : ` loaded as ${loadedAs}`}, and the page names exactly one`,
+    )
   return only.version
 }
 

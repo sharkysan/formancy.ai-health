@@ -1,11 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import {
-  lockedPackages,
-  releaseAgeExemptionProblems,
-  releaseAgeExemptions,
-  upstreamDependencyProblems,
-  workspaceManifests,
-} from './upstream-deps.mjs'
+import { lockedPackages, releaseAgeExemptionProblems, releaseAgeExemptions, upstreamDependencyProblems, workspaceManifests } from './upstream-deps.mjs'
 
 describe('upstreamDependencyProblems', () => {
   const questionnaire = { name: '@formancy/health-questionnaire', dependencies: { '@formancy/spec': '0.5.0' } }

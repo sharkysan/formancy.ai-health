@@ -9,12 +9,12 @@ describe('decimal', () => {
   // exponent's spelling, or every digit past the seventeenth.
   test.each([
     ['0.10', 'a trailing zero'],
-    ['-0.0', 'a negative zero, which R4\'s grammar admits'],
-    ['1E+2', 'an exponent with its sign and capital E, which R4\'s grammar admits'],
+    ['-0.0', "a negative zero, which R4's grammar admits"],
+    ['1E+2', "an exponent with its sign and capital E, which R4's grammar admits"],
     ['1e-3', 'a small value in exponent form'],
     ['123456789012345678901234567890', 'thirty integer digits'],
     ['0.123456789012345678901234567890', 'thirty fractional digits'],
-    ['99999999999999.9999', 'eighteen digits, the plan\'s regression case'],
+    ['99999999999999.9999', "eighteen digits, the plan's regression case"],
     ['9007199254740993', '2^53 + 1, which a double rounds to 2^53'],
     ['1E+400', 'a magnitude no double holds'],
   ])('keeps %s as written: %s', (text) => {

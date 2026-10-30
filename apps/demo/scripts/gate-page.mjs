@@ -30,8 +30,12 @@ export const FONT_FILE = /\.(?:woff2?|ttf|otf)(?:[?#]|$)/
 export function stylesheets(root = app) {
   const main = readFileSync(join(root, 'src', 'main.tsx'), 'utf8')
   const imported = [...main.matchAll(/^import '([^']+\.css)'$/gm)].map((match) => match[1])
-  if (imported.length === 0 || /^import\s[^'"\n]*\sfrom\s+['"][^'"]+\.css['"]/m.test(main)) throw new Error('src/main.tsx imports its stylesheets otherwise than as `import \'….css\'`, so the gate would read no breakpoint of theirs')
-  const read = (file) => readFileSync(file, 'utf8').replaceAll(/@import\s+'([^']+\.css)';/g, (_, path) => read(path.startsWith('.') ? join(dirname(file), path) : createRequire(file).resolve(path)))
+  if (imported.length === 0 || /^import\s[^'"\n]*\sfrom\s+['"][^'"]+\.css['"]/m.test(main))
+    throw new Error("src/main.tsx imports its stylesheets otherwise than as `import '….css'`, so the gate would read no breakpoint of theirs")
+  const read = (file) =>
+    readFileSync(file, 'utf8').replaceAll(/@import\s+'([^']+\.css)';/g, (_, path) =>
+      read(path.startsWith('.') ? join(dirname(file), path) : createRequire(file).resolve(path)),
+    )
   return imported.map((path) => {
     const file = path.startsWith('.') ? join(root, 'src', path) : createRequire(join(root, 'package.json')).resolve(path)
     return { path, css: read(file).replaceAll(/\/\*[\s\S]*?\*\//g, '') }
@@ -49,7 +53,10 @@ export function stylesheets(root = app) {
 export function roomOf(root = app) {
   const css = readFileSync(createRequire(join(root, 'package.json')).resolve('@formancy/themes/room.css'), 'utf8').replaceAll(/\/\*[\s\S]*?\*\//g, '')
   const declared = Object.fromEntries([...css.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)].map(([, name, value]) => [name, value.trim()]))
-  const through = (value, seen) => value.replaceAll(/var\(\s*(--[\w-]+)\s*\)/g, (whole, name) => (declared[name] === undefined || seen.includes(name) ? whole : through(declared[name], [...seen, name])))
+  const through = (value, seen) =>
+    value.replaceAll(/var\(\s*(--[\w-]+)\s*\)/g, (whole, name) =>
+      declared[name] === undefined || seen.includes(name) ? whole : through(declared[name], [...seen, name]),
+    )
   const variables = Object.fromEntries(Object.entries(declared).map(([name, value]) => [name, through(value, [name])]))
   return { variables, scheme: /color-scheme\s*:\s*([^;]+);/.exec(css)?.[1]?.trim() ?? null }
 }
@@ -69,7 +76,8 @@ export function canonicalColours(value) {
   const hex = (bytes) => `#${bytes.map((each) => each.toString(16).padStart(2, '0')).join('')}`
   return value
     .replaceAll(/#([\da-f]{3,8})(?![\da-f])/gi, (whole, digits) => {
-      if (digits.length === 3 || digits.length === 4) return `${hex([...digits].map((digit) => Number.parseInt(digit + digit, 16)))}${digits.length === 3 ? 'ff' : ''}`
+      if (digits.length === 3 || digits.length === 4)
+        return `${hex([...digits].map((digit) => Number.parseInt(digit + digit, 16)))}${digits.length === 3 ? 'ff' : ''}`
       if (digits.length === 6 || digits.length === 8) return `#${digits.toLowerCase()}${digits.length === 6 ? 'ff' : ''}`
       return whole
     })
@@ -103,14 +111,22 @@ const tokens = (value) =>
  */
 export async function roomProblem(page, room = roomOf()) {
   const names = Object.keys(room.variables)
-  if (names.length === 0 || room.scheme === null) return 'the installed room.css sets no custom property or no colour scheme, so the gate has nothing to hold the page to'
+  if (names.length === 0 || room.scheme === null)
+    return 'the installed room.css sets no custom property or no colour scheme, so the gate has nothing to hold the page to'
   const ground = canonicalColours(room.variables['--ground'] ?? '')
-  if (!/^#[\da-f]{8}$/.test(ground)) return `room.css's --ground is ${String(room.variables['--ground'])}, not a colour the gate compares with what the page computes`
+  if (!/^#[\da-f]{8}$/.test(ground))
+    return `room.css's --ground is ${String(room.variables['--ground'])}, not a colour the gate compares with what the page computes`
   const held = await page.evaluate((each) => {
     const style = getComputedStyle(document.documentElement)
-    return { values: Object.fromEntries(each.map((name) => [name, style.getPropertyValue(name)])), scheme: style.colorScheme, ground: getComputedStyle(document.body).backgroundColor }
+    return {
+      values: Object.fromEntries(each.map((name) => [name, style.getPropertyValue(name)])),
+      scheme: style.colorScheme,
+      ground: getComputedStyle(document.body).backgroundColor,
+    }
   }, names)
-  const wrong = names.filter((name) => tokens(held.values[name] ?? '') !== tokens(room.variables[name])).map((name) => `${name} is ${JSON.stringify(held.values[name] ?? '')}, not ${room.variables[name]}`)
+  const wrong = names
+    .filter((name) => tokens(held.values[name] ?? '') !== tokens(room.variables[name]))
+    .map((name) => `${name} is ${JSON.stringify(held.values[name] ?? '')}, not ${room.variables[name]}`)
   if (held.scheme !== room.scheme) wrong.push(`:root is drawn ${JSON.stringify(held.scheme)}, not ${room.scheme}`)
   if (canonicalColours(held.ground) !== ground) wrong.push(`the page's ground is ${held.ground}, not --ground's ${String(room.variables['--ground'])}`)
   return wrong.length === 0 ? null : `${String(wrong.length)} of the room's ${String(names.length + 2)} not so: ${wrong.slice(0, 4).join('; ')}`
@@ -160,7 +176,10 @@ export function passes(languages, sheets = stylesheets()) {
     { label: 'laptop, 1440', width: 1440, height: 900 },
     { label: 'wide, 2400 by 1400', width: Math.max(2400, widest + 1), height: 1400 },
   ]
-  if (list.length < languages.length) throw new Error(`${String(list.length)} passes for ${String(languages.length)} languages: ${languages.slice(list.length).join(', ')} would be measured by no pass`)
+  if (list.length < languages.length)
+    throw new Error(
+      `${String(list.length)} passes for ${String(languages.length)} languages: ${languages.slice(list.length).join(', ')} would be measured by no pass`,
+    )
   return list.map((entry, index) => {
     const language = languages[index % languages.length]
     return { ...entry, label: `${entry.label}, ${language}`, language }
@@ -240,7 +259,10 @@ export async function audit(page, target) {
       axe: window.axe.version,
       violations: results.violations.map((rule) => `${rule.id} (${String(rule.nodes.length)}): ${rule.nodes[0]?.html.slice(0, 90) ?? ''}`),
       measured: ['color-contrast', 'target-size'].filter((id) => nodes(results.passes, id).length > 0),
-      undecided: undecided.filter((node) => !hidden.includes(node)).map((node) => `${node.html.slice(0, 60)} (${why(node)})`).slice(0, 4),
+      undecided: undecided
+        .filter((node) => !hidden.includes(node))
+        .map((node) => `${node.html.slice(0, 60)} (${why(node)})`)
+        .slice(0, 4),
       hidden: hidden.length,
     }
   })
@@ -271,7 +293,9 @@ export async function reactProblem(page) {
   const builds = await page.evaluate(() => window.__gateReact ?? null)
   if (builds === null) return 'no hook was installed before the page ran'
   if (builds.length === 0) return 'no React renderer reported itself'
-  return builds.every((build) => build === 0) ? null : `React's renderer reported bundleType ${builds.join(', ')}: its development build, which no deploy serves`
+  return builds.every((build) => build === 0)
+    ? null
+    : `React's renderer reported bundleType ${builds.join(', ')}: its development build, which no deploy serves`
 }
 
 /** What has the keyboard's focus, said so that a failure names it. */
@@ -315,17 +339,30 @@ export async function fontProblem(page, { refused, forgets = false }) {
   if (declared.length === 0) return "no stylesheet of the built demo declares a face; the gate reads the faces from dist's @font-face rules"
   const faces = await page.evaluate(async () => {
     await document.fonts.ready
-    return [...document.fonts].map((face) => ({ face: `${face.family.replaceAll(/["']/g, '')} ${face.weight} ${face.style} ${face.unicodeRange === 'U+0-10FFFF' ? 'every character' : face.unicodeRange}`, status: face.status }))
+    return [...document.fonts].map((face) => ({
+      face: `${face.family.replaceAll(/["']/g, '')} ${face.weight} ${face.style} ${face.unicodeRange === 'U+0-10FFFF' ? 'every character' : face.unicodeRange}`,
+      status: face.status,
+    }))
   })
   const loaded = faces.filter((face) => face.status === 'loaded').map((face) => face.face)
   if (refused) return loaded.length === 0 ? null : `${loaded.slice(0, 3).join('; ')} loaded anyway, so this pass measured the web fonts, not the fallback stack`
   const families = (list) => [...new Set(list.map((face) => face.split(' ')[0]))]
-  if (faces.length !== declared.length) return `the page holds ${String(faces.length)} faces, where the built stylesheets declare ${String(declared.length)} (${families(declared).join(', ')})`
+  if (faces.length !== declared.length)
+    return `the page holds ${String(faces.length)} faces, where the built stylesheets declare ${String(declared.length)} (${families(declared).join(', ')})`
   const waiting = faces.filter((face) => face.status !== 'loaded').map((face) => `${face.face}: ${face.status}`)
-  if (!forgets) return waiting.length === 0 ? null : `${String(waiting.length)} of ${String(faces.length)} faces did not load as the page started, so text typed in their range would ask for them later: ${waiting.slice(0, 3).join('; ')}`
+  if (!forgets)
+    return waiting.length === 0
+      ? null
+      : `${String(waiting.length)} of ${String(faces.length)} faces did not load as the page started, so text typed in their range would ask for them later: ${waiting.slice(0, 3).join('; ')}`
   const otherwise = faces.filter((face) => !['loaded', 'unloaded'].includes(face.status)).map((face) => `${face.face}: ${face.status}`)
-  if (otherwise.length > 0) return `${String(otherwise.length)} of ${String(faces.length)} faces neither loaded nor forgotten: ${otherwise.slice(0, 3).join('; ')}`
+  if (otherwise.length > 0)
+    return `${String(otherwise.length)} of ${String(faces.length)} faces neither loaded nor forgotten: ${otherwise.slice(0, 3).join('; ')}`
   if (waiting.length === 0) return `every face is loaded once the page has drawn, so 0014's table no longer says what this browser does`
-  const again = await page.evaluate(async () => (await Promise.allSettled([...document.fonts].filter((face) => face.status === 'unloaded').map((face) => face.load()))).filter((result) => result.status !== 'fulfilled' || result.value.status !== 'loaded').length)
+  const again = await page.evaluate(
+    async () =>
+      (await Promise.allSettled([...document.fonts].filter((face) => face.status === 'unloaded').map((face) => face.load()))).filter(
+        (result) => result.status !== 'fulfilled' || result.value.status !== 'loaded',
+      ).length,
+  )
   return again === 0 ? null : `${String(again)} of the ${String(waiting.length)} faces it forgot did not load again`
 }

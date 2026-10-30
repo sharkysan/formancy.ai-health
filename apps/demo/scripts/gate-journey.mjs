@@ -105,7 +105,10 @@ const rulesIn = (region) => region.getByRole('listitem').evaluateAll((items) => 
 /** The PDF `bundle`'s JSON carries where `placement` puts it, decoded. */
 function carried(bundle, placement) {
   const entries = JSON.parse(bundle ?? '{"entry":[]}').entry.map(({ resource }) => resource)
-  const data = placement === 'data' ? entries.find((resource) => resource.resourceType === 'DocumentReference')?.content?.[0]?.attachment?.data : entries.find((resource) => resource.resourceType === 'Binary')?.data
+  const data =
+    placement === 'data'
+      ? entries.find((resource) => resource.resourceType === 'DocumentReference')?.content?.[0]?.attachment?.data
+      : entries.find((resource) => resource.resourceType === 'Binary')?.data
   return core.fromBase64Binary(data ?? '', 'data')
 }
 
@@ -148,7 +151,15 @@ function on(page, { language, words, languages, files, pdfFile, expected }) {
  * formancy's renderer draws no element of the id its engine mints for it
  * (src/engine.ts, which engine.test.ts measures).
  */
-const ROLES = { question: 'textbox', specialty: 'combobox', language: 'radio', interpreter: 'checkbox', interpreter_language: 'textbox', available_from: 'textbox', contact_phone: 'textbox' }
+const ROLES = {
+  question: 'textbox',
+  specialty: 'combobox',
+  language: 'radio',
+  interpreter: 'checkbox',
+  interpreter_language: 'textbox',
+  available_from: 'textbox',
+  contact_phone: 'textbox',
+}
 
 /**
  * Null where the element with the keyboard's focus and every label of it
@@ -164,7 +175,9 @@ const inTheWindow = (page) =>
     const out = [control, ...labels].flatMap((part) => {
       const { top, bottom, left, right } = part.getBoundingClientRect()
       const name = part === control ? 'the control' : 'its label'
-      return top < 0 || bottom > height || left < 0 || right > width ? [`${name} at ${Math.round(left)},${Math.round(top)} to ${Math.round(right)},${Math.round(bottom)} of ${width} by ${height}`] : []
+      return top < 0 || bottom > height || left < 0 || right > width
+        ? [`${name} at ${Math.round(left)},${Math.round(top)} to ${Math.round(right)},${Math.round(bottom)} of ${width} by ${height}`]
+        : []
     })
     return out.length === 0 ? null : out.join(', ')
   })
@@ -185,7 +198,10 @@ async function readsOut({ check }, at) {
   const labels = items.map(({ linkId }) => labelOf(language, `${linkId}.label`))
   const list = at.region(w.questionnaire.heading).getByRole('list', { name: w.readOut.heading, exact: true })
   const headings = await list.getByRole('heading').allTextContents()
-  check('the Questionnaire is read out: every item of the corpus’s, in its order, by the text the form gives its field in the page’s language', items.length > 0 && isDeepStrictEqual(headings, labels) ? null : `the read-out names ${headings.join(', ') || 'nothing'}`)
+  check(
+    'the Questionnaire is read out: every item of the corpus’s, in its order, by the text the form gives its field in the page’s language',
+    items.length > 0 && isDeepStrictEqual(headings, labels) ? null : `the read-out names ${headings.join(', ') || 'nothing'}`,
+  )
   const astray = []
   const unseen = []
   for (const [index, { linkId }] of items.entries()) {
@@ -202,8 +218,14 @@ async function readsOut({ check }, at) {
       if (out !== null) unseen.push(`${linkId}: ${out}`)
     }
   }
-  check('and each item’s way to its field, pressed from the keyboard, puts the keyboard on the field the form drew for it', astray.length === 0 ? null : astray.join('; '))
-  check('and the field and its label whole inside the window', astray.length === 0 && unseen.length === 0 ? null : unseen.length === 0 ? 'not every way reached its field' : unseen.join('; '))
+  check(
+    'and each item’s way to its field, pressed from the keyboard, puts the keyboard on the field the form drew for it',
+    astray.length === 0 ? null : astray.join('; '),
+  )
+  check(
+    'and the field and its label whole inside the window',
+    astray.length === 0 && unseen.length === 0 ? null : unseen.length === 0 ? 'not every way reached its field' : unseen.join('; '),
+  )
 }
 
 /** From the form's first field, which has the keyboard, through every field in its order to its submit control. */
@@ -234,9 +256,17 @@ async function fromTheSample({ check }, at) {
   const { page, w, files, expected } = at
   const differing = []
   for (const [heading, file] of at.shown) if ((await at.bytesOf(heading)) !== expected.files[file]) differing.push(file)
-  check('the page starts from the sample: every resource is the corpus entry of its name, byte for byte', differing.length === 0 ? null : `not the corpus's: ${differing.join(', ')}`)
-  const said = (await page.getByText(w.form.sample, { exact: true }).count()) === 1 && (await page.getByText(w.resources.corpus(files.response), { exact: false }).count()) === 1
-  check('and the page says so, and offers no way back to where it already is', said && (await at.reset.count()) === 0 ? null : 'the status, the corpus sentence or the reset button says otherwise')
+  check(
+    'the page starts from the sample: every resource is the corpus entry of its name, byte for byte',
+    differing.length === 0 ? null : `not the corpus's: ${differing.join(', ')}`,
+  )
+  const said =
+    (await page.getByText(w.form.sample, { exact: true }).count()) === 1 &&
+    (await page.getByText(w.resources.corpus(files.response), { exact: false }).count()) === 1
+  check(
+    'and the page says so, and offers no way back to where it already is',
+    said && (await at.reset.count()) === 0 ? null : 'the status, the corpus sentence or the reset button says otherwise',
+  )
 }
 
 /** An answer changed, typed as a person types it; the response's bytes it made. */
@@ -249,8 +279,13 @@ async function change({ check }, at) {
   const changed = await at.bytesOf(w.response.heading)
   const answered = changed !== null && JSON.stringify(JSON.parse(changed)).includes(TYPED.trim())
   const remade = changed !== expected.files[files.response] && (await at.bytesOf(w.document.heading)) !== expected.files[files.document]
-  check('a change remade the response from what was typed, and the CH ORF document with it', answered && remade ? null : answered ? 'the response or the document is still the sample’s' : 'the response does not hold what was typed')
-  const said = (await page.getByText(w.form.changed, { exact: true }).count()) === 1 && (await page.getByText(w.resources.corpus(files.response), { exact: false }).count()) === 0
+  check(
+    'a change remade the response from what was typed, and the CH ORF document with it',
+    answered && remade ? null : answered ? 'the response or the document is still the sample’s' : 'the response does not hold what was typed',
+  )
+  const said =
+    (await page.getByText(w.form.changed, { exact: true }).count()) === 1 &&
+    (await page.getByText(w.resources.corpus(files.response), { exact: false }).count()) === 0
   check('and the page says the answers are changed, and no longer the corpus’s', said ? null : 'the status or the corpus sentence says otherwise')
   return changed
 }
@@ -267,7 +302,12 @@ async function anotherLanguage({ check }, at, changed) {
   await at.question().waitFor()
   const back = await at.bytesOf(w.response.heading)
   const kept = there === changed && back === changed && lang === other
-  check(`a change of language keeps the answers: in ${other}, and back in ${language}, the response is the same bytes`, kept ? null : `in ${other} (<html lang="${lang}">) ${there === changed ? 'the same' : 'other'} bytes, back ${back === changed ? 'the same' : 'other'} bytes`)
+  check(
+    `a change of language keeps the answers: in ${other}, and back in ${language}, the response is the same bytes`,
+    kept
+      ? null
+      : `in ${other} (<html lang="${lang}">) ${there === changed ? 'the same' : 'other'} bytes, back ${back === changed ? 'the same' : 'other'} bytes`,
+  )
 }
 
 /** A required answer cleared: refused for it, said to a screen reader, and the form's submit leaving the keyboard on it. */
@@ -281,9 +321,15 @@ async function clear(gate, at, measured) {
   await response.getByText(w.resources.refusedBy('@formancy/health-questionnaire'), { exact: true }).waitFor()
   const rules = await rulesIn(response)
   const unmade = (await at.region(w.document.heading).getByText(w.document.notMade, { exact: true }).count()) === 1
-  check('a required answer cleared is refused for it, and the CH ORF document is not made', rules.join() === 'required' && unmade ? null : `the response lists ${rules.join(', ') || 'nothing'}`)
+  check(
+    'a required answer cleared is refused for it, and the CH ORF document is not made',
+    rules.join() === 'required' && unmade ? null : `the response lists ${rules.join(', ') || 'nothing'}`,
+  )
   const live = await page.getByRole('status').textContent()
-  check('and the page says so once, politely, to a screen reader', live === w.form.refused(new Intl.NumberFormat(language).format(1)) ? null : `the status says ${JSON.stringify(live)}`)
+  check(
+    'and the page says so once, politely, to a screen reader',
+    live === w.form.refused(new Intl.NumberFormat(language).format(1)) ? null : `the status says ${JSON.stringify(live)}`,
+  )
   await measured('refused')
   await enter(at.submit)
   check('submitted with that answer missing, the keyboard is on it', await focused(page, at.question()))
@@ -294,7 +340,8 @@ async function backToTheSample({ check }, at) {
   const { page, w, files, expected } = at
   await enter(at.reset)
   await at.reset.waitFor({ state: 'detached' })
-  const sample = (await at.bytesOf(w.response.heading)) === expected.files[files.response] && (await at.bytesOf(w.document.heading)) === expected.files[files.document]
+  const sample =
+    (await at.bytesOf(w.response.heading)) === expected.files[files.response] && (await at.bytesOf(w.document.heading)) === expected.files[files.document]
   check('back to the sample, byte for byte, with no way back offered', sample ? null : 'the response or the document is not the corpus’s')
   check('and the keyboard on the line that says so', await focused(page, page.getByText(w.form.sample, { exact: true })))
   await enter(at.submit)
@@ -308,7 +355,12 @@ async function openTheJson({ check }, at) {
   const pre = page.getByRole('region', { name: w.resources.asJson(w.response.heading), exact: true })
   await pre.waitFor()
   const laidOut = await pre.innerText()
-  check('the JSON opened is the bytes, laid out for reading', isDeepStrictEqual(JSON.parse(laidOut), JSON.parse(expected.files[files.response])) && laidOut.includes('\n') ? null : 'its text is not the response’s JSON, or is not laid out')
+  check(
+    'the JSON opened is the bytes, laid out for reading',
+    isDeepStrictEqual(JSON.parse(laidOut), JSON.parse(expected.files[files.response])) && laidOut.includes('\n')
+      ? null
+      : 'its text is not the response’s JSON, or is not laid out',
+  )
 }
 
 /** Every download of a resource shown, then the letter's PDF, whose bytes it answers. */
@@ -319,10 +371,20 @@ async function downloads({ check }, at) {
     const got = await downloaded(page, at.link(file))
     if (got.name !== file || text(got.bytes) !== (await at.bytesOf(heading)) || text(got.bytes) !== expected.files[file]) wrong.push(file)
   }
-  check('every resource downloads as the file of its name, holding the bytes shown, which are the corpus’s', wrong.length === 0 ? null : `not so: ${wrong.join(', ')}`)
+  check(
+    'every resource downloads as the file of its name, holding the bytes shown, which are the corpus’s',
+    wrong.length === 0 ? null : `not so: ${wrong.join(', ')}`,
+  )
   const letter = await downloaded(page, at.link(at.pdfFile))
   const isPdf = text(letter.bytes.subarray(0, 5)) === '%PDF-' && sameBytes(letter.bytes, expected.pdf)
-  check('the letter downloads as the PDF the register holds, the bytes its Bundle carries in the attachment', isPdf && sameBytes(carried(expected.files[files.letter.data], 'data'), letter.bytes) ? null : isPdf ? 'the attachment holds other bytes' : 'it is not the registered PDF')
+  check(
+    'the letter downloads as the PDF the register holds, the bytes its Bundle carries in the attachment',
+    isPdf && sameBytes(carried(expected.files[files.letter.data], 'data'), letter.bytes)
+      ? null
+      : isPdf
+        ? 'the attachment holds other bytes'
+        : 'it is not the registered PDF',
+  )
   return letter.bytes
 }
 
@@ -335,7 +397,10 @@ async function inABinary({ check }, at, pdf) {
   const binary = await at.bytesOf(w.letter.heading)
   const saved = await downloaded(page, at.link(files.letter.binary))
   const held = binary === expected.files[files.letter.binary] && sameBytes(carried(binary, 'binary'), pdf) && text(saved.bytes) === binary
-  check('in a Binary, the letter’s Bundle is the corpus entry, carries the PDF, and downloads as itself', held ? null : 'the Bundle, its Binary or its download is not so')
+  check(
+    'in a Binary, the letter’s Bundle is the corpus entry, carries the PDF, and downloads as itself',
+    held ? null : 'the Bundle, its Binary or its download is not so',
+  )
 }
 
 /**
@@ -359,7 +424,10 @@ export async function journey(gate, page, { measured, ...options }) {
   await openTheJson(gate, at)
   await measured('JSON open')
   const onPurpose = await rulesIn(at.region(at.w.refused.heading))
-  gate.check('each input refused on purpose is refused by its package, for its rule', onPurpose.join() === 'version,unmapped,check-digit,check-digit,unproved' ? null : `the rules shown are ${onPurpose.join(', ')}`)
+  gate.check(
+    'each input refused on purpose is refused by its package, for its rule',
+    onPurpose.join() === 'version,unmapped,check-digit,check-digit,unproved' ? null : `the rules shown are ${onPurpose.join(', ')}`,
+  )
   const pdf = await downloads(gate, at)
   await inABinary(gate, at, pdf)
   await measured('letter in a Binary')

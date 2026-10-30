@@ -54,7 +54,17 @@
 
 import { chOrfOutput } from './ch-orf.mjs'
 import { DEMO_NAMES, demoChOrfContext, demoReferral, demoReferralAnswers, demoReferralContext, demoResponseContext } from './demo-referral.mjs'
-import { intake, intakeContext, intakeResponseContext, intakeRoutine, intakeUrgent, minimal, minimalAnswers, minimalContext, minimalResponseContext } from './forms.mjs'
+import {
+  intake,
+  intakeContext,
+  intakeResponseContext,
+  intakeRoutine,
+  intakeUrgent,
+  minimal,
+  minimalAnswers,
+  minimalContext,
+  minimalResponseContext,
+} from './forms.mjs'
 
 /** The canonical base of the hand-built corpus: IANA's example domain, never fetched. */
 const BASE = 'http://example.org'
@@ -125,12 +135,14 @@ function packageOutput(core, { toQuestionnaire }) {
       ],
       resource: broken((resource) => {
         const control = { coding: [{ system: uri('http://hl7.org/fhir/questionnaire-item-control', 'corpus'), code: code('page', 'corpus') }] }
-        resource.item[0].extension = [{ url: uri('http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl', 'corpus'), valueCodeableConcept: control }]
+        resource.item[0].extension = [
+          { url: uri('http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl', 'corpus'), valueCodeableConcept: control },
+        ]
       }),
     },
     {
       file: 'questionnaire-min-occurs-not-required.json',
-      why: "a minimum of answers on an item that is not required, which R4 allows minOccurs only on, and which the package refuses rather than writes",
+      why: 'a minimum of answers on an item that is not required, which R4 allows minOccurs only on, and which the package refuses rather than writes',
       expect: [{ severity: 'error', id: 'Profile_EXT_Not_Here', expression: 'Questionnaire.item[0].item[12]' }],
       resource: broken((resource) => {
         delete resource.item[0].item[12].required
@@ -173,11 +185,21 @@ function responseOutput(core, { toQuestionnaireResponse }) {
   return [
     { file: 'questionnaireresponse-referral-intake-urgent.json', expect: 'accepted', resource: urgent },
     { file: 'questionnaireresponse-referral-intake-routine.json', expect: 'accepted', resource: routine },
-    { file: 'questionnaireresponse-minimal-v1.json', expect: 'accepted', resource: answered(toQuestionnaireResponse, minimal, minimalAnswers, minimalResponseContext) },
+    {
+      file: 'questionnaireresponse-minimal-v1.json',
+      expect: 'accepted',
+      resource: answered(toQuestionnaireResponse, minimal, minimalAnswers, minimalResponseContext),
+    },
     {
       file: 'questionnaireresponse-answer-wrong-type.json',
       why: "an answer of another type than its item's, a number on a text item, which formancy's engine accepts in a text field and the package refuses; on a question no enableWhen reads, since the validator stops the whole run on one that does ('Expected answer and actual answer have incompatible types', measured)",
-      expect: [{ severity: 'error', id: 'Questionnaire_QR_Item_WrongType', expression: `QuestionnaireResponse.item[0].item[${String(familyName)}].answer[0].value.ofType(integer)` }],
+      expect: [
+        {
+          severity: 'error',
+          id: 'Questionnaire_QR_Item_WrongType',
+          expression: `QuestionnaireResponse.item[0].item[${String(familyName)}].answer[0].value.ofType(integer)`,
+        },
+      ],
       resource: broken(urgent, (resource) => {
         about(resource)[familyName].answer = [{ valueInteger: integer('7', 'corpus') }]
       }),
@@ -200,7 +222,7 @@ function responseOutput(core, { toQuestionnaireResponse }) {
     },
     {
       file: 'questionnaireresponse-linkid-not-in-questionnaire.json',
-      why: 'an item of a linkId the Questionnaire lacks, which a submission\'s name its form does not have would be, and which the package refuses',
+      why: "an item of a linkId the Questionnaire lacks, which a submission's name its form does not have would be, and which the package refuses",
       expect: [{ severity: 'error', id: 'Questionnaire_QR_Item_NotFound', expression: 'QuestionnaireResponse' }],
       resource: broken(urgent, (resource) => {
         resource.item.push({ linkId: 'not_in_form', answer: [{ valueString: 'Synthetic' }] })
@@ -213,7 +235,11 @@ function responseOutput(core, { toQuestionnaireResponse }) {
         { severity: 'error', id: 'QUESTIONNAIRE_QR_ITEM_GROUP_REQUIRED', expression: `QuestionnaireResponse.item[0].item[${String(row + 1)}]` },
         // The validator gives this issue its message as its id, with the
         // linkId in it (measured): no other id is there to match.
-        { severity: 'error', id: "No response answer found for required item 'contact_name'", expression: `QuestionnaireResponse.item[0].item[${String(row + 1)}]` },
+        {
+          severity: 'error',
+          id: "No response answer found for required item 'contact_name'",
+          expression: `QuestionnaireResponse.item[0].item[${String(row + 1)}]`,
+        },
       ],
       resource: broken(routine, (resource) => {
         about(resource).splice(row + 1, 0, { linkId: 'contacts' })
@@ -239,7 +265,12 @@ function assembled(referralDocument, document) {
  * author and source the document's own entries, by their urn:uuid.
  */
 export function documentResponse(toQuestionnaireResponse, names) {
-  const context = { ...intakeResponseContext, subject: { reference: names.patient }, author: { reference: names.practitioner }, source: { reference: names.patient } }
+  const context = {
+    ...intakeResponseContext,
+    subject: { reference: names.patient },
+    author: { reference: names.practitioner },
+    source: { reference: names.patient },
+  }
   return answered(toQuestionnaireResponse, intake, intakeUrgent, context)
 }
 
@@ -334,7 +365,13 @@ function documentOutput(core, { toQuestionnaireResponse }, { NAMES, referralDocu
     {
       file: 'bundle-document-attachment-size-wrong.json',
       why: "an attachment's size that is not its bytes', which the package counts from the bytes it encodes",
-      expect: [{ severity: 'error', id: 'TYPE_SPECIFIC_CHECKS_DT_ATT_SIZE_CORRECT', expression: 'Bundle.entry[3].resource/*DocumentReference/null*/.content[0].attachment' }],
+      expect: [
+        {
+          severity: 'error',
+          id: 'TYPE_SPECIFIC_CHECKS_DT_ATT_SIZE_CORRECT',
+          expression: 'Bundle.entry[3].resource/*DocumentReference/null*/.content[0].attachment',
+        },
+      ],
       resource: broken(withData, (bundle) => {
         attachment(bundle).size = core.unsignedInt(String(pdf.length + 1), 'corpus')
       }),
@@ -342,7 +379,13 @@ function documentOutput(core, { toQuestionnaireResponse }, { NAMES, referralDocu
     {
       file: 'bundle-document-attachment-hash-wrong.json',
       why: "an attachment's SHA-1 that is not its bytes' -- that of no bytes at all -- which the package computes from the bytes it encodes; the validator computes it too, and accepts the package's",
-      expect: [{ severity: 'error', id: 'TYPE_SPECIFIC_CHECKS_DT_ATT_HASH_MISMATCH', expression: 'Bundle.entry[3].resource/*DocumentReference/null*/.content[0].attachment' }],
+      expect: [
+        {
+          severity: 'error',
+          id: 'TYPE_SPECIFIC_CHECKS_DT_ATT_HASH_MISMATCH',
+          expression: 'Bundle.entry[3].resource/*DocumentReference/null*/.content[0].attachment',
+        },
+      ],
       resource: broken(withData, (bundle) => {
         attachment(bundle).hash = '2jmj7l5rSw0yVb/vlWAYkK/YBwk='
       }),
@@ -361,7 +404,10 @@ function documentOutput(core, { toQuestionnaireResponse }, { NAMES, referralDocu
  * role, each named by its urn:uuid.
  */
 function demoOutput({ toQuestionnaire, toQuestionnaireResponse }, ch) {
-  const response = answered(toQuestionnaireResponse, demoReferral, demoReferralAnswers, { ...demoResponseContext, profiles: [ch.PROFILES.questionnaireResponse] })
+  const response = answered(toQuestionnaireResponse, demoReferral, demoReferralAnswers, {
+    ...demoResponseContext,
+    profiles: [ch.PROFILES.questionnaireResponse],
+  })
   const document = ch.toChOrfDocument({ ...demoChOrfContext, response: { fullUrl: DEMO_NAMES.response, questionnaireResponse: response } })
   if (!document.ok) throw new Error(`the package refused a corpus document: ${document.refusals.map((refusal) => refusal.message).join('; ')}`)
   return [
@@ -386,7 +432,10 @@ export function corpus({ core, questionnaire: questionnairePackage, documents, p
   // run, on a Questionnaire that had a version and no algorithm.
   const versionAlgorithm = () => ({
     url: uri('http://hl7.org/fhir/StructureDefinition/artifact-versionAlgorithm', 'Questionnaire.extension.url'),
-    valueCoding: { system: uri('http://hl7.org/fhir/version-algorithm', 'Questionnaire.extension.valueCoding.system'), code: code('semver', 'Questionnaire.extension.valueCoding.code') },
+    valueCoding: {
+      system: uri('http://hl7.org/fhir/version-algorithm', 'Questionnaire.extension.valueCoding.system'),
+      code: code('semver', 'Questionnaire.extension.valueCoding.code'),
+    },
   })
 
   const questionnaire = () => ({
@@ -460,7 +509,10 @@ export function corpus({ core, questionnaire: questionnairePackage, documents, p
       why: 'a cardinality broken: SDC allows an item one questionnaire-hidden extension',
       expect: [{ severity: 'error', id: 'Validation_VAL_Profile_Maximum', expression: 'Questionnaire.item[1]' }],
       resource: broken(questionnaire, (resource) => {
-        const hidden = () => ({ url: uri('http://hl7.org/fhir/StructureDefinition/questionnaire-hidden', 'Questionnaire.item.extension.url'), valueBoolean: true })
+        const hidden = () => ({
+          url: uri('http://hl7.org/fhir/StructureDefinition/questionnaire-hidden', 'Questionnaire.item.extension.url'),
+          valueBoolean: true,
+        })
         resource.item[1].extension = [hidden(), hidden()]
       }),
     },

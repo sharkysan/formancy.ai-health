@@ -30,7 +30,9 @@ describe('a translated form', () => {
     const questionnaire = exported(form([reason, urgent], { i18n: i18n() }), SWISS)
     expect(questionnaire.language).toBe('de-CH')
     const written = writeJson(questionnaire)
-    expect(written).toContain(`{"linkId":"reason","text":"Grund","_text":{"extension":[${translation('fr', 'Motif')},${translation('it', 'Motivo')}]},"type":"string"}`)
+    expect(written).toContain(
+      `{"linkId":"reason","text":"Grund","_text":{"extension":[${translation('fr', 'Motif')},${translation('it', 'Motivo')}]},"type":"string"}`,
+    )
     expect(written).toContain(`"code":"yes","display":"Ja","_display":{"extension":[${translation('fr', 'Oui')},${translation('it', 'Sì')}]}`)
   })
 
@@ -72,7 +74,11 @@ describe('a translated form', () => {
   test('refuses a plain string in another language, and a form with no catalogue once per language', () => {
     const mixed = form([reason, { key: 'note', type: 'static', label: 'Nur Deutsch' }], { i18n: i18n() })
     expect(refused(mixed, SWISS)).toEqual(['missing form.model.fields[1].label (fr)', 'missing form.model.fields[1].label (it)'])
-    expect(refused(form([{ key: 'note', type: 'static', label: 'Only English' }]), SWISS)).toEqual(['missing form.i18n (de-CH)', 'missing form.i18n (fr)', 'missing form.i18n (it)'])
+    expect(refused(form([{ key: 'note', type: 'static', label: 'Only English' }]), SWISS)).toEqual([
+      'missing form.i18n (de-CH)',
+      'missing form.i18n (fr)',
+      'missing form.i18n (it)',
+    ])
   })
 
   // Asked for nothing beside the default language, the form needs no
@@ -87,9 +93,12 @@ describe('a translated form', () => {
   // where a text belongs.
   test('reads a message only from the catalogue itself', () => {
     const tricky: FieldDef = { key: 'reason', type: 'text', label: { $t: 'constructor' } }
-    expect(refused(form([tricky], { i18n: { defaultLocale: 'de-CH', messages: { 'de-CH': { constructor: 'Konstruktor' }, fr: {} } } }), { ...HOST, languages: ['fr'] })).toEqual([
-      'missing form.model.fields[0].label (fr)',
-    ])
+    expect(
+      refused(form([tricky], { i18n: { defaultLocale: 'de-CH', messages: { 'de-CH': { constructor: 'Konstruktor' }, fr: {} } } }), {
+        ...HOST,
+        languages: ['fr'],
+      }),
+    ).toEqual(['missing form.model.fields[0].label (fr)'])
   })
 
   // The title is a plain string in @formancy/spec 0.6.0, the form's name:
@@ -102,7 +111,9 @@ describe('a translated form', () => {
   // A language tag is a code, and one with a space is not; formancy's
   // defaultLocale is any text of two to thirty-five characters.
   test("refuses a default locale that is not a code, at the form's", () => {
-    expect(refused(form([{ key: 'note', type: 'static', label: 'Plain' }], { i18n: { defaultLocale: 'de CH ', messages: { 'de CH ': {} } } }))).toEqual(['grammar form.i18n.defaultLocale'])
+    expect(refused(form([{ key: 'note', type: 'static', label: 'Plain' }], { i18n: { defaultLocale: 'de CH ', messages: { 'de CH ': {} } } }))).toEqual([
+      'grammar form.i18n.defaultLocale',
+    ])
   })
 
   // A catalogue may be named anything formancy's validator takes, two to
@@ -112,6 +123,8 @@ describe('a translated form', () => {
   // code whose display it reads in that language -- where a code alone
   // let each through (measured 17 October 2026, 0006).
   test.each(['Deutsch', 'de_CH', 'de-ch'])("refuses a default locale %s that is no language tag, at the form's", (locale) => {
-    expect(refused(form([{ key: 'note', type: 'static', label: { $t: 'n' } }], { i18n: { defaultLocale: locale, messages: { [locale]: { n: 'Hinweis' } } } }))).toEqual(['language-tag form.i18n.defaultLocale'])
+    expect(
+      refused(form([{ key: 'note', type: 'static', label: { $t: 'n' } }], { i18n: { defaultLocale: locale, messages: { [locale]: { n: 'Hinweis' } } } })),
+    ).toEqual(['language-tag form.i18n.defaultLocale'])
   })
 })

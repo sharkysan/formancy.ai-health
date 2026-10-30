@@ -55,7 +55,9 @@ describe('fetchVerified', () => {
     const directory = scratch()
     const path = join(directory, 'p.tgz')
     const printed = vi.spyOn(console, 'error').mockImplementation(() => {})
-    await expect(fetchVerified({ url: 'https://example.org/p.tgz', path, sha256: sha(Buffer.from('other')) }, serving(BYTES))).rejects.toThrow(/^refused what https:\/\/example.org\/p.tgz served: its SHA-256 is not [0-9a-f]{64}, the one the register says$/)
+    await expect(fetchVerified({ url: 'https://example.org/p.tgz', path, sha256: sha(Buffer.from('other')) }, serving(BYTES))).rejects.toThrow(
+      /^refused what https:\/\/example.org\/p.tgz served: its SHA-256 is not [0-9a-f]{64}, the one the register says$/,
+    )
     // What was served is printed, and never carried into the results file.
     expect(printed).toHaveBeenCalledWith(`https://example.org/p.tgz served bytes whose SHA-256 is ${sha(BYTES)}`)
     printed.mockRestore()
@@ -75,7 +77,9 @@ describe('fetchVerified', () => {
     expect(await sha256File(path)).toBe(sha(BYTES))
     rmSync(path)
     const printed = vi.spyOn(console, 'error').mockImplementation(() => {})
-    await expect(fetchVerified({ url: 'https://example.org/p.tgz', path, sha256: sha(BYTES) }, serving(BYTES, 404))).rejects.toThrow(/^https:\/\/example.org\/p.tgz did not serve the file$/)
+    await expect(fetchVerified({ url: 'https://example.org/p.tgz', path, sha256: sha(BYTES) }, serving(BYTES, 404))).rejects.toThrow(
+      /^https:\/\/example.org\/p.tgz did not serve the file$/,
+    )
     expect(printed).toHaveBeenCalledWith('https://example.org/p.tgz answered 404')
     printed.mockRestore()
   })
@@ -96,7 +100,13 @@ describe('prepareHome', () => {
     header.write('ustar\0', 257)
     header.write('00', 263)
     header.fill(0x20, 148, 156)
-    header.write(`${header.reduce((sum, byte) => sum + byte, 0).toString(8).padStart(6, '0')}\0 `, 148)
+    header.write(
+      `${header
+        .reduce((sum, byte) => sum + byte, 0)
+        .toString(8)
+        .padStart(6, '0')}\0 `,
+      148,
+    )
     return gzipSync(Buffer.concat([header, body, Buffer.alloc(512 - body.length), Buffer.alloc(1024)]))
   }
 
@@ -141,7 +151,9 @@ describe('prepareHome', () => {
     // A register whose hash moved keeps nothing, and the tarball on disk,
     // which is the old hash's bytes, is not unpacked under the new one.
     const changed = [{ ...packages[0], sha256: 'f'.repeat(64) }]
-    expect(() => prepareHome(where, changed, '7.0.3')).toThrow(/^refused to unpack hl7\.a#1\.0\.0: its tarball's SHA-256 is [0-9a-f]{64}, where the register says f{64}$/)
+    expect(() => prepareHome(where, changed, '7.0.3')).toThrow(
+      /^refused to unpack hl7\.a#1\.0\.0: its tarball's SHA-256 is [0-9a-f]{64}, where the register says f{64}$/,
+    )
     expect(existsSync(where.unpacked)).toBe(true)
   })
 

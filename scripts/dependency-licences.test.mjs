@@ -46,7 +46,16 @@ function tree(files, links = {}) {
 const manifest = (name, version, license, fields = {}) => ({ name, version, ...(license === undefined ? {} : { license }), ...fields })
 
 /** One entry of a closure, as `closure` returns it, for the cases that need no disk. */
-const entry = (name, version, licence, more = {}) => ({ name, version, licence, dir: `/x/${name}`, via: ['@formancy/health-x'], sibling: false, fonts: [], ...more })
+const entry = (name, version, licence, more = {}) => ({
+  name,
+  version,
+  licence,
+  dir: `/x/${name}`,
+  via: ['@formancy/health-x'],
+  sibling: false,
+  fonts: [],
+  ...more,
+})
 
 /** The bytes of an OpenType font holding only a name table with these Windows-platform names. */
 function font(names) {
@@ -109,7 +118,16 @@ describe('spdxAllows', () => {
   // listing them; this fails if somebody turns it into a deny-list that
   // forgot one.
   test('refuses LGPL, SSPL, BUSL, a source-available pointer and UNLICENSED', () => {
-    for (const expression of ['LGPL-2.1-only', 'LGPL-3.0-or-later', 'SSPL-1.0', 'BUSL-1.1', 'CC-BY-NC-SA-4.0', 'GPL-2.0+', 'SEE LICENSE IN LICENSE.md', 'UNLICENSED']) {
+    for (const expression of [
+      'LGPL-2.1-only',
+      'LGPL-3.0-or-later',
+      'SSPL-1.0',
+      'BUSL-1.1',
+      'CC-BY-NC-SA-4.0',
+      'GPL-2.0+',
+      'SEE LICENSE IN LICENSE.md',
+      'UNLICENSED',
+    ]) {
       expect(spdxAllows(expression), expression).toBe(false)
     }
   })
@@ -149,7 +167,20 @@ describe('spdxAllows', () => {
   // A guard refuses what it cannot read (formancy.ai 0022). A parser that
   // skipped what it did not understand would pass '(MIT' and 'MIT OR' as MIT.
   test('refuses what is not an expression', () => {
-    for (const expression of ['', ' ', '(MIT', 'MIT)', 'MIT OR', 'OR MIT', 'MIT GPL-3.0-only', 'MIT AND', '()', 'MIT WITH', 'WITH MIT', 'DocumentRef-x:LicenseRef-y']) {
+    for (const expression of [
+      '',
+      ' ',
+      '(MIT',
+      'MIT)',
+      'MIT OR',
+      'OR MIT',
+      'MIT GPL-3.0-only',
+      'MIT AND',
+      '()',
+      'MIT WITH',
+      'WITH MIT',
+      'DocumentRef-x:LicenseRef-y',
+    ]) {
       expect(spdxAllows(expression), JSON.stringify(expression)).toBe(false)
     }
   })
@@ -169,7 +200,13 @@ describe('spdxAllows', () => {
   // the software, which is the source-available kind the policy refuses, and a
   // LicenseRef can say anything.
   test('refuses a WITH whose exception is not one the policy has reviewed', () => {
-    for (const expression of ['Apache-2.0 WITH Commons-Clause', 'MIT WITH Commons-Clause', 'MIT with Commons-Clause', 'MIT WITH LicenseRef-NonCommercial', 'BSD-3-Clause WITH No-Production-Use']) {
+    for (const expression of [
+      'Apache-2.0 WITH Commons-Clause',
+      'MIT WITH Commons-Clause',
+      'MIT with Commons-Clause',
+      'MIT WITH LicenseRef-NonCommercial',
+      'BSD-3-Clause WITH No-Production-Use',
+    ]) {
       expect(spdxAllows(expression), expression).toBe(false)
     }
     // Still allowed on another branch, as any refused term is.
@@ -300,7 +337,13 @@ describe('FHIRPath', () => {
   // exception the maintainer decides, with the record that explains it,
   // never an edit to the allow-list.
   test('refuses fhirpath and the UCUM library it brings, as their manifests declare them', () => {
-    const found = problems([entry('fhirpath', '5.2.1', 'SEE LICENSE in LICENSE.md', { via: ['@formancy/health-questionnaire'] }), entry('@lhncbc/ucum-lhc', '7.1.10', 'SEE LICENSE IN LICENSE.md', { via: ['@formancy/health-questionnaire', 'fhirpath'] })], {})
+    const found = problems(
+      [
+        entry('fhirpath', '5.2.1', 'SEE LICENSE in LICENSE.md', { via: ['@formancy/health-questionnaire'] }),
+        entry('@lhncbc/ucum-lhc', '7.1.10', 'SEE LICENSE IN LICENSE.md', { via: ['@formancy/health-questionnaire', 'fhirpath'] }),
+      ],
+      {},
+    )
     expect(found).toEqual([
       'fhirpath@5.2.1 is SEE LICENSE in LICENSE.md by its package.json, which the policy refuses (@formancy/health-questionnaire > fhirpath)',
       '@lhncbc/ucum-lhc@7.1.10 is SEE LICENSE IN LICENSE.md by its package.json, which the policy refuses (@formancy/health-questionnaire > fhirpath > @lhncbc/ucum-lhc)',
@@ -316,7 +359,10 @@ describe('closure', () => {
   test('walks the production dependencies through links to real directories', () => {
     const root = tree(
       {
-        'packages/health-x/package.json': manifest('@formancy/health-x', '0.1.0', 'SEE LICENSE IN LICENSE.md', { dependencies: { a: '1.0.0' }, devDependencies: { dev: '1.0.0' } }),
+        'packages/health-x/package.json': manifest('@formancy/health-x', '0.1.0', 'SEE LICENSE IN LICENSE.md', {
+          dependencies: { a: '1.0.0' },
+          devDependencies: { dev: '1.0.0' },
+        }),
         'node_modules/.pnpm/a@1.0.0/node_modules/a/package.json': manifest('a', '1.0.0', 'MIT', { dependencies: { b: '^1.0.0' } }),
         'node_modules/.pnpm/b@1.0.0/node_modules/b/package.json': manifest('b', '1.0.0', 'ISC'),
         'node_modules/.pnpm/dev@1.0.0/node_modules/dev/package.json': manifest('dev', '1.0.0', 'GPL-3.0-only'),
@@ -353,7 +399,13 @@ describe('closure', () => {
       'app/node_modules/host/package.json': manifest('host', '1.0.0', 'AGPL-3.0-only'),
     })
     const found = closure(join(root, 'app'))
-    expect(found.map((item) => (item.missing ? `missing ${item.name}` : `${item.name}@${item.version}`))).toEqual(['app@1.0.0', 'missing gone', 'binary@1.0.0', 'host@1.0.0', 'missing agpl-host'])
+    expect(found.map((item) => (item.missing ? `missing ${item.name}` : `${item.name}@${item.version}`))).toEqual([
+      'app@1.0.0',
+      'missing gone',
+      'binary@1.0.0',
+      'host@1.0.0',
+      'missing agpl-host',
+    ])
     expect(problems(found, {})).toEqual([
       'gone is a dependency of app and is not installed, so its licence cannot be read (app > gone)',
       'host@1.0.0 is AGPL-3.0-only by its package.json, which the policy refuses (app > host)',
@@ -367,7 +419,9 @@ describe('closure', () => {
   test('walks through a workspace sibling without judging its own licence', () => {
     const root = tree(
       {
-        'packages/health-x/package.json': manifest('@formancy/health-x', '0.1.0', 'SEE LICENSE IN LICENSE.md', { dependencies: { '@formancy/health-y': 'workspace:*' } }),
+        'packages/health-x/package.json': manifest('@formancy/health-x', '0.1.0', 'SEE LICENSE IN LICENSE.md', {
+          dependencies: { '@formancy/health-y': 'workspace:*' },
+        }),
         'packages/health-y/package.json': manifest('@formancy/health-y', '0.1.0', 'SEE LICENSE IN LICENSE.md', { dependencies: { copyleft: '1.0.0' } }),
         'packages/health-y/node_modules/copyleft/package.json': manifest('copyleft', '1.0.0', 'GPL-2.0-only'),
       },
@@ -386,7 +440,9 @@ describe('closure', () => {
   test("judges a workspace sibling that does not declare this repository's licence", () => {
     const root = tree(
       {
-        'packages/health-x/package.json': manifest('@formancy/health-x', '0.1.0', 'SEE LICENSE IN LICENSE.md', { dependencies: { '@formancy/vendored': 'workspace:*' } }),
+        'packages/health-x/package.json': manifest('@formancy/health-x', '0.1.0', 'SEE LICENSE IN LICENSE.md', {
+          dependencies: { '@formancy/vendored': 'workspace:*' },
+        }),
         'packages/vendored/package.json': manifest('@formancy/vendored', '0.1.0', 'GPL-3.0-only', { private: true }),
       },
       { 'packages/health-x/node_modules/@formancy/vendored': 'packages/vendored' },
@@ -418,7 +474,12 @@ describe('fonts', () => {
   // version beside it, are what a person checks by hand; read wrongly, Roboto
   // would be refused and every engine with it.
   test('reads the licence and version from an OpenType name table', () => {
-    expect(fontLicence(font({ 5: 'Version 3.014; 2025', 13: OFL }))).toEqual({ readable: true, version: 'Version 3.014; 2025', description: OFL, licence: 'OFL-1.1' })
+    expect(fontLicence(font({ 5: 'Version 3.014; 2025', 13: OFL }))).toEqual({
+      readable: true,
+      version: 'Version 3.014; 2025',
+      description: OFL,
+      licence: 'OFL-1.1',
+    })
     expect(fontLicence(font({ 13: 'Licensed under the Apache License, Version 2.0' })).licence).toBe('Apache-2.0')
   })
 
@@ -449,7 +510,9 @@ describe('fonts', () => {
       { path: 'fonts/Ok-Regular.ttf', licence: 'OFL-1.1' },
       { path: 'standard_fonts/Liberation-Regular.ttf', licence: undefined },
     ])
-    expect(problems(found, {})).toEqual([`app@1.0.0/standard_fonts/Liberation-Regular.ttf is a font whose name table names no licence the policy allows: "${LIBERATION}" (app)`])
+    expect(problems(found, {})).toEqual([
+      `app@1.0.0/standard_fonts/Liberation-Regular.ttf is a font whose name table names no licence the policy allows: "${LIBERATION}" (app)`,
+    ])
   })
 
   // A Type 1 font has no name table, and neither does a format this does not
@@ -461,7 +524,9 @@ describe('fonts', () => {
       'app/standard_fonts/FoxitSans.pfb': '%!PS-AdobeFont-1.0',
     })
     const found = closure(join(root, 'app'))
-    expect(problems(found, {})).toEqual(['app@1.0.0/standard_fonts/FoxitSans.pfb is a font this guard cannot read a licence from; review it and record an exception (app)'])
+    expect(problems(found, {})).toEqual([
+      'app@1.0.0/standard_fonts/FoxitSans.pfb is a font this guard cannot read a licence from; review it and record an exception (app)',
+    ])
     expect(problems(found, { 'app@1.0.0/standard_fonts/FoxitSans.pfb': { licence: 'BSD-3-Clause', evidence: 'standard_fonts/LICENSE_FOXIT' } })).toEqual([])
     // A font's exception is held to the policy as a package's is.
     expect(problems(found, { 'app@1.0.0/standard_fonts/FoxitSans.pfb': { licence: 'GPL-2.0-only', evidence: 'LICENSE_LIBERATION' } })).toEqual([
@@ -483,8 +548,17 @@ describe('fonts', () => {
       'app/fonts/Old.eot': font({ 13: OFL }).subarray(4),
     })
     const found = closure(join(root, 'app'))
-    expect(found[0].fonts.map(({ path, licence }) => `${path} ${licence}`)).toEqual(['fonts/Family.ttc undefined', 'fonts/Ok.otf OFL-1.1', 'fonts/Old.eot undefined', 'fonts/Web.woff2 undefined'])
-    expect(problems(found, {}).map((problem) => problem.split(' is a font')[0])).toEqual(['app@1.0.0/fonts/Family.ttc', 'app@1.0.0/fonts/Old.eot', 'app@1.0.0/fonts/Web.woff2'])
+    expect(found[0].fonts.map(({ path, licence }) => `${path} ${licence}`)).toEqual([
+      'fonts/Family.ttc undefined',
+      'fonts/Ok.otf OFL-1.1',
+      'fonts/Old.eot undefined',
+      'fonts/Web.woff2 undefined',
+    ])
+    expect(problems(found, {}).map((problem) => problem.split(' is a font')[0])).toEqual([
+      'app@1.0.0/fonts/Family.ttc',
+      'app@1.0.0/fonts/Old.eot',
+      'app@1.0.0/fonts/Web.woff2',
+    ])
   })
 
   // A font is a font whatever it is called. Found by extension alone, the
@@ -503,7 +577,11 @@ describe('fonts', () => {
       'app/bin/flag': 'true, as the flag says\n',
       'app/lib/index.js': 'module.exports = true\n',
     })
-    expect(closure(join(root, 'app'))[0].fonts.map(({ path, readable }) => `${path} ${readable}`)).toEqual(['fonts/Gpl-Regular true', 'fonts/Gpl-Regular.font true', 'fonts/Type1.data false'])
+    expect(closure(join(root, 'app'))[0].fonts.map(({ path, readable }) => `${path} ${readable}`)).toEqual([
+      'fonts/Gpl-Regular true',
+      'fonts/Gpl-Regular.font true',
+      'fonts/Type1.data false',
+    ])
   })
 
   // A published package's own fonts are what it ships first. Passed over
@@ -575,7 +653,9 @@ describe('this workspace', () => {
   test("every publishable package's build inlines nothing from node_modules", async () => {
     const { published } = workspaceClosure()
     const packages = readdirSync(join(repo, 'packages')).map((name) => join(repo, 'packages', name))
-    const directories = packages.filter((dir) => existsSync(join(dir, 'package.json')) && published.includes(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).name))
+    const directories = packages.filter(
+      (dir) => existsSync(join(dir, 'package.json')) && published.includes(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).name),
+    )
     expect(directories.length).toBeGreaterThan(0)
     for (const dir of directories) {
       expect(existsSync(join(dir, 'tsdown.config.ts')), `${dir} is not built by tsdown`).toBe(true)

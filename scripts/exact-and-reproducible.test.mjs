@@ -77,7 +77,7 @@ function sourcesOf(directory) {
 const NAMES = new Map([
   ['parseFloat', 'parseFloat, which reads text into a double'],
   ['parseInt', 'parseInt, which reads text into a double'],
-  ['Date', 'Date, which reads the clock or stands for an instant in the host\'s zone'],
+  ['Date', "Date, which reads the clock or stands for an instant in the host's zone"],
   ['performance', 'performance, whose now() is a clock'],
   ['crypto', 'crypto, whose randomUUID() and getRandomValues() are random sources'],
 ])
@@ -133,7 +133,7 @@ function findings(code, name = 'source.ts') {
 describe('the exactness and reproducibility guard', () => {
   // A guard on the guard: the assertion that matters is about absence, so
   // a walk that found nothing would pass it forever.
-  test('reads every publishable package\'s source', () => {
+  test("reads every publishable package's source", () => {
     const paths = publishable().flatMap(sourcesOf)
     expect(paths).toContain('packages/health-core/src/numbers.ts')
     expect(paths).toContain('packages/health-core/src/json-read.ts')

@@ -30,7 +30,8 @@ import { readFileSync } from 'node:fs'
 /** `name` as packages/`dir`'s manifest declares it among its dependencies: an exact release, or a throw. */
 function declared(dir, name) {
   const version = JSON.parse(readFileSync(new URL(`../packages/${dir}/package.json`, import.meta.url), 'utf8')).dependencies?.[name]
-  if (typeof version !== 'string' || !/^\d+\.\d+\.\d+$/.test(version)) throw new Error(`packages/${dir}/package.json declares no exact ${name}, so no release of it is the one to install`)
+  if (typeof version !== 'string' || !/^\d+\.\d+\.\d+$/.test(version))
+    throw new Error(`packages/${dir}/package.json declares no exact ${name}, so no release of it is the one to install`)
   return version
 }
 

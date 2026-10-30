@@ -68,8 +68,12 @@ describe('gateBrowsers', () => {
   // went missing, which must not quietly run every browser; a repeat runs
   // one browser twice and overwrites its own results.
   test('refuses an unknown browser, an empty list and a repeat', () => {
-    expect(() => gateBrowsers({ env: { FORMANCY_BROWSERS: 'opera' }, platform: 'linux' })).toThrow('FORMANCY_BROWSERS names opera, which is no browser the gates run in: chromium, firefox, webkit')
-    expect(() => gateBrowsers({ env: { FORMANCY_BROWSERS: '' }, platform: 'linux' })).toThrow('FORMANCY_BROWSERS is set and names no browser: unset it for every browser the gates run in here, or name some of chromium, firefox, webkit')
+    expect(() => gateBrowsers({ env: { FORMANCY_BROWSERS: 'opera' }, platform: 'linux' })).toThrow(
+      'FORMANCY_BROWSERS names opera, which is no browser the gates run in: chromium, firefox, webkit',
+    )
+    expect(() => gateBrowsers({ env: { FORMANCY_BROWSERS: '' }, platform: 'linux' })).toThrow(
+      'FORMANCY_BROWSERS is set and names no browser: unset it for every browser the gates run in here, or name some of chromium, firefox, webkit',
+    )
     expect(() => gateBrowsers({ env: { FORMANCY_BROWSERS: ' , ' }, platform: 'linux' })).toThrow(/names no browser/)
     expect(() => gateBrowsers({ env: { FORMANCY_BROWSERS: 'firefox,firefox' }, platform: 'linux' })).toThrow('FORMANCY_BROWSERS names firefox twice')
   })
@@ -91,7 +95,9 @@ describe('gateBrowsers', () => {
     expect(ranIn(['chromium', 'firefox'], { env: {}, platform: 'win32' })).toBe(
       'In Chromium and Firefox: FORMANCY_BROWSERS is unset, which runs every browser the gate runs on win32; not in WebKit, which the release report expects results from too, and which runs on Linux only.',
     )
-    expect(ranIn(['webkit'], { env: { FORMANCY_BROWSERS: 'webkit' }, platform: 'linux' })).toBe('In WebKit, as FORMANCY_BROWSERS=webkit asks; not in Chromium and Firefox, which the release report expects results from too.')
+    expect(ranIn(['webkit'], { env: { FORMANCY_BROWSERS: 'webkit' }, platform: 'linux' })).toBe(
+      'In WebKit, as FORMANCY_BROWSERS=webkit asks; not in Chromium and Firefox, which the release report expects results from too.',
+    )
     expect(installCommand('webkit')).toBe('pnpm --filter @formancy/health-demo exec playwright install webkit')
   })
 })
@@ -111,9 +117,14 @@ describe('FACTS', () => {
   // gate, or a row with no check, is a sentence nothing measures. That
   // each check is made is the report's to hold, from the run.
   test('names, for every row, the checks of an app whose test:browser is its gate', () => {
-    const gated = readdirSync(join(repo, 'apps')).filter((name) => JSON.parse(readFileSync(join(repo, 'apps', name, 'package.json'), 'utf8')).scripts?.['test:browser'] === 'node scripts/browser-test.mjs')
+    const gated = readdirSync(join(repo, 'apps')).filter(
+      (name) => JSON.parse(readFileSync(join(repo, 'apps', name, 'package.json'), 'utf8')).scripts?.['test:browser'] === 'node scripts/browser-test.mjs',
+    )
     for (const [id, fact] of Object.entries(FACTS)) {
-      expect(gated.map((name) => `apps/${name}`), id).toContain(fact.heldBy.gate)
+      expect(
+        gated.map((name) => `apps/${name}`),
+        id,
+      ).toContain(fact.heldBy.gate)
       expect(fact.heldBy.checks.length, id).toBeGreaterThan(0)
       // One name in every browser, so a browser that changes fails it by name.
       for (const check of fact.heldBy.checks) expect(check, id).not.toMatch(/Chromium|Firefox|WebKit/)
@@ -125,6 +136,8 @@ describe('FACTS', () => {
   // refusal of the page's through as WebKit's.
   test('says exactly what the browser reports and logs of its own refusal', () => {
     expect(FACTS.refusesItsOwnSelectStyle.report).toEqual({ directive: 'style-src-attr', blocked: 'inline', target: 'SELECT', sample: 'text-overflow:inherit' })
-    expect(FACTS.refusesItsOwnSelectStyle.console).toBe("Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' does not appear in the style-src directive of the Content Security Policy.")
+    expect(FACTS.refusesItsOwnSelectStyle.console).toBe(
+      "Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' does not appear in the style-src directive of the Content Security Policy.",
+    )
   })
 })

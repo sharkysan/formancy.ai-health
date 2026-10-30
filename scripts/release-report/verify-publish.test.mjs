@@ -2,7 +2,16 @@ import { createHash } from 'node:crypto'
 import { describe, expect, test } from 'vitest'
 import { packageTarball } from '../release/test-archive.mjs'
 import { BODY_LIMIT } from '../release-notes.mjs'
-import { installedTarballProblems, lockedPackages, notesProblems, npmPurl, reportFilesProblems, reportProblems, sbomInstallProblems, sbomReportProblems } from './verify-publish.mjs'
+import {
+  installedTarballProblems,
+  lockedPackages,
+  notesProblems,
+  npmPurl,
+  reportFilesProblems,
+  reportProblems,
+  sbomInstallProblems,
+  sbomReportProblems,
+} from './verify-publish.mjs'
 
 /**
  * What a release refuses of the report before anything permanent happens
@@ -49,7 +58,13 @@ function green() {
     },
     tarballs,
     sbom: {
-      components: ['pkg:npm/%40formancy/health-core@0.1.0', 'pkg:npm/%40formancy/health-document@0.1.0', 'pkg:npm/%40formancy/spec@0.5.0', 'pkg:npm/ajv@8.20.0', 'pkg:npm/%40noble/hashes@2.4.0'].map((purl) => ({ purl })),
+      components: [
+        'pkg:npm/%40formancy/health-core@0.1.0',
+        'pkg:npm/%40formancy/health-document@0.1.0',
+        'pkg:npm/%40formancy/spec@0.5.0',
+        'pkg:npm/ajv@8.20.0',
+        'pkg:npm/%40noble/hashes@2.4.0',
+      ].map((purl) => ({ purl })),
     },
   }
 }
@@ -86,7 +101,9 @@ describe('the report', () => {
   // without any check of what it is.
   test('is refused when its directory holds anything but the report and the body', () => {
     expect(reportFilesProblems(['RELEASE_NOTES.md', 'release-report.json', 'release-report.md'])).toEqual([])
-    expect(reportFilesProblems(['RELEASE_NOTES.md', 'release-report.json', 'release-report.md', 'formancy-health-core-0.1.0.tgz'])).toEqual(['release-report/formancy-health-core-0.1.0.tgz is no file the report job writes'])
+    expect(reportFilesProblems(['RELEASE_NOTES.md', 'release-report.json', 'release-report.md', 'formancy-health-core-0.1.0.tgz'])).toEqual([
+      'release-report/formancy-health-core-0.1.0.tgz is no file the report job writes',
+    ])
     // The body's absence is notesProblems' to say, once.
     expect(reportFilesProblems(['release-report.md'])).toEqual(['release-report/release-report.json is missing'])
   })
@@ -98,7 +115,9 @@ describe('the tarballs against the report', () => {
     const { report, tarballs } = green()
     expect(installedTarballProblems(report, tarballs)).toEqual([])
     tarballs[1] = { ...tarballs[1], sha256: 'f'.repeat(64) }
-    expect(installedTarballProblems(report, tarballs)).toEqual([`formancy-health-document-0.1.0.tgz has sha256 ${'f'.repeat(64)}, not that of the formancy-health-document-0.1.0.tgz the install gate installed and ran, ${green().tarballs[1].sha256}`])
+    expect(installedTarballProblems(report, tarballs)).toEqual([
+      `formancy-health-document-0.1.0.tgz has sha256 ${'f'.repeat(64)}, not that of the formancy-health-document-0.1.0.tgz the install gate installed and ran, ${green().tarballs[1].sha256}`,
+    ])
   })
 
   // A package without a tarball is a release that leaves it behind; a
@@ -106,9 +125,9 @@ describe('the tarballs against the report', () => {
   test('are refused when one is missing, or one is no published package’s', () => {
     const { report, tarballs } = green()
     expect(installedTarballProblems(report, tarballs.slice(0, 1))).toEqual(['@formancy/health-document: 0 tarballs, where a release publishes exactly one'])
-    expect(installedTarballProblems(report, [...tarballs, { file: 'formancy-health-corpus-0.1.0.tgz', name: '@formancy/health-corpus', sha256: 'a'.repeat(64) }])).toEqual([
-      'formancy-health-corpus-0.1.0.tgz is @formancy/health-corpus, which is no published package',
-    ])
+    expect(
+      installedTarballProblems(report, [...tarballs, { file: 'formancy-health-corpus-0.1.0.tgz', name: '@formancy/health-corpus', sha256: 'a'.repeat(64) }]),
+    ).toEqual(['formancy-health-corpus-0.1.0.tgz is @formancy/health-corpus, which is no published package'])
   })
 })
 
@@ -118,7 +137,9 @@ describe('the release body', () => {
   test('is refused when the report job wrote none, or one longer than GitHub accepts', () => {
     expect(notesProblems('## 0.1.0\n\nThe first.\n')).toEqual([])
     expect(notesProblems(null)).toEqual(['the report job wrote no release body'])
-    expect(notesProblems('x'.repeat(BODY_LIMIT + 1))).toEqual([`the release body is ${String(BODY_LIMIT + 1)} characters, over the ${String(BODY_LIMIT)} GitHub accepts`])
+    expect(notesProblems('x'.repeat(BODY_LIMIT + 1))).toEqual([
+      `the release body is ${String(BODY_LIMIT + 1)} characters, over the ${String(BODY_LIMIT)} GitHub accepts`,
+    ])
   })
 })
 
@@ -130,8 +151,12 @@ describe('the SBOM', () => {
   test('is refused without each published package, at the version this release publishes', () => {
     const { report, sbom } = green()
     expect(sbomReportProblems(report, sbom)).toEqual([])
-    expect(sbomReportProblems(report, { components: sbom.components.filter((component) => !component.purl.includes('health-document')) })).toEqual(['the SBOM names no @formancy/health-document 0.1.0, which this release publishes'])
-    const older = { components: sbom.components.map((component) => (component.purl.includes('health-core') ? { purl: 'pkg:npm/%40formancy/health-core@0.0.9' } : component)) }
+    expect(sbomReportProblems(report, { components: sbom.components.filter((component) => !component.purl.includes('health-document')) })).toEqual([
+      'the SBOM names no @formancy/health-document 0.1.0, which this release publishes',
+    ])
+    const older = {
+      components: sbom.components.map((component) => (component.purl.includes('health-core') ? { purl: 'pkg:npm/%40formancy/health-core@0.0.9' } : component)),
+    }
     expect(sbomReportProblems(report, older)).toEqual(['the SBOM names no @formancy/health-core 0.1.0, which this release publishes'])
   })
 
@@ -140,8 +165,12 @@ describe('the SBOM', () => {
   // another release of it describes an install nobody tested.
   test('is refused without an upstream package a consumer installs, or with another version than the suites loaded', () => {
     const { report, sbom } = green()
-    expect(sbomReportProblems(report, { components: sbom.components.filter((component) => !component.purl.includes('spec@')) })).toEqual(['the SBOM names no @formancy/spec, which a published package depends on'])
-    const other = { components: sbom.components.map((component) => (component.purl.includes('spec@') ? { purl: 'pkg:npm/%40formancy/spec@0.4.0' } : component)) }
+    expect(sbomReportProblems(report, { components: sbom.components.filter((component) => !component.purl.includes('spec@')) })).toEqual([
+      'the SBOM names no @formancy/spec, which a published package depends on',
+    ])
+    const other = {
+      components: sbom.components.map((component) => (component.purl.includes('spec@') ? { purl: 'pkg:npm/%40formancy/spec@0.4.0' } : component)),
+    }
     expect(sbomReportProblems(report, other)).toEqual(['the SBOM names @formancy/spec 0.4.0, where the suites loaded 0.5.0'])
   })
 
@@ -223,11 +252,19 @@ describe('the SBOM', () => {
     }
     const whole = { components: [...sbom.components, { purl: 'pkg:npm/fast-uri@3.1.8' }] }
     expect(sbomInstallProblems(whole, lockfile)).toEqual([])
-    expect(sbomInstallProblems({ components: [...whole.components, { purl: 'pkg:npm/vitest@5.0.5' }] }, lockfile)).toEqual(['the SBOM names vitest 5.0.5, which the install it describes does not hold'])
-    expect(sbomInstallProblems({ components: whole.components.filter(({ purl }) => !purl.includes('ajv')) }, lockfile)).toEqual(['the SBOM leaves out ajv 8.20.0, which the install it describes holds'])
-    expect(sbomInstallProblems({ components: [...whole.components, { name: 'a-file', type: 'file' }] }, lockfile)).toEqual(['the SBOM names a-file, a component with no npm package URL, in an inventory of an npm install'])
+    expect(sbomInstallProblems({ components: [...whole.components, { purl: 'pkg:npm/vitest@5.0.5' }] }, lockfile)).toEqual([
+      'the SBOM names vitest 5.0.5, which the install it describes does not hold',
+    ])
+    expect(sbomInstallProblems({ components: whole.components.filter(({ purl }) => !purl.includes('ajv')) }, lockfile)).toEqual([
+      'the SBOM leaves out ajv 8.20.0, which the install it describes holds',
+    ])
+    expect(sbomInstallProblems({ components: [...whole.components, { name: 'a-file', type: 'file' }] }, lockfile)).toEqual([
+      'the SBOM names a-file, a component with no npm package URL, in an inventory of an npm install',
+    ])
     // An install that holds nothing holds the SBOM to nothing, and is no install of the tarballs.
-    expect(sbomInstallProblems(whole, { packages: { '': { name: 'formancy-health' } } })).toEqual(['the install the SBOM describes holds no package, so nothing it names can be held to it'])
+    expect(sbomInstallProblems(whole, { packages: { '': { name: 'formancy-health' } } })).toEqual([
+      'the install the SBOM describes holds no package, so nothing it names can be held to it',
+    ])
   })
 
   // The lockfile's own entry is the project, a link is a path and a dev

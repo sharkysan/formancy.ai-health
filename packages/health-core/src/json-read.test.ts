@@ -11,7 +11,11 @@ describe('readJson', () => {
   // grammar is R4's decimal grammar, character for character.
   test('keeps each number as written, as a decimal', () => {
     const read = readJson('{"value":0.10,"count":9007199254740993,"tiny":1E-400}') as Record<string, unknown>
-    for (const [name, text] of [['value', '0.10'], ['count', '9007199254740993'], ['tiny', '1E-400']] as const) {
+    for (const [name, text] of [
+      ['value', '0.10'],
+      ['count', '9007199254740993'],
+      ['tiny', '1E-400'],
+    ] as const) {
       const value = read[name]
       expect(isFhirNumber(value), name).toBe(true)
       expect(value, name).toMatchObject({ type: 'decimal', text })

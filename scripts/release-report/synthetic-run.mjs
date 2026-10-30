@@ -58,7 +58,12 @@ const PUBLISHED = ['@formancy/health-core', '@formancy/health-document', '@forma
 /** Each job's own record of what it built: new objects every time, so a test that changes one job's changes no other's. */
 const dist = (names = PUBLISHED) => names.map((name) => ({ package: name, distHash: DIST }))
 /** A suite test job, which builds what its package depends on: health-core, here. */
-const testJob = (id, name, path, files) => ({ ...base(`test-${id}`, 'test'), package: name, suites: [suite(name, path, files)], dist: dist(['@formancy/health-core']) })
+const testJob = (id, name, path, files) => ({
+  ...base(`test-${id}`, 'test'),
+  package: name,
+  suites: [suite(name, path, files)],
+  dist: dist(['@formancy/health-core']),
+})
 
 /** The validator gate's file, as scripts/validator.mjs writes it on a run in which every resource was judged as the corpus expects. */
 const gate = () => ({
@@ -69,8 +74,26 @@ const gate = () => ({
   offline: { tx: 'n/a', txCache: 'n/a', httpAccess: false, consoleRefusals: 0 },
   packages: { registered: ['hl7.fhir.r4.core#4.0.1', 'hl7.fhir.uv.sdc#4.0.0'], loaded: ['hl7.fhir.uv.sdc#4.0.0', 'hl7.fhir.r4.core#4.0.1'] },
   resources: [
-    { file: 'questionnaire-intake.json', expect: 'accepted', verdict: 'as expected', refusals: [], registeredWarnings: ['TERMINOLOGY_TX_WARNING'], errors: 0, warnings: 1, information: 2 },
-    { file: 'questionnaire-intake-status.json', expect: ['error code:value at Questionnaire.status'], verdict: 'as expected', refusals: ['error code:value at Questionnaire.status'], registeredWarnings: [], errors: 1, warnings: 0, information: 0 },
+    {
+      file: 'questionnaire-intake.json',
+      expect: 'accepted',
+      verdict: 'as expected',
+      refusals: [],
+      registeredWarnings: ['TERMINOLOGY_TX_WARNING'],
+      errors: 0,
+      warnings: 1,
+      information: 2,
+    },
+    {
+      file: 'questionnaire-intake-status.json',
+      expect: ['error code:value at Questionnaire.status'],
+      verdict: 'as expected',
+      refusals: ['error code:value at Questionnaire.status'],
+      registeredWarnings: [],
+      errors: 1,
+      warnings: 0,
+      information: 0,
+    },
   ],
   seconds: { validator: 24.3, total: 29.1 },
   problems: [],
@@ -82,7 +105,12 @@ const validatorJob = () => ({
   ...base('validator', 'validator'),
   validator: {
     gate: gate(),
-    suite: { ...suite(null, '.', [file('scripts/validator/registers.test.mjs', [test('the validator pin › holds'), test(VALIDATOR_ONLY)])]), testFiles: undefined, task: null, coverage: null },
+    suite: {
+      ...suite(null, '.', [file('scripts/validator/registers.test.mjs', [test('the validator pin › holds'), test(VALIDATOR_ONLY)])]),
+      testFiles: undefined,
+      task: null,
+      coverage: null,
+    },
   },
   // The job builds the packages the corpus is written by.
   dist: dist(),
@@ -142,7 +170,13 @@ const picturesCheck = () => ({
 })
 
 /** A leg of the browser job: the demo's gate in its browser, after turbo built what the demo imports, and in the pictures' browser their check. */
-const browserJob = (browser) => ({ ...base(`browser-${browser}`, 'browser'), variant: browser, browserGates: [browserGate(browser)], pictures: browser === PICTURES_BROWSER ? [picturesCheck()] : [], dist: dist() })
+const browserJob = (browser) => ({
+  ...base(`browser-${browser}`, 'browser'),
+  variant: browser,
+  browserGates: [browserGate(browser)],
+  pictures: browser === PICTURES_BROWSER ? [picturesCheck()] : [],
+  dist: dist(),
+})
 
 /** What a project of the install gate's records when every step passed: install-test.mjs's entry, `said` its runner's last line. */
 const project = (name, { consumer, steps, installed = {}, resolved, guide = null, said = '' }) => ({
@@ -198,9 +232,18 @@ export function greenRun() {
     file('packages/health-core/src/exactness.test.ts', [test('keeps 0.10 digit for digit')]),
     file('packages/health-core/src/numbers.test.ts', [test('refuses an integer past 32 bits')]),
   ])
-  const questionnaire = testJob('health-questionnaire', '@formancy/health-questionnaire', 'packages/health-questionnaire', [file('packages/health-questionnaire/src/questionnaire.test.ts', [test('refuses an unknown spec version')])])
-  const document = testJob('health-document', '@formancy/health-document', 'packages/health-document', [file('packages/health-document/src/bundle.test.ts', [test('refuses a dangling reference')])])
-  const corpus = { ...testJob('health-corpus', '@formancy/health-corpus', 'packages/health-corpus', [file('packages/health-corpus/src/documents.test.ts', [test('attaches every byte Report rendered')])]), dist: [] }
+  const questionnaire = testJob('health-questionnaire', '@formancy/health-questionnaire', 'packages/health-questionnaire', [
+    file('packages/health-questionnaire/src/questionnaire.test.ts', [test('refuses an unknown spec version')]),
+  ])
+  const document = testJob('health-document', '@formancy/health-document', 'packages/health-document', [
+    file('packages/health-document/src/bundle.test.ts', [test('refuses a dangling reference')]),
+  ])
+  const corpus = {
+    ...testJob('health-corpus', '@formancy/health-corpus', 'packages/health-corpus', [
+      file('packages/health-corpus/src/documents.test.ts', [test('attaches every byte Report rendered')]),
+    ]),
+    dist: [],
+  }
   const install = {
     ...base('install', 'install'),
     install: {
@@ -209,7 +252,14 @@ export function greenRun() {
       passed: true,
       node: 'v22.20.0',
       npm: '10.9.0',
-      tarballs: PUBLISHED.map((name) => ({ name, version: '0.1.0', file: `${name.slice(1).replace('/', '-')}-0.1.0.tgz`, sha256: 'ab'.repeat(32), integrity: 'sha512-x', distHash: DIST })),
+      tarballs: PUBLISHED.map((name) => ({
+        name,
+        version: '0.1.0',
+        file: `${name.slice(1).replace('/', '-')}-0.1.0.tgz`,
+        sha256: 'ab'.repeat(32),
+        integrity: 'sha512-x',
+        distHash: DIST,
+      })),
       consumers: projects(),
     },
     dist: dist(),
@@ -256,7 +306,15 @@ export function greenRun() {
         },
       },
     },
-    records: [{ number: '0004', file: '0004-fhir-json-is-written-and-read-exactly.md', title: 'Write and read FHIR JSON exactly', status: 'accepted', hash: 'sha256:04' }],
+    records: [
+      {
+        number: '0004',
+        file: '0004-fhir-json-is-written-and-read-exactly.md',
+        title: 'Write and read FHIR JSON exactly',
+        status: 'accepted',
+        hash: 'sha256:04',
+      },
+    ],
     jobs: [...JOBS],
     // Evidence no other test's defect touches, so each defect still gives
     // exactly its own sentence; gates.test.mjs and the gate tests here change it.
@@ -267,7 +325,22 @@ export function greenRun() {
     commit: 'c0ffee',
     version: '0.1.0',
     release: '',
-    changelog: ['# Changelog', '', '## Unreleased', '', 'Something changed.', '', '## 0.2.0', '', 'Ahead of the manifests.', '', '## 0.1.0', '', 'The first.', ''].join('\n'),
+    changelog: [
+      '# Changelog',
+      '',
+      '## Unreleased',
+      '',
+      'Something changed.',
+      '',
+      '## 0.2.0',
+      '',
+      'Ahead of the manifests.',
+      '',
+      '## 0.1.0',
+      '',
+      'The first.',
+      '',
+    ].join('\n'),
     generatedAt: new Date(T0 + 3_700_000).toISOString(),
   }
 }

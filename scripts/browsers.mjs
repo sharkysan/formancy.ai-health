@@ -68,7 +68,9 @@ export const LAUNCH_OPTIONS = Object.freeze({ headless: true })
  * holds a launch to `headless` as well. Firefox and WebKit have one build
  * each, headless or not.
  */
-export const PINNED_AS = Object.freeze(Object.fromEntries(BROWSERS.map((browser) => [browser, browser === 'chromium' && LAUNCH_OPTIONS.headless ? 'chromium-headless-shell' : browser])))
+export const PINNED_AS = Object.freeze(
+  Object.fromEntries(BROWSERS.map((browser) => [browser, browser === 'chromium' && LAUNCH_OPTIONS.headless ? 'chromium-headless-shell' : browser])),
+)
 
 /**
  * What a gate records of the browser it launched with `options`: the name and
@@ -108,14 +110,17 @@ export function gateBrowsers({ env = process.env, browsers = BROWSERS, platform 
     .split(',')
     .map((entry) => entry.trim())
     .filter((entry) => entry !== '')
-  if (named.length === 0) throw new Error(`${VARIABLE} is set and names no browser: unset it for every browser the gates run in here, or name some of ${browsers.join(', ')}`)
+  if (named.length === 0)
+    throw new Error(`${VARIABLE} is set and names no browser: unset it for every browser the gates run in here, or name some of ${browsers.join(', ')}`)
   for (const [at, browser] of named.entries()) {
     if (!browsers.includes(browser)) throw new Error(`${VARIABLE} names ${browser}, which is no browser the gates run in: ${browsers.join(', ')}`)
     if (named.indexOf(browser) !== at) throw new Error(`${VARIABLE} names ${browser} twice`)
   }
   const refused = named.find((browser) => !runOn([browser], platform).includes(browser))
   if (refused !== undefined) {
-    throw new Error(`${VARIABLE} names ${browserName(refused)}, which the gate runs on Linux only: Playwright's ${browserName(refused)} on ${platform} is another port than the one CI runs, and the gate holds 0014's table on Linux's. Here, ${VARIABLE}=${runOn(browsers, platform).join(',')} pnpm test:browser`)
+    throw new Error(
+      `${VARIABLE} names ${browserName(refused)}, which the gate runs on Linux only: Playwright's ${browserName(refused)} on ${platform} is another port than the one CI runs, and the gate holds 0014's table on Linux's. Here, ${VARIABLE}=${runOn(browsers, platform).join(',')} pnpm test:browser`,
+    )
   }
   return named
 }
@@ -125,7 +130,8 @@ export function ranIn(chosen, { env = process.env, browsers = BROWSERS, platform
   const names = prose(chosen.map(browserName))
   const rest = browsers.filter((browser) => !chosen.includes(browser))
   const left = rest.length === 0 ? '' : `; not in ${prose(rest.map(browserName))}, which the release report expects results from too`
-  if (env[VARIABLE] === undefined) return `In ${names}: ${VARIABLE} is unset, which runs every browser the gate runs on ${platform}${left}${rest.some((browser) => ONLY_ON[browser] !== undefined) ? ', and which runs on Linux only' : ''}.`
+  if (env[VARIABLE] === undefined)
+    return `In ${names}: ${VARIABLE} is unset, which runs every browser the gate runs on ${platform}${left}${rest.some((browser) => ONLY_ON[browser] !== undefined) ? ', and which runs on Linux only' : ''}.`
   return `In ${names}, as ${VARIABLE}=${env[VARIABLE]} asks${left}.`
 }
 
@@ -142,7 +148,8 @@ const NOT_READ = 'nothing read in its code: the row is what was measured'
  * The committed gate's runs that measured every row below, and watched each
  * row's check fail with the table's values turned over.
  */
-const GATE = 'the committed gate, every check of its 8 passes held in each browser -- in Chromium 156.0.8078.4 and Firefox 157.0 on Windows 11, and in all three in Playwright’s Linux image v1.63.0-noble with Playwright 1.64.1’s builds installed in it -- and, with every row’s values turned over, each row’s check failed in every pass it is made in, in Chromium on Windows 11 and in WebKit in that image'
+const GATE =
+  'the committed gate, every check of its 8 passes held in each browser -- in Chromium 156.0.8078.4 and Firefox 157.0 on Windows 11, and in all three in Playwright’s Linux image v1.63.0-noble with Playwright 1.64.1’s builds installed in it -- and, with every row’s values turned over, each row’s check failed in every pass it is made in, in Chromium on Windows 11 and in WebKit in that image'
 
 /** How refusesItsOwnSelectStyle was measured: the gate, and before it the probes that found the row, not committed. */
 const SELECT_PROBE = Object.freeze({
@@ -159,7 +166,10 @@ const SELECT_PROBE = Object.freeze({
 export const FACTS = Object.freeze({
   refusesItsOwnSelectStyle: Object.freeze({
     says: 'under a policy whose style-src admits no inline style, every <select> has a style attribute of the browser’s own refused, text-overflow:inherit, which it reports as the page’s -- a securitypolicyviolation of style-src-attr, blocked "inline", at the select -- and logs as an error',
-    heldBy: Object.freeze({ gate: DEMO, checks: Object.freeze(['a <select> under the page’s policy: the browser refuses a style of its own as 0014’s table says of this browser']) }),
+    heldBy: Object.freeze({
+      gate: DEMO,
+      checks: Object.freeze(['a <select> under the page’s policy: the browser refuses a style of its own as 0014’s table says of this browser']),
+    }),
     /**
      * What the browser reports and logs, once for each select: the report
      * as the gate's listener keeps it (gate-privacy.mjs) -- its `sample`
@@ -167,7 +177,8 @@ export const FACTS = Object.freeze({
      * the demo's does not -- and the console's line, word for word.
      */
     report: Object.freeze({ directive: 'style-src-attr', blocked: 'inline', target: 'SELECT', sample: 'text-overflow:inherit' }),
-    console: "Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' does not appear in the style-src directive of the Content Security Policy.",
+    console:
+      "Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' does not appear in the style-src directive of the Content Security Policy.",
     values: Object.freeze({ chromium: false, firefox: false, webkit: true }),
     source: Object.freeze({
       chromium: NOT_READ,
@@ -178,11 +189,17 @@ export const FACTS = Object.freeze({
   }),
   forgetsLoadedFaces: Object.freeze({
     says: 'a face the page loaded as it started (src/faces.ts) and does not draw with is "unloaded" again in document.fonts once the page has drawn, and loads again, from what the browser already holds, when it is next asked for',
-    heldBy: Object.freeze({ gate: DEMO, checks: Object.freeze(['every face the page declares loaded as it started, and is loaded still or loads again, as 0014’s table says of this browser']) }),
+    heldBy: Object.freeze({
+      gate: DEMO,
+      checks: Object.freeze(['every face the page declares loaded as it started, and is loaded still or loads again, as 0014’s table says of this browser']),
+    }),
     values: Object.freeze({ chromium: false, firefox: false, webkit: true }),
     source: Object.freeze({ chromium: NOT_READ, firefox: NOT_READ, webkit: NOT_READ }),
     measured: Object.freeze({
-      chromium: Object.freeze({ on: '2026-10-18', by: `${GATE}; before it, a probe of the built demo under its headers on Windows 11, Playwright 1.64.1: 28 faces, 28 calls of load() as the page started, 28 files asked for, and 28 faces loaded once it had settled` }),
+      chromium: Object.freeze({
+        on: '2026-10-18',
+        by: `${GATE}; before it, a probe of the built demo under its headers on Windows 11, Playwright 1.64.1: 28 faces, 28 calls of load() as the page started, 28 files asked for, and 28 faces loaded once it had settled`,
+      }),
       firefox: Object.freeze({ on: '2026-10-18', by: `${GATE}; before it, the same probe: 28 faces, 28 calls, 28 files, 28 loaded` }),
       webkit: Object.freeze({
         on: '2026-10-18',
@@ -192,11 +209,19 @@ export const FACTS = Object.freeze({
   }),
   asksForTheNextFileLater: Object.freeze({
     says: 'when a face’s first file, its woff2, does not arrive, the page’s load() as it started (src/faces.ts) does not go on to its next file, its woff: the browser asks for that only when text in the face’s range is first drawn, which can be after the page settled -- what was typed, told by which file is asked for',
-    heldBy: Object.freeze({ gate: DEMO, checks: Object.freeze(['with the web fonts refused, a face’s next file is asked for only once text in its range is drawn, as 0014’s table says of this browser']) }),
+    heldBy: Object.freeze({
+      gate: DEMO,
+      checks: Object.freeze([
+        'with the web fonts refused, a face’s next file is asked for only once text in its range is drawn, as 0014’s table says of this browser',
+      ]),
+    }),
     values: Object.freeze({ chromium: false, firefox: false, webkit: true }),
     source: Object.freeze({ chromium: NOT_READ, firefox: NOT_READ, webkit: NOT_READ }),
     measured: Object.freeze({
-      chromium: Object.freeze({ on: '2026-10-18', by: `${GATE}; before it, a probe of the built demo under its headers, every font file refused, on Windows 11, Playwright 1.64.1: 28 woff2 and 28 woff asked for as the page started, and nothing once Latin Extended, Vietnamese, Greek and Cyrillic text was typed` }),
+      chromium: Object.freeze({
+        on: '2026-10-18',
+        by: `${GATE}; before it, a probe of the built demo under its headers, every font file refused, on Windows 11, Playwright 1.64.1: 28 woff2 and 28 woff asked for as the page started, and nothing once Latin Extended, Vietnamese, Greek and Cyrillic text was typed`,
+      }),
       firefox: Object.freeze({ on: '2026-10-18', by: `${GATE}; before it, the same probe: 28 woff2 and 28 woff as it started, nothing once typed` }),
       webkit: Object.freeze({
         on: '2026-10-18',

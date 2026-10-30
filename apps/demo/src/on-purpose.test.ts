@@ -14,7 +14,9 @@ const pdf = await letterOf()
 const refused = refusedOnPurpose(sample, pdf)
 
 /** Each input's refusals, as `rule at path`. */
-const stated = Object.fromEntries(refused.map(({ id, said: what }) => [id, what.kind === 'refused' ? what.refusals.map(({ rule, path }) => `${rule} at ${path}`) : [what.kind]]))
+const stated = Object.fromEntries(
+  refused.map(({ id, said: what }) => [id, what.kind === 'refused' ? what.refusals.map(({ rule, path }) => `${rule} at ${path}`) : [what.kind]]),
+)
 
 describe('the inputs refused on purpose', () => {
   // A heading that names one refusal over a package's other one -- or over

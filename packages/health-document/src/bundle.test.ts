@@ -8,7 +8,14 @@ import { bytesOf, CLINICAL_DOCUMENT, CONSULTATION, minimalPdf, NAMES, patient, p
 function attached(bytes = minimalPdf()) {
   const result = toDocumentReference(
     { bytes, profile: 'PDF' },
-    { status: 'current', type: CONSULTATION, subject: { reference: NAMES.patient }, date: '2026-10-17T10:00:00+02:00', title: 'Zuweisung', binary: { fullUrl: NAMES.binary } },
+    {
+      status: 'current',
+      type: CONSULTATION,
+      subject: { reference: NAMES.patient },
+      date: '2026-10-17T10:00:00+02:00',
+      title: 'Zuweisung',
+      binary: { fullUrl: NAMES.binary },
+    },
   )
   if (!result.ok || result.binary === undefined) throw new Error('the DocumentReference was refused')
   return { documentReference: result.documentReference as FhirJsonObject, binary: result.binary as FhirJsonObject }
@@ -54,7 +61,10 @@ function bundled(context: DocumentContext = document()) {
 }
 
 /** `context` with its composition changed. */
-const withComposition = (change: Record<string, unknown>, context = document()): DocumentContext => ({ ...context, composition: { ...context.composition, ...change } as DocumentContext['composition'] })
+const withComposition = (change: Record<string, unknown>, context = document()): DocumentContext => ({
+  ...context,
+  composition: { ...context.composition, ...change } as DocumentContext['composition'],
+})
 
 /** `context` with the entry at `index` replaced, or removed when `entry` is undefined. */
 function withEntry(index: number, entry: DocumentContext['entries'][number] | undefined, context = document()): DocumentContext {
@@ -122,10 +132,16 @@ describe('a document Bundle', () => {
   // that are derived from this composition", its category, a section's
   // code, and the ids.
   test("writes the host's optional elements where given, and no others", () => {
-    const context = withComposition({ id: 'referral-letter', identifier: { system: 'urn:ietf:rfc:3986', value: 'urn:uuid:00000000-0000-4000-8000-000000000007' }, category: [CLINICAL_DOCUMENT] })
+    const context = withComposition({
+      id: 'referral-letter',
+      identifier: { system: 'urn:ietf:rfc:3986', value: 'urn:uuid:00000000-0000-4000-8000-000000000007' },
+      category: [CLINICAL_DOCUMENT],
+    })
     const composition = bundled({ ...context, id: 'referral-document' })
     expect(composition.id).toBe('referral-document')
-    expect(writeJson(composition.entry[0].resource)).toContain(`"resourceType":"Composition","id":"referral-letter","text":{"status":"generated","div":"${NARRATIVE}"},"identifier":{"system":"urn:ietf:rfc:3986","value":"urn:uuid:00000000-0000-4000-8000-000000000007"},"status":"final"`)
+    expect(writeJson(composition.entry[0].resource)).toContain(
+      `"resourceType":"Composition","id":"referral-letter","text":{"status":"generated","div":"${NARRATIVE}"},"identifier":{"system":"urn:ietf:rfc:3986","value":"urn:uuid:00000000-0000-4000-8000-000000000007"},"status":"final"`,
+    )
     expect(writeJson(bundled().entry[0].resource)).not.toContain('"identifier"')
   })
 
@@ -141,9 +157,19 @@ describe('a document Bundle', () => {
   // A decimal in a host's resource keeps its digits through the Bundle:
   // its entries are read and written by health-core, never by JSON.parse.
   test("keeps a host resource's decimal as written", () => {
-    const weight = { resourceType: 'Observation', status: 'final', code: { text: 'Synthetic' }, subject: { reference: NAMES.patient }, valueQuantity: { value: decimal('70.50', 'probe') } }
-    const context = withComposition({ section: [{ title: 'Befunde', entry: [{ reference: NAMES.documentReference }, { reference: 'urn:uuid:00000000-0000-4000-8000-000000000008' }] }] })
-    const written = writeJson(bundled({ ...context, entries: [...context.entries, { fullUrl: 'urn:uuid:00000000-0000-4000-8000-000000000008', resource: weight }] }))
+    const weight = {
+      resourceType: 'Observation',
+      status: 'final',
+      code: { text: 'Synthetic' },
+      subject: { reference: NAMES.patient },
+      valueQuantity: { value: decimal('70.50', 'probe') },
+    }
+    const context = withComposition({
+      section: [{ title: 'Befunde', entry: [{ reference: NAMES.documentReference }, { reference: 'urn:uuid:00000000-0000-4000-8000-000000000008' }] }],
+    })
+    const written = writeJson(
+      bundled({ ...context, entries: [...context.entries, { fullUrl: 'urn:uuid:00000000-0000-4000-8000-000000000008', resource: weight }] }),
+    )
     expect(written).toContain('"valueQuantity":{"value":70.50}')
   })
 })
@@ -160,7 +186,9 @@ describe('what a document claims, and its narrative', () => {
   // lastUpdated first.
   test('claims the profile the host names, for the Bundle and for the Composition', () => {
     const composition = bundled({ ...withComposition({ profile: CH_ORF_COMPOSITION }), profile: CH_ORF_DOCUMENT })
-    expect(writeJson(composition)).toMatch(/^\{"resourceType":"Bundle","meta":\{"lastUpdated":"2026-10-17T10:05:00\+02:00","profile":\["http:\/\/fhir\.ch\/ig\/ch-orf\/StructureDefinition\/ch-orf-document"\]\},"identifier"/)
+    expect(writeJson(composition)).toMatch(
+      /^\{"resourceType":"Bundle","meta":\{"lastUpdated":"2026-10-17T10:05:00\+02:00","profile":\["http:\/\/fhir\.ch\/ig\/ch-orf\/StructureDefinition\/ch-orf-document"\]\},"identifier"/,
+    )
     expect(writeJson(composition.entry[0].resource)).toContain(`{"resourceType":"Composition","meta":{"profile":["${CH_ORF_COMPOSITION}"]},"text":`)
     expect(writeJson(bundled())).not.toContain('"profile"')
   })
@@ -179,7 +207,10 @@ describe('what a document claims, and its narrative', () => {
   // bracket in a title is text, escaped; written as it is, it would be
   // markup the host never wrote, or no XHTML at all.
   test("writes a generated narrative of the Composition's titles, each escaped", () => {
-    const context = withComposition({ title: 'Zuweisung & Bericht', section: [{ title: 'Befund <dringend>', entry: [{ reference: NAMES.documentReference }] }] })
+    const context = withComposition({
+      title: 'Zuweisung & Bericht',
+      section: [{ title: 'Befund <dringend>', entry: [{ reference: NAMES.documentReference }] }],
+    })
     expect(writeJson(bundled(context).entry[0].resource)).toContain(
       '"text":{"status":"generated","div":"<div xmlns=\\"http://www.w3.org/1999/xhtml\\"><h1>Zuweisung &amp; Bericht</h1><h2>Befund &lt;dringend&gt;</h2></div>"}',
     )
@@ -191,7 +222,9 @@ describe('what a document claims, and its narrative', () => {
   // by health-core's text, which holds a host's text to what a narrative
   // carries.
   test('refuses a title the narrative cannot carry, at its place', () => {
-    const result = toDocumentBundle(withComposition({ title: 'Zuweisung\u0007', section: [{ title: 'Bericht\u0000', entry: [{ reference: NAMES.documentReference }] }] }))
+    const result = toDocumentBundle(
+      withComposition({ title: 'Zuweisung\u0007', section: [{ title: 'Bericht\u0000', entry: [{ reference: NAMES.documentReference }] }] }),
+    )
     expect(refusedAs(result)).toEqual(['grammar context.composition.title', 'grammar context.composition.section[0].title'])
     for (const refusal of result.ok ? [] : result.refusals) expect(refusal.message).not.toContain('Zuweisung')
   })
@@ -264,15 +297,55 @@ describe('what a document must be given', () => {
   // its own context's, the member's name not repeated.
   test.each([
     ['the document', (given: DocumentContext) => ({ ...given, signature: { type: [] } }), 'unmapped context', 'signature'],
-    ["the document's identifier", (given: DocumentContext) => ({ ...given, identifier: { ...given.identifier, use: 'official' } }), 'unmapped context.identifier', 'use'],
+    [
+      "the document's identifier",
+      (given: DocumentContext) => ({ ...given, identifier: { ...given.identifier, use: 'official' } }),
+      'unmapped context.identifier',
+      'use',
+    ],
     ['the Composition', (given: DocumentContext) => withComposition({ confidentiality: 'N' }, given), 'unmapped context.composition', 'confidentiality'],
-    ["the Composition's identifier", (given: DocumentContext) => withComposition({ identifier: { system: 'urn:ietf:rfc:3986', value: NAMES.document, use: 'official' } }, given), 'unmapped context.composition.identifier', 'use'],
-    ["the Composition's type", (given: DocumentContext) => withComposition({ type: { ...CONSULTATION, version: '2.9' } }, given), 'unmapped context.composition.type', 'version'],
-    ['a category', (given: DocumentContext) => withComposition({ category: [{ ...CLINICAL_DOCUMENT, userSelected: true }] }, given), 'unmapped context.composition.category[0]', 'userSelected'],
-    ["the Composition's subject", (given: DocumentContext) => withComposition({ subject: { reference: NAMES.patient, display: 'Synthetica Beispiel' } }, given), 'unmapped context.composition.subject', 'display'],
-    ['an author', (given: DocumentContext) => withComposition({ author: [{ reference: NAMES.practitioner, type: 'Practitioner' }] }, given), 'unmapped context.composition.author[0]', 'type'],
-    ['a section', (given: DocumentContext) => withComposition({ section: [{ ...given.composition.section[0], mode: 'snapshot' }] }, given), 'unmapped context.composition.section[0]', 'mode'],
-    ['an entry', (given: DocumentContext) => withEntry(0, { ...given.entries[0], search: { mode: 'match' } } as never, given), 'unmapped context.entries[0]', 'search'],
+    [
+      "the Composition's identifier",
+      (given: DocumentContext) => withComposition({ identifier: { system: 'urn:ietf:rfc:3986', value: NAMES.document, use: 'official' } }, given),
+      'unmapped context.composition.identifier',
+      'use',
+    ],
+    [
+      "the Composition's type",
+      (given: DocumentContext) => withComposition({ type: { ...CONSULTATION, version: '2.9' } }, given),
+      'unmapped context.composition.type',
+      'version',
+    ],
+    [
+      'a category',
+      (given: DocumentContext) => withComposition({ category: [{ ...CLINICAL_DOCUMENT, userSelected: true }] }, given),
+      'unmapped context.composition.category[0]',
+      'userSelected',
+    ],
+    [
+      "the Composition's subject",
+      (given: DocumentContext) => withComposition({ subject: { reference: NAMES.patient, display: 'Synthetica Beispiel' } }, given),
+      'unmapped context.composition.subject',
+      'display',
+    ],
+    [
+      'an author',
+      (given: DocumentContext) => withComposition({ author: [{ reference: NAMES.practitioner, type: 'Practitioner' }] }, given),
+      'unmapped context.composition.author[0]',
+      'type',
+    ],
+    [
+      'a section',
+      (given: DocumentContext) => withComposition({ section: [{ ...given.composition.section[0], mode: 'snapshot' }] }, given),
+      'unmapped context.composition.section[0]',
+      'mode',
+    ],
+    [
+      'an entry',
+      (given: DocumentContext) => withEntry(0, { ...given.entries[0], search: { mode: 'match' } } as never, given),
+      'unmapped context.entries[0]',
+      'search',
+    ],
   ])('refuses a member %s does not name', (_, change, refused, name) => {
     const result = toDocumentBundle(change(document()))
     expect(refusedAs(result)).toEqual([refused])
@@ -291,13 +364,19 @@ describe('what a document must be given', () => {
     }
     const author = { reference: NAMES.practitioner }
     expect(refusedAs(toDocumentBundle(withComposition({ author: holed(author, author) })))).toEqual(['absent context.composition.author[1]'])
-    expect(refusedAs(toDocumentBundle(withComposition({ category: holed(CLINICAL_DOCUMENT, CLINICAL_DOCUMENT) })))).toEqual(['absent context.composition.category[1]'])
+    expect(refusedAs(toDocumentBundle(withComposition({ category: holed(CLINICAL_DOCUMENT, CLINICAL_DOCUMENT) })))).toEqual([
+      'absent context.composition.category[1]',
+    ])
     const section = document().composition.section[0]
     expect(refusedAs(toDocumentBundle(withComposition({ section: holed(section, section) })))).toEqual(['absent context.composition.section[1]'])
     const entry = { reference: NAMES.documentReference }
-    expect(refusedAs(toDocumentBundle(withComposition({ section: [{ title: 'Bericht', entry: holed(entry, entry) }] })))).toEqual(['absent context.composition.section[0].entry[1]'])
+    expect(refusedAs(toDocumentBundle(withComposition({ section: [{ title: 'Bericht', entry: holed(entry, entry) }] })))).toEqual([
+      'absent context.composition.section[0].entry[1]',
+    ])
     const context = document()
-    expect(refusedAs(toDocumentBundle({ ...context, entries: holed(context.entries[0] as never, context.entries[1] as never) }))).toContain('absent context.entries[1]')
+    expect(refusedAs(toDocumentBundle({ ...context, entries: holed(context.entries[0] as never, context.entries[1] as never) }))).toContain(
+      'absent context.entries[1]',
+    )
   })
 })
 
@@ -306,13 +385,18 @@ describe('the references inside a document', () => {
   // "SHALL include" every resource its Composition refers to, directly or
   // not, and a receiver that cannot resolve one cannot show the document.
   test("refuses a reference to an entry it does not hold, at the reference's path", () => {
-    expect(refusedAs(toDocumentBundle(withEntry(0, undefined)))).toEqual(['dangling context.composition.subject.reference', 'dangling context.entries[1].resource.subject.reference'])
+    expect(refusedAs(toDocumentBundle(withEntry(0, undefined)))).toEqual([
+      'dangling context.composition.subject.reference',
+      'dangling context.entries[1].resource.subject.reference',
+    ])
   })
 
   // A Type/id inside a document resolves against no base: the entries are
   // named by urn:uuid, so it names nothing the Bundle holds.
   test('refuses a reference by Type/id, which no entry of a document answers to', () => {
-    expect(refusedAs(toDocumentBundle(withComposition({ subject: { reference: 'Patient/synthetic-1' } })))).toEqual(['dangling context.composition.subject.reference'])
+    expect(refusedAs(toDocumentBundle(withComposition({ subject: { reference: 'Patient/synthetic-1' } })))).toEqual([
+      'dangling context.composition.subject.reference',
+    ])
   })
 
   // R4 lets what the Composition's resources refer to stay outside the
@@ -322,7 +406,9 @@ describe('the references inside a document', () => {
   test("refuses a host entry's reference by Type/id, which R4 would let point outside the document", () => {
     const { resource } = document().entries[2] as { resource: FhirJsonObject }
     const authored = { ...resource, author: [{ reference: 'Practitioner/synthetic-1' }] }
-    expect(refusedAs(toDocumentBundle(withEntry(2, { fullUrl: NAMES.documentReference, resource: authored })))).toEqual(['dangling context.entries[2].resource.author[0].reference'])
+    expect(refusedAs(toDocumentBundle(withEntry(2, { fullUrl: NAMES.documentReference, resource: authored })))).toEqual([
+      'dangling context.entries[2].resource.author[0].reference',
+    ])
   })
 
   // An address is where to fetch a person's record, which is never this
@@ -334,7 +420,9 @@ describe('the references inside a document', () => {
     ['a version', 'Patient/1/_history/2'],
   ])("refuses %s in a host's entry", (_, reference) => {
     const { resource } = document().entries[2] as { resource: FhirJsonObject }
-    expect(refusedAs(toDocumentBundle(withEntry(2, { fullUrl: NAMES.documentReference, resource: { ...resource, subject: { reference } } })))).toEqual(['reference context.entries[2].resource.subject.reference'])
+    expect(refusedAs(toDocumentBundle(withEntry(2, { fullUrl: NAMES.documentReference, resource: { ...resource, subject: { reference } } })))).toEqual([
+      'reference context.entries[2].resource.subject.reference',
+    ])
   })
 
   // What R4 allows an element to name is held where the reference
@@ -350,16 +438,22 @@ describe('the references inside a document', () => {
 
   test('refuses a DocumentReference subject that resolves to a type R4 does not allow there', () => {
     const { resource } = document().entries[2] as { resource: FhirJsonObject }
-    const context = withEntry(2, { fullUrl: NAMES.documentReference, resource: { ...resource, subject: { reference: NAMES.binary } } }, withComposition({ subject: { reference: NAMES.patient } }))
+    const context = withEntry(
+      2,
+      { fullUrl: NAMES.documentReference, resource: { ...resource, subject: { reference: NAMES.binary } } },
+      withComposition({ subject: { reference: NAMES.patient } }),
+    )
     expect(refusedAs(toDocumentBundle(context))).toContain('reference context.entries[2].resource.subject.reference')
   })
 
   // A reference that says what it names must name that.
   test("refuses a host's reference whose stated type is not what it resolves to", () => {
     const { resource } = document().entries[2] as { resource: FhirJsonObject }
-    expect(refusedAs(toDocumentBundle(withEntry(2, { fullUrl: NAMES.documentReference, resource: { ...resource, subject: { reference: NAMES.patient, type: 'Group' } } })))).toEqual([
-      'reference context.entries[2].resource.subject.reference',
-    ])
+    expect(
+      refusedAs(
+        toDocumentBundle(withEntry(2, { fullUrl: NAMES.documentReference, resource: { ...resource, subject: { reference: NAMES.patient, type: 'Group' } } })),
+      ),
+    ).toEqual(['reference context.entries[2].resource.subject.reference'])
   })
 
   // The attachment's url is the Bundle's own link to the bytes: it names
@@ -367,10 +461,20 @@ describe('the references inside a document', () => {
   test('refuses an attachment url that names no entry, or one that is no Binary', () => {
     const context = document()
     const { resource } = context.entries[2] as unknown as { resource: { content: [{ attachment: FhirJsonObject }] } & FhirJsonObject }
-    const pointing = (url: string) => withEntry(2, { fullUrl: NAMES.documentReference, resource: { ...resource, content: [{ attachment: { ...resource.content[0].attachment, url } }] } })
-    expect(refusedAs(toDocumentBundle(pointing('urn:uuid:00000000-0000-4000-8000-0000000000ff')))).toEqual(['dangling context.entries[2].resource.content[0].attachment.url', 'unreferenced context.entries[3]'])
-    expect(refusedAs(toDocumentBundle(pointing(NAMES.patient)))).toEqual(['reference context.entries[2].resource.content[0].attachment.url', 'unreferenced context.entries[3]'])
-    expect(refusedAs(toDocumentBundle(pointing('https://documents.synthetic.invalid/1.pdf')))).toEqual(['dangling context.entries[2].resource.content[0].attachment.url', 'unreferenced context.entries[3]'])
+    const pointing = (url: string) =>
+      withEntry(2, { fullUrl: NAMES.documentReference, resource: { ...resource, content: [{ attachment: { ...resource.content[0].attachment, url } }] } })
+    expect(refusedAs(toDocumentBundle(pointing('urn:uuid:00000000-0000-4000-8000-0000000000ff')))).toEqual([
+      'dangling context.entries[2].resource.content[0].attachment.url',
+      'unreferenced context.entries[3]',
+    ])
+    expect(refusedAs(toDocumentBundle(pointing(NAMES.patient)))).toEqual([
+      'reference context.entries[2].resource.content[0].attachment.url',
+      'unreferenced context.entries[3]',
+    ])
+    expect(refusedAs(toDocumentBundle(pointing('https://documents.synthetic.invalid/1.pdf')))).toEqual([
+      'dangling context.entries[2].resource.content[0].attachment.url',
+      'unreferenced context.entries[3]',
+    ])
   })
 
   // R4 has strings called reference that are no Reference: an Expression's,
@@ -378,8 +482,13 @@ describe('the references inside a document', () => {
   // as references, a host's resource that uses one would be refused.
   test("reads no uri called reference as a reference: an Expression's, a DetectedIssue's", () => {
     const issue = { resourceType: 'DetectedIssue', status: 'final', patient: { reference: NAMES.patient }, reference: 'https://guidance.synthetic.invalid/1' }
-    const extension = { url: 'https://extensions.synthetic.invalid/condition', valueExpression: { language: 'text/fhirpath', reference: 'https://expressions.synthetic.invalid/1' } }
-    const context = withComposition({ section: [{ title: 'Bericht', entry: [{ reference: NAMES.documentReference }, { reference: 'urn:uuid:00000000-0000-4000-8000-000000000009' }] }] })
+    const extension = {
+      url: 'https://extensions.synthetic.invalid/condition',
+      valueExpression: { language: 'text/fhirpath', reference: 'https://expressions.synthetic.invalid/1' },
+    }
+    const context = withComposition({
+      section: [{ title: 'Bericht', entry: [{ reference: NAMES.documentReference }, { reference: 'urn:uuid:00000000-0000-4000-8000-000000000009' }] }],
+    })
     const entries = [...context.entries, { fullUrl: 'urn:uuid:00000000-0000-4000-8000-000000000009', resource: { ...issue, extension: [extension] } }]
     expect(bundled({ ...context, entries }).entry).toHaveLength(6)
   })
@@ -406,11 +515,18 @@ describe('the entries of a document', () => {
   // not refer to -- a Provenance, which R4 admits -- is not reached
   // forwards, and H06 writes none (0008).
   test('refuses an entry that only refers back to the Composition', () => {
-    const provenance = { resourceType: 'Provenance', target: [{ reference: NAMES.composition }], recorded: '2026-10-17T10:05:00+02:00', agent: [{ who: { reference: NAMES.practitioner } }] }
+    const provenance = {
+      resourceType: 'Provenance',
+      target: [{ reference: NAMES.composition }],
+      recorded: '2026-10-17T10:05:00+02:00',
+      agent: [{ who: { reference: NAMES.practitioner } }],
+    }
     const context = document()
-    expect(refusedAs(toDocumentBundle({ ...context, entries: [...context.entries, { fullUrl: 'urn:uuid:00000000-0000-4000-8000-00000000000b', resource: provenance }] }))).toEqual([
-      'unreferenced context.entries[4]',
-    ])
+    expect(
+      refusedAs(
+        toDocumentBundle({ ...context, entries: [...context.entries, { fullUrl: 'urn:uuid:00000000-0000-4000-8000-00000000000b', resource: provenance }] }),
+      ),
+    ).toEqual(['unreferenced context.entries[4]'])
   })
 
   // One name, one entry: two entries of one fullUrl are two resources a
@@ -421,7 +537,9 @@ describe('the entries of a document', () => {
       'duplicate-entry context.entries[1].fullUrl',
       'dangling context.composition.author[0].reference',
     ])
-    expect(refusedAs(toDocumentBundle(withEntry(1, { fullUrl: NAMES.composition, resource: practitioner() }, context)))).toContain('duplicate-entry context.entries[1].fullUrl')
+    expect(refusedAs(toDocumentBundle(withEntry(1, { fullUrl: NAMES.composition, resource: practitioner() }, context)))).toContain(
+      'duplicate-entry context.entries[1].fullUrl',
+    )
   })
 
   // Each entry's resource is FHIR JSON with a type and, where it has one,
@@ -449,7 +567,9 @@ describe('the entries of a document', () => {
     expect(refusedAs(toDocumentBundle(withEntry(0, { fullUrl: NAMES.patient } as never)))).toContain('absent context.entries[0].resource')
     // FHIR JSON health-core writes, and no resource: a string, a list.
     expect(refusedAs(toDocumentBundle(withEntry(0, { fullUrl: NAMES.patient, resource: 'Patient' } as never)))).toContain('absent context.entries[0].resource')
-    expect(refusedAs(toDocumentBundle(withEntry(0, { fullUrl: NAMES.patient, resource: [patient()] } as never)))).toContain('absent context.entries[0].resource')
+    expect(refusedAs(toDocumentBundle(withEntry(0, { fullUrl: NAMES.patient, resource: [patient()] } as never)))).toContain(
+      'absent context.entries[0].resource',
+    )
   })
 })
 
@@ -474,7 +594,10 @@ describe("what a document's attachments say of their bytes", () => {
   // accessible link"), so without this the document would describe one
   // PDF and carry another, shown under the first one's title.
   test('refuses a DocumentReference whose size and hash are not those of the Binary it names', () => {
-    expect(refusedAs(toDocumentBundle(withEntry(3, { fullUrl: NAMES.binary, resource: another().binary })))).toEqual([`mismatch ${ATTACHMENT}.size`, `mismatch ${ATTACHMENT}.hash`])
+    expect(refusedAs(toDocumentBundle(withEntry(3, { fullUrl: NAMES.binary, resource: another().binary })))).toEqual([
+      `mismatch ${ATTACHMENT}.size`,
+      `mismatch ${ATTACHMENT}.hash`,
+    ])
   })
 
   // The attachment and the Binary each say what the bytes are; a receiver
@@ -482,7 +605,9 @@ describe("what a document's attachments say of their bytes", () => {
   // two things.
   test("refuses a DocumentReference whose media type is not its Binary's", () => {
     const { binary } = attached()
-    expect(refusedAs(toDocumentBundle(withEntry(3, { fullUrl: NAMES.binary, resource: { ...binary, contentType: 'application/octet-stream' } })))).toEqual([`mismatch ${ATTACHMENT}.contentType`])
+    expect(refusedAs(toDocumentBundle(withEntry(3, { fullUrl: NAMES.binary, resource: { ...binary, contentType: 'application/octet-stream' } })))).toEqual([
+      `mismatch ${ATTACHMENT}.contentType`,
+    ])
   })
 
   // The same of bytes in the attachment itself, which the validator also
@@ -507,7 +632,9 @@ describe("what a document's attachments say of their bytes", () => {
   test('refuses bytes it cannot read, whose size and hash it cannot check', () => {
     const { binary } = attached()
     const spaced = `${String(binary['data']).slice(0, 8)} ${String(binary['data']).slice(8)}`
-    expect(refusedAs(toDocumentBundle(withEntry(3, { fullUrl: NAMES.binary, resource: { ...binary, data: spaced } })))).toEqual(['grammar context.entries[3].resource.data'])
+    expect(refusedAs(toDocumentBundle(withEntry(3, { fullUrl: NAMES.binary, resource: { ...binary, data: spaced } })))).toEqual([
+      'grammar context.entries[3].resource.data',
+    ])
   })
 
   // R4 makes an attachment's size and hash optional: one that says
@@ -541,7 +668,11 @@ describe('the refusals of a document', () => {
   // and the same input gives the same list.
   test('are in the order the document holds what they refuse', () => {
     const { resource } = document().entries[2] as { resource: FhirJsonObject }
-    const twice = { ...resource, subject: { reference: 'https://records.synthetic.invalid/Patient/1' }, author: [{ reference: 'https://records.synthetic.invalid/Practitioner/2' }] }
+    const twice = {
+      ...resource,
+      subject: { reference: 'https://records.synthetic.invalid/Patient/1' },
+      author: [{ reference: 'https://records.synthetic.invalid/Practitioner/2' }],
+    }
     expect(refusedAs(toDocumentBundle(withEntry(2, { fullUrl: NAMES.documentReference, resource: twice })))).toEqual([
       'reference context.entries[2].resource.subject.reference',
       'reference context.entries[2].resource.author[0].reference',
@@ -553,7 +684,14 @@ describe('the refusals of a document', () => {
   // them a value -- the names, the identifier, the address are what a
   // host's log must not hold.
   test('are every one at once, and quote no value', () => {
-    const context = withEntry(1, { fullUrl: NAMES.practitioner, resource: { ...practitioner(), telecom: [{ system: 'url', value: 'Synthetica' }], managingOrganization: { reference: 'https://records.synthetic.invalid/Organization/Beispiel' } } })
+    const context = withEntry(1, {
+      fullUrl: NAMES.practitioner,
+      resource: {
+        ...practitioner(),
+        telecom: [{ system: 'url', value: 'Synthetica' }],
+        managingOrganization: { reference: 'https://records.synthetic.invalid/Organization/Beispiel' },
+      },
+    })
     const result = toDocumentBundle({ ...withComposition({ date: 'Synthetica', title: '' }, context), identifier: { system: 'urn:ietf:rfc:3986' } as never })
     expect(refusedAs(result)).toEqual([
       'absent context.identifier.value',

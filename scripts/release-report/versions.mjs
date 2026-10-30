@@ -38,7 +38,13 @@ function launchedIn(results, browser) {
     if (launched == null) continue
     const { name, version, headless } = launched
     const key = `${String(name)} ${String(version)} ${String(headless)}`
-    seen.set(key, { name, version, headless, pin: browser.pins.find((pin) => pin.browser === name)?.browserVersion ?? null, by: distinct([...(seen.get(key)?.by ?? []), by]) })
+    seen.set(key, {
+      name,
+      version,
+      headless,
+      pin: browser.pins.find((pin) => pin.browser === name)?.browserVersion ?? null,
+      by: distinct([...(seen.get(key)?.by ?? []), by]),
+    })
   }
   return [...seen.values()]
 }
@@ -82,8 +88,18 @@ export function testedOnInRun({ results, facts }) {
     guides: facts.guides,
     validator: {
       pinned: facts.validator,
-      ran: gate === null ? null : { reported: gate.validator?.reported ?? null, java: gate.validator?.java ?? null, loaded: gate.packages?.loaded?.length ?? null },
+      ran:
+        gate === null
+          ? null
+          : { reported: gate.validator?.reported ?? null, java: gate.validator?.java ?? null, loaded: gate.packages?.loaded?.length ?? null },
     },
-    runners: [...new Map(results.map((result) => [`${result.runner?.image ?? ''} ${result.runner?.imageVersion ?? ''}`, { image: result.runner?.image ?? null, imageVersion: result.runner?.imageVersion ?? null }])).values()],
+    runners: [
+      ...new Map(
+        results.map((result) => [
+          `${result.runner?.image ?? ''} ${result.runner?.imageVersion ?? ''}`,
+          { image: result.runner?.image ?? null, imageVersion: result.runner?.imageVersion ?? null },
+        ]),
+      ).values(),
+    ],
   }
 }

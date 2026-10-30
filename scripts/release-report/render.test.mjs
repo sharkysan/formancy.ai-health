@@ -21,15 +21,21 @@ describe('the limitations a run shows', () => {
   // Node is what the jobs ran and what the install gate ran on; no
   // published package says which Node it supports, and the reader is told.
   test('name the Node every job ran, the install gate’s, and that no package declares one', () => {
-    expect(derivedLimitations(report())).toContain('The suites ran on Node v22.20.0; the install gate ran on v22.20.0; no published package declares the Node versions it supports.')
+    expect(derivedLimitations(report())).toContain(
+      'The suites ran on Node v22.20.0; the install gate ran on v22.20.0; no published package declares the Node versions it supports.',
+    )
   })
 
   // No published package has a third-party runtime dependency today; one
   // that arrives as a range admits versions no suite ran, and a clean
   // install on the day is the evidence of one.
   test('say there is no runtime dependency, or whether one is exact, and name one a clean install resolved past the suites', () => {
-    expect(derivedLimitations(report())).toContain('No published package depends at run time on anything but its siblings and upstream `@formancy/*` packages, each at an exact version.')
-    const exact = derivedLimitations(report((inputs) => inputs.facts.runtime.push({ package: '@formancy/health-core', name: 'tslib', range: '2.8.1', loaded: '2.8.1' })))
+    expect(derivedLimitations(report())).toContain(
+      'No published package depends at run time on anything but its siblings and upstream `@formancy/*` packages, each at an exact version.',
+    )
+    const exact = derivedLimitations(
+      report((inputs) => inputs.facts.runtime.push({ package: '@formancy/health-core', name: 'tslib', range: '2.8.1', loaded: '2.8.1' })),
+    )
     expect(exact).toContain('Every runtime dependency is published at an exact version, the one the suites ran.')
     const ranged = derivedLimitations(
       report((inputs) => {
@@ -41,8 +47,12 @@ describe('the limitations a run shows', () => {
     expect(ranged).toContain('A clean npm install on 2026-10-17 resolved `tslib` 2.8.2 (the suites ran 2.8.1), which no suite ran.')
     expect(derivedLimitations(report()).some((sentence) => sentence.startsWith('A clean npm install'))).toBe(false)
     // What the guide's project resolved beside the tarballs is said as the guide's, never as a consumer's.
-    const guide = derivedLimitations(report((inputs) => (job(inputs, 'install').install.consumers[1].resolved.find((entry) => entry.name === '@formancy/report-spec').version = '0.1.1')))
-    expect(guide).toContain('A clean npm install on 2026-10-17 resolved `@formancy/report-spec` 0.1.1 in the guide’s project (the suites ran 0.1.0), which no suite ran.')
+    const guide = derivedLimitations(
+      report((inputs) => (job(inputs, 'install').install.consumers[1].resolved.find((entry) => entry.name === '@formancy/report-spec').version = '0.1.1')),
+    )
+    expect(guide).toContain(
+      'A clean npm install on 2026-10-17 resolved `@formancy/report-spec` 0.1.1 in the guide’s project (the suites ran 0.1.0), which no suite ran.',
+    )
   })
 
   // The suites can load two versions of one upstream package -- the
@@ -56,7 +66,8 @@ describe('the limitations a run shows', () => {
   // suite ran the 0.6.0 every suite of the packages loads.
   test('hold what an install resolved of a package a published package depends on to the versions the suites ran the published packages against', () => {
     const twoLoaded = (inputs) => {
-      for (const project of job(inputs, 'install').install.consumers) for (const entry of project.resolved) if (entry.name === '@formancy/spec') entry.version = '0.6.0'
+      for (const project of job(inputs, 'install').install.consumers)
+        for (const entry of project.resolved) if (entry.name === '@formancy/spec') entry.version = '0.6.0'
       inputs.facts.upstream.find((entry) => entry.name === '@formancy/spec').version = '0.6.0'
       inputs.facts.upstream.push({ name: '@formancy/spec', version: '0.5.0', declared: null, direct: false, shipped: false })
     }
@@ -70,7 +81,9 @@ describe('the limitations a run shows', () => {
     expect(derivedLimitations(report(twoLoaded)).filter((sentence) => sentence.startsWith('A clean npm install'))).toEqual([])
     expect(resolving('0.6.1')).toEqual(['A clean npm install on 2026-10-17 resolved `@formancy/spec` 0.6.1 (the suites ran 0.6.0), which no suite ran.'])
     expect(resolving('0.5.0')).toEqual(['A clean npm install on 2026-10-17 resolved `@formancy/spec` 0.5.0 (the suites ran 0.6.0), which no suite ran.'])
-    expect(resolving('0.5.0', 1)).toEqual(['A clean npm install on 2026-10-17 resolved `@formancy/spec` 0.5.0 in the guide’s project (the suites ran 0.6.0), which no suite ran.'])
+    expect(resolving('0.5.0', 1)).toEqual([
+      'A clean npm install on 2026-10-17 resolved `@formancy/spec` 0.5.0 in the guide’s project (the suites ran 0.6.0), which no suite ran.',
+    ])
   })
 
   // A package no published package depends on is in a project only for
@@ -82,13 +95,18 @@ describe('the limitations a run shows', () => {
     const guide = (version) =>
       derivedLimitations(
         report((inputs) => {
-          inputs.facts.upstream.push({ name: '@formancy/expressions', version: '0.5.0', declared: null, direct: false, shipped: false }, { name: '@formancy/expressions', version: '0.6.0', declared: null, direct: false, shipped: false })
+          inputs.facts.upstream.push(
+            { name: '@formancy/expressions', version: '0.5.0', declared: null, direct: false, shipped: false },
+            { name: '@formancy/expressions', version: '0.6.0', declared: null, direct: false, shipped: false },
+          )
           job(inputs, 'install').install.consumers[1].resolved.push({ name: '@formancy/expressions', version })
         }),
       ).filter((sentence) => sentence.startsWith('A clean npm install'))
     expect(guide('0.5.0')).toEqual([])
     expect(guide('0.6.0')).toEqual([])
-    expect(guide('0.4.0')).toEqual(['A clean npm install on 2026-10-17 resolved `@formancy/expressions` 0.4.0 in the guide’s project (the suites ran 0.5.0 and 0.6.0), which no suite ran.'])
+    expect(guide('0.4.0')).toEqual([
+      'A clean npm install on 2026-10-17 resolved `@formancy/expressions` 0.4.0 in the guide’s project (the suites ran 0.5.0 and 0.6.0), which no suite ran.',
+    ])
   })
 
   // The packed packages ran under Node and nowhere else; with no install
@@ -103,7 +121,13 @@ describe('the limitations a run shows', () => {
     expect(derivedLimitations(report((inputs) => (job(inputs, 'install').install = null)))).toContain(
       'No install gate ran the packed packages in this run; the browser gate ran the demo, which bundles the packages as the workspace builds them, in Chromium 156.0.8078.4, Firefox 157.0 and WebKit 27.2 alone; no gate ran the packed packages in a browser.',
     )
-    expect(derivedLimitations(report((inputs) => { for (const leg of ['browser-chromium', 'browser-firefox', 'browser-webkit']) job(inputs, leg).browserGates = [] }))).toContain(
+    expect(
+      derivedLimitations(
+        report((inputs) => {
+          for (const leg of ['browser-chromium', 'browser-firefox', 'browser-webkit']) job(inputs, leg).browserGates = []
+        }),
+      ),
+    ).toContain(
       'The install gate ran the packed packages under Node v22.20.0 alone; no browser gate ran the demo, which bundles the packages as the workspace builds them; no gate ran the packed packages in a browser.',
     )
   })
@@ -115,15 +139,21 @@ describe('the limitations a run shows', () => {
     expect(derivedLimitations(report())).toContain(
       'The HL7 FHIR validator 7.0.2 ran offline, on Java 17.0.4, against the 2 registered packages, and judged 2 resources of the corpus, 1 of them broken on purpose; a conformance claim is about those resources and no other.',
     )
-    expect(derivedLimitations(report((inputs) => (job(inputs, 'validator').validator = null)))).toContain('No validator gate ran in this run: nothing here judged the FHIR the packages write.')
+    expect(derivedLimitations(report((inputs) => (job(inputs, 'validator').validator = null)))).toContain(
+      'No validator gate ran in this run: nothing here judged the FHIR the packages write.',
+    )
   })
 
   // Neither the suites' source-not-dist nor which jobs built what npm
   // receives may go unsaid.
   test('say the suites ran the source, and which jobs built the dist/ npm receives', () => {
     const identity = derivedLimitations(report()).find((sentence) => sentence.includes('published dist/'))
-    expect(identity).toBe("Each package's own suites ran its source; the published dist/ was run by the install gate, and each package's is byte-identical to its dist/ built in browser-chromium, browser-firefox, browser-webkit, install, validator and verify, and in every other job that built it (*Build identity* names them).")
-    expect(derivedLimitations(report((inputs) => (job(inputs, 'install').install = null)))).toContain("Each package's own suites ran its source; no install gate ran the packed dist/ in this run.")
+    expect(identity).toBe(
+      "Each package's own suites ran its source; the published dist/ was run by the install gate, and each package's is byte-identical to its dist/ built in browser-chromium, browser-firefox, browser-webkit, install, validator and verify, and in every other job that built it (*Build identity* names them).",
+    )
+    expect(derivedLimitations(report((inputs) => (job(inputs, 'install').install = null)))).toContain(
+      "Each package's own suites ran its source; no install gate ran the packed dist/ in this run.",
+    )
   })
 })
 
@@ -134,7 +164,9 @@ describe('the release gates, as a report shows them', () => {
     const sentences = derivedLimitations(report())
     expect(sentences).toContain('Release gate `G4` is open: Nothing to test yet.')
     expect(sentences).toContain('Release gate `G5` is open: No package reads a guide version to refuse. The evidence it has passed in this run.')
-    expect(renderContent(report())).toContain('| G5 | open | `packages/health-questionnaire/src/questionnaire.test.ts`: passed | No package reads a guide version to refuse. |')
+    expect(renderContent(report())).toContain(
+      '| G5 | open | `packages/health-questionnaire/src/questionnaire.test.ts`: passed | No package reads a guide version to refuse. |',
+    )
   })
 
   // A document from another commit is stated, with when it last changed and
@@ -143,18 +175,26 @@ describe('the release gates, as a report shows them', () => {
     const built = report()
     const markdown = renderContent(built)
     const gates = markdown.slice(markdown.indexOf('## Release gates'), markdown.indexOf('## Known limitations'))
-    expect(gates).toContain('| rehearsal | stated, not exercised by this run | stated in `RELEASING.md`, last changed 2026-10-16 at `1234567`, 3 commit(s) before this one |  |')
+    expect(gates).toContain(
+      '| rehearsal | stated, not exercised by this run | stated in `RELEASING.md`, last changed 2026-10-16 at `1234567`, 3 commit(s) before this one |  |',
+    )
     expect(gates).toContain('| G3 | evidence passed in this run | `packages/health-core/src/exactness.test.ts`: passed |  |')
     expect(gates).not.toMatch(/\| [^|]+ \| [^|]*\bmet\b/)
-    expect(derivedLimitations(built)).toContain('Release gate `rehearsal` is stated in `RELEASING.md`, last changed 2026-10-16 at `1234567`, 3 commit(s) before this one; not exercised by this run.')
+    expect(derivedLimitations(built)).toContain(
+      'Release gate `rehearsal` is stated in `RELEASING.md`, last changed 2026-10-16 at `1234567`, 3 commit(s) before this one; not exercised by this run.',
+    )
   })
 
   // On a machine there is no `needs`: a job's evidence is said to have no
   // result there, not to have failed or not run, and in CI it is the job's.
   test('say a job’s evidence has no result outside a gates run, and in CI how the job ended', () => {
     const local = renderContent(report((inputs) => inputs.gatesRegister.gates[1].evidence.push({ job: 'validator' })))
-    expect(local).toContain('| G2 | evidence did not pass in this run | `scripts/validator/registers.test.mjs`: passed; `scripts/validator/judge.test.mjs`: passed; the `validator` job: no result outside a gates run |  |')
-    expect(renderContent(buildReport(greenCiRun()))).toContain('| G2 | evidence passed in this run | `scripts/validator/registers.test.mjs`: passed; `scripts/validator/judge.test.mjs`: passed; the `validator` job: passed |  |')
+    expect(local).toContain(
+      '| G2 | evidence did not pass in this run | `scripts/validator/registers.test.mjs`: passed; `scripts/validator/judge.test.mjs`: passed; the `validator` job: no result outside a gates run |  |',
+    )
+    expect(renderContent(buildReport(greenCiRun()))).toContain(
+      '| G2 | evidence passed in this run | `scripts/validator/registers.test.mjs`: passed; `scripts/validator/judge.test.mjs`: passed; the `validator` job: passed |  |',
+    )
   })
 })
 
@@ -177,14 +217,16 @@ describe('the Markdown', () => {
   // run passed, so a reader sees why a skip did not fail the run; and on a
   // machine that allowed the validator missing, how many were allowed.
   test('shows the guards’ skips with those the validator job passed, or a machine allowed', () => {
-    expect(renderContent(report())).toContain("The repository's guards (`pnpm test:repo`): 5 of 6 passed in 5 files; skipped: 1 (1 passed by the validator job).")
+    expect(renderContent(report())).toContain(
+      "The repository's guards (`pnpm test:repo`): 5 of 6 passed in 5 files; skipped: 1 (1 passed by the validator job).",
+    )
     const allowed = renderContent(
       report((inputs) => {
         job(inputs, 'validator').validator = null
         inputs.allowMissing = ['validator']
       }),
     )
-    expect(allowed).toContain("5 of 6 passed in 5 files; skipped: 1 (1 allowed, the validator missing).")
+    expect(allowed).toContain('5 of 6 passed in 5 files; skipped: 1 (1 allowed, the validator missing).')
   })
 
   // Tested on names the upstream packages, which of them a consumer
@@ -199,7 +241,9 @@ describe('the Markdown', () => {
     expect(markdown).toContain('| Upstream | Declared as | Loaded | Shipped | A consumer’s clean install | The guide’s project |')
     expect(markdown).toContain('| `@formancy/spec` | 0.5.0 | 0.5.0 | yes | 0.5.0 | 0.5.0 |')
     expect(markdown).toContain('| `@formancy/report-spec` | 0.1.0 | 0.1.0 | no: no published package depends on it | not installed by a consumer | 0.1.0 |')
-    expect(markdown).toContain('FHIR 4.0.1, as health-core writes it. The validator gate pins the HL7 FHIR validator 7.0.2 (released 2026-10-15, Java 17 or later), and ran 7.0.2 on Java 17.0.4, which loaded 2 packages; the register holds `hl7.fhir.r4.core#4.0.1` and `hl7.fhir.uv.sdc#4.0.0`, and 0 packages they bring.')
+    expect(markdown).toContain(
+      'FHIR 4.0.1, as health-core writes it. The validator gate pins the HL7 FHIR validator 7.0.2 (released 2026-10-15, Java 17 or later), and ran 7.0.2 on Java 17.0.4, which loaded 2 packages; the register holds `hl7.fhir.r4.core#4.0.1` and `hl7.fhir.uv.sdc#4.0.0`, and 0 packages they bring.',
+    )
     expect(markdown).toContain('pnpm 12.4.2, through corepack (`pnpm@12.4.2`). Tools, as the workspace loads them: typescript 6.0.3 (`~6.0.3`).')
   })
 
@@ -213,7 +257,9 @@ describe('the Markdown', () => {
     expect(results).toContain('The install gate passed with npm 10.9.0 on Node v22.20.0, in the 2 plain npm projects `scripts/install-hosts.mjs` plans:')
     expect(results).toContain('| node | `consume.ts`: type-check, run | the tarballs alone | none | yes |')
     expect(results).toContain('| guide | `guide-node.ts`: type-check, guide: run | @formancy/spec 0.5.0, @formancy/report-spec 0.1.0 | node, 2 blocks | yes |')
-    expect(results).toContain('The last step of the `guide` project, which builds the guide, said: ok: the guide’s program ran and printed the 2 lines the guide shows it printing')
+    expect(results).toContain(
+      'The last step of the `guide` project, which builds the guide, said: ok: the guide’s program ran and printed the 2 lines the guide shows it printing',
+    )
     expect(results).not.toContain('one plain npm project')
   })
 
@@ -232,7 +278,9 @@ describe('the Markdown', () => {
   test('prints a stated limitation with its record, its status and its test', () => {
     // A Status line's relative link to a later record is made absolute: from a report, a relative one goes nowhere.
     const narrowed = renderContent(report((inputs) => (inputs.records[0].status = 'accepted; narrowed by [0009](0009-a-ch-orf-document.md)')))
-    expect(narrowed).toContain('(accepted; narrowed by [0009](https://github.com/sharkysan/formancy.ai-health/blob/c0ffee/docs/decisions/0009-a-ch-orf-document.md))')
+    expect(narrowed).toContain(
+      '(accepted; narrowed by [0009](https://github.com/sharkysan/formancy.ai-health/blob/c0ffee/docs/decisions/0009-a-ch-orf-document.md))',
+    )
     expect(renderContent(report())).toContain(
       '- A host must keep a number’s text. — stated by [0004 Write and read FHIR JSON exactly](https://github.com/sharkysan/formancy.ai-health/blob/c0ffee/docs/decisions/0004-fhir-json-is-written-and-read-exactly.md#consequences) (accepted); held by `packages/health-core/src/numbers.test.ts`, passed in this run',
     )
@@ -243,7 +291,8 @@ describe('the Markdown', () => {
   test('says how each section was made', () => {
     const markdown = renderContent(report())
     const method = markdown.slice(markdown.indexOf('## How this report was made'), markdown.indexOf('## Problems'))
-    for (const section of ['Subject', 'Tested on', 'Results', 'Validator', 'Browser', 'Build identity', 'Release gates', 'Known limitations', 'Problems']) expect(method).toContain(`- **${section}:**`)
+    for (const section of ['Subject', 'Tested on', 'Results', 'Validator', 'Browser', 'Build identity', 'Release gates', 'Known limitations', 'Problems'])
+      expect(method).toContain(`- **${section}:**`)
   })
 
   // The Browser section is each gate's own record in each browser: what it
@@ -260,7 +309,13 @@ describe('the Markdown', () => {
     )
     const other = renderContent(report((inputs) => (job(inputs, 'browser-chromium').browserGates[0].browser.version = '155.0.7999.2')))
     expect(other).toContain('this run launched Chromium 155.0.7999.2 (not the 156.0.8078.4 it pins)')
-    expect(renderContent(report((inputs) => { for (const leg of ['browser-chromium', 'browser-firefox', 'browser-webkit']) job(inputs, leg).browserGates = [] }))).toContain('No browser gate left results in this run.')
+    expect(
+      renderContent(
+        report((inputs) => {
+          for (const leg of ['browser-chromium', 'browser-firefox', 'browser-webkit']) job(inputs, leg).browserGates = []
+        }),
+      ),
+    ).toContain('No browser gate left results in this run.')
   })
 
   // The README pictures' check (0016), as its own file says it: what it
@@ -275,8 +330,12 @@ describe('the Markdown', () => {
     expect(section).toContain('| Pictures’ check | Launched | Playwright | Scenes walked of scenes.json’s | Not walked | Problems found | Wall time |')
     expect(section).toContain('| apps/demo | chromium 156.0.8078.4, headless | 1.64.1 | 2 of 2 | none | 0 | 2.0 s |')
     expect(markdown).toContain('`test-results/pictures.json`')
-    expect(renderContent(report((inputs) => job(inputs, 'browser-chromium').pictures[0].walked.pop()))).toContain('| apps/demo | chromium 156.0.8078.4, headless | 1.64.1 | 1 of 2 | demo-refused | 0 | 2.0 s |')
-    expect(renderContent(report((inputs) => (job(inputs, 'browser-chromium').pictures[0].browser.version = '155.0.7999.2')))).toContain('Chromium 155.0.7999.2 (not the 156.0.8078.4 it pins)')
+    expect(renderContent(report((inputs) => job(inputs, 'browser-chromium').pictures[0].walked.pop()))).toContain(
+      '| apps/demo | chromium 156.0.8078.4, headless | 1.64.1 | 1 of 2 | demo-refused | 0 | 2.0 s |',
+    )
+    expect(renderContent(report((inputs) => (job(inputs, 'browser-chromium').pictures[0].browser.version = '155.0.7999.2')))).toContain(
+      'Chromium 155.0.7999.2 (not the 156.0.8078.4 it pins)',
+    )
     expect(renderContent(report((inputs) => (job(inputs, 'browser-chromium').pictures = [])))).toContain('No pictures’ check left results in this run.')
   })
 
@@ -288,7 +347,9 @@ describe('the Markdown', () => {
     const section = markdown.slice(markdown.indexOf('## Browser'), markdown.indexOf('## Build identity'))
     for (const [id, fact] of Object.entries(FACTS)) {
       const row = section.split('\n').find((line) => line.startsWith(`| ${id} |`))
-      expect(row, id).toBe(`| ${id} | ${fact.says.replaceAll('|', '\\|')} | ${['chromium', 'firefox', 'webkit'].map((browser) => String(fact.values[browser])).join(' | ')} | ${fact.heldBy.gate}: ${fact.heldBy.checks.map((check) => `“${check}”`).join('; ')} |`)
+      expect(row, id).toBe(
+        `| ${id} | ${fact.says.replaceAll('|', '\\|')} | ${['chromium', 'firefox', 'webkit'].map((browser) => String(fact.values[browser])).join(' | ')} | ${fact.heldBy.gate}: ${fact.heldBy.checks.map((check) => `“${check}”`).join('; ')} |`,
+      )
     }
   })
 })
@@ -300,11 +361,18 @@ describe('the subject and the summary', () => {
     const inputs = copy(greenCiRun())
     inputs.release = 'dry-run'
     const markdown = renderReport(buildReport(inputs))
-    expect(markdown).toContain('Formancy Health 0.1.0, a rehearsal (`dry-run`); nothing is published from it. Commit `c0ffee`. Run [42](https://github.com/sharkysan/formancy.ai-health/actions/runs/42) of CI, attempt 1.')
+    expect(markdown).toContain(
+      'Formancy Health 0.1.0, a rehearsal (`dry-run`); nothing is published from it. Commit `c0ffee`. Run [42](https://github.com/sharkysan/formancy.ai-health/actions/runs/42) of CI, attempt 1.',
+    )
     expect(markdown).toContain('| validator | 1 | ubuntu24 20261012.1 | v22.20.0 | linux x64 |')
     expect(renderReport(report(), { local: true, partial: ['validator'] })).toContain('local: no NEEDS, no artefacts; partial: validator allowed missing.')
     // A local run of a tree with uncommitted changes did not run that commit.
-    expect(renderReport(report((inputs) => (inputs.results[0].dirty = true)), { local: true })).toContain('Commit `c0ffee`, with uncommitted changes.')
+    expect(
+      renderReport(
+        report((inputs) => (inputs.results[0].dirty = true)),
+        { local: true },
+      ),
+    ).toContain('Commit `c0ffee`, with uncommitted changes.')
     expect(renderReport(report(), { local: true })).toContain('Commit `c0ffee`. Generated')
   })
 
@@ -314,7 +382,11 @@ describe('the subject and the summary', () => {
     const summary = renderSummary(report(), { section: 'Unreleased', link: 'https://example.invalid/report.md' })
     expect(summary).toContain('The full report of the run that gated this: https://example.invalid/report.md')
     expect(summary).toContain('The notes above are CHANGELOG.md’s `Unreleased` section.')
-    expect(summary).toContain("5 of 5 tests passed across 4 packages; the install gate passed; the validator gate passed, 2 resources judged as the corpus expects; the demo's browser gate made 30 checks in 6 passes, in Chromium, Firefox and WebKit, and none failed.")
-    expect(renderSummary(report((inputs) => (job(inputs, 'browser-webkit').browserGates[0].checks.failed = ['phone, 360, fr: the page set no cookie: cookies: a'])))).toContain("the demo's browser gate failed in WebKit.")
+    expect(summary).toContain(
+      "5 of 5 tests passed across 4 packages; the install gate passed; the validator gate passed, 2 resources judged as the corpus expects; the demo's browser gate made 30 checks in 6 passes, in Chromium, Firefox and WebKit, and none failed.",
+    )
+    expect(
+      renderSummary(report((inputs) => (job(inputs, 'browser-webkit').browserGates[0].checks.failed = ['phone, 360, fr: the page set no cookie: cookies: a']))),
+    ).toContain("the demo's browser gate failed in WebKit.")
   })
 })

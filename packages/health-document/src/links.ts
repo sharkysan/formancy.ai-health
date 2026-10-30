@@ -38,7 +38,8 @@ const URI_REFERENCES: ReadonlySet<string> = new Set(['DetectedIssue.reference', 
 const ATTACHMENT_URL = 'DocumentReference.content.attachment.url'
 
 /** Whether `value` is a FHIR JSON object: no array, no number, no null. */
-export const isObject = (value: FhirJson | undefined): value is FhirJsonObject => typeof value === 'object' && value !== null && !Array.isArray(value) && !isFhirNumber(value)
+export const isObject = (value: FhirJson | undefined): value is FhirJsonObject =>
+  typeof value === 'object' && value !== null && !Array.isArray(value) && !isFhirNumber(value)
 
 /** One link `holder`'s `name` makes, or undefined when it is none. */
 function linkAt(holder: FhirJsonObject, name: string, text: string, path: string, element: string): Link | undefined {
@@ -52,7 +53,9 @@ function linkAt(holder: FhirJsonObject, name: string, text: string, path: string
 /** Every link in `resource`, in the order the resource holds them; paths start at `path`, where the resource stands. */
 export function linksOf(resource: FhirJsonObject, path: string): Link[] {
   const found: Link[] = []
-  const stack: { readonly value: FhirJson; readonly path: string; readonly element: string }[] = [{ value: resource, path, element: String(resource['resourceType']) }]
+  const stack: { readonly value: FhirJson; readonly path: string; readonly element: string }[] = [
+    { value: resource, path, element: String(resource['resourceType']) },
+  ]
   for (let next = stack.pop(); next !== undefined; next = stack.pop()) {
     const { value, element } = next
     const inner: { readonly value: FhirJson; readonly path: string; readonly element: string }[] = []

@@ -62,6 +62,8 @@ describe("the corpus's PDF", () => {
   // And a PDF health-document refuses stops it the same way, before any
   // document is assembled of it.
   test('refused by health-document, stops before a document is assembled', () => {
-    expect(() => referralDocumentContext({ pdf: new Uint8Array([0x25]), placement: 'data' })).toThrow(/refused the corpus's DocumentReference: pdf\.bytes: its bytes/)
+    expect(() => referralDocumentContext({ pdf: new Uint8Array([0x25]), placement: 'data' })).toThrow(
+      /refused the corpus's DocumentReference: pdf\.bytes: its bytes/,
+    )
   })
 })

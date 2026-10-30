@@ -15,7 +15,16 @@ import { heldNextFile, heldSelectStyle, lateOfItsOwn, selectsDrawTheSame, thePag
 const ROW = FACTS.refusesItsOwnSelectStyle
 const LINE = ROW.console
 /** A report as gate-privacy.mjs's listener keeps it: WebKit's own, at the page's first select, as the demo's policy has it reported, with no sample. */
-const report = (change = {}) => ({ directive: 'style-src-attr', blocked: 'inline', target: 'SELECT', element: 0, ownStyle: false, sample: '', at: 'http://localhost:4395/health/assets/index.js:10', ...change })
+const report = (change = {}) => ({
+  directive: 'style-src-attr',
+  blocked: 'inline',
+  target: 'SELECT',
+  element: 0,
+  ownStyle: false,
+  sample: '',
+  at: 'http://localhost:4395/health/assets/index.js:10',
+  ...change,
+})
 const FONT = 'http://localhost:4395/health/assets/ibm-plex-sans-greek-400-normal-D9ESIMu3.woff'
 
 /** A gate that keeps its checks: name -> problem. */
@@ -30,11 +39,31 @@ describe('what the page did, apart from what the browser does of its own', () =>
   // select fails; let through by their shape alone, a style the page puts
   // on a select, or a line more than WebKit's reports, would pass too.
   test('leaves out WebKit’s own refusal at a select, each line matched to a report, and nothing else', () => {
-    const pages = thePagesOwn('webkit', { reports: [report(), report({ element: 1, sample: ROW.report.sample })], errors: [{ text: LINE, url: '' }, { text: LINE, url: '' }] })
+    const pages = thePagesOwn('webkit', {
+      reports: [report(), report({ element: 1, sample: ROW.report.sample })],
+      errors: [
+        { text: LINE, url: '' },
+        { text: LINE, url: '' },
+      ],
+    })
     expect(pages).toEqual({ reports: [], errors: [], own: { refusesItsOwnSelectStyle: 2 } })
-    const theirs = [report({ ownStyle: true }), report({ target: 'OPTION' }), report({ directive: 'style-src-elem' }), report({ sample: 'color:red' }), report({ blocked: 'http://localhost:4395/elsewhere.css' })]
+    const theirs = [
+      report({ ownStyle: true }),
+      report({ target: 'OPTION' }),
+      report({ directive: 'style-src-elem' }),
+      report({ sample: 'color:red' }),
+      report({ blocked: 'http://localhost:4395/elsewhere.css' }),
+    ]
     expect(thePagesOwn('webkit', { reports: theirs, errors: [] }).reports).toEqual(theirs)
-    expect(thePagesOwn('webkit', { reports: [report()], errors: [{ text: LINE, url: '' }, { text: LINE, url: '' }] }).errors).toEqual([{ text: LINE, url: '' }])
+    expect(
+      thePagesOwn('webkit', {
+        reports: [report()],
+        errors: [
+          { text: LINE, url: '' },
+          { text: LINE, url: '' },
+        ],
+      }).errors,
+    ).toEqual([{ text: LINE, url: '' }])
   })
 
   // WebKit refuses its own style once for each select. A style the page
@@ -43,14 +72,22 @@ describe('what the page did, apart from what the browser does of its own', () =>
   // pass in WebKit. One report of each select is WebKit's; a second at it,
   // and its line, are the page's.
   test('leaves out one report of each select, and keeps a second at one select as the page’s', () => {
-    const pages = thePagesOwn('webkit', { reports: [report(), report({ element: 1 }), report()], errors: [LINE, LINE, LINE].map((text) => ({ text, url: '' })) })
+    const pages = thePagesOwn('webkit', {
+      reports: [report(), report({ element: 1 }), report()],
+      errors: [LINE, LINE, LINE].map((text) => ({ text, url: '' })),
+    })
     expect(pages).toEqual({ reports: [report()], errors: [{ text: LINE, url: '' }], own: { refusesItsOwnSelectStyle: 2 } })
   })
 
   // The row says Chromium and Firefox refuse nothing of their own: the same
   // report there is the page's, and fails the gate.
   test('leaves out nothing of the row in a browser the row says does not refuse', () => {
-    for (const browser of ['chromium', 'firefox']) expect(thePagesOwn(browser, { reports: [report()], errors: [{ text: LINE, url: '' }] })).toEqual({ reports: [report()], errors: [{ text: LINE, url: '' }], own: {} })
+    for (const browser of ['chromium', 'firefox'])
+      expect(thePagesOwn(browser, { reports: [report()], errors: [{ text: LINE, url: '' }] })).toEqual({
+        reports: [report()],
+        errors: [{ text: LINE, url: '' }],
+        own: {},
+      })
   })
 
   // In the pass that refuses the web fonts, every browser logs each refused
@@ -60,7 +97,10 @@ describe('what the page did, apart from what the browser does of its own', () =>
     const refused = new Set([FONT])
     const errors = [
       { text: 'Failed to load resource: net::ERR_FAILED', url: FONT },
-      { text: `[JavaScript Error: "downloadable font: download failed (font-family: "IBM Plex Sans" style:normal weight:400 width:100 src index:0): status=2147500037 source: ${FONT}"]`, url: '' },
+      {
+        text: `[JavaScript Error: "downloadable font: download failed (font-family: "IBM Plex Sans" style:normal weight:400 width:100 src index:0): status=2147500037 source: ${FONT}"]`,
+        url: '',
+      },
       { text: 'Failed to load resource: net::ERR_FAILED', url: 'http://localhost:4395/health/assets/index.js' },
     ]
     expect(thePagesOwn('chromium', { reports: [], errors, refused }).errors).toEqual([errors[2]])
@@ -89,7 +129,9 @@ describe('what the browser asked for late, apart from the page', () => {
     }
     expect(held('webkit', [FONT])).toBeNull()
     expect(held('webkit', [])).toBe('the table says true, and once the page had settled it asked for no font file')
-    expect(held('webkit', [FONT], new Set())).toBe('the table says true, and once the page had settled it asked for ibm-plex-sans-greek-400-normal-D9ESIMu3.woff (not refused)')
+    expect(held('webkit', [FONT], new Set())).toBe(
+      'the table says true, and once the page had settled it asked for ibm-plex-sans-greek-400-normal-D9ESIMu3.woff (not refused)',
+    )
     expect(held('chromium', [])).toBeNull()
     expect(held('firefox', [FONT])).toBe('the table says false, and once the page had settled it asked for ibm-plex-sans-greek-400-normal-D9ESIMu3.woff')
   })
@@ -101,7 +143,7 @@ describe('the row of the select, held on a page of its own', () => {
   test('asks for samples in the policy’s style-src and changes nothing else', () => {
     const policy = headersFor('http://localhost:4395/health/')['Content-Security-Policy']
     const sampled = withSamples(policy)
-    expect(sampled).toBe(policy.replace("style-src http://localhost:4395/health/assets/", "style-src http://localhost:4395/health/assets/ 'report-sample'"))
+    expect(sampled).toBe(policy.replace('style-src http://localhost:4395/health/assets/', "style-src http://localhost:4395/health/assets/ 'report-sample'"))
     expect(() => withSamples("default-src 'none'")).toThrow("the page's policy has no style-src to ask for samples in: default-src 'none'")
   })
 
@@ -132,7 +174,12 @@ describe('the row of the select, held on a page of its own', () => {
   })
   const held = async (browser, reports, lines, late) => {
     const gate = recorder()
-    await heldSelectStyle(gate, { context: context(reports, lines, late), url: 'http://localhost:4395/health/', headers: headersFor('http://localhost:4395/health/'), browser })
+    await heldSelectStyle(gate, {
+      context: context(reports, lines, late),
+      url: 'http://localhost:4395/health/',
+      headers: headersFor('http://localhost:4395/health/'),
+      browser,
+    })
     return gate.checks.get(ROW.heldBy.checks[0])
   }
 
@@ -144,7 +191,9 @@ describe('the row of the select, held on a page of its own', () => {
     expect(await held('webkit', theirs, [LINE])).toBeNull()
     expect(await held('chromium', [], [])).toBeNull()
     expect(await held('webkit', [], [])).toBe('the table says true, and the page of one select reported [] and logged []')
-    expect(await held('webkit', [report({ sample: 'color:red' })], [LINE])).toMatch(/^the table says true, and the page of one select reported \[\{.*"sample":"color:red"/)
+    expect(await held('webkit', [report({ sample: 'color:red' })], [LINE])).toMatch(
+      /^the table says true, and the page of one select reported \[\{.*"sample":"color:red"/,
+    )
     expect(await held('webkit', theirs, [LINE, LINE])).toMatch(/logged \[".*",".*"\]$/)
     expect(await held('firefox', theirs, [LINE])).toMatch(/^the table says false, and the page of one select reported \[\{/)
     expect(await held('webkit', null, [])).toBe('no listener was installed before the page ran')

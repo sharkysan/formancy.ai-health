@@ -81,7 +81,10 @@ const selector = (written: string): string => written.trim().replaceAll(/\s+/g, 
  * before it and ends in a semicolon -- an `@import` -- is no part of it.
  */
 const rulesOf = (css: string): { selectors: string[]; body: string }[] =>
-  [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, prelude = '', body = '']) => ({ selectors: (prelude.split(';').at(-1) ?? '').split(',').map(selector), body }))
+  [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, prelude = '', body = '']) => ({
+    selectors: (prelude.split(';').at(-1) ?? '').split(',').map(selector),
+    body,
+  }))
 
 /**
  * Each variable the themes declare only under a scope, with the selectors
@@ -102,7 +105,9 @@ const outsideScopes = (file: string, css: string, scopes: Map<string, Set<string
     read(body).flatMap((name) => {
       const within = scopes.get(name)
       if (within === undefined) return []
-      return selectors.filter((each) => ![...within].some((scope) => each.includes(scope))).map((each) => `${file}: ${each} reads ${name} outside ${[...within].join(' or ')}`)
+      return selectors
+        .filter((each) => ![...within].some((scope) => each.includes(scope)))
+        .map((each) => `${file}: ${each} reads ${name} outside ${[...within].join(' or ')}`)
     }),
   )
 
@@ -130,8 +135,10 @@ const ELEMENT_CALLS = new Set(['createElement', 'createElementNS', 'cloneElement
 function stylesWritten(file: string, text: string): string[] {
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS)
   const found: string[] = []
-  const literal = (node: ts.Node | undefined): string | undefined => (node !== undefined && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined)
-  const called = (expression: ts.Expression): string => (ts.isIdentifier(expression) ? expression.text : ts.isPropertyAccessExpression(expression) ? expression.name.text : '')
+  const literal = (node: ts.Node | undefined): string | undefined =>
+    node !== undefined && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined
+  const called = (expression: ts.Expression): string =>
+    ts.isIdentifier(expression) ? expression.text : ts.isPropertyAccessExpression(expression) ? expression.name.text : ''
   const writes = (node: ts.Node): boolean => {
     if (ts.isJsxAttribute(node)) return node.name.getText(source) === 'style'
     if (ts.isPropertyAccessExpression(node)) return STYLE_MEMBERS.has(node.name.text)
@@ -142,7 +149,11 @@ function stylesWritten(file: string, text: string): string[] {
       if (ATTRIBUTE_CALLS.has(name)) return node.arguments.some((argument) => literal(argument)?.toLowerCase() === 'style')
       if (!ELEMENT_CALLS.has(name)) return false
       const [type, props] = node.arguments
-      return literal(type)?.toLowerCase() === 'style' || literal(props)?.toLowerCase() === 'style' || (props !== undefined && ts.isObjectLiteralExpression(props) && props.properties.some((property) => property.name?.getText(source) === 'style'))
+      return (
+        literal(type)?.toLowerCase() === 'style' ||
+        literal(props)?.toLowerCase() === 'style' ||
+        (props !== undefined && ts.isObjectLiteralExpression(props) && props.properties.some((property) => property.name?.getText(source) === 'style'))
+      )
     }
     return /^--[\w-]+$/.test(literal(node) ?? '')
   }
@@ -166,7 +177,9 @@ describe("the demo's stylesheets", () => {
   test('state no colour of their own', () => {
     const colours = stylesheets.flatMap(({ file, css }) =>
       [...css.matchAll(/([\w-]+)\s*:\s*([^;{}]+)/g)].flatMap(([, property = '', value = '']) =>
-        property.startsWith('--') ? [] : [...wordsOf(value).filter(isColour), ...(value.match(COLOUR_FUNCTION) ?? [])].map((word) => `${file}: ${property}: ${word}`),
+        property.startsWith('--')
+          ? []
+          : [...wordsOf(value).filter(isColour), ...(value.match(COLOUR_FUNCTION) ?? [])].map((word) => `${file}: ${property}: ${word}`),
       ),
     )
     expect(colours).toEqual([])
@@ -200,7 +213,11 @@ describe("the demo's stylesheets", () => {
     const theirs = new Set(WORN.flatMap((file) => declared(withoutComments(themes(file)))))
     expect(theirs).toContain('--wb-signal')
     expect(theirs).toContain('--ground')
-    const unknown = stylesheets.flatMap(({ file, css }) => read(css).filter((name) => !theirs.has(name)).map((name) => `${file}: ${name}`))
+    const unknown = stylesheets.flatMap(({ file, css }) =>
+      read(css)
+        .filter((name) => !theirs.has(name))
+        .map((name) => `${file}: ${name}`),
+    )
     expect(unknown).toEqual([])
   })
 
@@ -215,8 +232,16 @@ describe("the demo's stylesheets", () => {
     expect(scopes.get('--fm-paper')).toEqual(new Set(["[data-formancy-theme='blueprint']"]))
     expect(scopes.get('--ground')).toBeUndefined()
     expect(stylesheets.flatMap(({ file, css }) => outsideScopes(file, css, scopes))).toEqual([])
-    expect(outsideScopes('a.css', '.paper { background: var(--fm-paper) }', scopes)).toEqual(["a.css: .paper reads --fm-paper outside [data-formancy-theme='blueprint']"])
-    expect(outsideScopes('a.css', `@media (width > 1px) { .x[data-formancy-theme="blueprint"], [data-formancy-theme='blueprint'] .y { color: var(--fm-ink) } }`, scopes)).toEqual([])
+    expect(outsideScopes('a.css', '.paper { background: var(--fm-paper) }', scopes)).toEqual([
+      "a.css: .paper reads --fm-paper outside [data-formancy-theme='blueprint']",
+    ])
+    expect(
+      outsideScopes(
+        'a.css',
+        `@media (width > 1px) { .x[data-formancy-theme="blueprint"], [data-formancy-theme='blueprint'] .y { color: var(--fm-ink) } }`,
+        scopes,
+      ),
+    ).toEqual([])
   })
 
   // A colour a script writes is a colour of the page's that no stylesheet
@@ -250,7 +275,7 @@ describe("the demo's stylesheets", () => {
   })
 })
 
-describe("the stylesheets main.tsx imports", () => {
+describe('the stylesheets main.tsx imports', () => {
   // The workbench declares its light defaults on :root and the room sets
   // them to its own, on :root too, so the room after the workbench or its
   // panes stay light in the dark room, as room.css's header says; Blueprint
@@ -259,7 +284,11 @@ describe("the stylesheets main.tsx imports", () => {
   // elsewhere would be a palette nobody holds here.
   test("are the themes' workbench, room and Blueprint, then the page's faces and layout, in that order", () => {
     const imports = ts.preProcessFile(readFileSync(join(src, 'main.tsx'), 'utf8'), true, false).importedFiles.map(({ fileName }) => fileName)
-    expect(imports.filter((name) => name.endsWith('.css'))).toEqual([...WORN.map((file) => `@formancy/themes/${file}`), './styles/fonts.css', './styles/demo.css'])
+    expect(imports.filter((name) => name.endsWith('.css'))).toEqual([
+      ...WORN.map((file) => `@formancy/themes/${file}`),
+      './styles/fonts.css',
+      './styles/demo.css',
+    ])
   })
 
   // The faces the page serves are those the themes' stacks name first: a
@@ -272,8 +301,14 @@ describe("the stylesheets main.tsx imports", () => {
   // `<Family> Variable` (@formancy/themes' README).
   test("serve the face each of the themes' stacks names first, and only those", () => {
     const fonts = stylesheets.find(({ file }) => file === 'styles/fonts.css')?.css ?? ''
-    const served = new Set([...fonts.matchAll(/@import '([^']+)'/g)].map(([, from = '']) => /font-family:\s*'([^']+)'/.exec(readFileSync(createRequire(import.meta.url).resolve(from), 'utf8'))?.[1]))
-    const firsts = WORN.flatMap((file) => [...withoutComments(themes(file)).matchAll(/(--[\w-]+):\s*'([^']+)'/g)].map(([, stack = '', family = '']) => ({ stack, family })))
+    const served = new Set(
+      [...fonts.matchAll(/@import '([^']+)'/g)].map(
+        ([, from = '']) => /font-family:\s*'([^']+)'/.exec(readFileSync(createRequire(import.meta.url).resolve(from), 'utf8'))?.[1],
+      ),
+    )
+    const firsts = WORN.flatMap((file) =>
+      [...withoutComments(themes(file)).matchAll(/(--[\w-]+):\s*'([^']+)'/g)].map(([, stack = '', family = '']) => ({ stack, family })),
+    )
     expect(firsts.map(({ stack }) => stack)).toContain('--display')
     const unserved = firsts.filter(({ family }) => !served.has(family) && !served.has(`${family} Variable`)).map(({ stack, family }) => `${stack}: ${family}`)
     expect(unserved).toEqual([])

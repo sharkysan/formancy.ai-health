@@ -68,7 +68,8 @@ describe('the page, as it opens', () => {
     open()
     expect(screen.getByText(en.form.sample)).toBeDefined()
     expect(screen.queryByRole('button', { name: en.form.reset })).toBeNull()
-    for (const file of [FILES.questionnaire, FILES.response, FILES.document, FILES.letter.data]) expect(screen.getByText(en.resources.corpus(file), { exact: false })).toBeDefined()
+    for (const file of [FILES.questionnaire, FILES.response, FILES.document, FILES.letter.data])
+      expect(screen.getByText(en.resources.corpus(file), { exact: false })).toBeDefined()
     expect(bytesOf(en.response.heading)).toBe(json(FILES.response))
     expect(bytesOf(en.document.heading)).toBe(json(FILES.document))
     expect(bytesOf(en.questionnaire.heading)).toBe(json(FILES.questionnaire))
@@ -92,7 +93,8 @@ describe('the page, as it opens', () => {
   // every page, and is marked English for a reader that speaks it.
   test("carries HL7's and LOINC's notices and the product's purpose, word for word and in English, in every language", () => {
     open('fr')
-    for (const text of [facts.notices.hl7, facts.notices.loinc, facts.purpose]) expect(screen.getByText(text).closest('[lang]')?.getAttribute('lang')).toBe('en')
+    for (const text of [facts.notices.hl7, facts.notices.loinc, facts.purpose])
+      expect(screen.getByText(text).closest('[lang]')?.getAttribute('lang')).toBe('en')
     expect(document.documentElement.lang).toBe('fr')
     expect(document.title).toBe(WORDS.fr.title)
   })
@@ -201,7 +203,9 @@ describe('the page in Italian', () => {
   test("draws none of formancy's words in English", () => {
     open('it')
     const form = screen.getByRole('region', { name: WORDS.it.form.heading })
-    const english = [...Object.values(FORM_WORDS), ...Object.values(en.formancy)].flatMap((word): string[] => (typeof word === 'string' && !word.includes('{') ? [word] : []))
+    const english = [...Object.values(FORM_WORDS), ...Object.values(en.formancy)].flatMap((word): string[] =>
+      typeof word === 'string' && !word.includes('{') ? [word] : [],
+    )
     expect(english).toContain(String(en.formancy['form.submit']))
     // Each text the form draws, on its own: the form's whole textContent
     // runs a label into the next, and a word at the seam has no boundary.
@@ -236,7 +240,10 @@ describe('the Questionnaire, read out', () => {
   test.each(LANGUAGES)('names every item of the Questionnaire shown, in the form’s order, in %s', async (language) => {
     open(language)
     expect(headings(language)).toEqual(keys.map((key) => label(language, key)))
-    const shown = readOut(screen.getByRole('region', { name: WORDS[language].resources.asJson(WORDS[language].questionnaire.heading) }).getAttribute('data-json') ?? '', language)
+    const shown = readOut(
+      screen.getByRole('region', { name: WORDS[language].resources.asJson(WORDS[language].questionnaire.heading) }).getAttribute('data-json') ?? '',
+      language,
+    )
     expect(shown.ok && shown.items.map(({ text }) => text?.text)).toEqual(headings(language))
     expect(await audited()).toEqual([])
   })
@@ -260,7 +267,11 @@ describe('the Questionnaire, read out', () => {
     expect(within(specialty).getByText('specialty')).toBeDefined()
     expect(within(specialty).getByText(en.readOut.types.choice, { exact: false })).toBeDefined()
     const options = within(specialty).getByRole('list', { name: en.readOut.options })
-    expect(within(options).getAllByRole('listitem').map((option) => option.textContent)).toEqual(['Dermatology', 'Cardiology', 'Orthopaedics', 'Ophthalmology'])
+    expect(
+      within(options)
+        .getAllByRole('listitem')
+        .map((option) => option.textContent),
+    ).toEqual(['Dermatology', 'Cardiology', 'Orthopaedics', 'Ophthalmology'])
     const interpreted = screen.getByRole('listitem', { name: label('en', 'interpreter_language') })
     const conditions = within(within(interpreted).getByRole('list', { name: en.readOut.shownWhen })).getAllByRole('listitem')
     expect(conditions.map((condition) => condition.textContent)).toEqual([`${label('en', 'interpreter')} (interpreter) ${en.readOut.is} ${en.readOut.yes}`])
@@ -334,7 +345,9 @@ describe('the downloads', () => {
     const letterPdf = await downloaded(en.resources.download(PDF_FILE))
     expect(letterPdf).toEqual(new Uint8Array(pdf))
     expect(new TextDecoder().decode(letterPdf.subarray(0, 5))).toBe('%PDF-')
-    const attached = readJson(bytesOf(en.letter.heading) ?? '') as { entry: { resource: { resourceType: string; content?: { attachment: { data?: string } }[]; data?: string } }[] }
+    const attached = readJson(bytesOf(en.letter.heading) ?? '') as {
+      entry: { resource: { resourceType: string; content?: { attachment: { data?: string } }[]; data?: string } }[]
+    }
     const data = attached.entry.find(({ resource }) => resource.resourceType === 'DocumentReference')?.resource.content?.[0]?.attachment.data ?? ''
     expect(fromBase64Binary(data, 'data')).toEqual(letterPdf)
     await user.click(screen.getByRole('radio', { name: en.letter.binary }))

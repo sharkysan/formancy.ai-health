@@ -118,7 +118,12 @@ function localSystem(value: string, path: string): FhirUri {
 }
 
 /** A host's own identifier, `{ system, value }`, under `name` of `holder`; undefined, refused at `path`, where it cannot be one. */
-export function localIdentifierAt(holder: unknown, name: string, path: string, refusals: Refusals): { readonly system: FhirUri; readonly value: string } | undefined {
+export function localIdentifierAt(
+  holder: unknown,
+  name: string,
+  path: string,
+  refusals: Refusals,
+): { readonly system: FhirUri; readonly value: string } | undefined {
   const given = valueAt(holder, name)
   const before = refusals.count
   if (!known(given, ['system', 'value'], path, refusals)) return undefined

@@ -4,4 +4,18 @@ export { COMPOSITION_STATUSES, type CompositionContext, type SectionContext } fr
 export { toDocumentBundle, type DocumentBundleExport, type DocumentContext } from './bundle.js'
 export type { DocumentEntry } from './entries.js'
 export type { ByName, Coded } from './context.js'
-export type { Attachment, Binary, Bundle, BundleEntry, Claims, CodeableConcept, Coding, Composition, CompositionSection, DocumentReference, Identifier, Narrative, Reference } from './resource.js'
+export type {
+  Attachment,
+  Binary,
+  Bundle,
+  BundleEntry,
+  Claims,
+  CodeableConcept,
+  Coding,
+  Composition,
+  CompositionSection,
+  DocumentReference,
+  Identifier,
+  Narrative,
+  Reference,
+} from './resource.js'

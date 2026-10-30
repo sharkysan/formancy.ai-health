@@ -48,10 +48,16 @@ describe('testedOn()', () => {
   // the private health-corpus declares, as test support.
   test('marks shipped the upstream packages a published package installs, and none only health-corpus declares', () => {
     const shipped = facts.upstream.filter((entry) => entry.shipped).map((entry) => entry.name)
-    const declaredUpstream = published(repo).flatMap(({ manifest }) => Object.keys(manifest.dependencies ?? {}).filter((name) => name.startsWith('@formancy/') && !local.has(name)))
+    const declaredUpstream = published(repo).flatMap(({ manifest }) =>
+      Object.keys(manifest.dependencies ?? {}).filter((name) => name.startsWith('@formancy/') && !local.has(name)),
+    )
     expect(declaredUpstream).toEqual(['@formancy/spec'])
     expect(shipped).toEqual(expect.arrayContaining(declaredUpstream))
-    for (const name of ['@formancy/report-spec', '@formancy/report-runtime', '@formancy/report-render-pdf']) expect(facts.upstream.find((entry) => entry.name === name), name).toMatchObject({ direct: true, shipped: false })
+    for (const name of ['@formancy/report-spec', '@formancy/report-runtime', '@formancy/report-render-pdf'])
+      expect(
+        facts.upstream.find((entry) => entry.name === name),
+        name,
+      ).toMatchObject({ direct: true, shipped: false })
   })
 
   // The report and the README state one tuple: two readings of it could
@@ -59,7 +65,12 @@ describe('testedOn()', () => {
   test('states the tuple the compatibility table states', () => {
     const record = compatibility(repo)
     expect(facts.fhir).toBe(record.fhir)
-    expect(facts.validator).toEqual({ version: record.validator.version, released: record.validator.released, sha256: record.validator.sha256, java: record.validator.java })
+    expect(facts.validator).toEqual({
+      version: record.validator.version,
+      released: record.validator.released,
+      sha256: record.validator.sha256,
+      java: record.validator.java,
+    })
     expect(facts.guides.map((entry) => entry.key)).toEqual(record.packages.map(packageKey))
   })
 
@@ -86,7 +97,9 @@ describe('testedOn()', () => {
   test('names the Playwright the demo’s gate loads, and the build it pins for each browser the gates run in', () => {
     const playwright = JSON.parse(readFileSync(join(repo, 'apps', 'demo', 'node_modules', 'playwright', 'package.json'), 'utf8')).version
     expect(facts.browser.playwright).toBe(playwright)
-    expect(facts.browser.pins.map((pin) => [pin.browser, pin.name, pin.headless])).toEqual(BROWSERS.map((browser) => [browser, PINNED_AS[browser], LAUNCH_OPTIONS.headless]))
+    expect(facts.browser.pins.map((pin) => [pin.browser, pin.name, pin.headless])).toEqual(
+      BROWSERS.map((browser) => [browser, PINNED_AS[browser], LAUNCH_OPTIONS.headless]),
+    )
     // Chromium's four parts, Firefox's and WebKit's two (157.0, 27.2): a version, whatever its browser's shape.
     for (const pin of facts.browser.pins) expect(pin.browserVersion, pin.name).toMatch(/^\d+(?:\.\d+)+$/)
   })

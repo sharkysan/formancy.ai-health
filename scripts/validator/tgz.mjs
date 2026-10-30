@@ -80,9 +80,11 @@ function paxRecords(data) {
  */
 function safePath(name) {
   const trimmed = name.endsWith('/') ? name.slice(0, -1) : name
-  if (trimmed === '' || trimmed.startsWith('/') || /^[A-Za-z]:/.test(trimmed) || trimmed.includes('\\') || trimmed.includes('\0')) throw new Error(`refused the entry ${JSON.stringify(name)}: not a relative path`)
+  if (trimmed === '' || trimmed.startsWith('/') || /^[A-Za-z]:/.test(trimmed) || trimmed.includes('\\') || trimmed.includes('\0'))
+    throw new Error(`refused the entry ${JSON.stringify(name)}: not a relative path`)
   const segments = trimmed.split('/')
-  if (segments.some((segment) => segment === '' || segment === '.' || segment === '..')) throw new Error(`refused the entry ${JSON.stringify(name)}: an empty, . or .. segment`)
+  if (segments.some((segment) => segment === '' || segment === '.' || segment === '..'))
+    throw new Error(`refused the entry ${JSON.stringify(name)}: an empty, . or .. segment`)
   return segments.join('/')
 }
 
@@ -127,7 +129,8 @@ export function entries(gzipped, limit = MAX_UNPACKED) {
     const name = pax.path ?? longName ?? (prefix === '' ? field(header, 0, 100) : `${prefix}/${field(header, 0, 100)}`)
     pax = {}
     longName = undefined
-    if (type !== '0' && type !== '5') throw new Error(`refused the entry ${JSON.stringify(name)}: its type ${JSON.stringify(type)} is neither a file nor a directory`)
+    if (type !== '0' && type !== '5')
+      throw new Error(`refused the entry ${JSON.stringify(name)}: its type ${JSON.stringify(type)} is neither a file nor a directory`)
     const path = safePath(name)
     if (seen.has(path)) throw new Error(`refused the entry ${JSON.stringify(name)}: the archive gives it twice`)
     seen.add(path)

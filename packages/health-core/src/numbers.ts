@@ -186,7 +186,8 @@ function compareMagnitudes(a: Value, b: Value): -1 | 0 | 1 {
  * keeps its text.
  */
 export function compareNumbers(a: FhirNumber, b: FhirNumber): -1 | 0 | 1 {
-  if (!isFhirNumber(a) || !isFhirNumber(b)) throw new TypeError('compareNumbers compares FHIR numbers made by decimal(), integer(), positiveInt() or unsignedInt()')
+  if (!isFhirNumber(a) || !isFhirNumber(b))
+    throw new TypeError('compareNumbers compares FHIR numbers made by decimal(), integer(), positiveInt() or unsignedInt()')
   const [left, right] = [valueOf(a.text), valueOf(b.text)]
   if (left.negative !== right.negative) return left.negative ? -1 : 1
   const order = compareMagnitudes(left, right)

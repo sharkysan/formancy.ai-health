@@ -19,7 +19,20 @@
  * encounter details, category and code; a member of the host's context
  * that would say one is refused, never left out.
  */
-import { codeOf, dateTime, known, member, needed, optional, readItems, uuid, valueAt, type FhirReference, type FhirUuid, type Refusals } from '@formancy/health-core'
+import {
+  codeOf,
+  dateTime,
+  known,
+  member,
+  needed,
+  optional,
+  readItems,
+  uuid,
+  valueAt,
+  type FhirReference,
+  type FhirUuid,
+  type Refusals,
+} from '@formancy/health-core'
 import { CONTEXT, REQUEST_INTENTS, REQUEST_PRIORITIES, REQUEST_STATUSES } from './context.js'
 import { localIdentifierAt } from './identifiers.js'
 import type { Written } from './people.js'
@@ -47,7 +60,16 @@ function serviceRequestAt(orders: readonly unknown[], index: string, path: strin
   const priority = optional(given, 'priority', at('priority'), refusals, codeOf(REQUEST_PRIORITIES))
   const authoredOn = optional(given, 'authoredOn', at('authoredOn'), refusals, dateTime)
   const { patient, requester } = parties
-  if (refusals.count > before || fullUrl === undefined || placer === undefined || status === undefined || intent === undefined || patient === undefined || requester === undefined) return undefined
+  if (
+    refusals.count > before ||
+    fullUrl === undefined ||
+    placer === undefined ||
+    status === undefined ||
+    intent === undefined ||
+    patient === undefined ||
+    requester === undefined
+  )
+    return undefined
   const resource: ServiceRequest = {
     resourceType: 'ServiceRequest',
     meta: { profile: [PROFILES.serviceRequest] },

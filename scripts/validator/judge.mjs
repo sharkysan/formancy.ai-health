@@ -92,7 +92,8 @@ export function judge({ corpus, outcomes, warnings, pinned, registered, loaded }
   for (const outcome of outcomes) {
     if (byFile.has(outcome.file)) problems.push(`${outcome.file} has two outcomes`)
     byFile.set(outcome.file, outcome)
-    if (outcome.version !== pinned) problems.push(`${outcome.file} was judged by validator ${String(outcome.version)}, not by ${pinned}, which docs/release/validator.json pins`)
+    if (outcome.version !== pinned)
+      problems.push(`${outcome.file} was judged by validator ${String(outcome.version)}, not by ${pinned}, which docs/release/validator.json pins`)
   }
   const files = new Set(corpus.map((entry) => entry.file))
   for (const file of byFile.keys()) if (!files.has(file)) problems.push(`${file} has an outcome but is no file of the corpus`)
@@ -118,12 +119,15 @@ export function judge({ corpus, outcomes, warnings, pinned, registered, loaded }
       information: count('information'),
     }
   })
-  for (const warning of warnings) if (!raised.has(warning.id)) problems.push(`the registered warning ${warning.id} was raised by no resource of the corpus: remove it from scripts/validator/warnings.json`)
+  for (const warning of warnings)
+    if (!raised.has(warning.id))
+      problems.push(`the registered warning ${warning.id} was raised by no resource of the corpus: remove it from scripts/validator/warnings.json`)
   if (loaded === undefined) problems.push('the validator’s console has no Package Summary line, so what it loaded cannot be told')
   else {
     const want = new Set(registered)
     for (const key of loaded) if (!want.has(key)) problems.push(`the validator loaded ${key}, which docs/release/ig-packages.json does not register`)
-    for (const key of registered) if (!loaded.includes(key)) problems.push(`docs/release/ig-packages.json registers ${key}, which the validator did not load: remove it`)
+    for (const key of registered)
+      if (!loaded.includes(key)) problems.push(`docs/release/ig-packages.json registers ${key}, which the validator did not load: remove it`)
   }
   return { resources, problems }
 }

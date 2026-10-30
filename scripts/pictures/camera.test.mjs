@@ -29,10 +29,14 @@ describe('a context', () => {
   // The wide pictures are of the two columns, the form beside the
   // resources; a width at or below the widest breakpoint of the page's
   // stylesheets would picture another layout under the same captions.
-  test("is opened with the settings, past the widest breakpoint, and refused at it", async () => {
+  test('is opened with the settings, past the widest breakpoint, and refused at it', async () => {
     await context(browser, { width: 1440, widest: 1120 })
-    expect(opened).toEqual([{ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, locale: 'en-US', timezoneId: 'UTC', reducedMotion: 'reduce', colorScheme: 'light' }])
-    await expect(context(browser, { width: 1120, widest: 1120 })).rejects.toThrow('a picture is taken past the widest breakpoint, 1120px, and 1120px is not past it')
+    expect(opened).toEqual([
+      { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, locale: 'en-US', timezoneId: 'UTC', reducedMotion: 'reduce', colorScheme: 'light' },
+    ])
+    await expect(context(browser, { width: 1120, widest: 1120 })).rejects.toThrow(
+      'a picture is taken past the widest breakpoint, 1120px, and 1120px is not past it',
+    )
   })
 })
 
@@ -47,7 +51,12 @@ describe('the clip', () => {
   // The bench stops short of what is drawn beside the parts, side by side:
   // the demo's sections stand 24 px apart.
   test('keeps what the bench leaves on each side, and no more', () => {
-    expect(padded({ x: 616, y: 2416, width: 808, height: 624 }, { top: 12, right: 12, bottom: 12, left: 12 }, { width: 1440, height: 5190 })).toEqual({ x: 604, y: 2404, width: 832, height: 648 })
+    expect(padded({ x: 616, y: 2416, width: 808, height: 624 }, { top: 12, right: 12, bottom: 12, left: 12 }, { width: 1440, height: 5190 })).toEqual({
+      x: 604,
+      y: 2404,
+      width: 832,
+      height: 648,
+    })
   })
 
   // A margin past the page's edge would be a box the full-page shot cannot
@@ -68,7 +77,10 @@ describe('the page, served from the build', () => {
   /** What serve() answers to `url`, through a route handler it registered on a stand-in for the context. */
   async function answer(url) {
     let handler
-    await serve({ route: async (_, registered) => void (handler = registered) }, { origin: 'http://demo.invalid', base: '/health/', dist, headers: { 'Content-Security-Policy': "default-src 'none'" } })
+    await serve(
+      { route: async (_, registered) => void (handler = registered) },
+      { origin: 'http://demo.invalid', base: '/health/', dist, headers: { 'Content-Security-Policy': "default-src 'none'" } },
+    )
     let fulfilled
     await handler({ request: () => ({ url: () => url }), fulfill: async (response) => void (fulfilled = response) })
     return fulfilled
@@ -82,7 +94,10 @@ describe('the page, served from the build', () => {
     const page = await answer('http://demo.invalid/health/')
     expect(page).toMatchObject({ status: 200, headers: { 'Content-Security-Policy': "default-src 'none'", 'Content-Type': 'text/html; charset=utf-8' } })
     expect(String(page.body)).toBe('<!doctype html>')
-    expect(await answer('http://demo.invalid/health/assets/index.js')).toMatchObject({ status: 200, headers: { 'Content-Type': 'text/javascript; charset=utf-8' } })
+    expect(await answer('http://demo.invalid/health/assets/index.js')).toMatchObject({
+      status: 200,
+      headers: { 'Content-Type': 'text/javascript; charset=utf-8' },
+    })
     expect(await answer('http://demo.invalid/health/assets/face.woff2')).toMatchObject({ status: 200, headers: { 'Content-Type': 'font/woff2' } })
   })
 

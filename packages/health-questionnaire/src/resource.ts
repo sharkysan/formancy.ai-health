@@ -9,15 +9,7 @@
  * (https://hl7.org/fhir/R4/questionnaire.html, read on 17 October 2026),
  * in the order R4 lists them, which is the order they are written in.
  */
-import type {
-  FhirCode,
-  FhirDate,
-  FhirDateTime,
-  FhirDecimal,
-  FhirInteger,
-  FhirTime,
-  FhirUri,
-} from '@formancy/health-core'
+import type { FhirCode, FhirDate, FhirDateTime, FhirDecimal, FhirInteger, FhirTime, FhirUri } from '@formancy/health-core'
 
 /** An extension as this package writes them: a value, or the parts of a translation. */
 export type Extension = {

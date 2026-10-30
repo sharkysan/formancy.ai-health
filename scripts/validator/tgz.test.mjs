@@ -104,7 +104,8 @@ describe('entries', () => {
   // rules: written as given, `../x` lands beside the cache.
   test('refuses a path that is absolute, a drive, a backslash, or holds an empty, . or .. segment', () => {
     for (const name of ['/etc/passwd', '/', 'C:/x', 'package\\x', '']) expect(() => entries(archive(record(name, 'x'))), name).toThrow(/not a relative path/)
-    for (const name of ['../x', 'package/../../x', 'package/./x', 'package//x']) expect(() => entries(archive(record(name, 'x'))), name).toThrow(/an empty, \. or \.\. segment/)
+    for (const name of ['../x', 'package/../../x', 'package/./x', 'package//x'])
+      expect(() => entries(archive(record(name, 'x'))), name).toThrow(/an empty, \. or \.\. segment/)
     expect(() => entries(archive(pax({ path: '../outside' }), record('fine', 'x')))).toThrow(/refused the entry "\.\.\/outside"/)
   })
 
@@ -151,7 +152,9 @@ describe('unpack', () => {
   // count, so a caller can tell an empty archive from a package.
   test('writes every file under the destination', () => {
     const to = join(scratch(), 'hl7.fhir.uv.sdc#4.0.0')
-    expect(unpack(archive(record('package/', '', '5'), record('package/package.json', '{"name":"hl7.fhir.uv.sdc"}'), record('package/other/a.json', '{}')), to)).toBe(2)
+    expect(
+      unpack(archive(record('package/', '', '5'), record('package/package.json', '{"name":"hl7.fhir.uv.sdc"}'), record('package/other/a.json', '{}')), to),
+    ).toBe(2)
     expect(readFileSync(join(to, 'package', 'package.json'), 'utf8')).toBe('{"name":"hl7.fhir.uv.sdc"}')
     expect(readFileSync(join(to, 'package', 'other', 'a.json'), 'utf8')).toBe('{}')
   })

@@ -100,7 +100,11 @@ async function measured(gate, page, state) {
   check(`${state}: axe's default rules and target size find nothing`, result.violations.length === 0 ? null : result.violations.join('; '))
   check(`${state}: contrast and target size measured, over something`, result.measured.length === 2 ? null : `only ${result.measured.join(', ') || 'nothing'}`)
   check(`${state}: the contrast of every text in view decided`, result.undecided.length === 0 ? null : `undecided: ${result.undecided.join('; ')}`)
-  gate.measure({ name: `${state}: texts whose contrast axe could not decide because their region had scrolled them out of view`, value: result.hidden, unit: 'texts' })
+  gate.measure({
+    name: `${state}: texts whose contrast axe could not decide because their region had scrolled them out of view`,
+    value: result.hidden,
+    unit: 'texts',
+  })
 }
 
 /**
@@ -115,16 +119,30 @@ async function measured(gate, page, state) {
  */
 async function head(gate, page, { language, w, links }) {
   const { check } = gate
-  const said = await page.evaluate(() => ({ lang: document.documentElement.lang, title: document.title, robots: document.querySelector('meta[name="robots"]')?.getAttribute('content') ?? null, text: document.body.innerText }))
-  check('the page opens in the browser’s language: <html lang> and its title', said.lang === language && said.title === w.title ? null : `<html lang="${said.lang}">, "${said.title}"`)
+  const said = await page.evaluate(() => ({
+    lang: document.documentElement.lang,
+    title: document.title,
+    robots: document.querySelector('meta[name="robots"]')?.getAttribute('content') ?? null,
+    text: document.body.innerText,
+  }))
+  check(
+    'the page opens in the browser’s language: <html lang> and its title',
+    said.lang === language && said.title === w.title ? null : `<html lang="${said.lang}">, "${said.title}"`,
+  )
   check('the page says noindex', said.robots === 'noindex' ? null : `its robots meta is ${JSON.stringify(said.robots)}`)
   const heading = await page.getByRole('heading', { level: 1 }).textContent()
   check('its title and its heading hold no HL7 mark', !MARK.test(said.title) && !MARK.test(heading ?? '') ? null : `"${said.title}", "${heading}"`)
   const banners = await page.getByText(w.banner, { exact: true }).count()
-  check('it says once that its data is synthetic, that a real patient’s does not belong in it, and that it sends what is typed nowhere and keeps none of it', banners === 1 ? null : `its banner is on the page ${String(banners)} times`)
+  check(
+    'it says once that its data is synthetic, that a real patient’s does not belong in it, and that it sends what is typed nowhere and keeps none of it',
+    banners === 1 ? null : `its banner is on the page ${String(banners)} times`,
+  )
   const first = [...said.text.matchAll(/\b(HL7|FHIR)(®?)/g)]
   const unmarked = ['HL7', 'FHIR'].filter((mark) => first.find((match) => match[1] === mark)?.[2] !== '®')
-  check('the first time it names the standard, it names the HL7® FHIR® standard', unmarked.length === 0 ? null : `the first ${unmarked.join(' and ')} ${unmarked.length === 1 ? 'has' : 'have'} no ®`)
+  check(
+    'the first time it names the standard, it names the HL7® FHIR® standard',
+    unmarked.length === 0 ? null : `the first ${unmarked.join(' and ')} ${unmarked.length === 1 ? 'has' : 'have'} no ®`,
+  )
   const foot = page.getByRole('contentinfo')
   const notices = []
   for (const notice of [HL7_NOTICE, LOINC_NOTICE]) {
@@ -134,12 +152,20 @@ async function head(gate, page, { language, w, links }) {
   check('HL7’s notice and LOINC’s stand in the foot of the page, word for word, marked English', notices.length === 0 ? null : `not so: ${notices.join('; ')}`)
   const hrefs = await page.getByRole('link').evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute('href') ?? ''))
   const strays = hrefs.filter((href) => href !== '#demo' && !href.startsWith('blob:') && !Object.values(links).includes(href))
-  check('every link is one src/links.ts names, the skip link’s, or a download of bytes the page holds', hrefs.length > 0 && strays.length === 0 ? null : strays.join(', ') || 'the page holds no link')
+  check(
+    'every link is one src/links.ts names, the skip link’s, or a download of bytes the page holds',
+    hrefs.length > 0 && strays.length === 0 ? null : strays.join(', ') || 'the page holds no link',
+  )
   const linked = (await foot.getByRole('link', { name: w.footer.notices, exact: true }).getAttribute('href')) ?? ''
   const bundled = await page.context().request.get(new URL(linked, page.url()).href)
   const served = bundled.ok() ? await bundled.body() : null
   const type = bundled.headers()['content-type'] ?? 'no type'
-  check('the notices its foot links to are the THIRD-PARTY-NOTICES.txt its build wrote, served as text', linked === NOTICES_FILE && served?.equals(readFileSync(join(dist, NOTICES_FILE))) === true && /^text\/plain\b/.test(type) ? null : `${linked}: ${String(bundled.status())}, ${type}${served === null ? '' : ', other bytes than the build wrote'}`)
+  check(
+    'the notices its foot links to are the THIRD-PARTY-NOTICES.txt its build wrote, served as text',
+    linked === NOTICES_FILE && served?.equals(readFileSync(join(dist, NOTICES_FILE))) === true && /^text\/plain\b/.test(type)
+      ? null
+      : `${linked}: ${String(bundled.status())}, ${type}${served === null ? '' : ', other bytes than the build wrote'}`,
+  )
 }
 
 /**
@@ -163,7 +189,10 @@ async function keyboard(gate, page, w) {
   check('the skip link, shown: axe finds nothing', skipAudit.violations.length === 0 ? null : skipAudit.violations.join('; '))
   await page.keyboard.press('Enter')
   const main = page.getByRole('main')
-  check('Enter on it puts the keyboard on <main>', (await main.evaluate((element) => element === document.activeElement)) ? null : `the focus is on ${await describeFocus(page)}`)
+  check(
+    'Enter on it puts the keyboard on <main>',
+    (await main.evaluate((element) => element === document.activeElement)) ? null : `the focus is on ${await describeFocus(page)}`,
+  )
   await page.keyboard.press('Tab')
   const into = await main.evaluate((element) => {
     const tabbable = [...element.querySelectorAll('*')].filter((each) => each.tabIndex >= 0 && !each.disabled && each.getClientRects().length > 0)
@@ -202,7 +231,10 @@ async function pass(gate, { browser, name }, { url, headers }, { label, width, h
     await page.goto(url, { waitUntil: 'load' })
     await watcher.settle({ within: WITHIN })
     gate.check('the page runs React’s production build, the one a deploy serves', await reactProblem(page))
-    gate.check('the page is in formancy.ai’s room: every variable room.css sets holds on :root, the workbench’s among them, drawn dark on the room’s ground', await roomProblem(page))
+    gate.check(
+      'the page is in formancy.ai’s room: every variable room.css sets holds on :root, the workbench’s among them, drawn dark on the room’s ground',
+      await roomProblem(page),
+    )
     const w = modules.words.WORDS[language]
     await head(gate, page, { language, w, links: modules.links.LINKS })
     await keyboard(gate, page, w)
@@ -216,7 +248,10 @@ async function pass(gate, { browser, name }, { url, headers }, { label, width, h
       measured: (state) => measured(gate, page, state),
     })
     const faces = FACTS.forgetsLoadedFaces
-    gate.check(refuseFonts ? 'with the web fonts refused, none loaded' : faces.heldBy.checks[0], await fontProblem(page, { refused: refuseFonts, forgets: faces.values[name] === true }))
+    gate.check(
+      refuseFonts ? 'with the web fonts refused, none loaded' : faces.heldBy.checks[0],
+      await fontProblem(page, { refused: refuseFonts, forgets: faces.values[name] === true }),
+    )
     gate.check('the page threw nothing', thrown.length === 0 ? null : thrown.slice(0, 3).join('; '))
     await privacyChecks(gate, { context, page, watcher, url, browser: name, refused })
     await policyChecks(gate, { context, page, watcher, url, headers, errors, browser: name, refusedFonts: refused ?? new Set() })
@@ -289,7 +324,9 @@ async function inBrowser(name, { modules, list, url, headers }) {
     for (const each of list) await pass(gate, { browser, name }, { url, headers }, each, modules)
     const failures = gate.failures()
     if (failures.length > 0) return `${String(failures.length)} check(s) failed in ${browserName(name)}:\n  ${failures.join('\n  ')}`
-    console.log(`\n${browserName(name)}: the demo's whole journey in ${String(list.length)} passes, in ${String(new Set(list.map((each) => each.language)).size)} languages, from ${String(Math.min(...list.map((each) => each.width)))} to ${String(Math.max(...list.map((each) => each.width)))}px wide, every check held`)
+    console.log(
+      `\n${browserName(name)}: the demo's whole journey in ${String(list.length)} passes, in ${String(new Set(list.map((each) => each.language)).size)} languages, from ${String(Math.min(...list.map((each) => each.width)))} to ${String(Math.max(...list.map((each) => each.width)))}px wide, every check held`,
+    )
     return null
   } catch (error) {
     gate.error(error)

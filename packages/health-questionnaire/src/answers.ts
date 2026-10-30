@@ -133,7 +133,13 @@ function ticksOf(field: FieldDef, item: QuestionnaireItem, value: unknown, path:
  * `path`: none when formancy holds no answer, one, or a tick each; or
  * undefined, with what is wrong in `refusals`.
  */
-export function answersOf(field: FieldDef, item: QuestionnaireItem, value: unknown, path: string, refusals: Refusals): QuestionnaireResponseAnswer[] | undefined {
+export function answersOf(
+  field: FieldDef,
+  item: QuestionnaireItem,
+  value: unknown,
+  path: string,
+  refusals: Refusals,
+): QuestionnaireResponseAnswer[] | undefined {
   if (unanswered(value)) return []
   if (item.type === 'choice' && item.repeats === true) return ticksOf(field, item, value, path, refusals)
   const write: Write | undefined = item.type === 'choice' ? (_, chosen, at) => ({ valueCoding: codingOf(item, chosen, at) }) : SCALARS[item.type as ItemType]

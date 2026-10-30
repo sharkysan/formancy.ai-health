@@ -13,7 +13,13 @@
 import { writeJson, type FhirJson, type Refusal } from '@formancy/health-core'
 import { PROFILES, toChOrfDocument, type ChOrfContext } from '@formancy/health-ch'
 import { referralDocument, type Placement } from '@formancy/health-corpus/documents'
-import { toQuestionnaire, toQuestionnaireResponse, type QuestionnaireContext, type QuestionnaireResponse, type ResponseContext } from '@formancy/health-questionnaire'
+import {
+  toQuestionnaire,
+  toQuestionnaireResponse,
+  type QuestionnaireContext,
+  type QuestionnaireResponse,
+  type ResponseContext,
+} from '@formancy/health-questionnaire'
 import type { FormSchema } from '@formancy/spec'
 
 /**
@@ -60,7 +66,10 @@ type Export<Made> = ({ readonly ok: true } & Made) | { readonly ok: false; reado
  * written as FHIR JSON, or its refusals -- and the resource itself, for a
  * document that carries it; failed when anything throws.
  */
-export function attempt<Made, Resource extends object>(make: () => Export<Made>, resource: (made: Made) => Resource): { readonly outcome: Outcome; readonly resource?: Resource } {
+export function attempt<Made, Resource extends object>(
+  make: () => Export<Made>,
+  resource: (made: Made) => Resource,
+): { readonly outcome: Outcome; readonly resource?: Resource } {
   try {
     const result = make()
     if (!result.ok) return { outcome: { kind: 'refused', refusals: result.refusals } }
@@ -125,7 +134,11 @@ export interface First {
 }
 
 export function firstOf(sample: Sample, pdf: Uint8Array): First {
-  return { questionnaire: questionnaireOf(sample), answered: answeredOf(sample, sample.answers), letter: { data: letterOf(pdf, 'data'), binary: letterOf(pdf, 'binary') } }
+  return {
+    questionnaire: questionnaireOf(sample),
+    answered: answeredOf(sample, sample.answers),
+    letter: { data: letterOf(pdf, 'data'), binary: letterOf(pdf, 'binary') },
+  }
 }
 
 /**

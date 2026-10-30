@@ -12,7 +12,7 @@ describe('toQuestionnaire', () => {
   // writes it: a Questionnaire holding a JavaScript number, an undefined
   // or an empty array would be refused there, or, through JSON.stringify,
   // written with its digits lost. These are its bytes, every one.
-  test('answers a Questionnaire writeJson writes, claiming SDC 4.0.0, under the host\'s base, id and version', () => {
+  test("answers a Questionnaire writeJson writes, claiming SDC 4.0.0, under the host's base, id and version", () => {
     const questionnaire = exported(form([name]))
     expect(writeJson(questionnaire)).toBe(
       '{"resourceType":"Questionnaire","meta":{"profile":["http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire|4.0.0"]},' +
@@ -84,7 +84,21 @@ describe('toQuestionnaire', () => {
   // field left out, and every reason is given at once, so an author
   // fixes the form in one pass.
   test('refuses the whole form for one field, with every refusal at once', () => {
-    const result = toQuestionnaire(form([name, { key: 'drawn', type: 'signature' }, { key: 'ranked', type: 'ranking', options: [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }] }]), HOST)
+    const result = toQuestionnaire(
+      form([
+        name,
+        { key: 'drawn', type: 'signature' },
+        {
+          key: 'ranked',
+          type: 'ranking',
+          options: [
+            { value: 'a', label: 'A' },
+            { value: 'b', label: 'B' },
+          ],
+        },
+      ]),
+      HOST,
+    )
     expect(result.ok).toBe(false)
     expect(result).not.toHaveProperty('questionnaire')
     if (result.ok) return
@@ -97,7 +111,12 @@ describe('toQuestionnaire', () => {
   // have, a language that is not a code. Each is refused at its name.
   test("refuses a host's context that is not what it says it is, at each name", () => {
     const wrong = { base: 'not a uri', version: 3 as unknown as string, status: 'final' as 'active', languages: ['fr', 'de CH '] }
-    expect(refused(form([name]), wrong)).toEqual(['grammar context.base', 'javascript-number context.version', 'unmapped context.status', 'grammar context.languages[1]'])
+    expect(refused(form([name]), wrong)).toEqual([
+      'grammar context.base',
+      'javascript-number context.version',
+      'unmapped context.status',
+      'grammar context.languages[1]',
+    ])
   })
 
   // A language asked for is a translation's lang, which the validator
@@ -106,7 +125,11 @@ describe('toQuestionnaire', () => {
   // a refusal for a text missing in it names it, so it must be a language
   // tag and nothing a host could have put there instead.
   test('refuses a language asked for that is no language tag, at its index', () => {
-    expect(refused(form([name]), { ...HOST, languages: ['fr', 'french', 'de_CH', 'IT'] })).toEqual(['language-tag context.languages[1]', 'language-tag context.languages[2]', 'language-tag context.languages[3]'])
+    expect(refused(form([name]), { ...HOST, languages: ['fr', 'french', 'de_CH', 'IT'] })).toEqual([
+      'language-tag context.languages[1]',
+      'language-tag context.languages[2]',
+      'language-tag context.languages[3]',
+    ])
   })
 
   // A member the context does not name -- a publisher, a copyright -- is
@@ -141,7 +164,10 @@ describe('toQuestionnaire', () => {
   // path means it was quoted.
   test('never quotes a value, in any refusal of any kind', () => {
     const values = ['Erika', 'Muster', '1987-02-28', '1987-02-29', '1999-12-31', '756.1234.5678.90', '31415926535', '27182818284', '07:41', 'Hans', 'Meier']
-    const invalid = form([{ key: 'born', type: 'date', earliest: '1999-12-31', latest: '1987-02-28' }, { key: 'arrival', type: 'time', latest: '07:41:00' }])
+    const invalid = form([
+      { key: 'born', type: 'date', earliest: '1999-12-31', latest: '1987-02-28' },
+      { key: 'arrival', type: 'time', latest: '07:41:00' },
+    ])
     const mapped = ruled(
       [
         { key: 'name', type: 'radio', label: { $t: 'name' }, options: [{ value: ' Erika Muster', label: 'Erika Muster' }] },
@@ -166,7 +192,9 @@ describe('toQuestionnaire', () => {
     const contextual = toQuestionnaire(form([name]), context)
     if (!contextual.ok) refusals.push(...contextual.refusals)
     // Every kind is here: formancy's, the mapping's, a primitive's, the context's.
-    expect(new Set(refusals.map((refusal) => refusal.rule))).toEqual(new Set(['invalid', 'grammar', 'calendar', 'range', 'unmapped', 'missing', 'language-tag']))
+    expect(new Set(refusals.map((refusal) => refusal.rule))).toEqual(
+      new Set(['invalid', 'grammar', 'calendar', 'range', 'unmapped', 'missing', 'language-tag']),
+    )
     for (const refusal of refusals) for (const value of values) expect(`${refusal.message} ${refusal.path}`).not.toContain(value)
   })
 
@@ -181,7 +209,9 @@ describe('toQuestionnaire', () => {
 
   test('writes a page as a group holding its fields', () => {
     const paged = exported(form([{ key: 'step_one', type: 'page', label: 'Step one', fields: [{ key: 'note', type: 'static', label: 'Nothing to answer.' }] }]))
-    expect(paged.item).toEqual([{ linkId: 'step_one', text: 'Step one', type: 'group', item: [{ linkId: 'note', text: 'Nothing to answer.', type: 'display' }] }])
+    expect(paged.item).toEqual([
+      { linkId: 'step_one', text: 'Step one', type: 'group', item: [{ linkId: 'note', text: 'Nothing to answer.', type: 'display' }] },
+    ])
   })
 
   // The answers' export walks each field beside the item it became; the
@@ -192,7 +222,10 @@ describe('toQuestionnaire', () => {
     const schema = form([name, { key: 'box', type: 'group', fields: [{ key: 'inside', type: 'text' }] }])
     const { roots } = placesOf(schema)
     const items = exported(schema).item ?? []
-    expect(pairsOf(roots, items).map((pair) => [pair.item.linkId, pair.children.map((child) => child.item.linkId)])).toEqual([['given_name', []], ['box', ['inside']]])
+    expect(pairsOf(roots, items).map((pair) => [pair.item.linkId, pair.children.map((child) => child.item.linkId)])).toEqual([
+      ['given_name', []],
+      ['box', ['inside']],
+    ])
     expect(() => pairsOf(roots, items.slice(1))).toThrow(/one per field/)
     expect(() => pairsOf(roots, [...items].reverse())).toThrow(/not its field/)
   })

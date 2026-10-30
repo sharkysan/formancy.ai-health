@@ -61,10 +61,7 @@ describe('the linter', () => {
   // A bare disable comment hides a finding without saying why, and a stale
   // one keeps hiding whatever lands under it later.
   test('a disable comment must say why, and an unused one fails', async () => {
-    const bare = await lint(
-      'export async function f() {}\n// eslint-disable-next-line @typescript-eslint/no-floating-promises\nf()\n',
-      SOURCE,
-    )
+    const bare = await lint('export async function f() {}\n// eslint-disable-next-line @typescript-eslint/no-floating-promises\nf()\n', SOURCE)
     expect(ruleIds(bare)).toContain('@eslint-community/eslint-comments/require-description')
     const unused = await lint('// eslint-disable-next-line no-console -- not needed\nexport const x = 1\n', SOURCE)
     expect(unused).toContainEqual(expect.objectContaining({ severity: 2, message: expect.stringMatching(/Unused eslint-disable directive/) }))

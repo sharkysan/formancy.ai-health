@@ -68,13 +68,19 @@ describe("the faces' versions", () => {
   // Google Fonts release its files were made from. Keyed by the font's own
   // family, as formancy.ai-report's look names them.
   test("are each family's release, from the demo's Fontsource packages", () => {
-    expect(faceVersions(join(REPO, 'apps', 'demo'), ['Archivo Variable', 'IBM Plex Mono', 'IBM Plex Sans'])).toEqual({ Archivo: 'v25', 'IBM Plex Mono': 'v20', 'IBM Plex Sans': 'v23' })
+    expect(faceVersions(join(REPO, 'apps', 'demo'), ['Archivo Variable', 'IBM Plex Mono', 'IBM Plex Sans'])).toEqual({
+      Archivo: 'v25',
+      'IBM Plex Mono': 'v20',
+      'IBM Plex Sans': 'v23',
+    })
   })
 
   // A family no package ships -- a face from somewhere else, or a package
   // dropped -- has no version to record, and a record that named none
   // would say nothing of what was pictured.
   test('refuse a family no Fontsource package of the app ships', () => {
-    expect(() => faceVersions(join(REPO, 'apps', 'demo'), ['IBM Plex Sans', 'Inter'])).toThrow('no Fontsource package of apps/demo declares the family Inter, so its version cannot be recorded')
+    expect(() => faceVersions(join(REPO, 'apps', 'demo'), ['IBM Plex Sans', 'Inter'])).toThrow(
+      'no Fontsource package of apps/demo declares the family Inter, so its version cannot be recorded',
+    )
   })
 })

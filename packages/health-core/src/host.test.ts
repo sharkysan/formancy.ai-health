@@ -36,7 +36,9 @@ describe('needed and optional', () => {
   // the primitive the caller names, at that path.
   test('refuse what is absent, and check what is there', () => {
     expect(refusedBy((refusals) => needed({}, 'birthDate', 'context.patient.birthDate', refusals, date))).toEqual(['absent context.patient.birthDate'])
-    expect(refusedBy((refusals) => needed({ birthDate: '2026-02-30' }, 'birthDate', 'context.patient.birthDate', refusals, date))).toEqual(['calendar context.patient.birthDate'])
+    expect(refusedBy((refusals) => needed({ birthDate: '2026-02-30' }, 'birthDate', 'context.patient.birthDate', refusals, date))).toEqual([
+      'calendar context.patient.birthDate',
+    ])
     const refusals = new Refusals()
     expect(needed({ birthDate: '1980-02-29' }, 'birthDate', 'context.patient.birthDate', refusals, date)).toBe('1980-02-29')
     expect(refusals.count).toBe(0)
@@ -48,7 +50,9 @@ describe('needed and optional', () => {
     const refusals = new Refusals()
     expect(optional({}, 'birthDate', 'context.patient.birthDate', refusals, date)).toBeUndefined()
     expect(refusals.count).toBe(0)
-    expect(refusedBy((each) => optional({ birthDate: '17.10.2026' }, 'birthDate', 'context.patient.birthDate', each, date))).toEqual(['grammar context.patient.birthDate'])
+    expect(refusedBy((each) => optional({ birthDate: '17.10.2026' }, 'birthDate', 'context.patient.birthDate', each, date))).toEqual([
+      'grammar context.patient.birthDate',
+    ])
   })
 
   // A null is a value the host gave, and FHIR JSON has none outside an
@@ -56,8 +60,12 @@ describe('needed and optional', () => {
   // without a word, where the host meant to say something. It is handed
   // to the primitive, which refuses it.
   test('refuse a null rather than take it for absent', () => {
-    expect(refusedBy((each) => optional({ birthDate: null }, 'birthDate', 'context.patient.birthDate', each, date))).toEqual(['grammar context.patient.birthDate'])
-    expect(refusedBy((each) => needed({ birthDate: null }, 'birthDate', 'context.patient.birthDate', each, date))).toEqual(['grammar context.patient.birthDate'])
+    expect(refusedBy((each) => optional({ birthDate: null }, 'birthDate', 'context.patient.birthDate', each, date))).toEqual([
+      'grammar context.patient.birthDate',
+    ])
+    expect(refusedBy((each) => needed({ birthDate: null }, 'birthDate', 'context.patient.birthDate', each, date))).toEqual([
+      'grammar context.patient.birthDate',
+    ])
   })
 })
 
@@ -67,7 +75,8 @@ describe('text', () => {
   // says nothing, and is refused as nothing is.
   test('keeps a text, and refuses one of whitespace or no string at all as absent', () => {
     expect(text('Zuweisung', 'context.composition.title')).toBe('Zuweisung')
-    for (const value of ['', ' \t\n', 7 as never]) expect(refusalOf(() => text(value, 'context.composition.title'))).toMatchObject({ rule: 'absent', path: 'context.composition.title' })
+    for (const value of ['', ' \t\n', 7 as never])
+      expect(refusalOf(() => text(value, 'context.composition.title'))).toMatchObject({ rule: 'absent', path: 'context.composition.title' })
   })
 
   // The whitespace a string may hold, and every character but the few a

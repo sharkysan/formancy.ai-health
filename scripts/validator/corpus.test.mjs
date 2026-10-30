@@ -6,7 +6,17 @@ import { describe, expect, test } from 'vitest'
 import { chOrfContext, chOrfDocument } from './ch-orf.mjs'
 import { corpus, documentResponse } from './corpus.mjs'
 import { DEMO_NAMES, demoChOrfContext, demoReferral, demoReferralAnswers, demoReferralContext, demoResponseContext } from './demo-referral.mjs'
-import { intake, intakeContext, intakeResponseContext, intakeRoutine, intakeUrgent, minimal, minimalAnswers, minimalContext, minimalResponseContext } from './forms.mjs'
+import {
+  intake,
+  intakeContext,
+  intakeResponseContext,
+  intakeRoutine,
+  intakeUrgent,
+  minimal,
+  minimalAnswers,
+  minimalContext,
+  minimalResponseContext,
+} from './forms.mjs'
 
 /**
  * The validator gate's corpus holds every construct version 1 maps (0006)
@@ -35,7 +45,8 @@ const DOCUMENT = built('health-document')
 const CORPUS = built('health-corpus')
 const CH = built('health-ch')
 
-if (![QUESTIONNAIRE, CORE, DOCUMENT, CORPUS, CH].every((path) => existsSync(path))) throw new Error('scripts/validator/corpus.test.mjs reads the packages as built: run pnpm build first')
+if (![QUESTIONNAIRE, CORE, DOCUMENT, CORPUS, CH].every((path) => existsSync(path)))
+  throw new Error('scripts/validator/corpus.test.mjs reads the packages as built: run pnpm build first')
 const questionnairePackage = await import(pathToFileURL(QUESTIONNAIRE).href)
 const { toQuestionnaire, toQuestionnaireResponse } = questionnairePackage
 const core = await import(pathToFileURL(CORE).href)
@@ -48,7 +59,10 @@ const fromQuestionnaire = createRequire(join(repo, 'packages', 'health-questionn
 const { FIELD_TYPES, RULE_KINDS } = await import(pathToFileURL(fromQuestionnaire.resolve('@formancy/spec')).href)
 
 const HOST = { base: 'https://forms.synthetic.invalid', status: 'draft' }
-const OPTIONS = [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }]
+const OPTIONS = [
+  { value: 'a', label: 'A' },
+  { value: 'b', label: 'B' },
+]
 
 /** A form of one field of `type`, with what formancy's validator asks of that type. */
 function oneField(type, more = {}) {
@@ -79,10 +93,14 @@ function fieldTypes(fields, into = new Set()) {
 
 const exported = (form, context = HOST) => toQuestionnaire(form, context)
 const mappedFieldTypes = FIELD_TYPES.filter((type) => exported(oneField(type)).ok)
-const mappedItemTypes = new Set([...FIELD_TYPES, 'number'].flatMap((type) => [oneField(type), oneField(type, { step: 1 })]).flatMap((form) => {
-  const result = exported(form)
-  return result.ok ? [...itemTypes(result.questionnaire.item)] : []
-}))
+const mappedItemTypes = new Set(
+  [...FIELD_TYPES, 'number']
+    .flatMap((type) => [oneField(type), oneField(type, { step: 1 })])
+    .flatMap((form) => {
+      const result = exported(form)
+      return result.ok ? [...itemTypes(result.questionnaire.item)] : []
+    }),
+)
 const forms = [intake, minimal, demoReferral]
 
 /** The response `toQuestionnaireResponse` makes of `answers` to `form`; fails the suite when it refuses a corpus submission. */
@@ -128,7 +146,9 @@ describe('the corpus of the validator gate', () => {
   })
 
   test('holds every item type the package writes, in the Questionnaires the gate judges', () => {
-    const written = new Set([exported(intake, intakeContext), exported(minimal, minimalContext)].flatMap((result) => (result.ok ? [...itemTypes(result.questionnaire.item)] : [])))
+    const written = new Set(
+      [exported(intake, intakeContext), exported(minimal, minimalContext)].flatMap((result) => (result.ok ? [...itemTypes(result.questionnaire.item)] : [])),
+    )
     expect([...mappedItemTypes].filter((type) => !written.has(type))).toEqual([])
   })
 
@@ -136,8 +156,16 @@ describe('the corpus of the validator gate', () => {
   // field it can apply to, is exported.
   test('holds every rule kind the package maps', () => {
     const probe = (kind) => {
-      const fields = [{ key: 'flag', type: 'checkbox' }, { key: 'step', type: 'page', fields: [{ key: 'only', type: 'text' }] }]
-      const rule = { target: kind === 'skip' ? 'step' : 'only', kind, ...(kind === 'check' ? { check: 'probe' } : { cel: 'flag == true' }), ...(kind === 'validate' ? { code: 'probe' } : {}) }
+      const fields = [
+        { key: 'flag', type: 'checkbox' },
+        { key: 'step', type: 'page', fields: [{ key: 'only', type: 'text' }] },
+      ]
+      const rule = {
+        target: kind === 'skip' ? 'step' : 'only',
+        kind,
+        ...(kind === 'check' ? { check: 'probe' } : { cel: 'flag == true' }),
+        ...(kind === 'validate' ? { code: 'probe' } : {}),
+      }
       return exported({ specVersion: '4', id: 'probe', title: 'Probe', model: { fields }, logic: { rules: [rule] } }).ok
     }
     const mapped = RULE_KINDS.filter(probe)
@@ -156,7 +184,10 @@ describe('the corpus of the validator gate', () => {
   // package's.
   test('holds every enableWhen operator and answer type the package writes', () => {
     const literals = ['true', '1', '1.5', "'a'", "'2000-01-01'", "'09:30'", "'2026-01-01T00:00:00Z'"]
-    const comparisons = literals.flatMap((literal) => [...['==', '!=', '<', '<=', '>', '>='].map((operator) => `only ${operator} ${literal}`), `${literal} in only`])
+    const comparisons = literals.flatMap((literal) => [
+      ...['==', '!=', '<', '<=', '>', '>='].map((operator) => `only ${operator} ${literal}`),
+      `${literal} in only`,
+    ])
     const shapes = [...new Set(mappedFieldTypes)].flatMap((type) => [oneField(type), oneField(type, { step: 1 })])
     const writes = (questionnaire) => {
       const found = new Set()
@@ -183,7 +214,9 @@ describe('the corpus of the validator gate', () => {
     )
     // A guard on the guard: a derivation that read nothing would be held by any corpus.
     expect([...derived]).toEqual(expect.arrayContaining(['operator =', 'operator exists', 'answerCoding', 'answerInteger']))
-    const written = new Set([exported(intake, intakeContext), exported(minimal, minimalContext)].flatMap((result) => (result.ok ? [...writes(result.questionnaire)] : [])))
+    const written = new Set(
+      [exported(intake, intakeContext), exported(minimal, minimalContext)].flatMap((result) => (result.ok ? [...writes(result.questionnaire)] : [])),
+    )
     expect([...derived].filter((found) => !written.has(found)).sort()).toEqual([])
   })
 
@@ -274,7 +307,22 @@ describe('the corpus of the validator gate', () => {
   // package's, and a type it starts to write fails this until a corpus
   // submission answers it.
   test('holds every answer type and structure the package writes, in the responses the gate judges', () => {
-    const pool = ['a', 'b', 1, 2.5, true, false, '2000-01-01', '09:30', '2026-01-01T00:00:00Z', ['a'], ['a', 'b'], { inner: 'x' }, [{ inner: 'x' }], [{ inner: 'x' }, { inner: 'y' }]]
+    const pool = [
+      'a',
+      'b',
+      1,
+      2.5,
+      true,
+      false,
+      '2000-01-01',
+      '09:30',
+      '2026-01-01T00:00:00Z',
+      ['a'],
+      ['a', 'b'],
+      { inner: 'x' },
+      [{ inner: 'x' }],
+      [{ inner: 'x' }, { inner: 'y' }],
+    ]
     const context = { questionnaire: HOST, status: 'in-progress', authored: '2026-10-17' }
     const shapes = [...new Set(mappedFieldTypes)].flatMap((type) => [oneField(type), oneField(type, { step: 1 })])
     const derived = new Set(
@@ -309,7 +357,8 @@ function resourceTypes(value, into = new Set()) {
 function placements(value, into = new Set()) {
   if (Array.isArray(value)) for (const each of value) placements(each, into)
   else if (typeof value === 'object' && value !== null) {
-    if (value.resourceType === 'DocumentReference') for (const { attachment } of value.content) for (const name of ['data', 'url']) if (attachment[name] !== undefined) into.add(name)
+    if (value.resourceType === 'DocumentReference')
+      for (const { attachment } of value.content) for (const name of ['data', 'url']) if (attachment[name] !== undefined) into.add(name)
     for (const each of Object.values(value)) placements(each, into)
   }
   return into
@@ -325,7 +374,9 @@ function placements(value, into = new Set()) {
 const smallestPdf = new Uint8Array([...'%PDF-1.4\n%%EOF\n'].map((character) => character.charCodeAt(0)))
 const PROBES = {
   toQuestionnaire: () => [exported(oneField('text')).questionnaire],
-  toQuestionnaireResponse: () => [toQuestionnaireResponse(oneField('text'), { only: 'a' }, { questionnaire: HOST, status: 'in-progress', authored: '2026-10-17' }).questionnaireResponse],
+  toQuestionnaireResponse: () => [
+    toQuestionnaireResponse(oneField('text'), { only: 'a' }, { questionnaire: HOST, status: 'in-progress', authored: '2026-10-17' }).questionnaireResponse,
+  ],
   toDocumentReference: () =>
     ['data', 'binary'].flatMap((placement) => {
       const result = documentPackage.toDocumentReference({ bytes: smallestPdf, profile: 'PDF' }, documents.referralContext(placement))
@@ -347,7 +398,10 @@ const PROBES = {
 }
 
 describe('the resources of the validator gate', () => {
-  const exportsOf = (module) => Object.entries(module).filter(([name, value]) => typeof value === 'function' && /^to[A-Z]/.test(name)).map(([name]) => name)
+  const exportsOf = (module) =>
+    Object.entries(module)
+      .filter(([name, value]) => typeof value === 'function' && /^to[A-Z]/.test(name))
+      .map(([name]) => name)
 
   // A guard on the guard: an export the probes do not know writes
   // resources nobody derived, and a probe that names no export probes
@@ -362,7 +416,19 @@ describe('the resources of the validator gate', () => {
   // stopped holding fails here until it does again.
   test('hold every resource type the packages write, in resources the gate must accept', () => {
     const written = new Set(Object.values(PROBES).flatMap((probe) => [...resourceTypes(probe())]))
-    expect([...written].sort()).toEqual(['Binary', 'Bundle', 'Composition', 'DocumentReference', 'Organization', 'Patient', 'Practitioner', 'PractitionerRole', 'Questionnaire', 'QuestionnaireResponse', 'ServiceRequest'])
+    expect([...written].sort()).toEqual([
+      'Binary',
+      'Bundle',
+      'Composition',
+      'DocumentReference',
+      'Organization',
+      'Patient',
+      'Practitioner',
+      'PractitionerRole',
+      'Questionnaire',
+      'QuestionnaireResponse',
+      'ServiceRequest',
+    ])
     const accepted = corpus({ core, questionnaire: questionnairePackage, documents, pdf, ch }).filter((entry) => entry.expect === 'accepted')
     const held = new Set(accepted.flatMap((entry) => [...resourceTypes(entry.resource)]))
     expect([...written].filter((type) => !held.has(type)).sort()).toEqual([])

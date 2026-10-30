@@ -31,7 +31,10 @@ describe('reference', () => {
     'urn:oid:2.999.1',
     '',
   ])('refuses %j', (text) => {
-    expect(refusalOf(() => reference(text, 'QuestionnaireResponse.subject.reference'))).toMatchObject({ rule: 'reference', path: 'QuestionnaireResponse.subject.reference' })
+    expect(refusalOf(() => reference(text, 'QuestionnaireResponse.subject.reference'))).toMatchObject({
+      rule: 'reference',
+      path: 'QuestionnaireResponse.subject.reference',
+    })
   })
 
   // Where R4 allows a reference to only some resource types -- an author is
@@ -44,7 +47,9 @@ describe('reference', () => {
     const types = ['Patient', 'Practitioner']
     expect(reference('Practitioner/p-1', 'QuestionnaireResponse.author.reference', types)).toBe('Practitioner/p-1')
     expect(refusalOf(() => reference('Observation/o-1', 'QuestionnaireResponse.author.reference', types))).toMatchObject({ rule: 'reference' })
-    expect(reference('urn:uuid:8c1e5a52-3f43-4c2a-9a52-6b0e1b1f6a01', 'QuestionnaireResponse.author.reference', types)).toBe('urn:uuid:8c1e5a52-3f43-4c2a-9a52-6b0e1b1f6a01')
+    expect(reference('urn:uuid:8c1e5a52-3f43-4c2a-9a52-6b0e1b1f6a01', 'QuestionnaireResponse.author.reference', types)).toBe(
+      'urn:uuid:8c1e5a52-3f43-4c2a-9a52-6b0e1b1f6a01',
+    )
   })
 
   // A refusal ends up in a host's log, and a reference names a person's

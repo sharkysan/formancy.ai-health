@@ -12,7 +12,11 @@ describe('sha1', () => {
   test.each([
     ['', 'da39a3ee5e6b4b0d3255bfef95601890afd80709', 'no bytes: one block of padding alone'],
     ['abc', 'a9993e364706816aba3e25717850c26c9cd0d89d', "FIPS 180-2's one-block example"],
-    ['abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq', '84983e441c3bd26ebaae4aa1f95129e5e54670f1', "FIPS 180-2's two-block example, 56 bytes, whose length no longer fits its first block"],
+    [
+      'abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq',
+      '84983e441c3bd26ebaae4aa1f95129e5e54670f1',
+      "FIPS 180-2's two-block example, 56 bytes, whose length no longer fits its first block",
+    ],
   ])('of %j is %s: %s', (text, digest) => {
     expect(hex(sha1(ascii(text)))).toBe(digest)
   })

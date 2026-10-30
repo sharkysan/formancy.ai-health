@@ -118,7 +118,12 @@ function options(argv) {
     const at = argv.indexOf(name)
     return at === -1 ? undefined : argv[at + 1]
   }
-  return { java: value('--java') ?? 'java', cache: resolve(repo, value('--cache') ?? '.fhir-cache'), results: resolve(repo, value('--results') ?? RESULTS), fresh: argv.includes('--fresh') }
+  return {
+    java: value('--java') ?? 'java',
+    cache: resolve(repo, value('--cache') ?? '.fhir-cache'),
+    results: resolve(repo, value('--results') ?? RESULTS),
+    fresh: argv.includes('--fresh'),
+  }
 }
 
 const seconds = (since) => Math.round((performance.now() - since) / 100) / 10
@@ -127,7 +132,7 @@ const local = (path) => relative(repo, path).replaceAll('\\', '/')
 /** Everything written to the open file `fd`, read from its start. */
 function written(fd) {
   const bytes = Buffer.alloc(fstatSync(fd).size)
-  for (let at = 0; at < bytes.length; ) {
+  for (let at = 0; at < bytes.length;) {
     const read = readSync(fd, bytes, at, bytes.length - at, at)
     if (read === 0) break
     at += read
@@ -164,15 +169,20 @@ async function main(argv, startedAt) {
   const version = spawnSync(java, ['-version'], { encoding: 'utf8' })
   if (version.error !== undefined) throw new Error(`cannot run ${java}: ${version.error.message}; pass --java <path to java>`)
   const major = javaMajor(`${version.stderr}${version.stdout}`)
-  if (major === undefined || major < pin.java) throw new Error(`${java} is Java ${String(major)}, and validator ${pin.version} needs ${String(pin.java)} or later`)
+  if (major === undefined || major < pin.java)
+    throw new Error(`${java} is Java ${String(major)}, and validator ${pin.version} needs ${String(pin.java)} or later`)
 
   const where = layout(cache)
   const fetched = []
   if (await fetchVerified({ url: pin.url, path: where.jar(pin), sha256: pin.sha256 })) fetched.push(`validator_cli.jar ${pin.version}`)
   for (const entry of packages) if (await fetchVerified({ url: entry.url, path: where.tgz(entry), sha256: entry.sha256 })) fetched.push(packageKey(entry))
   const home = prepareHome(where, packages, pin.version, { fresh })
-  console.log(`validator: ${pin.version} and ${String(packages.length)} packages checked against their registered SHA-256; fetched ${fetched.length === 0 ? 'nothing' : fetched.join(', ')}`)
-  console.log(`validator: package cache ${local(where.packages)}: ${String(home.unpacked.length)} unpacked, ${String(home.kept.length)} kept${home.removed.length === 0 ? '' : `, removed ${home.removed.join(', ')}`}`)
+  console.log(
+    `validator: ${pin.version} and ${String(packages.length)} packages checked against their registered SHA-256; fetched ${fetched.length === 0 ? 'nothing' : fetched.join(', ')}`,
+  )
+  console.log(
+    `validator: package cache ${local(where.packages)}: ${String(home.unpacked.length)} unpacked, ${String(home.kept.length)} kept${home.removed.length === 0 ? '' : `, removed ${home.removed.join(', ')}`}`,
+  )
 
   const built = async (path) => {
     if (!existsSync(join(repo, path))) throw new Error(`${path} is missing: run pnpm build first, since the corpus is made by the packages as built`)
@@ -222,7 +232,14 @@ async function main(argv, startedAt) {
   let verdict = { resources: [], problems: [] }
   const outcome = readIfThere(output)
   if (outcome !== undefined) {
-    verdict = judge({ corpus: entries, outcomes: readOutcomes(outcome), warnings, pinned: pin.version, registered: packages.map(packageKey), loaded: said.packages })
+    verdict = judge({
+      corpus: entries,
+      outcomes: readOutcomes(outcome),
+      warnings,
+      pinned: pin.version,
+      registered: packages.map(packageKey),
+      loaded: said.packages,
+    })
   } else problems.push(`the validator wrote no ${local(output)}`)
   problems.push(...verdict.problems)
 
@@ -254,7 +271,9 @@ async function main(argv, startedAt) {
   writeFileSync(results, `${JSON.stringify(report, null, 2)}\n`)
 
   const accepted = verdict.resources.filter((row) => row.expect === 'accepted').length
-  console.log(`validator: ${String(verdict.resources.length)} resources judged in ${String(validatorSeconds)} s, ${String(accepted)} to accept and ${String(verdict.resources.length - accepted)} broken to refuse; its console printed ${String(said.refused)} refused requests; results in ${local(results)}`)
+  console.log(
+    `validator: ${String(verdict.resources.length)} resources judged in ${String(validatorSeconds)} s, ${String(accepted)} to accept and ${String(verdict.resources.length - accepted)} broken to refuse; its console printed ${String(said.refused)} refused requests; results in ${local(results)}`,
+  )
   if (problems.length > 0) {
     console.error('Validator gate failed:')
     for (const problem of problems) console.error(`  - ${problem}`)

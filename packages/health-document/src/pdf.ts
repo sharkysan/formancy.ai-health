@@ -38,7 +38,20 @@ import { known, member, type Refusals } from '@formancy/health-core'
 export const PDF = 'pdf'
 
 /** What a host may declare a PDF to be: plain, or an ISO 19005 conformance level. */
-export const PDF_PROFILES = ['PDF', 'PDF/A-1a', 'PDF/A-1b', 'PDF/A-2a', 'PDF/A-2b', 'PDF/A-2u', 'PDF/A-3a', 'PDF/A-3b', 'PDF/A-3u', 'PDF/A-4', 'PDF/A-4e', 'PDF/A-4f'] as const
+export const PDF_PROFILES = [
+  'PDF',
+  'PDF/A-1a',
+  'PDF/A-1b',
+  'PDF/A-2a',
+  'PDF/A-2b',
+  'PDF/A-2u',
+  'PDF/A-3a',
+  'PDF/A-3b',
+  'PDF/A-3u',
+  'PDF/A-4',
+  'PDF/A-4e',
+  'PDF/A-4f',
+] as const
 
 export type PdfProfile = (typeof PDF_PROFILES)[number]
 

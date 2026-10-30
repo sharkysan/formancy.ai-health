@@ -189,7 +189,14 @@ describe("HL7's notice", () => {
   // name -- a walk that missed one would hold three and pass -- and not
   // the private corpus.
   test("is looked for in every published package's README", () => {
-    expect(carrying()).toEqual(expect.arrayContaining(['packages/health-core/README.md', 'packages/health-questionnaire/README.md', 'packages/health-document/README.md', 'packages/health-ch/README.md']))
+    expect(carrying()).toEqual(
+      expect.arrayContaining([
+        'packages/health-core/README.md',
+        'packages/health-questionnaire/README.md',
+        'packages/health-document/README.md',
+        'packages/health-ch/README.md',
+      ]),
+    )
     expect(carrying()).not.toContain('packages/health-corpus/README.md')
   })
 
@@ -198,7 +205,11 @@ describe("HL7's notice", () => {
   // that forgave a word would pass a notice HL7 never wrote -- a singular
   // "trademark", the endorsement clause left off, an ® HL7's text has not.
   test('is found however its lines break, and not when a word of it differs', () => {
-    expect(carriesNotice(`Intro.\n\nHL7, FHIR and the FHIR\n[FLAME DESIGN] are the registered trademarks of Health Level Seven\nInternational and their use does not constitute endorsement by HL7. More.`)).toBe(true)
+    expect(
+      carriesNotice(
+        `Intro.\n\nHL7, FHIR and the FHIR\n[FLAME DESIGN] are the registered trademarks of Health Level Seven\nInternational and their use does not constitute endorsement by HL7. More.`,
+      ),
+    ).toBe(true)
     expect(carriesNotice(HL7_NOTICE.replace('trademarks', 'trademark'))).toBe(false)
     expect(carriesNotice(HL7_NOTICE.replace(' and their use does not constitute endorsement by HL7.', '.'))).toBe(false)
     expect(carriesNotice(HL7_NOTICE.replace('HL7, FHIR', 'HL7®, FHIR®'))).toBe(false)
@@ -261,7 +272,9 @@ describe("a claim of HL7's permission", () => {
   // whatever is written there next.
   test('is exempt only where a file states one to refuse it', () => {
     const files = new Set(committable())
-    const stale = [...STATES_THE_RULE].filter(([file]) => !files.has(file) || claimsIn(textOf(file) ?? '').length === 0).map(([file, reason]) => `${file} (${reason})`)
+    const stale = [...STATES_THE_RULE]
+      .filter(([file]) => !files.has(file) || claimsIn(textOf(file) ?? '').length === 0)
+      .map(([file, reason]) => `${file} (${reason})`)
     expect(stale, 'remove these from STATES_THE_RULE').toEqual([])
   })
 })
@@ -271,7 +284,14 @@ describe('the names', () => {
   // applied for no licence at all. Spelled as the old working name, as a
   // coined compound or in another case, a mark is still a mark.
   test('are refused with an HL7 mark in them, in any case and inside a word', () => {
-    for (const name of ['@formancy/fhir-core', 'Formancy FHIR', 'FormancyFhir', 'formancy-hl7', '@formancy/health-Hl7v2', 'Formancy FHIR Source-Available Licence']) {
+    for (const name of [
+      '@formancy/fhir-core',
+      'Formancy FHIR',
+      'FormancyFhir',
+      'formancy-hl7',
+      '@formancy/health-Hl7v2',
+      'Formancy FHIR Source-Available Licence',
+    ]) {
       expect(MARK.test(name), name).toBe(true)
     }
     for (const name of ['formancy-health', '@formancy/health-core', 'Formancy Health', 'Formancy Health Source-Available Licence']) {

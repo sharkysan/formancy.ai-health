@@ -1,6 +1,24 @@
 import { join } from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { announce, checkProblems, dated, digest, entry, lineDiff, misquotes, outsideRepository, pairingProblems, picturedApps, pictureOf, quotations, readScenes, REPO, serialize, stylesheetNotices, withEntry } from './record.mjs'
+import {
+  announce,
+  checkProblems,
+  dated,
+  digest,
+  entry,
+  lineDiff,
+  misquotes,
+  outsideRepository,
+  pairingProblems,
+  picturedApps,
+  pictureOf,
+  quotations,
+  readScenes,
+  REPO,
+  serialize,
+  stylesheetNotices,
+  withEntry,
+} from './record.mjs'
 
 /**
  * What a capture may write into docs/images/readme/captured.json and what
@@ -9,23 +27,54 @@ import { announce, checkProblems, dated, digest, entry, lineDiff, misquotes, out
  * camera's.
  */
 
-const LOOK = { platform: 'win32-x64', playwright: '1.64.1', chromium: '156.0.8078.4', fonts: { Archivo: 'v25', 'IBM Plex Mono': 'v20', 'IBM Plex Sans': 'v23' } }
+const LOOK = {
+  platform: 'win32-x64',
+  playwright: '1.64.1',
+  chromium: '156.0.8078.4',
+  fonts: { Archivo: 'v25', 'IBM Plex Mono': 'v20', 'IBM Plex Sans': 'v23' },
+}
 const SETTINGS = { width: 1440, height: 900, deviceScaleFactor: 2, locale: 'en-US', timezoneId: 'UTC' }
 const SCENES = [
-  { id: 'demo-form', app: 'demo', placement: 'inline', title: 'The form', caption: 'It says “Synthetische Fragestellung”.', alt: 'The form.', quotes: { 'Synthetische Fragestellung': ['Form'] } },
-  { id: 'demo-refused', app: 'demo', placement: 'inline', title: 'Refused', caption: '“Refused by @formancy/health-questionnaire:”.', alt: 'The response.', quotes: { 'Refused by @formancy/health-questionnaire:': ['Response'] } },
+  {
+    id: 'demo-form',
+    app: 'demo',
+    placement: 'inline',
+    title: 'The form',
+    caption: 'It says “Synthetische Fragestellung”.',
+    alt: 'The form.',
+    quotes: { 'Synthetische Fragestellung': ['Form'] },
+  },
+  {
+    id: 'demo-refused',
+    app: 'demo',
+    placement: 'inline',
+    title: 'Refused',
+    caption: '“Refused by @formancy/health-questionnaire:”.',
+    alt: 'The response.',
+    quotes: { 'Refused by @formancy/health-questionnaire:': ['Response'] },
+  },
 ]
 const FORM = { Form: '- region "The form":\n  - textbox "Question for the specialist*": Synthetische Fragestellung, ohne klinische Bedeutung' }
 const REFUSED = { Response: '- region "The answers, as a QuestionnaireResponse":\n  - paragraph: "Refused by @formancy/health-questionnaire:"' }
 const PICTURES = { 'demo-form': Buffer.from('demo-form'), 'demo-refused': Buffer.from('demo-refused') }
-const taken = (id, text, look = LOOK) => entry(id, { captured: '2026-10-20', settings: SETTINGS, clip: { x: 0, y: 0, width: 608, height: 1077 }, picture: PICTURES[id] ?? Buffer.from(id), look, data: 'the demo referral', stylesheet: 'sha256 0', text })
+const taken = (id, text, look = LOOK) =>
+  entry(id, {
+    captured: '2026-10-20',
+    settings: SETTINGS,
+    clip: { x: 0, y: 0, width: 608, height: 1077 },
+    picture: PICTURES[id] ?? Buffer.from(id),
+    look,
+    data: 'the demo referral',
+    stylesheet: 'sha256 0',
+    text,
+  })
 
 describe('the apps with pictures', () => {
   // The guard holds the scenes of every app with a pictures script, and the
   // release report expects a check of the same apps (collect.mjs asks this
   // too): an app one counted and the other did not would be pictures held
   // by the guard and checked by nobody, or a check nobody expects.
-  test("are the apps with a pictures script: in this repository, the demo", () => {
+  test('are the apps with a pictures script: in this repository, the demo', () => {
     expect(picturedApps()).toEqual(['demo'])
     expect(picturedApps(join(REPO, 'docs'))).toEqual([])
   })
@@ -47,9 +96,38 @@ describe('the record the demo script writes', () => {
   // size taken from the viewport instead of the clip, would be a record
   // the README renders at the wrong width.
   test("is one entry per scene, with the clip as its CSS size and the picture's own bytes and digest", () => {
-    const written = entry('demo-form', { captured: '2026-10-20', settings: SETTINGS, clip: { x: 0, y: 316, width: 608, height: 1077 }, picture: PICTURES['demo-form'], look: LOOK, data: 'the demo referral', stylesheet: 'sha256 0', text: FORM })
-    expect(Object.keys(written)).toEqual(['file', 'captured', 'viewport', 'deviceScaleFactor', 'locale', 'timezone', 'css', 'bytes', 'sha256', 'look', 'data', 'stylesheet', 'text'])
-    expect(written).toMatchObject({ file: 'docs/images/readme/demo-form.webp', viewport: { width: 1440, height: 900 }, css: { width: 608, height: 1077 }, bytes: 9, timezone: 'UTC' })
+    const written = entry('demo-form', {
+      captured: '2026-10-20',
+      settings: SETTINGS,
+      clip: { x: 0, y: 316, width: 608, height: 1077 },
+      picture: PICTURES['demo-form'],
+      look: LOOK,
+      data: 'the demo referral',
+      stylesheet: 'sha256 0',
+      text: FORM,
+    })
+    expect(Object.keys(written)).toEqual([
+      'file',
+      'captured',
+      'viewport',
+      'deviceScaleFactor',
+      'locale',
+      'timezone',
+      'css',
+      'bytes',
+      'sha256',
+      'look',
+      'data',
+      'stylesheet',
+      'text',
+    ])
+    expect(written).toMatchObject({
+      file: 'docs/images/readme/demo-form.webp',
+      viewport: { width: 1440, height: 900 },
+      css: { width: 608, height: 1077 },
+      bytes: 9,
+      timezone: 'UTC',
+    })
     expect(written.sha256).toBe(digest('demo-form'))
   })
 
@@ -111,7 +189,8 @@ describe('what --check fails with', () => {
   const record = { 'demo-form': taken('demo-form', FORM), 'demo-refused': taken('demo-refused', REFUSED) }
   const all = { 'demo-form': FORM, 'demo-refused': REFUSED }
   const file = (path) => Object.entries(PICTURES).find(([id]) => pictureOf(id) === path)?.[1]
-  const check = (changes) => checkProblems({ app: 'demo', scenes: SCENES, record, actIds: Object.keys(all), running: all, playwright: '1.64.1', file, ...changes })
+  const check = (changes) =>
+    checkProblems({ app: 'demo', scenes: SCENES, record, actIds: Object.keys(all), running: all, playwright: '1.64.1', file, ...changes })
 
   // A guard on the guards below: the walk as recorded passes.
   test('is nothing when every part says what it said and every picture is its file', () => {
@@ -134,7 +213,10 @@ describe('what --check fails with', () => {
   // A picture nothing walks is held by nothing, and an act nothing records
   // compares nothing.
   test('is a scene with no act, and an act with no scene', () => {
-    expect(check({ actIds: ['demo-form', 'demo-refusd'], running: { 'demo-form': FORM } })).toEqual(['demo: the scene demo-refused has no act, so its picture is held by nothing', 'demo: the act demo-refusd is no scene of scripts/pictures/scenes.json'])
+    expect(check({ actIds: ['demo-form', 'demo-refusd'], running: { 'demo-form': FORM } })).toEqual([
+      'demo: the scene demo-refused has no act, so its picture is held by nothing',
+      'demo: the act demo-refusd is no scene of scripts/pictures/scenes.json',
+    ])
   })
 
   // The same pairing, asked before the walk: an act renamed from its scene
@@ -149,7 +231,10 @@ describe('what --check fails with', () => {
   // format did -- and the caption that quoted the old sentence is said too.
   // Watched failing with the refusal's maker renamed in the running text.
   test('is each part whose text changed, with a line diff and both Playwright versions, and the quote it broke', () => {
-    const running = { ...all, 'demo-refused': { Response: '- region "The answers, as a QuestionnaireResponse":\n  - paragraph: "Refused by @formancy/health-ch:"' } }
+    const running = {
+      ...all,
+      'demo-refused': { Response: '- region "The answers, as a QuestionnaireResponse":\n  - paragraph: "Refused by @formancy/health-ch:"' },
+    }
     expect(check({ running, playwright: '1.65.0' })).toEqual([
       'demo-refused, part Response: the page now says something else than its picture (recorded with Playwright 1.64.1, running 1.65.0); `node scripts/pictures.mjs --scene demo-refused` retakes it\n    -   - paragraph: "Refused by @formancy/health-questionnaire:"\n    +   - paragraph: "Refused by @formancy/health-ch:"',
       'demo-refused: “Refused by @formancy/health-questionnaire:” is not inside one name or value of what the part Response says, so the caption quotes what its picture does not show',
@@ -166,8 +251,12 @@ describe('what --check fails with', () => {
   // text alone would pass, and the README would show nothing, or something
   // no capture took. Watched failing with the file reader returning nothing.
   test("is a picture missing, and a picture that is not its record's", () => {
-    expect(check({ file: (path) => (path === pictureOf('demo-form') ? undefined : file(path)) })).toEqual(['docs/images/readme/demo-form.webp does not exist, and its record says it was taken'])
-    expect(check({ file: (path) => (path === pictureOf('demo-form') ? Buffer.from('another') : file(path)) })).toEqual(['docs/images/readme/demo-form.webp is not the picture its record describes: it was changed by hand, or the record was'])
+    expect(check({ file: (path) => (path === pictureOf('demo-form') ? undefined : file(path)) })).toEqual([
+      'docs/images/readme/demo-form.webp does not exist, and its record says it was taken',
+    ])
+    expect(check({ file: (path) => (path === pictureOf('demo-form') ? Buffer.from('another') : file(path)) })).toEqual([
+      'docs/images/readme/demo-form.webp is not the picture its record describes: it was changed by hand, or the record was',
+    ])
   })
 })
 
@@ -199,7 +288,11 @@ describe('the stylesheet notice', () => {
     expect(printed).toEqual(['notice: a notice, 100% true'])
     expect(appended).toEqual([])
     printed.length = 0
-    announce(['a notice, 100% true'], { env: { GITHUB_ACTIONS: 'true', GITHUB_STEP_SUMMARY: '/summary' }, print: (line) => printed.push(line), append: (...args) => appended.push(args) })
+    announce(['a notice, 100% true'], {
+      env: { GITHUB_ACTIONS: 'true', GITHUB_STEP_SUMMARY: '/summary' },
+      print: (line) => printed.push(line),
+      append: (...args) => appended.push(args),
+    })
     expect(printed).toEqual(['notice: a notice, 100% true', '::warning title=README pictures::a notice, 100%25 true'])
     expect(appended).toEqual([['/summary', '> **README pictures:** a notice, 100% true\n\n']])
   })

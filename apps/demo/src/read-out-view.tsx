@@ -217,7 +217,13 @@ function Answer({ answer, words }: { readonly answer: ReadAnswer; readonly words
     case 'boolean':
       return <q>{answer.value ? words.yes : words.no}</q>
     case 'option':
-      return answer.display === undefined ? <code>{answer.code}</code> : <q><Said wording={answer.display} /></q>
+      return answer.display === undefined ? (
+        <code>{answer.code}</code>
+      ) : (
+        <q>
+          <Said wording={answer.display} />
+        </q>
+      )
     case 'string':
       return <q>{answer.value}</q>
     case 'number':

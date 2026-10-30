@@ -7,7 +7,10 @@ describe('readCondition', () => {
   test('reads a comparison, and keeps a literal as written', () => {
     expect(readCondition("country == 'CH'")).toEqual({ comparisons: [{ key: 'country', operator: '==', literal: { kind: 'string', text: 'CH' } }], join: '&&' })
     expect(readCondition('weight>=-2.50')).toEqual({ comparisons: [{ key: 'weight', operator: '>=', literal: { kind: 'number', text: '-2.50' } }], join: '&&' })
-    expect(readCondition('  consent != false  ')).toEqual({ comparisons: [{ key: 'consent', operator: '!=', literal: { kind: 'boolean', value: false } }], join: '&&' })
+    expect(readCondition('  consent != false  ')).toEqual({
+      comparisons: [{ key: 'consent', operator: '!=', literal: { kind: 'boolean', value: false } }],
+      join: '&&',
+    })
     expect(readCondition('"a b" in topics')).toEqual({ comparisons: [{ key: 'topics', operator: 'in', literal: { kind: 'string', text: 'a b' } }], join: '&&' })
   })
 
@@ -31,7 +34,7 @@ describe('readCondition', () => {
     "(a == 'x')",
     "a.b == 'x'",
     "a[0] == 'x'",
-    "size(a) > 1",
+    'size(a) > 1',
     "a == 'it\\'s'",
     "a == 'line\nbreak'",
     'a == 5u',

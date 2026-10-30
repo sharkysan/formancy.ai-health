@@ -101,10 +101,18 @@ describe('the patient', () => {
     ['a name without its given names', { fullUrl: NAMES.patient, name: { family: 'Beispiel' } }, 'absent context.patient.name.given'],
     ['a given name of spaces', { fullUrl: NAMES.patient, name: { family: 'Beispiel', given: [' '] } }, 'absent context.patient.name.given[0]'],
     ['a name that is a string', { fullUrl: NAMES.patient, name: 'Synthetica Beispiel' }, 'absent context.patient.name'],
-    ['a name with a prefix it does not write', { fullUrl: NAMES.patient, name: { family: 'Beispiel', given: ['Synthetica'], prefix: ['Dr.'] } }, 'unmapped context.patient.name'],
+    [
+      'a name with a prefix it does not write',
+      { fullUrl: NAMES.patient, name: { family: 'Beispiel', given: ['Synthetica'], prefix: ['Dr.'] } },
+      'unmapped context.patient.name',
+    ],
     ['a gender R4 does not have', { fullUrl: NAMES.patient, gender: 'f' }, 'unmapped context.patient.gender'],
     ['no object at all', 'Beispiel', 'absent context.patient'],
-    ['a family name a resource cannot carry', { fullUrl: NAMES.patient, name: { family: 'Beispiel\u0007', given: ['Synthetica'] } }, 'grammar context.patient.name.family'],
+    [
+      'a family name a resource cannot carry',
+      { fullUrl: NAMES.patient, name: { family: 'Beispiel\u0007', given: ['Synthetica'] } },
+      'grammar context.patient.name.family',
+    ],
   ])('is refused with %s', (_, given, refusal) => {
     expect(readPatient(given).refused).toEqual([refusal])
   })
@@ -114,8 +122,12 @@ describe('the patient', () => {
   // refused as health-ch's own bug, and one among the identifiers was
   // dropped without a word. Each is refused where it stands.
   test('is refused for a hole in a list, at its index', () => {
-    expect(readPatient({ fullUrl: NAMES.patient, name: { family: 'Beispiel', given: holed('Synthetica', 'Secunda') } }).refused).toEqual(['absent context.patient.name.given[1]'])
-    expect(readPatient({ fullUrl: NAMES.patient, identifier: holed(patient().identifier[0], patient().identifier[0]) }).refused).toEqual(['absent context.patient.identifier[1]'])
+    expect(readPatient({ fullUrl: NAMES.patient, name: { family: 'Beispiel', given: holed('Synthetica', 'Secunda') } }).refused).toEqual([
+      'absent context.patient.name.given[1]',
+    ])
+    expect(readPatient({ fullUrl: NAMES.patient, identifier: holed(patient().identifier[0], patient().identifier[0]) }).refused).toEqual([
+      'absent context.patient.identifier[1]',
+    ])
   })
 })
 
@@ -186,11 +198,23 @@ describe('the author', () => {
     ['no practitioner', { fullUrl: NAMES.role }, 'absent context.author.practitioner'],
     ['no fullUrl of its own', { practitioner: author().practitioner }, 'absent context.author.fullUrl'],
     ['a practitioner without a name', { ...author(), practitioner: { fullUrl: NAMES.practitioner } }, 'absent context.author.practitioner.name'],
-    ['a practitioner whose name is a string', { ...author(), practitioner: { fullUrl: NAMES.practitioner, name: 'Muster' } }, 'absent context.author.practitioner.name'],
+    [
+      'a practitioner whose name is a string',
+      { ...author(), practitioner: { fullUrl: NAMES.practitioner, name: 'Muster' } },
+      'absent context.author.practitioner.name',
+    ],
     ['an organisation that is a string', { ...author(), organization: 'Praxis' }, 'absent context.author.organization'],
     ['a specialty it does not write', { ...author(), specialty: 'Allgemeinmedizin' }, 'unmapped context.author'],
-    ['a hole among the prefixes', { ...author(), practitioner: { ...author().practitioner, name: { family: 'Muster', prefix: holed('Dr.', 'med.') } } }, 'absent context.author.practitioner.name.prefix[1]'],
-    ['an organisation name a resource cannot carry', { ...author(), organization: { ...author().organization, name: 'Praxis\u0000' } }, 'grammar context.author.organization.name'],
+    [
+      'a hole among the prefixes',
+      { ...author(), practitioner: { ...author().practitioner, name: { family: 'Muster', prefix: holed('Dr.', 'med.') } } },
+      'absent context.author.practitioner.name.prefix[1]',
+    ],
+    [
+      'an organisation name a resource cannot carry',
+      { ...author(), organization: { ...author().organization, name: 'Praxis\u0000' } },
+      'grammar context.author.organization.name',
+    ],
   ])('is refused with %s', (_, given, refusal) => {
     expect(readAuthor(given).refused).toEqual([refusal])
   })

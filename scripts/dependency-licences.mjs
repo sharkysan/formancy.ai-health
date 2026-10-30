@@ -72,7 +72,19 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
  * which allows embedding. Nothing else, so a licence nobody has read is refused
  * by not being here.
  */
-export const ALLOWED = Object.freeze(['MIT', 'ISC', 'BSD-2-Clause', 'BSD-3-Clause', 'Apache-2.0', '0BSD', 'BlueOak-1.0.0', 'Zlib', 'CC0-1.0', 'Unlicense', 'OFL-1.1'])
+export const ALLOWED = Object.freeze([
+  'MIT',
+  'ISC',
+  'BSD-2-Clause',
+  'BSD-3-Clause',
+  'Apache-2.0',
+  '0BSD',
+  'BlueOak-1.0.0',
+  'Zlib',
+  'CC0-1.0',
+  'Unlicense',
+  'OFL-1.1',
+])
 const allowed = new Set(ALLOWED.map((id) => id.toUpperCase()))
 
 /**
@@ -346,7 +358,9 @@ export function problems(entries, exceptions = EXCEPTIONS) {
   for (const item of entries) {
     const route = [...item.via, item.name].join(' > ')
     if (item.missing) {
-      found.add(`${item.name} is a ${item.peer ? 'peer dependency' : 'dependency'} of ${item.via.at(-1)} and is not installed, so its licence cannot be read (${route})`)
+      found.add(
+        `${item.name} is a ${item.peer ? 'peer dependency' : 'dependency'} of ${item.via.at(-1)} and is not installed, so its licence cannot be read (${route})`,
+      )
       continue
     }
     const id = `${item.name}@${item.version}`

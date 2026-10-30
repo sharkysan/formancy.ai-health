@@ -55,7 +55,8 @@ function checkAttachment(attachment: FhirJsonObject, path: string, binaries: Rea
 /** Every DocumentReference's attachments among `entries`, each held to its bytes, in the order the document holds them. */
 export function checkAttachments(entries: readonly Entry[], refusals: Refusals): void {
   const binaries = new Map<FhirJson, Placed>()
-  for (const { fullUrl, type, resource, path } of entries) if (fullUrl !== undefined && type === 'Binary' && resource !== undefined) binaries.set(fullUrl, { resource, path: member(path, 'resource') })
+  for (const { fullUrl, type, resource, path } of entries)
+    if (fullUrl !== undefined && type === 'Binary' && resource !== undefined) binaries.set(fullUrl, { resource, path: member(path, 'resource') })
   for (const { type, resource, path } of entries) {
     const content = type === 'DocumentReference' ? resource?.['content'] : undefined
     if (!Array.isArray(content)) continue

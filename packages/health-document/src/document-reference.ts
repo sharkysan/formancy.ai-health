@@ -14,7 +14,27 @@
  * made, an instant from the host's clock. None of it is made here, and
  * the same PDF and context give the same resource.
  */
-import { code, codeOf, id, instant, known, member, needed, optional, Refusals, text, toBase64Binary, unsignedInt, uuid, valueAt, type FhirCode, type FhirId, type FhirInstant, type FhirUuid, type Refusal } from '@formancy/health-core'
+import {
+  code,
+  codeOf,
+  id,
+  instant,
+  known,
+  member,
+  needed,
+  optional,
+  Refusals,
+  text,
+  toBase64Binary,
+  unsignedInt,
+  uuid,
+  valueAt,
+  type FhirCode,
+  type FhirId,
+  type FhirInstant,
+  type FhirUuid,
+  type Refusal,
+} from '@formancy/health-core'
 import { conceptAt, conceptsAt, CONTEXT, referenceAt, referencesAt, type ByName, type Coded } from './context.js'
 import { checkPdf, PDF, type Pdf } from './pdf.js'
 import type { Attachment, Binary, CodeableConcept, DocumentReference, Reference } from './resource.js'
@@ -82,7 +102,17 @@ function binaryAt(context: DocumentReferenceContext, refusals: Refusals): Elemen
 const CONTEXT_MEMBERS = ['id', 'status', 'type', 'category', 'subject', 'date', 'author', 'title', 'binary']
 
 /** Nothing read, for a context that is no object. */
-const UNREAD: Elements = { id: undefined, status: undefined, type: undefined, category: undefined, subject: undefined, date: undefined, author: undefined, title: undefined, binary: undefined }
+const UNREAD: Elements = {
+  id: undefined,
+  status: undefined,
+  type: undefined,
+  category: undefined,
+  subject: undefined,
+  date: undefined,
+  author: undefined,
+  title: undefined,
+  binary: undefined,
+}
 
 function elementsOf(context: DocumentReferenceContext, refusals: Refusals): Elements {
   if (!known(context, CONTEXT_MEMBERS, CONTEXT, refusals)) return UNREAD
@@ -94,7 +124,8 @@ function elementsOf(context: DocumentReferenceContext, refusals: Refusals): Elem
     category: conceptsAt(context, 'category', at('category'), refusals),
     subject: referenceAt(context, 'subject', at('subject'), refusals, targetsOf('DocumentReference.subject')),
     date: needed(context, 'date', at('date'), refusals, instant),
-    author: valueAt(context, 'author') === undefined ? undefined : referencesAt(context, 'author', at('author'), refusals, targetsOf('DocumentReference.author')),
+    author:
+      valueAt(context, 'author') === undefined ? undefined : referencesAt(context, 'author', at('author'), refusals, targetsOf('DocumentReference.author')),
     title: needed(context, 'title', at('title'), refusals, text),
     binary: binaryAt(context, refusals),
   }
@@ -113,7 +144,16 @@ export function toDocumentReference(pdf: Pdf, context: DocumentReferenceContext)
   const size = bytes === undefined ? undefined : refusals.take(() => unsignedInt(BigInt(bytes.length), member(PDF, 'bytes')))
   const elements = elementsOf(context, refusals)
   const { status, type, subject, date, title } = elements
-  if (refusals.count > 0 || bytes === undefined || size === undefined || status === undefined || type === undefined || subject === undefined || date === undefined || title === undefined) {
+  if (
+    refusals.count > 0 ||
+    bytes === undefined ||
+    size === undefined ||
+    status === undefined ||
+    type === undefined ||
+    subject === undefined ||
+    date === undefined ||
+    title === undefined
+  ) {
     return { ok: false, refusals: refusals.list }
   }
   const contentType = code(PDF_MEDIA_TYPE, 'DocumentReference.content.attachment.contentType')
@@ -133,6 +173,8 @@ export function toDocumentReference(pdf: Pdf, context: DocumentReferenceContext)
     content: [{ attachment }],
   }
   const binary: Binary | undefined =
-    elements.binary === undefined ? undefined : { resourceType: 'Binary', ...(elements.binary.id === undefined ? {} : { id: elements.binary.id }), contentType, data }
+    elements.binary === undefined
+      ? undefined
+      : { resourceType: 'Binary', ...(elements.binary.id === undefined ? {} : { id: elements.binary.id }), contentType, data }
   return { ok: true, documentReference, binary }
 }

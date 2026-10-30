@@ -37,9 +37,7 @@ import { Texts } from './texts.js'
  */
 export const SPEC_VERSIONS_MAPPED = ['1', '2', '3', '4'] as const
 
-export type QuestionnaireExport =
-  | { readonly ok: true; readonly questionnaire: Questionnaire }
-  | { readonly ok: false; readonly refusals: readonly Refusal[] }
+export type QuestionnaireExport = { readonly ok: true; readonly questionnaire: Questionnaire } | { readonly ok: false; readonly refusals: readonly Refusal[] }
 
 const MAPPED: ReadonlySet<unknown> = new Set(SPEC_VERSIONS_MAPPED)
 
@@ -57,7 +55,10 @@ function readForm(form: unknown, refusals: Refusals): FormSchema | undefined {
 function questionnaireOf(form: FormSchema, context: CheckedContext, url: string, texts: Texts, items: readonly QuestionnaireItem[]): Questionnaire {
   // Constants, checked as what they are written as: the paths name where they stand.
   const at = 'Questionnaire.extension.valueCoding'
-  const versionAlgorithm: Extension = { url: EXTENSION.versionAlgorithm, valueCoding: { system: uri(VERSION_ALGORITHM, `${at}.system`), code: code('integer', `${at}.code`) } }
+  const versionAlgorithm: Extension = {
+    url: EXTENSION.versionAlgorithm,
+    valueCoding: { system: uri(VERSION_ALGORITHM, `${at}.system`), code: code('integer', `${at}.code`) },
+  }
   return {
     resourceType: 'Questionnaire',
     meta: { profile: [SDC_QUESTIONNAIRE] },

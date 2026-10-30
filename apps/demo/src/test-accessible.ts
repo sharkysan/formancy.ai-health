@@ -33,5 +33,7 @@ export async function violations(): Promise<string[]> {
 const CONTROLS = ['button', 'checkbox', 'combobox', 'link', 'listbox', 'radio', 'region', 'textbox'] as const
 
 export function unnamed(): string[] {
-  return CONTROLS.flatMap((role) => screen.queryAllByRole(role, { name: (name: string) => name.trim() === '' })).map((element) => `unnamed: ${element.outerHTML.slice(0, 120)}`)
+  return CONTROLS.flatMap((role) => screen.queryAllByRole(role, { name: (name: string) => name.trim() === '' })).map(
+    (element) => `unnamed: ${element.outerHTML.slice(0, 120)}`,
+  )
 }

@@ -61,7 +61,12 @@ const unpacked = (() => {
 // having checked nothing. So where the job says the gate ran, the files
 // they read must all be there.
 test.runIf(process.env.VALIDATOR_GATE_RAN === 'true')('skips nothing where the validator gate has run', () => {
-  expect({ jar: existsSync(where.jar(pin)), tarballs: cached, unpacked, results: existsSync(RESULTS) }).toEqual({ jar: true, tarballs: true, unpacked: true, results: true })
+  expect({ jar: existsSync(where.jar(pin)), tarballs: cached, unpacked, results: existsSync(RESULTS) }).toEqual({
+    jar: true,
+    tarballs: true,
+    unpacked: true,
+    results: true,
+  })
 })
 
 /** A register entry, valid, for fixtures to break one field of. */
@@ -77,7 +82,13 @@ const entry = (fields = {}) => ({
   bytes: 1196457,
   ...fields,
 })
-const CORE = entry({ id: 'hl7.fhir.r4.core', version: '4.0.1', loadedAs: 'core', canonical: 'http://hl7.org/fhir', url: 'https://packages.fhir.org/hl7.fhir.r4.core/4.0.1' })
+const CORE = entry({
+  id: 'hl7.fhir.r4.core',
+  version: '4.0.1',
+  loadedAs: 'core',
+  canonical: 'http://hl7.org/fhir',
+  url: 'https://packages.fhir.org/hl7.fhir.r4.core/4.0.1',
+})
 
 describe('the validator pin', () => {
   test('holds', () => {
@@ -89,7 +100,9 @@ describe('the validator pin', () => {
   // hash that is not one checks nothing.
   test('refuses an inexact version, another address, a malformed hash and a Java that is no version', () => {
     expect(pinProblems({ ...pin, version: 'latest' })).toEqual(['docs/release/validator.json: version is not an exact release'])
-    expect(pinProblems({ ...pin, url: 'https://example.org/validator_cli.jar' })).toEqual([`docs/release/validator.json: url is not the validator_cli.jar asset of release ${pin.version} of hapifhir/org.hl7.fhir.core`])
+    expect(pinProblems({ ...pin, url: 'https://example.org/validator_cli.jar' })).toEqual([
+      `docs/release/validator.json: url is not the validator_cli.jar asset of release ${pin.version} of hapifhir/org.hl7.fhir.core`,
+    ])
     expect(pinProblems({ ...pin, sha256: pin.sha256.toUpperCase() })).toEqual(['docs/release/validator.json: sha256 is not 64 lowercase hex digits'])
     expect(pinProblems({ ...pin, java: '17' })).toEqual(['docs/release/validator.json: java is not a Java major version'])
   })
@@ -105,10 +118,14 @@ describe('the validator pin', () => {
 
   // The bytes the gate ran are the bytes registered: checked on whatever
   // this machine downloaded.
-  test.skipIf(!existsSync(where.jar(pin)))('is the JAR in the cache, byte for byte', async () => {
-    expect(await sha256File(where.jar(pin))).toBe(pin.sha256)
-    expect(statSync(where.jar(pin)).size).toBe(pin.bytes)
-  }, HASHING)
+  test.skipIf(!existsSync(where.jar(pin)))(
+    'is the JAR in the cache, byte for byte',
+    async () => {
+      expect(await sha256File(where.jar(pin))).toBe(pin.sha256)
+      expect(statSync(where.jar(pin)).size).toBe(pin.bytes)
+    },
+    HASHING,
+  )
 })
 
 describe('the package register', () => {
@@ -131,15 +148,23 @@ describe('the package register', () => {
     const broken = (fields) => packageProblems([CORE, entry(fields)])
     expect(broken({ version: '4.0.x' })).toContain('docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.x: version is not an exact release')
     expect(broken({ version: 'current' })).toContain('docs/release/ig-packages.json: hl7.fhir.uv.sdc#current: version is not an exact release')
-    expect(broken({ url: 'https://packages.simplifier.net/hl7.fhir.uv.sdc/4.0.0' })).toEqual(['docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0: url is not packages.fhir.org’s for this exact version'])
+    expect(broken({ url: 'https://packages.simplifier.net/hl7.fhir.uv.sdc/4.0.0' })).toEqual([
+      'docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0: url is not packages.fhir.org’s for this exact version',
+    ])
     expect(broken({ sha256: 'd785' })).toEqual(['docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0: sha256 is not 64 lowercase hex digits'])
-    expect(broken({ licence: 'CC-BY-NC-4.0' })).toEqual(['docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0: licence is not one dependency-licences.mjs allows'])
+    expect(broken({ licence: 'CC-BY-NC-4.0' })).toEqual([
+      'docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0: licence is not one dependency-licences.mjs allows',
+    ])
     expect(broken({ licence: undefined })).toEqual(['docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0: licence is not one dependency-licences.mjs allows'])
     expect(broken({ loadedAs: 'optional' })).toEqual(['docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0: loadedAs is not one of core, ig, dependency'])
     expect(broken({ canonical: 'hl7.org/fhir/uv/sdc' })).toEqual(['docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0: canonical is not an http(s) URL'])
     expect(broken({ bytes: 0 })).toEqual(['docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0: bytes is not a size'])
-    expect(broken({ declaredBy: ['hl7.fhir.uv.ips#2.0.1'] })).toEqual(['docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0: declaredBy names hl7.fhir.uv.ips#2.0.1, which is not registered'])
-    expect(broken({ loadedAs: 'dependency' })).toEqual(['docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0: no registered package declares it, and no note says why the validator loads it'])
+    expect(broken({ declaredBy: ['hl7.fhir.uv.ips#2.0.1'] })).toEqual([
+      'docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0: declaredBy names hl7.fhir.uv.ips#2.0.1, which is not registered',
+    ])
+    expect(broken({ loadedAs: 'dependency' })).toEqual([
+      'docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0: no registered package declares it, and no note says why the validator loads it',
+    ])
   })
 
   // Two entries for one package are two hashes for one set of bytes; no
@@ -156,9 +181,19 @@ describe('the package register', () => {
   // ballot asked for with -ig, or one nothing declares, would pass.
   test('refuses a prerelease the gate asks for, or one no registered package declares', () => {
     const ballot = { version: '4.0.0-ballot', url: 'https://packages.fhir.org/hl7.fhir.uv.sdc/4.0.0-ballot' }
-    expect(packageProblems([CORE, entry(ballot)])).toEqual(['docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0-ballot: a prerelease, which the gate never asks for'])
-    expect(packageProblems([CORE, entry({ ...ballot, loadedAs: 'dependency', note: 'loaded by the validator' })])).toEqual(['docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0-ballot: a prerelease that no registered package declares'])
-    const declared = entry({ id: 'hl7.fhir.uv.extensions.r4', version: '5.3.0-ballot-tc1', url: 'https://packages.fhir.org/hl7.fhir.uv.extensions.r4/5.3.0-ballot-tc1', loadedAs: 'dependency', declaredBy: ['hl7.fhir.uv.sdc#4.0.0'] })
+    expect(packageProblems([CORE, entry(ballot)])).toEqual([
+      'docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0-ballot: a prerelease, which the gate never asks for',
+    ])
+    expect(packageProblems([CORE, entry({ ...ballot, loadedAs: 'dependency', note: 'loaded by the validator' })])).toEqual([
+      'docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0-ballot: a prerelease that no registered package declares',
+    ])
+    const declared = entry({
+      id: 'hl7.fhir.uv.extensions.r4',
+      version: '5.3.0-ballot-tc1',
+      url: 'https://packages.fhir.org/hl7.fhir.uv.extensions.r4/5.3.0-ballot-tc1',
+      loadedAs: 'dependency',
+      declaredBy: ['hl7.fhir.uv.sdc#4.0.0'],
+    })
     expect(packageProblems([CORE, entry(), declared])).toEqual([])
   })
 
@@ -171,31 +206,60 @@ describe('the package register', () => {
   // again and never a field's to admit.
   test('admits a licence the policy refuses only for the package and version a decision names', () => {
     const formatCode = (fields) =>
-      entry({ id: 'ihe.formatcode.fhir', version: '1.4.0', url: 'https://packages.fhir.org/ihe.formatcode.fhir/1.4.0', loadedAs: 'dependency', declaredBy: [], note: 'declared by CH Term', licence: 'CC-BY-4.0', ...fields })
+      entry({
+        id: 'ihe.formatcode.fhir',
+        version: '1.4.0',
+        url: 'https://packages.fhir.org/ihe.formatcode.fhir/1.4.0',
+        loadedAs: 'dependency',
+        declaredBy: [],
+        note: 'declared by CH Term',
+        licence: 'CC-BY-4.0',
+        ...fields,
+      })
     expect(packageProblems([CORE, formatCode()])).toEqual([])
-    expect(packageProblems([CORE, formatCode({ version: '1.5.0', url: 'https://packages.fhir.org/ihe.formatcode.fhir/1.5.0' })])).toEqual(['docs/release/ig-packages.json: ihe.formatcode.fhir#1.5.0: licence is not one dependency-licences.mjs allows'])
-    expect(packageProblems([CORE, formatCode({ licence: 'CC-BY-SA-4.0' })])).toEqual(['docs/release/ig-packages.json: ihe.formatcode.fhir#1.4.0: licence is not one dependency-licences.mjs allows'])
-    expect(packageProblems([CORE, entry({ licence: 'CC-BY-4.0' })])).toEqual(['docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0: licence is not one dependency-licences.mjs allows'])
+    expect(packageProblems([CORE, formatCode({ version: '1.5.0', url: 'https://packages.fhir.org/ihe.formatcode.fhir/1.5.0' })])).toEqual([
+      'docs/release/ig-packages.json: ihe.formatcode.fhir#1.5.0: licence is not one dependency-licences.mjs allows',
+    ])
+    expect(packageProblems([CORE, formatCode({ licence: 'CC-BY-SA-4.0' })])).toEqual([
+      'docs/release/ig-packages.json: ihe.formatcode.fhir#1.4.0: licence is not one dependency-licences.mjs allows',
+    ])
+    expect(packageProblems([CORE, entry({ licence: 'CC-BY-4.0' })])).toEqual([
+      'docs/release/ig-packages.json: hl7.fhir.uv.sdc#4.0.0: licence is not one dependency-licences.mjs allows',
+    ])
   })
 
   // The bytes the gate unpacked are the bytes registered.
-  test.skipIf(!cached)('is every package in the cache, byte for byte', async () => {
-    for (const item of packages) {
-      expect(await sha256File(where.tgz(item)), packageKey(item)).toBe(item.sha256)
-      expect(statSync(where.tgz(item)).size, packageKey(item)).toBe(item.bytes)
-    }
-  }, HASHING)
+  test.skipIf(!cached)(
+    'is every package in the cache, byte for byte',
+    async () => {
+      for (const item of packages) {
+        expect(await sha256File(where.tgz(item)), packageKey(item)).toBe(item.sha256)
+        expect(statSync(where.tgz(item)).size, packageKey(item)).toBe(item.bytes)
+      }
+    },
+    HASHING,
+  )
 
   // What the register says of a package is what the package says of
   // itself, read from the manifest the gate unpacked from those bytes:
   // its id and version, its canonical and licence, and which registered
   // packages declare it, both ways.
   test.skipIf(!unpacked)('says of every package what its own package.json says', () => {
-    const manifests = new Map(packages.map((item) => [packageKey(item), JSON.parse(readFileSync(join(where.packages, packageKey(item), 'package', 'package.json'), 'utf8'))]))
+    const manifests = new Map(
+      packages.map((item) => [packageKey(item), JSON.parse(readFileSync(join(where.packages, packageKey(item), 'package', 'package.json'), 'utf8'))]),
+    )
     for (const item of packages) {
       const manifest = manifests.get(packageKey(item))
-      expect({ id: manifest.name, version: manifest.version, canonical: manifest.canonical, licence: manifest.license }, packageKey(item)).toEqual({ id: item.id, version: item.version, canonical: item.canonical, licence: item.licence })
-      const declaring = [...manifests].filter(([, other]) => other.dependencies?.[item.id] === item.version).map(([key]) => key).sort()
+      expect({ id: manifest.name, version: manifest.version, canonical: manifest.canonical, licence: manifest.license }, packageKey(item)).toEqual({
+        id: item.id,
+        version: item.version,
+        canonical: item.canonical,
+        licence: item.licence,
+      })
+      const declaring = [...manifests]
+        .filter(([, other]) => other.dependencies?.[item.id] === item.version)
+        .map(([key]) => key)
+        .sort()
       expect(item.declaredBy, packageKey(item)).toEqual(declaring)
     }
   })
@@ -211,14 +275,18 @@ describe('the package register', () => {
     const exact = /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/
     const ranges = packages.flatMap((item) => {
       const manifest = JSON.parse(readFileSync(join(where.packages, packageKey(item), 'package', 'package.json'), 'utf8'))
-      return Object.entries(manifest.dependencies ?? {}).filter(([, version]) => !exact.test(version)).map(([id, range]) => ({ by: packageKey(item), id, range }))
+      return Object.entries(manifest.dependencies ?? {})
+        .filter(([, version]) => !exact.test(version))
+        .map(([id, range]) => ({ by: packageKey(item), id, range }))
     })
     for (const { by, id, range } of ranges) {
       const minor = /^(\d+\.\d+)\.x$/.exec(range)
       expect(minor, `${by} declares ${id} ${range}, a range this test does not read`).not.toBeNull()
       const admitted = packages.filter((item) => item.id === id && item.version.startsWith(`${minor[1]}.`))
       expect(admitted.map(packageKey), `${by} declares ${id} ${range}`).toHaveLength(1)
-      expect(admitted[0].note, `${packageKey(admitted[0])} is loaded for a range, and no note says so`).toMatch(new RegExp(range.replaceAll('.', String.raw`\.`)))
+      expect(admitted[0].note, `${packageKey(admitted[0])} is loaded for a range, and no note says so`).toMatch(
+        new RegExp(range.replaceAll('.', String.raw`\.`)),
+      )
     }
   })
 

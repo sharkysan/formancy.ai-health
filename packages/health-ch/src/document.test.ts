@@ -12,7 +12,10 @@ function documented(context: ChOrfContext = referral()) {
 }
 
 /** `referral()` with its composition changed. */
-const withComposition = (change: Record<string, unknown>): ChOrfContext => ({ ...referral(), composition: { ...composition(), ...change } as ChOrfContext['composition'] })
+const withComposition = (change: Record<string, unknown>): ChOrfContext => ({
+  ...referral(),
+  composition: { ...composition(), ...change } as ChOrfContext['composition'],
+})
 
 /** The narrative of `referral()`'s Composition as writeJson writes the div: its title and its section's. */
 const NARRATIVE = '<div xmlns=\\"http://www.w3.org/1999/xhtml\\"><h1>Zuweisung</h1><h2>Auftrag</h2></div>'
@@ -32,18 +35,37 @@ describe('a CH ORF document', () => {
   test('is written exactly, the Composition first and its entries in the order CH ORF shows', () => {
     const bundle = documented()
     const written = writeJson(bundle)
-    expect(written.startsWith(
-      '{"resourceType":"Bundle","meta":{"lastUpdated":"2026-10-17T10:05:00+02:00","profile":["http://fhir.ch/ig/ch-orf/StructureDefinition/ch-orf-document"]},' +
-        `"identifier":{"system":"urn:ietf:rfc:3986","value":"${NAMES.document}"},"type":"document","timestamp":"2026-10-17T10:05:00+02:00",` +
-        `"entry":[{"fullUrl":"${NAMES.composition}","resource":{"resourceType":"Composition","meta":{"profile":["http://fhir.ch/ig/ch-orf/StructureDefinition/ch-orf-composition|3.0.2"]},` +
-        `"text":{"status":"generated","div":"${NARRATIVE}"},"status":"final",` +
-        '"type":{"coding":[{"system":"http://terminology.hl7.org/CodeSystem/v2-0270","code":"CN","display":"Consultation"}]},' +
-        '"category":[{"coding":[{"system":"http://terminology.hl7.org/CodeSystem/v3-ActClass","code":"DOCCLIN","display":"clinical document"}]}],' +
-        `"subject":{"reference":"${NAMES.patient}"},"date":"2026-10-17T10:00:00+02:00","author":[{"reference":"${NAMES.role}"}],"title":"Zuweisung",` +
-        `"section":[{"title":"Auftrag","code":{"coding":[{"system":"http://loinc.org","code":"93037-0","display":"Portable medical order form"}]},"entry":[{"reference":"${NAMES.response}"},{"reference":"${NAMES.serviceRequest}"}]}]}}`,
-    ), written.slice(0, 2000)).toBe(true)
-    expect(bundle.entry.map((entry) => entry.fullUrl)).toEqual([NAMES.composition, NAMES.patient, NAMES.response, NAMES.serviceRequest, NAMES.role, NAMES.practitioner, NAMES.organization])
-    expect(bundle.entry.map((entry) => entry.resource.resourceType)).toEqual(['Composition', 'Patient', 'QuestionnaireResponse', 'ServiceRequest', 'PractitionerRole', 'Practitioner', 'Organization'])
+    expect(
+      written.startsWith(
+        '{"resourceType":"Bundle","meta":{"lastUpdated":"2026-10-17T10:05:00+02:00","profile":["http://fhir.ch/ig/ch-orf/StructureDefinition/ch-orf-document"]},' +
+          `"identifier":{"system":"urn:ietf:rfc:3986","value":"${NAMES.document}"},"type":"document","timestamp":"2026-10-17T10:05:00+02:00",` +
+          `"entry":[{"fullUrl":"${NAMES.composition}","resource":{"resourceType":"Composition","meta":{"profile":["http://fhir.ch/ig/ch-orf/StructureDefinition/ch-orf-composition|3.0.2"]},` +
+          `"text":{"status":"generated","div":"${NARRATIVE}"},"status":"final",` +
+          '"type":{"coding":[{"system":"http://terminology.hl7.org/CodeSystem/v2-0270","code":"CN","display":"Consultation"}]},' +
+          '"category":[{"coding":[{"system":"http://terminology.hl7.org/CodeSystem/v3-ActClass","code":"DOCCLIN","display":"clinical document"}]}],' +
+          `"subject":{"reference":"${NAMES.patient}"},"date":"2026-10-17T10:00:00+02:00","author":[{"reference":"${NAMES.role}"}],"title":"Zuweisung",` +
+          `"section":[{"title":"Auftrag","code":{"coding":[{"system":"http://loinc.org","code":"93037-0","display":"Portable medical order form"}]},"entry":[{"reference":"${NAMES.response}"},{"reference":"${NAMES.serviceRequest}"}]}]}}`,
+      ),
+      written.slice(0, 2000),
+    ).toBe(true)
+    expect(bundle.entry.map((entry) => entry.fullUrl)).toEqual([
+      NAMES.composition,
+      NAMES.patient,
+      NAMES.response,
+      NAMES.serviceRequest,
+      NAMES.role,
+      NAMES.practitioner,
+      NAMES.organization,
+    ])
+    expect(bundle.entry.map((entry) => entry.resource.resourceType)).toEqual([
+      'Composition',
+      'Patient',
+      'QuestionnaireResponse',
+      'ServiceRequest',
+      'PractitionerRole',
+      'Practitioner',
+      'Organization',
+    ])
   })
 
   // The answers are the host's, carried as health-questionnaire wrote
@@ -88,7 +110,9 @@ describe('a CH ORF document', () => {
   test('holds every order, in the order the host gives them', () => {
     const bundle = documented({ ...referral(), serviceRequests: [serviceRequest(), serviceRequest(NAMES.secondServiceRequest, NAMES.secondOrder)] })
     expect(bundle.entry.map((entry) => entry.fullUrl).slice(3, 5)).toEqual([NAMES.serviceRequest, NAMES.secondServiceRequest])
-    expect(writeJson(bundle.entry[0].resource)).toContain(`"entry":[{"reference":"${NAMES.response}"},{"reference":"${NAMES.serviceRequest}"},{"reference":"${NAMES.secondServiceRequest}"}]`)
+    expect(writeJson(bundle.entry[0].resource)).toContain(
+      `"entry":[{"reference":"${NAMES.response}"},{"reference":"${NAMES.serviceRequest}"},{"reference":"${NAMES.secondServiceRequest}"}]`,
+    )
   })
 })
 
@@ -124,11 +148,17 @@ describe('what a CH ORF document refuses of its context', () => {
   // is refused, where it stands.
   test('refuses a name given twice, at the later of the two', () => {
     const { response: _, ...unanswered } = referral()
-    expect(refusedAs(toChOrfDocument({ ...unanswered, patient: { ...patient(), fullUrl: NAMES.composition } }))).toEqual(['duplicate-entry context.patient.fullUrl'])
+    expect(refusedAs(toChOrfDocument({ ...unanswered, patient: { ...patient(), fullUrl: NAMES.composition } }))).toEqual([
+      'duplicate-entry context.patient.fullUrl',
+    ])
     const twice = { ...referral(), serviceRequests: [serviceRequest(), serviceRequest(NAMES.serviceRequest, NAMES.secondOrder)] }
     expect(refusedAs(toChOrfDocument(twice))).toEqual(['duplicate-entry context.serviceRequests[1].fullUrl'])
-    expect(refusedAs(toChOrfDocument({ ...unanswered, author: { ...author(), fullUrl: NAMES.practitioner } }))).toEqual(['duplicate-entry context.author.practitioner.fullUrl'])
-    expect(refusedAs(toChOrfDocument({ ...referral(), response: { fullUrl: NAMES.patient, questionnaireResponse: answers() } }))).toEqual(['duplicate-entry context.response.fullUrl'])
+    expect(refusedAs(toChOrfDocument({ ...unanswered, author: { ...author(), fullUrl: NAMES.practitioner } }))).toEqual([
+      'duplicate-entry context.author.practitioner.fullUrl',
+    ])
+    expect(refusedAs(toChOrfDocument({ ...referral(), response: { fullUrl: NAMES.patient, questionnaireResponse: answers() } }))).toEqual([
+      'duplicate-entry context.response.fullUrl',
+    ])
   })
 
   // CH ORF's document asks a patient, an author and an order (its
@@ -191,13 +221,18 @@ describe('what a CH ORF document refuses of its context', () => {
     expect(refusedAs(toChOrfDocument({ ...referral(), response: { fullUrl: NAMES.response, questionnaireResponse: withNumber as never } }))).toEqual([
       'javascript-number context.response.questionnaireResponse.item[0].answer[0].valueInteger',
     ])
-    const referring = { ...answers(), item: [{ linkId: 'reason', answer: [{ valueReference: { reference: 'urn:uuid:5c3e9a10-7b2d-4f61-9e8a-0d1c2b3a4fff' } }] }] }
+    const referring = {
+      ...answers(),
+      item: [{ linkId: 'reason', answer: [{ valueReference: { reference: 'urn:uuid:5c3e9a10-7b2d-4f61-9e8a-0d1c2b3a4fff' } }] }],
+    }
     expect(refusedAs(toChOrfDocument({ ...referral(), response: { fullUrl: NAMES.response, questionnaireResponse: referring as never } }))).toEqual([
       'dangling context.response.questionnaireResponse.item[0].answer[0].valueReference.reference',
     ])
     // A decimal the host wrote keeps its digits through the document.
     const decimals = { ...answers(), item: [{ linkId: 'reason', answer: [{ valueDecimal: decimal('70.50', 'probe') }] }] }
-    expect(writeJson(documented({ ...referral(), response: { fullUrl: NAMES.response, questionnaireResponse: decimals as never } }))).toContain('"valueDecimal":70.50')
+    expect(writeJson(documented({ ...referral(), response: { fullUrl: NAMES.response, questionnaireResponse: decimals as never } }))).toContain(
+      '"valueDecimal":70.50',
+    )
   })
 
   // The cost of one decision in one place: health-document is asked only
@@ -227,8 +262,14 @@ describe("where health-document's refusals are given", () => {
   })
 
   test('keeps the offset and the language a refusal knows', () => {
-    expect(reRooted(new Refusal('syntax', 'context.entries[1].resource', { offset: 7 }), 1)).toMatchObject({ path: 'context.response.questionnaireResponse', offset: 7 })
-    expect(reRooted(new Refusal('missing', 'context.composition.title', { language: 'fr' }), 1)).toMatchObject({ path: 'context.composition.title', language: 'fr' })
+    expect(reRooted(new Refusal('syntax', 'context.entries[1].resource', { offset: 7 }), 1)).toMatchObject({
+      path: 'context.response.questionnaireResponse',
+      offset: 7,
+    })
+    expect(reRooted(new Refusal('missing', 'context.composition.title', { language: 'fr' }), 1)).toMatchObject({
+      path: 'context.composition.title',
+      language: 'fr',
+    })
   })
 
   // Anything else health-document refuses is something health-ch wrote:

@@ -6,12 +6,33 @@ import { fromBase64Binary, FHIR_VERSION } from '@formancy/health-core'
 import { CH_CORE_VERSION, CH_ORF_VERSION } from '@formancy/health-ch'
 import ts from 'typescript'
 import { describe, expect, test } from 'vitest'
-import { DEMO_NAMES, demoChOrfContext, demoReferral, demoReferralAnswers, demoReferralContext, demoResponseContext } from '../../../../scripts/validator/demo-referral.mjs'
+import {
+  DEMO_NAMES,
+  demoChOrfContext,
+  demoReferral,
+  demoReferralAnswers,
+  demoReferralContext,
+  demoResponseContext,
+} from '../../../../scripts/validator/demo-referral.mjs'
 import { NOTICES_FILE } from '../../../../scripts/third-party-notices.mjs'
 import { readLetter, sha256 } from '../../../../scripts/validator/letter.mjs'
 import type { Outcome } from '../exports.js'
 import { LINKS } from '../links.js'
-import { corpusFiles, DEMO_MODULES, demoModules, factsOf, FACTS_IMPORT, LETTER_IMPORT, letterOf, outsideReads, pinned, SAMPLE_IMPORT, sampleOf, sampleProblems, type CorpusEntry } from './plugin.js'
+import {
+  corpusFiles,
+  DEMO_MODULES,
+  demoModules,
+  factsOf,
+  FACTS_IMPORT,
+  LETTER_IMPORT,
+  letterOf,
+  outsideReads,
+  pinned,
+  SAMPLE_IMPORT,
+  sampleOf,
+  sampleProblems,
+  type CorpusEntry,
+} from './plugin.js'
 
 /**
  * The build's plugin: the modules it hands the page, what it refuses, and
@@ -49,7 +70,14 @@ describe("the plugin's modules", () => {
   // function, a bigint -- would be dropped or refused on the way, and the
   // page would start from other data than the gate judged.
   test('hand the page the corpus demo referral, every value as demo-referral.mjs holds it', async () => {
-    const original = { form: demoReferral, questionnaireContext: demoReferralContext, responseContext: demoResponseContext, chOrfContext: demoChOrfContext, answers: demoReferralAnswers, names: { response: DEMO_NAMES.response } }
+    const original = {
+      form: demoReferral,
+      questionnaireContext: demoReferralContext,
+      responseContext: demoResponseContext,
+      chOrfContext: demoChOrfContext,
+      answers: demoReferralAnswers,
+      names: { response: DEMO_NAMES.response },
+    }
     expect(sampleOf()).toStrictEqual(original)
     expect(exported((await load(DEMO_MODULES[0] ?? '')).source)).toStrictEqual(original)
   })
@@ -76,7 +104,13 @@ describe("the plugin's modules", () => {
     expect(facts.formancy).toBe(JSON.parse(readFileSync(join(app, 'package.json'), 'utf8')).dependencies['@formancy/react'])
     expect(facts.report).toBe(readLetter().renderedBy['@formancy/report-render-pdf'])
     expect(facts.purpose).toMatch(/medical device/)
-    expect(facts.corpus).toEqual(['questionnaire-demo-referral.json', 'questionnaireresponse-demo-referral.json', 'bundle-ch-orf-demo-referral.json', 'bundle-document-pdf-as-data.json', 'bundle-document-pdf-in-binary.json'])
+    expect(facts.corpus).toEqual([
+      'questionnaire-demo-referral.json',
+      'questionnaireresponse-demo-referral.json',
+      'bundle-ch-orf-demo-referral.json',
+      'bundle-document-pdf-as-data.json',
+      'bundle-document-pdf-in-binary.json',
+    ])
     const { source } = await load(DEMO_MODULES[2] ?? '')
     expect(exported(source)).toStrictEqual(JSON.parse(JSON.stringify(facts)))
   })
@@ -102,7 +136,13 @@ describe('the notices the page links to', () => {
 describe('the first resources the build holds to the corpus', () => {
   const made = (json: string): Outcome => ({ kind: 'made', json })
   const entry = (file: string, resource: unknown, expect: unknown = 'accepted'): CorpusEntry => ({ file, expect, resource })
-  const files = ['questionnaire-demo-referral.json', 'questionnaireresponse-demo-referral.json', 'bundle-ch-orf-demo-referral.json', 'bundle-document-pdf-as-data.json', 'bundle-document-pdf-in-binary.json']
+  const files = [
+    'questionnaire-demo-referral.json',
+    'questionnaireresponse-demo-referral.json',
+    'bundle-ch-orf-demo-referral.json',
+    'bundle-document-pdf-as-data.json',
+    'bundle-document-pdf-in-binary.json',
+  ]
   const resource = (file: string) => ({ resourceType: 'Basic', id: file.replace('.json', '') })
   const json = (file: string) => `{"resourceType":"Basic","id":"${file.replace('.json', '')}"}`
   const page = new Map(files.map((file) => [file, made(json(file))]))
@@ -113,18 +153,36 @@ describe('the first resources the build holds to the corpus', () => {
   test('refuses a resource of other bytes, one the corpus lacks or refuses, and one the page does not make', () => {
     expect(sampleProblems(page, entries)).toEqual([])
     const [first = '', second = '', third = '', fourth = ''] = files
-    expect(sampleProblems(new Map([...page, [first, made(json(first).replace('Basic', 'Basics'))]]), entries)).toEqual([`${first}: the page makes other bytes of the sample than the corpus's entry`])
-    expect(sampleProblems(page, entries.filter((each) => each.file !== second))).toEqual([`${second}: the corpus has no entry of that name`])
-    expect(sampleProblems(page, entries.map((each) => (each.file === third ? entry(third, resource(third), [{ severity: 'error' }]) : each)))).toEqual([`${third}: the corpus's entry of that name is one the gate refuses`])
-    expect(sampleProblems(new Map([...page].filter(([file]) => file !== fourth)), entries)).toEqual([`${fourth}: the page does not make it of the sample (not made)`])
-    expect(sampleProblems(new Map([...page, [fourth, { kind: 'failed' } as const]]), entries)).toEqual([`${fourth}: the page does not make it of the sample (failed)`])
+    expect(sampleProblems(new Map([...page, [first, made(json(first).replace('Basic', 'Basics'))]]), entries)).toEqual([
+      `${first}: the page makes other bytes of the sample than the corpus's entry`,
+    ])
+    expect(
+      sampleProblems(
+        page,
+        entries.filter((each) => each.file !== second),
+      ),
+    ).toEqual([`${second}: the corpus has no entry of that name`])
+    expect(
+      sampleProblems(
+        page,
+        entries.map((each) => (each.file === third ? entry(third, resource(third), [{ severity: 'error' }]) : each)),
+      ),
+    ).toEqual([`${third}: the corpus's entry of that name is one the gate refuses`])
+    expect(sampleProblems(new Map([...page].filter(([file]) => file !== fourth)), entries)).toEqual([
+      `${fourth}: the page does not make it of the sample (not made)`,
+    ])
+    expect(sampleProblems(new Map([...page, [fourth, { kind: 'failed' } as const]]), entries)).toEqual([
+      `${fourth}: the page does not make it of the sample (failed)`,
+    ])
   })
 
   // The build, Cloudflare's included, stops rather than ship a page whose
   // claim is false; and lists the files the page then says are entries.
   test('stop the build with every problem, or are listed as corpus entries', () => {
     expect(corpusFiles(page, entries)).toEqual(files)
-    expect(() => corpusFiles(page, entries.slice(1))).toThrow(/not the validator corpus's[\s\S]*questionnaire-demo-referral\.json: the corpus has no entry of that name/)
+    expect(() => corpusFiles(page, entries.slice(1))).toThrow(
+      /not the validator corpus's[\s\S]*questionnaire-demo-referral\.json: the corpus has no entry of that name/,
+    )
   })
 })
 
@@ -149,7 +207,9 @@ function reachedOutside(file: string, found = new Set<string>(), seen = new Set<
   seen.add(file)
   for (const { fileName } of ts.preProcessFile(readFileSync(file, 'utf8'), true, true).importedFiles) {
     if (!fileName.startsWith('.')) continue
-    const target = [fileName, fileName.replace(/\.js$/, '.ts'), fileName.replace(/\.js$/, '.tsx'), `${fileName}.ts`].map((name) => resolve(dirname(file), name)).find((candidate) => existsSync(candidate) && !candidate.endsWith('.d.ts'))
+    const target = [fileName, fileName.replace(/\.js$/, '.ts'), fileName.replace(/\.js$/, '.tsx'), `${fileName}.ts`]
+      .map((name) => resolve(dirname(file), name))
+      .find((candidate) => existsSync(candidate) && !candidate.endsWith('.d.ts'))
     if (target === undefined) throw new Error(`${relative(repo, file)} imports ${fileName}, which is no file here`)
     const path = relative(repo, target).replaceAll('\\', '/')
     if (!path.startsWith('apps/demo/')) found.add(path)
@@ -165,7 +225,8 @@ function reachedOutside(file: string, found = new Set<string>(), seen = new Set<
  */
 function suiteFiles(): string[] {
   const include = /\binclude: (\[[^\]]*\]),\n\s*environment:/.exec(readFileSync(join(app, 'vitest.config.ts'), 'utf8'))?.[1]
-  if (include !== "['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.mjs']") throw new Error(`the suite's include is ${String(include)}, which suiteFiles() does not walk`)
+  if (include !== "['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.mjs']")
+    throw new Error(`the suite's include is ${String(include)}, which suiteFiles() does not walk`)
   const tests = (directory: string, name: RegExp): string[] =>
     readdirSync(join(app, directory), { recursive: true, withFileTypes: true })
       .filter((entry) => entry.isFile() && name.test(entry.name))
@@ -181,7 +242,15 @@ function turboInputs(): Record<string, string[]> {
     .filter((line) => !line.trim().startsWith('//'))
     .join('\n')
   const tasks: Record<string, { inputs?: string[] }> = JSON.parse(text).tasks
-  return Object.fromEntries(Object.entries(tasks).map(([task, { inputs = [] }]) => [task, inputs.filter((input) => input.startsWith('$TURBO_ROOT$/')).map((input) => input.slice('$TURBO_ROOT$/'.length)).sort()]))
+  return Object.fromEntries(
+    Object.entries(tasks).map(([task, { inputs = [] }]) => [
+      task,
+      inputs
+        .filter((input) => input.startsWith('$TURBO_ROOT$/'))
+        .map((input) => input.slice('$TURBO_ROOT$/'.length))
+        .sort(),
+    ]),
+  )
 }
 
 describe("the build's inputs outside the app", () => {

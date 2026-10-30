@@ -61,7 +61,7 @@ function orderOf(answer: QuestionnaireResponseAnswer, condition: EnableWhen): nu
 
 /** Whether one condition holds for its question's `answers`. */
 function holds(condition: EnableWhen, answers: readonly QuestionnaireResponseAnswer[]): boolean {
-  if (condition.operator === 'exists') return (answers.length > 0) === condition.answerBoolean
+  if (condition.operator === 'exists') return answers.length > 0 === condition.answerBoolean
   const meets = OPERATORS[condition.operator]
   if (meets === undefined) throw new Error(`no enableWhen operator ${condition.operator} is written here`)
   return answers.some((answer) => meets(orderOf(answer, condition)))

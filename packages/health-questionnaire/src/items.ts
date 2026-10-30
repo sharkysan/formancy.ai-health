@@ -94,7 +94,8 @@ function constraintsOf(field: FieldDef, type: ItemType, path: string, scope: Ite
   for (const property of ['pattern', 'format', 'mask'] as const) if (field[property] !== undefined) refusals.add('unmapped', member(path, property))
   const maxLength = field.maxLength === undefined ? undefined : refusals.take(() => integerOf(field.maxLength as number, member(path, 'maxLength')))
   if (maxLength !== undefined) found.maxLength = maxLength
-  if (field.minLength !== undefined) add(refusals.take(() => ({ url: EXTENSION.minLength, valueInteger: integerOf(field.minLength as number, member(path, 'minLength')) })))
+  if (field.minLength !== undefined)
+    add(refusals.take(() => ({ url: EXTENSION.minLength, valueInteger: integerOf(field.minLength as number, member(path, 'minLength')) })))
   const lowest = field.min ?? field.earliest
   const highest = field.max ?? field.latest
   const lowestAt = member(path, field.min === undefined ? 'earliest' : 'min')
@@ -103,9 +104,11 @@ function constraintsOf(field: FieldDef, type: ItemType, path: string, scope: Ite
   if (highest !== undefined) add(refusals.take(() => bound(EXTENSION.maxValue, type, highest, highestAt)))
   if (field.minItems !== undefined && field.minItems > 0) {
     if (field.required !== true || (field.type === 'repeater' && field.minItems > 1)) refusals.add('unmapped', member(path, 'minItems'))
-    else if (field.type !== 'repeater') add(refusals.take(() => ({ url: EXTENSION.minOccurs, valueInteger: integerOf(field.minItems as number, member(path, 'minItems')) })))
+    else if (field.type !== 'repeater')
+      add(refusals.take(() => ({ url: EXTENSION.minOccurs, valueInteger: integerOf(field.minItems as number, member(path, 'minItems')) })))
   }
-  if (field.maxItems !== undefined) add(refusals.take(() => ({ url: EXTENSION.maxOccurs, valueInteger: integerOf(field.maxItems as number, member(path, 'maxItems')) })))
+  if (field.maxItems !== undefined)
+    add(refusals.take(() => ({ url: EXTENSION.maxOccurs, valueInteger: integerOf(field.maxItems as number, member(path, 'maxItems')) })))
   if (type === 'choice') found.answerOption = answerOptionsOf(field, path, scope.url, scope.texts, refusals)
   if (field.type === 'hidden') found.extension.unshift({ url: EXTENSION.hidden, valueBoolean: true })
   return found

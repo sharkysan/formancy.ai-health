@@ -22,7 +22,13 @@ const OUTSIDE = join(REPO, '..', 'pictures-review')
 describe('the arguments', () => {
   // A misspelt scene or app would otherwise run nothing and say it succeeded.
   test('are checked against scenes.json', () => {
-    expect(parse(['--app', 'demo', '--scene', 'demo-refused'], SCENES)).toEqual({ apps: ['demo'], scenes: ['demo-refused'], all: false, check: false, review: undefined })
+    expect(parse(['--app', 'demo', '--scene', 'demo-refused'], SCENES)).toEqual({
+      apps: ['demo'],
+      scenes: ['demo-refused'],
+      all: false,
+      check: false,
+      review: undefined,
+    })
     expect(() => parse(['--app', 'site'], SCENES)).toThrow('--app site is no app with a scene in scripts/pictures/scenes.json; those are demo, other')
     expect(() => parse(['--scene', 'demo-refusd'], SCENES)).toThrow('--scene demo-refusd is no scene of scripts/pictures/scenes.json')
     expect(() => parse(['--scene'], SCENES)).toThrow(/^--scene needs a value/)
@@ -58,7 +64,14 @@ describe('the plan', () => {
   // Every app, in scenes.json's order, when nothing narrows it; a scene only
   // to the app that has it, so no app is asked for a scene it cannot take.
   test("runs the apps in scenes.json's order, each with only its own scenes", () => {
-    expect(plan(parse([], SCENES), SCENES)).toEqual({ runs: [{ app: 'demo', args: [] }, { app: 'other', args: [] }], fresh: false, write: true })
+    expect(plan(parse([], SCENES), SCENES)).toEqual({
+      runs: [
+        { app: 'demo', args: [] },
+        { app: 'other', args: [] },
+      ],
+      fresh: false,
+      write: true,
+    })
     expect(plan(parse(['--scene', 'other-two', '--scene', 'demo-form', '--review', OUTSIDE], SCENES), SCENES).runs).toEqual([
       { app: 'demo', args: ['--scene', 'demo-form', '--review', OUTSIDE] },
       { app: 'other', args: ['--scene', 'other-two', '--review', OUTSIDE] },
@@ -80,8 +93,14 @@ describe('the record after --all', () => {
   // date and captured.json would change on a retake that changed no picture.
   test('keeps the date of every picture retaken as the same bytes and text', () => {
     const look = { platform: 'win32-x64', playwright: '1.64.1', chromium: '156.0.8078.4', fonts: {} }
-    const before = { 'demo-form': { captured: '2026-10-01', sha256: 'a', look, text: { Form: '- region "The form"' } }, 'demo-refused': { captured: '2026-10-01', sha256: 'b', look, text: { Response: '- region "The answers"' } } }
-    const after = { 'demo-form': { ...before['demo-form'], captured: '2026-10-20' }, 'demo-refused': { ...before['demo-refused'], captured: '2026-10-20', sha256: 'c' } }
+    const before = {
+      'demo-form': { captured: '2026-10-01', sha256: 'a', look, text: { Form: '- region "The form"' } },
+      'demo-refused': { captured: '2026-10-01', sha256: 'b', look, text: { Response: '- region "The answers"' } },
+    }
+    const after = {
+      'demo-form': { ...before['demo-form'], captured: '2026-10-20' },
+      'demo-refused': { ...before['demo-refused'], captured: '2026-10-20', sha256: 'c' },
+    }
     expect(redated(before, after, SCENES)).toEqual({ 'demo-form': before['demo-form'], 'demo-refused': after['demo-refused'] })
   })
 })
@@ -90,8 +109,15 @@ describe('the table', () => {
   // What a reviewer lists in the pull request: which pictures are new, which
   // changed by their bytes, and which a retake left as they were.
   test('says of each scene its CSS size, its bytes, and whether its picture is new, changed or unchanged', () => {
-    const before = { 'demo-form': { css: { width: 608, height: 1077 }, bytes: 138686, sha256: 'a' }, 'demo-refused': { css: { width: 840, height: 504 }, bytes: 122910, sha256: 'b' } }
-    const after = { ...before, 'demo-refused': { ...before['demo-refused'], sha256: 'c' }, 'other-two': { css: { width: 1440, height: 752 }, bytes: 292636, sha256: 'd' } }
+    const before = {
+      'demo-form': { css: { width: 608, height: 1077 }, bytes: 138686, sha256: 'a' },
+      'demo-refused': { css: { width: 840, height: 504 }, bytes: 122910, sha256: 'b' },
+    }
+    const after = {
+      ...before,
+      'demo-refused': { ...before['demo-refused'], sha256: 'c' },
+      'other-two': { css: { width: 1440, height: 752 }, bytes: 292636, sha256: 'd' },
+    }
     expect(table(before, after, SCENES).split('\n')).toEqual([
       'scene         CSS size  bytes   picture',
       'demo-form     608x1077  138686  unchanged',

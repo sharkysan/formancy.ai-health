@@ -91,16 +91,20 @@ export const FORM: FormSchema = {
  * the patient, to the form's version 1, claiming CH ORF's profile.
  */
 export function answers(more: Record<string, unknown> = {}): QuestionnaireResponse {
-  const result = toQuestionnaireResponse(FORM, { reason: 'Synthetischer Grund' }, {
-    questionnaire: { base: 'https://forms.synthetic.invalid', version: '1', status: 'active' },
-    status: 'completed',
-    authored: '2026-10-17T10:00:00+02:00',
-    subject: { reference: NAMES.patient },
-    author: { reference: NAMES.role },
-    source: { reference: NAMES.patient },
-    profiles: [PROFILES.questionnaireResponse],
-    ...more,
-  })
+  const result = toQuestionnaireResponse(
+    FORM,
+    { reason: 'Synthetischer Grund' },
+    {
+      questionnaire: { base: 'https://forms.synthetic.invalid', version: '1', status: 'active' },
+      status: 'completed',
+      authored: '2026-10-17T10:00:00+02:00',
+      subject: { reference: NAMES.patient },
+      author: { reference: NAMES.role },
+      source: { reference: NAMES.patient },
+      profiles: [PROFILES.questionnaireResponse],
+      ...more,
+    },
+  )
   if (!result.ok) throw new Error(`the synthetic answers were refused: ${result.refusals.map((refusal) => refusal.message).join('; ')}`)
   return result.questionnaireResponse
 }

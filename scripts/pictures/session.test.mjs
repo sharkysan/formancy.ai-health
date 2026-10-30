@@ -24,10 +24,20 @@ describe("an app script's arguments", () => {
   // app script by hand must get the same refusals, or a scene of another app
   // would be walked by nobody and the run would say it succeeded.
   test("are the runner's, for this app only", () => {
-    expect(appOptions(['--scene', 'demo-form', '--review', OUTSIDE], SCENES, 'demo')).toEqual({ apps: [], scenes: ['demo-form'], all: false, check: false, review: OUTSIDE })
+    expect(appOptions(['--scene', 'demo-form', '--review', OUTSIDE], SCENES, 'demo')).toEqual({
+      apps: [],
+      scenes: ['demo-form'],
+      all: false,
+      check: false,
+      review: OUTSIDE,
+    })
     expect(appOptions(['--check'], SCENES, 'demo')).toMatchObject({ check: true })
-    expect(() => appOptions(['--scene', 'other-scene'], SCENES, 'demo')).toThrow('--scene other-scene is a other scene, and this is apps/demo/scripts/pictures.mjs')
-    expect(() => appOptions(['--app', 'demo'], SCENES, 'demo')).toThrow("--app is the root runner's option: apps/demo/scripts/pictures.mjs takes its own scenes only")
+    expect(() => appOptions(['--scene', 'other-scene'], SCENES, 'demo')).toThrow(
+      '--scene other-scene is a other scene, and this is apps/demo/scripts/pictures.mjs',
+    )
+    expect(() => appOptions(['--app', 'demo'], SCENES, 'demo')).toThrow(
+      "--app is the root runner's option: apps/demo/scripts/pictures.mjs takes its own scenes only",
+    )
     expect(() => appOptions(['--all', '--scene', 'demo-form'], SCENES, 'demo')).toThrow('--all retakes every scene of an app, so it is not given with --scene')
     expect(() => appOptions(['--review', join(REPO, 'x')], SCENES, 'demo')).toThrow(/is inside the repository/)
   })
@@ -39,10 +49,16 @@ describe('the browser', () => {
   // pictures in a look no record names, and a check the report reads as
   // Chromium's. Refused before anything is launched or walked.
   test('is PICTURES_BROWSER, and another is refused before anything is launched', async () => {
-    const acts = Object.fromEntries(readScenes().filter((scene) => scene.app === 'demo').map((scene) => [scene.id, async () => ({ parts: {} })]))
+    const acts = Object.fromEntries(
+      readScenes()
+        .filter((scene) => scene.app === 'demo')
+        .map((scene) => [scene.id, async () => ({ parts: {} })]),
+    )
     let launched = false
     const firefox = { name: () => 'firefox', launch: async () => void (launched = true) }
-    await expect(pictures({ app: 'demo', browserType: firefox, acts }, [])).rejects.toThrow(`the README's pictures are taken in ${PICTURES_BROWSER} alone (scripts/browsers.mjs), and this script was handed firefox`)
+    await expect(pictures({ app: 'demo', browserType: firefox, acts }, [])).rejects.toThrow(
+      `the README's pictures are taken in ${PICTURES_BROWSER} alone (scripts/browsers.mjs), and this script was handed firefox`,
+    )
     expect(launched).toBe(false)
   })
 })
@@ -54,7 +70,9 @@ describe("a scene's width", () => {
   test("is the app's unless the scene names one, which must be at or below the narrowest breakpoint", () => {
     expect(widthOf(SCENES[1], { width: 1440, narrowest: 640 })).toBe(1440)
     expect(widthOf(SCENES[2], { width: 1440, narrowest: 640 })).toBe(390)
-    expect(() => widthOf({ id: 'demo-tablet', width: 700 }, { width: 1440, narrowest: 640 })).toThrow('demo-tablet names the width 700, and a scene names a width only to picture the narrowest layout, at or below 640px')
+    expect(() => widthOf({ id: 'demo-tablet', width: 700 }, { width: 1440, narrowest: 640 })).toThrow(
+      'demo-tablet names the width 700, and a scene names a width only to picture the narrowest layout, at or below 640px',
+    )
     expect(() => widthOf({ id: 'demo-half', width: 390.5 }, { width: 1440, narrowest: 640 })).toThrow(/names the width 390\.5/)
   })
 })
@@ -97,7 +115,9 @@ describe('what a scene that is not shot is said to be', () => {
   // whose text had changed must not be reported unchanged.
   test('under --scene, compared with its record and said either way, and never retaken', () => {
     expect(line(['--scene', 'demo-narrow'])).toBe("not named by --scene; its text is the record's")
-    expect(line(['--scene', 'demo-narrow'], { Form: '- region "The form":\n  - status' })).toBe("not named by --scene, and its text is not the record's: `node scripts/pictures.mjs --scene demo-form` retakes it")
+    expect(line(['--scene', 'demo-narrow'], { Form: '- region "The form":\n  - status' })).toBe(
+      "not named by --scene, and its text is not the record's: `node scripts/pictures.mjs --scene demo-form` retakes it",
+    )
   })
 
   // By default a scene is left only when its text is the record's; under
@@ -116,7 +136,12 @@ describe('what a check leaves for the release report', () => {
   // held by nobody. So the result says which scenes were walked, in walk
   // order, and plans nothing of its own that the report could believe.
   test('lists the scenes it walked, and the error only when one ended it', () => {
-    const stopped = checkResult({ ...ran, browser: { name: 'chromium', version: '156.0.8078.4', headless: true }, walked: ['demo-form'], error: 'demo-changed: the new answer never came' })
+    const stopped = checkResult({
+      ...ran,
+      browser: { name: 'chromium', version: '156.0.8078.4', headless: true },
+      walked: ['demo-form'],
+      error: 'demo-changed: the new answer never came',
+    })
     expect(stopped).toEqual({
       check: 'pictures',
       app: 'apps/demo',

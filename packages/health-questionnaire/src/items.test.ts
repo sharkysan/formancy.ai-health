@@ -63,9 +63,18 @@ describe('each version 1 field type', () => {
   // without SDC's `page` item control, which R4's code system lacks.
   test('a group, a page and a repeater are groups; a repeater repeats', () => {
     const child = { key: 'city', type: 'text' } as const
-    expect(onlyItem({ key: 'address', type: 'group', fields: [child] })).toEqual({ linkId: 'address', type: 'group', item: [{ linkId: 'city', type: 'string' }] })
+    expect(onlyItem({ key: 'address', type: 'group', fields: [child] })).toEqual({
+      linkId: 'address',
+      type: 'group',
+      item: [{ linkId: 'city', type: 'string' }],
+    })
     expect(onlyItem({ key: 'step', type: 'page', fields: [child] })).toEqual({ linkId: 'step', type: 'group', item: [{ linkId: 'city', type: 'string' }] })
-    expect(onlyItem({ key: 'people', type: 'repeater', fields: [child] })).toEqual({ linkId: 'people', type: 'group', repeats: true, item: [{ linkId: 'city', type: 'string' }] })
+    expect(onlyItem({ key: 'people', type: 'repeater', fields: [child] })).toEqual({
+      linkId: 'people',
+      type: 'group',
+      repeats: true,
+      item: [{ linkId: 'city', type: 'string' }],
+    })
   })
 
   // A static text is something to read, and a display item is: as a
@@ -79,8 +88,12 @@ describe('each version 1 field type', () => {
   // and so linkIds are unique across the Questionnaire, as R4's que-2
   // asks, however deep a field is.
   test("every item's linkId is its field's key, nested ones included", () => {
-    const questionnaire = exported(form([{ key: 'outer', type: 'group', fields: [{ key: 'inner', type: 'repeater', fields: [{ key: 'leaf', type: 'text' }] }] }]))
-    expect(writeJson(questionnaire)).toContain('"linkId":"outer","type":"group","item":[{"linkId":"inner","type":"group","repeats":true,"item":[{"linkId":"leaf","type":"string"}]}]')
+    const questionnaire = exported(
+      form([{ key: 'outer', type: 'group', fields: [{ key: 'inner', type: 'repeater', fields: [{ key: 'leaf', type: 'text' }] }] }]),
+    )
+    expect(writeJson(questionnaire)).toContain(
+      '"linkId":"outer","type":"group","item":[{"linkId":"inner","type":"group","repeats":true,"item":[{"linkId":"leaf","type":"string"}]}]',
+    )
   })
 })
 
@@ -105,7 +118,7 @@ describe('the field types version 1 refuses', () => {
   // back as neither -- exported with no item, or refused for something
   // other than what it is -- would be a field a Questionnaire drops
   // without a word. The five refused are exactly version 1's.
-  test.each([...FIELD_TYPES])("%s, as the @formancy/spec it reads lists it, is one item or refused at its type", (type) => {
+  test.each([...FIELD_TYPES])('%s, as the @formancy/spec it reads lists it, is one item or refused at its type', (type) => {
     const field: FieldDef = { key: 'only', type, label: 'Only' }
     if (['select', 'radio', 'selectboxes', 'ranking', 'matrix'].includes(type)) field.options = [option('a', 'A'), option('b', 'B')]
     if (type === 'matrix') field.rows = [{ value: 'r', label: 'R' }]
@@ -148,7 +161,10 @@ describe('what a field says beside its type', () => {
       type: 'string',
       maxLength: expect.anything(),
     })
-    expect(digits(onlyItem({ key: 'reason', type: 'text', minLength: 2, maxLength: 80 }))).toMatchObject({ extension: [{ valueInteger: '#2' }], maxLength: '#80' })
+    expect(digits(onlyItem({ key: 'reason', type: 'text', minLength: 2, maxLength: 80 }))).toMatchObject({
+      extension: [{ valueInteger: '#2' }],
+      maxLength: '#80',
+    })
   })
 
   // A pattern is a JavaScript regular expression, a format and a mask are
@@ -162,7 +178,7 @@ describe('what a field says beside its type', () => {
 
   // A bound's digits are the double formancy compares with, written as
   // the shortest text that reads back as it; a whole one from its BigInt.
-  test('min and max are minValue and maxValue of the item\'s own type', () => {
+  test("min and max are minValue and maxValue of the item's own type", () => {
     expect(digits(onlyItem({ key: 'weight', type: 'number', min: 0.5, max: 300 }))).toMatchObject({
       extension: [
         { url: 'http://hl7.org/fhir/StructureDefinition/minValue', valueDecimal: '#0.5' },
@@ -184,8 +200,12 @@ describe('what a field says beside its type', () => {
       { url: 'http://hl7.org/fhir/StructureDefinition/minValue', valueTime: '08:00:00' },
       { url: 'http://hl7.org/fhir/StructureDefinition/maxValue', valueTime: '17:30:00' },
     ])
-    expect(onlyItem({ key: 'born', type: 'date', earliest: '1900-01-01' }).extension).toEqual([{ url: 'http://hl7.org/fhir/StructureDefinition/minValue', valueDate: '1900-01-01' }])
-    expect(onlyItem({ key: 'seen', type: 'datetime', latest: '2026-10-17T08:00:00Z' }).extension).toEqual([{ url: 'http://hl7.org/fhir/StructureDefinition/maxValue', valueDateTime: '2026-10-17T08:00:00Z' }])
+    expect(onlyItem({ key: 'born', type: 'date', earliest: '1900-01-01' }).extension).toEqual([
+      { url: 'http://hl7.org/fhir/StructureDefinition/minValue', valueDate: '1900-01-01' },
+    ])
+    expect(onlyItem({ key: 'seen', type: 'datetime', latest: '2026-10-17T08:00:00Z' }).extension).toEqual([
+      { url: 'http://hl7.org/fhir/StructureDefinition/maxValue', valueDateTime: '2026-10-17T08:00:00Z' },
+    ])
   })
 
   // R4 allows questionnaire-minOccurs only on a required item, and the
@@ -215,7 +235,11 @@ describe('what a field says beside its type', () => {
   // written again; a minimum above one is refused.
   test("a repeater's minItems of one is its required, and one above refused", () => {
     const rows: FieldDef = { key: 'rows', type: 'repeater', required: true, minItems: 1, maxItems: 5, fields: [{ key: 'x', type: 'text' }] }
-    expect(digits(onlyItem(rows))).toMatchObject({ extension: [{ url: 'http://hl7.org/fhir/StructureDefinition/questionnaire-maxOccurs', valueInteger: '#5' }], required: true, repeats: true })
+    expect(digits(onlyItem(rows))).toMatchObject({
+      extension: [{ url: 'http://hl7.org/fhir/StructureDefinition/questionnaire-maxOccurs', valueInteger: '#5' }],
+      required: true,
+      repeats: true,
+    })
     expect(refused(form([{ ...rows, minItems: 2 }]))).toEqual(['unmapped form.model.fields[0].minItems'])
   })
 
@@ -229,7 +253,9 @@ describe('what a field says beside its type', () => {
   // An option's value becomes a code, and R4's code has no leading or
   // doubled whitespace; formancy's value is any text.
   test('refuses an option whose value is no FHIR code, at that value', () => {
-    expect(refused(form([{ key: 'clinic', type: 'radio', options: [option('ok', 'Ok'), option(' padded', 'Padded')] }]))).toEqual(['grammar form.model.fields[0].options[1].value'])
+    expect(refused(form([{ key: 'clinic', type: 'radio', options: [option('ok', 'Ok'), option(' padded', 'Padded')] }]))).toEqual([
+      'grammar form.model.fields[0].options[1].value',
+    ])
   })
 
   // R4's que-1 refuses a group with no item; an empty group in formancy
@@ -242,9 +268,19 @@ describe('what a field says beside its type', () => {
   // Presentation: how a field looks, not what it collects. Carried, a
   // widget would be a promise about a renderer the Questionnaire cannot
   // keep; its absence changes no answer.
-  test('does not carry a widget, a datagrid\'s columns or a repeater\'s button labels', () => {
+  test("does not carry a widget, a datagrid's columns or a repeater's button labels", () => {
     expect(onlyItem({ key: 'agree', type: 'checkbox', widget: 'toggle' })).toEqual({ linkId: 'agree', type: 'boolean' })
-    expect(onlyItem({ key: 'rows', type: 'repeater', widget: 'datagrid', columns: [{ field: 'x' }], addLabel: 'Add', removeLabel: 'Remove', fields: [{ key: 'x', type: 'text' }] })).toEqual({
+    expect(
+      onlyItem({
+        key: 'rows',
+        type: 'repeater',
+        widget: 'datagrid',
+        columns: [{ field: 'x' }],
+        addLabel: 'Add',
+        removeLabel: 'Remove',
+        fields: [{ key: 'x', type: 'text' }],
+      }),
+    ).toEqual({
       linkId: 'rows',
       type: 'group',
       repeats: true,
@@ -275,7 +311,9 @@ describe('a number field', () => {
   test('refuses a bound of an integer item past 32 bits, at the bound', () => {
     expect(refused(form([{ key: 'count', type: 'number', step: 1, max: 2147483648 }]))).toEqual(['range form.model.fields[0].max'])
     expect(refused(form([{ key: 'count', type: 'number', step: 1, min: -2147483649 }]))).toEqual(['range form.model.fields[0].min'])
-    expect(digits(onlyItem({ key: 'count', type: 'number', step: 1, min: -2147483648, max: 2147483647 }))).toMatchObject({ extension: [{ valueInteger: '#-2147483648' }, { valueInteger: '#2147483647' }] })
+    expect(digits(onlyItem({ key: 'count', type: 'number', step: 1, min: -2147483648, max: 2147483647 }))).toMatchObject({
+      extension: [{ valueInteger: '#-2147483648' }, { valueInteger: '#2147483647' }],
+    })
   })
 
   // A maximum that is not whole on an integer item has no integer to be.
@@ -297,12 +335,18 @@ describe('a computed field', () => {
   // A rule inside a repeater runs once per row; read-only holds for each.
   test('inside a repeater is read-only too', () => {
     const rows: FieldDef = { key: 'rows', type: 'repeater', fields: [{ key: 'line_total', type: 'number' }] }
-    expect(exported(ruled([rows], [{ target: 'rows[].line_total', kind: 'computed', cel: 'item.line_total' }])).item?.[0]?.item).toEqual([{ linkId: 'line_total', type: 'decimal', readOnly: true }])
+    expect(exported(ruled([rows], [{ target: 'rows[].line_total', kind: 'computed', cel: 'item.line_total' }])).item?.[0]?.item).toEqual([
+      { linkId: 'line_total', type: 'decimal', readOnly: true },
+    ])
   })
 
   // A static text holds no value to compute, and a container none of its own.
   test('refuses a computed rule on what holds no answer', () => {
-    expect(refused(ruled([{ key: 'address', type: 'group', fields: [{ key: 'city', type: 'text' }] }], [{ target: 'address', kind: 'computed', cel: "{'city': 'x'}" }]))).toEqual(['unmapped form.logic.rules[0].target'])
+    expect(
+      refused(
+        ruled([{ key: 'address', type: 'group', fields: [{ key: 'city', type: 'text' }] }], [{ target: 'address', kind: 'computed', cel: "{'city': 'x'}" }]),
+      ),
+    ).toEqual(['unmapped form.logic.rules[0].target'])
   })
 
   // formancy computes a field while a visible rule hides it: on
@@ -315,14 +359,46 @@ describe('a computed field', () => {
   // is, where an author can act on it. A page a skip rule walks past keeps
   // every value in formancy, and the response leaves all of them out.
   test('refuses a computed rule on a field a visible rule can hide, and not on a skipped page', () => {
-    const fields: FieldDef[] = [{ key: 'consent', type: 'checkbox' }, { key: 'given', type: 'text' }, { key: 'shown_name', type: 'text' }, { key: 'box', type: 'group', fields: [{ key: 'inner', type: 'text' }] }]
+    const fields: FieldDef[] = [
+      { key: 'consent', type: 'checkbox' },
+      { key: 'given', type: 'text' },
+      { key: 'shown_name', type: 'text' },
+      { key: 'box', type: 'group', fields: [{ key: 'inner', type: 'text' }] },
+    ]
     const shownName = { target: 'shown_name', kind: 'computed', cel: "given + '!'" } as const
-    expect(refused(ruled(fields, [shownName, { target: 'shown_name', kind: 'visible', cel: 'consent == true' }]))).toEqual(['unmapped form.logic.rules[0].target'])
-    expect(refused(ruled(fields, [{ target: 'box', kind: 'visible', cel: 'consent == true' }, { target: 'box.inner', kind: 'computed', cel: 'given' }]))).toEqual(['unmapped form.logic.rules[1].target'])
+    expect(refused(ruled(fields, [shownName, { target: 'shown_name', kind: 'visible', cel: 'consent == true' }]))).toEqual([
+      'unmapped form.logic.rules[0].target',
+    ])
+    expect(
+      refused(
+        ruled(fields, [
+          { target: 'box', kind: 'visible', cel: 'consent == true' },
+          { target: 'box.inner', kind: 'computed', cel: 'given' },
+        ]),
+      ),
+    ).toEqual(['unmapped form.logic.rules[1].target'])
     const rows: FieldDef = { key: 'rows', type: 'repeater', fields: [{ key: 'line_total', type: 'number' }] }
-    expect(refused(ruled([fields[0] as FieldDef, rows], [{ target: 'rows[].line_total', kind: 'computed', cel: 'item.line_total' }, { target: 'rows', kind: 'visible', cel: 'consent == true' }]))).toEqual(['unmapped form.logic.rules[0].target'])
+    expect(
+      refused(
+        ruled(
+          [fields[0] as FieldDef, rows],
+          [
+            { target: 'rows[].line_total', kind: 'computed', cel: 'item.line_total' },
+            { target: 'rows', kind: 'visible', cel: 'consent == true' },
+          ],
+        ),
+      ),
+    ).toEqual(['unmapped form.logic.rules[0].target'])
     const page: FieldDef = { key: 'step', type: 'page', fields: [{ key: 'total', type: 'number' }] }
-    const skipped = exported(ruled([fields[0] as FieldDef, page], [{ target: 'total', kind: 'computed', cel: '1 + 1' }, { target: 'step', kind: 'skip', cel: 'consent == true' }]))
+    const skipped = exported(
+      ruled(
+        [fields[0] as FieldDef, page],
+        [
+          { target: 'total', kind: 'computed', cel: '1 + 1' },
+          { target: 'step', kind: 'skip', cel: 'consent == true' },
+        ],
+      ),
+    )
     expect(skipped.item?.[1]?.item).toEqual([{ linkId: 'total', type: 'decimal', readOnly: true }])
   })
 })

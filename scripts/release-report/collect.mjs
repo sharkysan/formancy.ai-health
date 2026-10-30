@@ -182,7 +182,13 @@ function checkoutFiles(root, git) {
 }
 
 /** Which machine a result file comes from: Node, the platform, and on GitHub the runner image. */
-const runner = (env) => ({ node: process.version, platform: process.platform, arch: process.arch, image: env.ImageOS ?? null, imageVersion: env.ImageVersion ?? null })
+const runner = (env) => ({
+  node: process.version,
+  platform: process.platform,
+  arch: process.arch,
+  image: env.ImageOS ?? null,
+  imageVersion: env.ImageVersion ?? null,
+})
 
 /**
  * The readers, by job: what each job of gates.yml leaves for the report.
@@ -205,9 +211,24 @@ const READERS = {
  * under `root`, the `git` it is given, `env`, `now` and `browsers`, the
  * browsers the gates run in.
  */
-export function collect({ root = repo, job, pkg, variant, local = false, since, browsers = BROWSERS, env = process.env, git = defaultGit, now = () => new Date() }) {
+export function collect({
+  root = repo,
+  job,
+  pkg,
+  variant,
+  local = false,
+  since,
+  browsers = BROWSERS,
+  env = process.env,
+  git = defaultGit,
+  now = () => new Date(),
+}) {
   if (!local && READERS[job] === undefined) {
-    throw new Error(`collect.mjs reads the ${Object.keys(READERS).join(', ').replace(/, (?=[^,]*$)/, ' and ')} jobs, and has no reader for ${String(job)}: a job the report expects results from needs one here`)
+    throw new Error(
+      `collect.mjs reads the ${Object.keys(READERS)
+        .join(', ')
+        .replace(/, (?=[^,]*$)/, ' and ')} jobs, and has no reader for ${String(job)}: a job the report expects results from needs one here`,
+    )
   }
   // A leg of the browser job runs the gate in one browser (0014), and
   // leaves that browser's results under a key of its own.
@@ -222,7 +243,8 @@ export function collect({ root = repo, job, pkg, variant, local = false, since, 
   /** `file`, which `reader` expected, is not there. */
   const notFound = (file, reader) => void absent.push({ reader, file })
   const after = local ? time(since) : Number.NEGATIVE_INFINITY
-  if (local && Number.isNaN(after)) throw new Error('--local needs --since <ISO instant>: results older than it are refused as stale, and nothing else can say from when')
+  if (local && Number.isNaN(after))
+    throw new Error('--local needs --since <ISO instant>: results older than it are refused as stale, and nothing else can say from when')
   const iso = (value) => new Date(time(value)).toISOString()
   // A file that records no start cannot be told from yesterday's, in CI as
   // on a machine: refused, never read as this run's.
@@ -263,17 +285,24 @@ export function collect({ root = repo, job, pkg, variant, local = false, since, 
       if (task === undefined && name !== null && !local) missing.push(`${turbo} (run it with --summarize)`)
       if (task?.startTime != null && !fresh(turbo, task.startTime)) task = undefined
       if (task?.startTime != null && !(task.startTime <= time(json.startTime) && time(json.startTime) <= task.endTime)) {
-        missing.push(`another run's: ${turbo} ran from ${iso(task.startTime)} to ${iso(task.endTime)}, which does not hold its vitest.json's start, ${iso(json.startTime)}`)
+        missing.push(
+          `another run's: ${turbo} ran from ${iso(task.startTime)} to ${iso(task.endTime)}, which does not hold its vitest.json's start, ${iso(json.startTime)}`,
+        )
         task = undefined
       }
       if (task?.cache === 'HIT') missing.push(`a fresh run of ${name}#test:coverage: turbo replayed it from its cache`)
       let coverage = null
       const written = existsSync(join(root, summary)) ? statSync(join(root, summary)).mtimeMs : undefined
       if (written !== undefined && fresh(summary, written, 'written')) {
-        if (written < time(json.startTime)) missing.push(`another run's: ${summary} written ${iso(written)}, before its vitest.json started, ${iso(json.startTime)}`)
+        if (written < time(json.startTime))
+          missing.push(`another run's: ${summary} written ${iso(written)}, before its vitest.json started, ${iso(json.startTime)}`)
         else coverage = readJson(join(root, summary)).total
       }
-      const testFiles = testFilesOf(checkout(), path, packages.map((entry) => entry.path))
+      const testFiles = testFilesOf(
+        checkout(),
+        path,
+        packages.map((entry) => entry.path),
+      )
       suites.push({ package: name, path, ...normaliseSuite(json, root), testFiles, task: task ?? null, coverage })
     },
     /**
@@ -295,8 +324,10 @@ export function collect({ root = repo, job, pkg, variant, local = false, since, 
           }
           const result = readJson(join(root, shown))
           if (!fresh(shown, result.startedAt)) continue
-          if (result.asked !== browser) missing.push(`${app}’s gate asked for ${result.asked === undefined ? 'no browser' : String(result.asked)} in its ${browser} file: ${shown}`)
-          else if (result.browser != null && result.browser.name !== browser) missing.push(`${app}’s gate launched ${String(result.browser.name)} in its ${browser} file: ${shown}`)
+          if (result.asked !== browser)
+            missing.push(`${app}’s gate asked for ${result.asked === undefined ? 'no browser' : String(result.asked)} in its ${browser} file: ${shown}`)
+          else if (result.browser != null && result.browser.name !== browser)
+            missing.push(`${app}’s gate launched ${String(result.browser.name)} in its ${browser} file: ${shown}`)
           else browserGates.push(result)
         }
       }
@@ -352,7 +383,9 @@ export function collect({ root = repo, job, pkg, variant, local = false, since, 
       const finished = time(validator.gate.finishedAt)
       if (!(time(suites[guards].startTime) >= finished)) {
         const end = Number.isFinite(finished) ? `finished ${iso(finished)}` : 'records no end'
-        missing.push(`another run's: test-results/vitest.json, the guards', started ${iso(suites[guards].startTime)}, before ${VALIDATOR_RESULTS}, the validator gate's, ${end}, so the registers' cases that read the gate's file read an earlier one: run the guards after the gate`)
+        missing.push(
+          `another run's: test-results/vitest.json, the guards', started ${iso(suites[guards].startTime)}, before ${VALIDATOR_RESULTS}, the validator gate's, ${end}, so the registers' cases that read the gate's file read an earlier one: run the guards after the gate`,
+        )
         suites.splice(guards, 1)
       }
     }

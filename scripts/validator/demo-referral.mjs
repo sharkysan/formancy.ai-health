@@ -44,13 +44,23 @@ const words = {
   'specialty.cardiology': ['Kardiologie', 'Cardiologie', 'Cardiologia', 'Cardiology'],
   'specialty.orthopaedics': ['Orthopädie', 'Orthopédie', 'Ortopedia', 'Orthopaedics'],
   'specialty.ophthalmology': ['Ophthalmologie', 'Ophtalmologie', 'Oftalmologia', 'Ophthalmology'],
-  'language.label': ['Sprache der Patientin oder des Patienten', 'Langue de la patiente ou du patient', 'Lingua della o del paziente', "The patient's language"],
+  'language.label': [
+    'Sprache der Patientin oder des Patienten',
+    'Langue de la patiente ou du patient',
+    'Lingua della o del paziente',
+    "The patient's language",
+  ],
   // A language by its own name, in every catalogue.
   ...Object.fromEntries(Object.entries(ENDONYMS).map(([code, name]) => [`language.${code}`, DEMO_LANGUAGES.map(() => name)])),
   'interpreter.label': ['Dolmetschen nötig', 'Interprète nécessaire', 'Interprete necessario', 'An interpreter is needed'],
   'interpreter_language.label': ['Sprache für das Dolmetschen', "Langue d'interprétation", "Lingua dell'interpretariato", 'Language to interpret'],
   'available_from.label': ['Termin möglich ab', 'Rendez-vous possible dès le', 'Appuntamento possibile dal', 'Appointment possible from'],
-  'contact_phone.label': ['Telefon der Praxis für Rückfragen', 'Téléphone du cabinet pour les questions', 'Telefono dello studio per domande', 'Practice phone for questions'],
+  'contact_phone.label': [
+    'Telefon der Praxis für Rückfragen',
+    'Téléphone du cabinet pour les questions',
+    'Telefono dello studio per domande',
+    'Practice phone for questions',
+  ],
 }
 
 const t = (id) => ({ $t: id })
@@ -75,7 +85,12 @@ export const demoReferral = {
         type: 'select',
         label: t('specialty.label'),
         required: true,
-        options: [option('dermatology', 'specialty.dermatology'), option('cardiology', 'specialty.cardiology'), option('orthopaedics', 'specialty.orthopaedics'), option('ophthalmology', 'specialty.ophthalmology')],
+        options: [
+          option('dermatology', 'specialty.dermatology'),
+          option('cardiology', 'specialty.cardiology'),
+          option('orthopaedics', 'specialty.orthopaedics'),
+          option('ophthalmology', 'specialty.ophthalmology'),
+        ],
       },
       {
         key: 'language',
@@ -92,7 +107,9 @@ export const demoReferral = {
   logic: { rules: [{ target: 'interpreter_language', kind: 'visible', cel: 'interpreter == true' }] },
   i18n: {
     defaultLocale: 'de-CH',
-    messages: Object.fromEntries(DEMO_LANGUAGES.map((language, index) => [language, Object.fromEntries(Object.entries(words).map(([id, texts]) => [id, texts[index]]))])),
+    messages: Object.fromEntries(
+      DEMO_LANGUAGES.map((language, index) => [language, Object.fromEntries(Object.entries(words).map(([id, texts]) => [id, texts[index]]))]),
+    ),
   },
 }
 
@@ -155,12 +172,28 @@ export const demoResponseContext = {
 export const demoChOrfContext = {
   identifier: DEMO_NAMES.document,
   timestamp: '2026-10-17T10:05:00+02:00',
-  composition: { fullUrl: DEMO_NAMES.composition, status: 'final', ...CH_ORF_CODES, date: '2026-10-17T10:00:00+02:00', title: 'Zuweisung', sectionTitle: 'Auftrag' },
+  composition: {
+    fullUrl: DEMO_NAMES.composition,
+    status: 'final',
+    ...CH_ORF_CODES,
+    date: '2026-10-17T10:00:00+02:00',
+    title: 'Zuweisung',
+    sectionTitle: 'Auftrag',
+  },
   patient: { fullUrl: DEMO_NAMES.patient, ...CH_ORF_PEOPLE.patient },
   author: {
     fullUrl: DEMO_NAMES.role,
     practitioner: { fullUrl: DEMO_NAMES.practitioner, ...CH_ORF_PEOPLE.practitioner },
     organization: { fullUrl: DEMO_NAMES.organization, ...CH_ORF_PEOPLE.organization },
   },
-  serviceRequests: [{ fullUrl: DEMO_NAMES.serviceRequest, placer: { system: 'urn:ietf:rfc:3986', value: DEMO_NAMES.order }, status: 'active', intent: 'order', priority: 'routine', authoredOn: '2026-10-17T10:00:00+02:00' }],
+  serviceRequests: [
+    {
+      fullUrl: DEMO_NAMES.serviceRequest,
+      placer: { system: 'urn:ietf:rfc:3986', value: DEMO_NAMES.order },
+      status: 'active',
+      intent: 'order',
+      priority: 'routine',
+      authoredOn: '2026-10-17T10:00:00+02:00',
+    },
+  ],
 }

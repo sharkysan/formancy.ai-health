@@ -45,7 +45,12 @@ describe('isEnabled', () => {
   // displays of one code are one answer.
   test('compares codings by system and code', () => {
     expect(isEnabled(item([when('=', { answerCoding: coding('BE') })]), answers({ valueCoding: { ...coding('BE'), display: 'Bern' } }))).toBe(true)
-    expect(isEnabled(item([when('=', { answerCoding: coding('BE') })]), answers({ valueCoding: { ...coding('BE'), system: uri('https://forms.synthetic.invalid/other', at) } }))).toBe(false)
+    expect(
+      isEnabled(
+        item([when('=', { answerCoding: coding('BE') })]),
+        answers({ valueCoding: { ...coding('BE'), system: uri('https://forms.synthetic.invalid/other', at) } }),
+      ),
+    ).toBe(false)
     expect(isEnabled(item([when('!=', { answerCoding: coding('BE') })]), answers({ valueCoding: coding('VS') }))).toBe(true)
   })
 
@@ -68,7 +73,9 @@ describe('isEnabled', () => {
     expect(isEnabled(item([when('>=', { answerDecimal: decimal('150', at) })]), answers({ valueDecimal: decimal('149.99', at) }))).toBe(false)
     expect(isEnabled(item([when('>', { answerInteger: integer('2', at) })]), answers({ valueInteger: integer('3', at) }))).toBe(true)
     expect(isEnabled(item([when('<=', { answerInteger: integer('2', at) })]), answers({ valueInteger: integer('3', at) }))).toBe(false)
-    expect(isEnabled(item([when('<', { answerDecimal: decimal('9007199254740993', at) })]), answers({ valueDecimal: decimal('9007199254740992', at) }))).toBe(true)
+    expect(isEnabled(item([when('<', { answerDecimal: decimal('9007199254740993', at) })]), answers({ valueDecimal: decimal('9007199254740992', at) }))).toBe(
+      true,
+    )
   })
 
   // A date, a time and a date and time are compared in formancy's fixed

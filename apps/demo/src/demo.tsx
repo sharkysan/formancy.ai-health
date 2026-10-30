@@ -109,8 +109,8 @@ function Steps({ sample, pdf, facts, language, words }: StepsProps) {
   // names, byte for byte, and listed them: a resource is one while it is
   // the first's bytes.
   const firstFiles = useMemo(() => byFile(first), [first])
-  const isCorpus = (file: string, outcome: Outcome): boolean => facts.corpus.includes(file) && json(outcome) !== undefined && json(outcome) === json(firstFiles.get(file))
-
+  const isCorpus = (file: string, outcome: Outcome): boolean =>
+    facts.corpus.includes(file) && json(outcome) !== undefined && json(outcome) === json(firstFiles.get(file))
 
   const status = useRef<HTMLParagraphElement>(null)
   const response = useRef<HTMLHeadingElement>(null)
@@ -155,13 +155,27 @@ function Steps({ sample, pdf, facts, language, words }: StepsProps) {
             />
           </Step>
           <Step id="step-response" heading={words.response.heading} intro={words.response.intro} headingRef={response}>
-            <OutcomeView outcome={answered.response} maker="@formancy/health-questionnaire" file={FILES.response} name={words.response.heading} corpus={isCorpus(FILES.response, answered.response)} words={words} />
+            <OutcomeView
+              outcome={answered.response}
+              maker="@formancy/health-questionnaire"
+              file={FILES.response}
+              name={words.response.heading}
+              corpus={isCorpus(FILES.response, answered.response)}
+              words={words}
+            />
           </Step>
           <Step id="step-document" heading={words.document.heading} intro={words.document.intro}>
             {answered.document === undefined ? (
               <p className="refused">{words.document.notMade}</p>
             ) : (
-              <OutcomeView outcome={answered.document} maker="@formancy/health-ch" file={FILES.document} name={words.document.heading} corpus={isCorpus(FILES.document, answered.document)} words={words} />
+              <OutcomeView
+                outcome={answered.document}
+                maker="@formancy/health-ch"
+                file={FILES.document}
+                name={words.document.heading}
+                corpus={isCorpus(FILES.document, answered.document)}
+                words={words}
+              />
             )}
           </Step>
           <LetterStep pdf={pdf} letter={first.letter} report={facts.report} isCorpus={isCorpus} words={words} />

@@ -63,9 +63,17 @@ export function refusedOnPurpose(sample: Sample, pdf: Uint8Array): readonly Refu
     { id: 'version', maker: '@formancy/health-questionnaire', said: questionnaireWith({ specVersion: '5' as FormSchema['specVersion'] }) },
     // A `!=` under `&&` (0007): the unanswered case of the `!=` would need
     // an enableWhen nested in another, which SDC has not.
-    { id: 'unmapped', maker: '@formancy/health-questionnaire', said: questionnaireWith({ logic: { rules: [{ target: 'interpreter_language', kind: 'visible', cel: "interpreter == true && language != 'de'" }] } }) },
+    {
+      id: 'unmapped',
+      maker: '@formancy/health-questionnaire',
+      said: questionnaireWith({ logic: { rules: [{ target: 'interpreter_language', kind: 'visible', cel: "interpreter == true && language != 'de'" }] } }),
+    },
     { id: 'ahv', maker: '@formancy/health-ch', said: documentWith((context) => ({ ...context, patient: { ...context.patient, ahvn13: WRONG_AHVN13 } })) },
-    { id: 'gln', maker: '@formancy/health-ch', said: documentWith((context) => ({ ...context, author: { ...context.author, practitioner: { ...context.author.practitioner, gln: WRONG_GLN } } })) },
+    {
+      id: 'gln',
+      maker: '@formancy/health-ch',
+      said: documentWith((context) => ({ ...context, author: { ...context.author, practitioner: { ...context.author.practitioner, gln: WRONG_GLN } } })),
+    },
     { id: 'unproved', maker: '@formancy/health-document', said: said(() => toDocumentReference({ bytes: pdf, profile: 'PDF/A-2b' }, referralContext('data'))) },
   ]
 }

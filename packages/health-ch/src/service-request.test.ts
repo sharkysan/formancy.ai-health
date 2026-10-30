@@ -53,7 +53,11 @@ describe('the orders', () => {
     ['an intent R4 does not have', { intent: 'referral' }, 'unmapped context.serviceRequests[0].intent'],
     ['a priority R4 does not have', { priority: 'high' }, 'unmapped context.serviceRequests[0].priority'],
     ['a time without its zone', { authoredOn: '2026-10-17T10:00:00' }, 'zone context.serviceRequests[0].authoredOn'],
-    ['a placer under the GLN system', { placer: { system: 'urn:oid:2.51.1.3', value: '9520000000011' } }, 'identifier context.serviceRequests[0].placer.system'],
+    [
+      'a placer under the GLN system',
+      { placer: { system: 'urn:oid:2.51.1.3', value: '9520000000011' } },
+      'identifier context.serviceRequests[0].placer.system',
+    ],
     ['a placer without its value', { placer: { system: 'urn:ietf:rfc:3986' } }, 'absent context.serviceRequests[0].placer.value'],
     ['no placer', { placer: undefined }, 'absent context.serviceRequests[0].placer'],
     ['no status', { status: undefined }, 'absent context.serviceRequests[0].status'],
@@ -67,7 +71,10 @@ describe('the orders', () => {
 
   // Every refusal of every order at once, in their order.
   test('are refused for everything wrong with each, at once', () => {
-    expect(reading([{ ...serviceRequest(), status: 'open' }, 'order']).refused).toEqual(['unmapped context.serviceRequests[0].status', 'absent context.serviceRequests[1]'])
+    expect(reading([{ ...serviceRequest(), status: 'open' }, 'order']).refused).toEqual([
+      'unmapped context.serviceRequests[0].status',
+      'absent context.serviceRequests[1]',
+    ])
   })
 
   // A hole in the host's list of orders, which JSON never has, walked
@@ -78,6 +85,8 @@ describe('the orders', () => {
     const orders: unknown[] = [serviceRequest()]
     orders[2] = serviceRequest(NAMES.secondServiceRequest, NAMES.secondOrder)
     expect(reading(orders).refused).toEqual(['absent context.serviceRequests[1]'])
-    expect(reading([{ ...serviceRequest(), placer: { system: 'urn:ietf:rfc:3986', value: '\udc00' } }]).refused).toEqual(['grammar context.serviceRequests[0].placer.value'])
+    expect(reading([{ ...serviceRequest(), placer: { system: 'urn:ietf:rfc:3986', value: '\udc00' } }]).refused).toEqual([
+      'grammar context.serviceRequests[0].placer.value',
+    ])
   })
 })

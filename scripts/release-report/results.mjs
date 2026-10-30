@@ -37,10 +37,26 @@ const kind = (status) => (status === 'passed' || status === 'failed' ? status : 
  */
 const LEAVES = {
   install: { jobs: ['install', 'local'], held: (result) => result.install != null, what: 'the install gate’s record, which only the install job leaves' },
-  browser: { jobs: ['browser', 'local'], held: (result) => (result.browserGates ?? []).length > 0, what: 'a browser gate’s results, which only the browser job leaves' },
-  pictures: { jobs: ['browser', 'local'], held: (result) => (result.pictures ?? []).length > 0, what: 'a pictures’ check’s results, which only the browser job leaves' },
-  gate: { jobs: ['validator', 'local'], held: (result) => result.validator?.gate != null, what: 'the validator gate’s file, which only the validator job leaves' },
-  registers: { jobs: ['validator', 'local'], held: (result) => result.validator?.suite != null, what: 'the validator job’s run of the registers’ test, which only the validator job leaves' },
+  browser: {
+    jobs: ['browser', 'local'],
+    held: (result) => (result.browserGates ?? []).length > 0,
+    what: 'a browser gate’s results, which only the browser job leaves',
+  },
+  pictures: {
+    jobs: ['browser', 'local'],
+    held: (result) => (result.pictures ?? []).length > 0,
+    what: 'a pictures’ check’s results, which only the browser job leaves',
+  },
+  gate: {
+    jobs: ['validator', 'local'],
+    held: (result) => result.validator?.gate != null,
+    what: 'the validator gate’s file, which only the validator job leaves',
+  },
+  registers: {
+    jobs: ['validator', 'local'],
+    held: (result) => result.validator?.suite != null,
+    what: 'the validator job’s run of the registers’ test, which only the validator job leaves',
+  },
 }
 
 /** The results that may hold `section`, a key of LEAVES. */
@@ -48,7 +64,9 @@ const leaving = (results, section) => results.filter((result) => LEAVES[section]
 
 /** Each section found in a results file of a job that does not leave it, as a sentence naming that file's key. */
 export const misplacedSections = (results) =>
-  Object.values(LEAVES).flatMap(({ jobs, held, what }) => results.filter((result) => !jobs.includes(result.job) && held(result)).map((result) => `${result.key}: its results hold ${what}`))
+  Object.values(LEAVES).flatMap(({ jobs, held, what }) =>
+    results.filter((result) => !jobs.includes(result.job) && held(result)).map((result) => `${result.key}: its results hold ${what}`),
+  )
 
 /**
  * How a test that did not run in a suite is accounted for: `validator` when
@@ -59,7 +77,11 @@ export const misplacedSections = (results) =>
  */
 export function accountsOf(results, allowedFiles = []) {
   const passed = new Set(
-    leaving(results, 'registers').flatMap((result) => (result.validator?.suite?.files ?? []).flatMap((file) => file.tests.filter((test) => test.status === 'passed').map((test) => `${file.file} › ${test.name}`))),
+    leaving(results, 'registers').flatMap((result) =>
+      (result.validator?.suite?.files ?? []).flatMap((file) =>
+        file.tests.filter((test) => test.status === 'passed').map((test) => `${file.file} › ${test.name}`),
+      ),
+    ),
   )
   return (file, name) => (passed.has(`${file} › ${name}`) ? 'validator' : allowedFiles.includes(file) ? 'allowed' : undefined)
 }
@@ -99,8 +121,12 @@ function suiteRow(suites, { name, path, published }, { accounted = () => undefin
     // that did not run the validator, which the banner names.
     ranInValidator: tests.filter((test) => elsewhere(test) === 'validator').length,
     allowed: tests.filter((test) => elsewhere(test) === 'allowed').length,
-    notPassed: tests.filter((test) => test.status !== 'passed' && elsewhere(test) === undefined).map((test) => ({ file: test.file, name: test.name, status: test.status })),
-    failedFiles: files.filter((file) => file.status === 'failed').map((file) => ({ file: file.file, testsPassed: file.tests.every((test) => test.status === 'passed') })),
+    notPassed: tests
+      .filter((test) => test.status !== 'passed' && elsewhere(test) === undefined)
+      .map((test) => ({ file: test.file, name: test.name, status: test.status })),
+    failedFiles: files
+      .filter((file) => file.status === 'failed')
+      .map((file) => ({ file: file.file, testsPassed: file.tests.every((test) => test.status === 'passed') })),
     // Whether every results file listed the test files the checkout holds,
     // and those its suite did not run: the include's misses, or a subset run.
     listsTestFiles: !checkout || suites.every((suite) => Array.isArray(suite.testFiles)),
@@ -121,13 +147,18 @@ function suiteRow(suites, { name, path, published }, { accounted = () => undefin
 const suitesOf = (results) => results.flatMap((result) => (result.suites ?? []).map((suite) => ({ ...suite, job: result.key })))
 
 /** The validator job's runs of the registers' test, each with its key. */
-const validatorSuitesOf = (results) => leaving(results, 'registers').flatMap((result) => (result.validator?.suite == null ? [] : [{ ...result.validator.suite, job: result.key }]))
+const validatorSuitesOf = (results) =>
+  leaving(results, 'registers').flatMap((result) => (result.validator?.suite == null ? [] : [{ ...result.validator.suite, job: result.key }]))
 
 /** The install gate's record in the run, from the job that leaves it: the first such file that holds one, or null. */
-export const installOf = (results) => leaving(results, 'install').map((result) => result.install).find((entry) => entry != null) ?? null
+export const installOf = (results) =>
+  leaving(results, 'install')
+    .map((result) => result.install)
+    .find((entry) => entry != null) ?? null
 
 /** Every browser gate's file in the run, from the job that leaves them, each with the key it came in. */
-export const browserGatesOf = (results) => leaving(results, 'browser').flatMap((result) => (result.browserGates ?? []).map((gate) => ({ gate, job: result.key })))
+export const browserGatesOf = (results) =>
+  leaving(results, 'browser').flatMap((result) => (result.browserGates ?? []).map((gate) => ({ gate, job: result.key })))
 
 /** Every pictures' check's file in the run, from the job that leaves them, each with the key it came in. */
 export const picturesOf = (results) => leaving(results, 'pictures').flatMap((result) => (result.pictures ?? []).map((check) => ({ check, job: result.key })))
@@ -200,7 +231,9 @@ export function unmeasured(row) {
     ...(row.ok + row.failed.length === 0 ? ['made no check'] : []),
     ...(row.passes === 0 ? ['made no pass at a viewport width'] : []),
     ...(row.planned.length === 0 ? ['planned no pass'] : []),
-    ...(skipped.length === 0 ? [] : [`did not make ${String(skipped.length)} of the ${String(row.planned.length)} passes it planned: ${skipped.map((label) => `"${label}"`).join(', ')}`]),
+    ...(skipped.length === 0
+      ? []
+      : [`did not make ${String(skipped.length)} of the ${String(row.planned.length)} passes it planned: ${skipped.map((label) => `"${label}"`).join(', ')}`]),
     ...(empty.length === 0 ? [] : [`made no check in ${empty.length === 1 ? 'the pass' : 'the passes'} ${empty.join(', ')}`]),
   ]
 }
@@ -219,10 +252,13 @@ function rowSays(row) {
   const count = (field) => (Number.isInteger(row[field]) ? row[field] : 0)
   const refusals = Array.isArray(row.refusals) ? row.refusals : []
   const unregistered = count('warnings') - (Array.isArray(row.registeredWarnings) ? row.registeredWarnings.length : 0)
-  if (refusals.length !== count('errors') + unregistered) return `it counts ${String(count('errors'))} error(s) and ${String(unregistered)} unregistered warning(s) beside ${String(refusals.length)} refusal(s)`
+  if (refusals.length !== count('errors') + unregistered)
+    return `it counts ${String(count('errors'))} error(s) and ${String(unregistered)} unregistered warning(s) beside ${String(refusals.length)} refusal(s)`
   if (row.expect === 'accepted') return refusals.length === 0 ? undefined : `refused: ${sortedText(refusals)}`
   const expected = Array.isArray(row.expect) ? row.expect : []
-  return refusals.length > 0 && sortedText(refusals) === sortedText(expected) ? undefined : `refused for ${sortedText(refusals) || 'nothing'}, where the corpus expects ${sortedText(expected) || 'nothing'}`
+  return refusals.length > 0 && sortedText(refusals) === sortedText(expected)
+    ? undefined
+    : `refused for ${sortedText(refusals) || 'nothing'}, where the corpus expects ${sortedText(expected) || 'nothing'}`
 }
 
 /** A row judged otherwise than the corpus expects, by the gate's verdict or by its own record; undefined when neither says so. */
@@ -301,8 +337,18 @@ export function resultsInRun({ results, covered, published, accounted = accounts
   const install = installOf(results)
   const validator = validatorOf(results)
   return {
-    packages: covered.map((entry) => suiteRow(suites.filter((suite) => suite.package === entry.name), { ...entry, published: published.includes(entry.name) }, { accounted })),
-    repository: suiteRow(suites.filter((suite) => suite.package === null), { name: null, path: '.', published: false }, { accounted }),
+    packages: covered.map((entry) =>
+      suiteRow(
+        suites.filter((suite) => suite.package === entry.name),
+        { ...entry, published: published.includes(entry.name) },
+        { accounted },
+      ),
+    ),
+    repository: suiteRow(
+      suites.filter((suite) => suite.package === null),
+      { name: null, path: '.', published: false },
+      { accounted },
+    ),
     browserGates: browserGatesOf(results).map(({ gate, job }) => gateRow(gate, job)),
     pictures: picturesOf(results).map((found) => picturesRow(found, scenes[found.check.app] ?? [])),
     validator: {
@@ -325,10 +371,17 @@ export function resultsInRun({ results, covered, published, accounted = accounts
     missing: results.flatMap((result) => (result.missing ?? []).map((what) => ({ job: result.key, what }))),
     misplaced: misplacedSections(results),
     buildIdentity: published.map((name) => {
-      const builds = results.flatMap((result) => (result.dist ?? []).filter((entry) => entry.package === name).map((entry) => ({ job: result.key, distHash: entry.distHash })))
+      const builds = results.flatMap((result) =>
+        (result.dist ?? []).filter((entry) => entry.package === name).map((entry) => ({ job: result.key, distHash: entry.distHash })),
+      )
       const tarball = (install?.tarballs ?? []).find((entry) => entry.name === name) ?? null
       const hashes = distinct([...builds.map((build) => build.distHash), ...(tarball === null ? [] : [tarball.distHash])])
-      return { package: name, tarball: tarball === null ? null : { file: tarball.file, sha256: tarball.sha256, distHash: tarball.distHash }, builds, identical: hashes.length <= 1 }
+      return {
+        package: name,
+        tarball: tarball === null ? null : { file: tarball.file, sha256: tarball.sha256, distHash: tarball.distHash },
+        builds,
+        identical: hashes.length <= 1,
+      }
     }),
   }
 }
@@ -371,4 +424,5 @@ export const testFilesOf = (files, path, covered) => files.filter((file) => TEST
  * suite's include matches it is held by every run, which fails on a test
  * file its suite did not run.
  */
-export const isRunTest = (file, { covered, exists }) => TEST_FILE.test(file) && (suiteOwning(file, covered) !== '.' || file.startsWith('scripts/')) && exists(file)
+export const isRunTest = (file, { covered, exists }) =>
+  TEST_FILE.test(file) && (suiteOwning(file, covered) !== '.' || file.startsWith('scripts/')) && exists(file)

@@ -53,7 +53,8 @@ function itemOf(out: Extract<ReadOut, { ok: true }>, linkId: string): ReadItem {
 }
 
 /** An outline: each item's linkId, its nesting as indentation. */
-const outline = (items: readonly ReadItem[], depth = 0): string[] => items.flatMap((each) => [`${'  '.repeat(depth)}${each.linkId}`, ...outline(each.items, depth + 1)])
+const outline = (items: readonly ReadItem[], depth = 0): string[] =>
+  items.flatMap((each) => [`${'  '.repeat(depth)}${each.linkId}`, ...outline(each.items, depth + 1)])
 
 const translated = (text: string, lang: string): Wording => ({ text, lang, untranslated: false })
 
@@ -61,7 +62,15 @@ describe("the demo's Questionnaire, read out", () => {
   // The read-out stands for the resource below it: an item left out, or
   // put in another order, would be a form the Questionnaire does not say.
   test('lists every item in its order, by its linkId, as the resource holds them', () => {
-    expect(outline(read(demo, 'en').items)).toEqual(['question', 'specialty', 'language', 'interpreter', 'interpreter_language', 'available_from', 'contact_phone'])
+    expect(outline(read(demo, 'en').items)).toEqual([
+      'question',
+      'specialty',
+      'language',
+      'interpreter',
+      'interpreter_language',
+      'available_from',
+      'contact_phone',
+    ])
   })
 
   // The page reads in four languages, and so does the Questionnaire: the
@@ -83,7 +92,9 @@ describe("the demo's Questionnaire, read out", () => {
   // false, as R4 reads them.
   test('states each item’s type, and whether it is required or repeats', () => {
     const out = read(demo, 'en')
-    expect(flat(out.items).map(({ linkId, type, required, repeats }) => `${linkId}: ${type}${required ? ', required' : ''}${repeats ? ', repeats' : ''}`)).toEqual([
+    expect(
+      flat(out.items).map(({ linkId, type, required, repeats }) => `${linkId}: ${type}${required ? ', required' : ''}${repeats ? ', repeats' : ''}`),
+    ).toEqual([
       'question: text, required',
       'specialty: choice, required',
       'language: choice',
@@ -112,7 +123,9 @@ describe("the demo's Questionnaire, read out", () => {
   // language and by its linkId.
   test('reads its condition: the question, by its text and linkId, the operator and the answer', () => {
     const item = itemOf(read(demo, 'fr'), 'interpreter_language')
-    expect(item.conditions).toEqual([{ question: 'interpreter', questionText: translated('Interprète nécessaire', 'fr'), operator: '=', answer: { kind: 'boolean', value: true } }])
+    expect(item.conditions).toEqual([
+      { question: 'interpreter', questionText: translated('Interprète nécessaire', 'fr'), operator: '=', answer: { kind: 'boolean', value: true } },
+    ])
     expect(item.behaviour).toBeUndefined()
   })
 
@@ -141,7 +154,8 @@ describe('the read-out reads the resource, and nothing else', () => {
   // back for it alone, says so, and names the language it shows instead,
   // so the page can mark it.
   test('falls back to the resource’s own text for a text it holds no translation of, and for that text alone', () => {
-    const italian = '{"url":"http://hl7.org/fhir/StructureDefinition/translation","extension":[{"url":"lang","valueCode":"it"},{"url":"content","valueString":"Quesito per lo specialista"}]},'
+    const italian =
+      '{"url":"http://hl7.org/fhir/StructureDefinition/translation","extension":[{"url":"lang","valueCode":"it"},{"url":"content","valueString":"Quesito per lo specialista"}]},'
     const changed = demo.replace(italian, '')
     expect(changed).not.toBe(demo)
     const out = read(changed, 'it')
@@ -168,7 +182,12 @@ describe("the corpus's intake, read out", () => {
     expect(lines).toContain('  address')
     expect(lines).toContain('    city')
     expect(lines.slice(-2)).toEqual(['contact_page', '  contact_phone'])
-    expect(itemOf(read(intakeJson, 'de-CH'), 'contacts')).toMatchObject({ type: 'group', required: true, repeats: true, items: [{ linkId: 'contact_name' }, { linkId: 'contact_calls' }] })
+    expect(itemOf(read(intakeJson, 'de-CH'), 'contacts')).toMatchObject({
+      type: 'group',
+      required: true,
+      repeats: true,
+      items: [{ linkId: 'contact_name' }, { linkId: 'contact_calls' }],
+    })
   })
 
   // The intake has no English: read in English, every text is the
@@ -191,10 +210,19 @@ describe("the corpus's intake, read out", () => {
   // page's language, and how several join.
   test('reads every operator R4 has, each with the answer of its type', () => {
     const out = read(intakeJson, 'it')
-    const said = (linkId: string) => ({ behaviour: itemOf(out, linkId).behaviour, conditions: itemOf(out, linkId).conditions.map(({ question, operator, answer }) => ({ question, operator, answer })) })
+    const said = (linkId: string) => ({
+      behaviour: itemOf(out, linkId).behaviour,
+      conditions: itemOf(out, linkId).conditions.map(({ question, operator, answer }) => ({ question, operator, answer })),
+    })
     const unanswered = (question: string) => ({ question, operator: 'exists', answer: { kind: 'boolean', value: false } })
-    expect(said('weight_note')).toEqual({ behaviour: 'any', conditions: [{ question: 'weight', operator: '>=', answer: { kind: 'number', value: '150' } }, unanswered('weight')] })
-    expect(said('canton_detail')).toEqual({ behaviour: undefined, conditions: [{ question: 'canton', operator: '=', answer: { kind: 'option', code: 'TI', display: translated('Ticino', 'it') } }] })
+    expect(said('weight_note')).toEqual({
+      behaviour: 'any',
+      conditions: [{ question: 'weight', operator: '>=', answer: { kind: 'number', value: '150' } }, unanswered('weight')],
+    })
+    expect(said('canton_detail')).toEqual({
+      behaviour: undefined,
+      conditions: [{ question: 'canton', operator: '=', answer: { kind: 'option', code: 'TI', display: translated('Ticino', 'it') } }],
+    })
     expect(said('consent_detail')).toEqual({
       behaviour: 'all',
       conditions: [
@@ -251,7 +279,12 @@ describe('what the read-out cannot read', () => {
     ['an ordering on a yes or no', demo, demo.replace('"operator":"="', '"operator":">"'), '$.item[4].enableWhen[0]'],
     ['an operator R4 does not have', demo, demo.replace('"operator":"="', '"operator":"~"'), '$.item[4].enableWhen[0].operator'],
     ['several conditions with no word for how they join', intakeJson, intakeJson.replace(',"enableBehavior":"all"', ''), '$.item[0].item[10]'],
-    ['a condition on a question the resource does not hold', demo, demo.replace('"question":"interpreter"', '"question":"nobody"'), '$.item[4].enableWhen[0].question'],
+    [
+      'a condition on a question the resource does not hold',
+      demo,
+      demo.replace('"question":"interpreter"', '"question":"nobody"'),
+      '$.item[4].enableWhen[0].question',
+    ],
     ['two items of one linkId, which R4 forbids (que-2)', demo, demo.replace('"linkId":"contact_phone"', '"linkId":"question"'), '$.item[6]'],
   ])('refuses %s, where it stops', (_name, source, bytes, at) => {
     refused(source, bytes, at)
@@ -262,18 +295,43 @@ describe('what the read-out cannot read', () => {
   // bytes hold a text, an ordering of a yes or no, or a second answer
   // passed over, would be a condition the resource does not state.
   test.each([
-    ['`exists` with an answer other than a yes or no', intakeJson, intakeJson.replace('{"question":"weight","operator":"exists","answerBoolean":false}', '{"question":"weight","operator":"exists","answerString":"x"}'), '$.item[0].item[5].enableWhen[1]'],
+    [
+      '`exists` with an answer other than a yes or no',
+      intakeJson,
+      intakeJson.replace('{"question":"weight","operator":"exists","answerBoolean":false}', '{"question":"weight","operator":"exists","answerString":"x"}'),
+      '$.item[0].item[5].enableWhen[1]',
+    ],
     ['`<` on a yes or no', demo, demo.replace('"operator":"="', '"operator":"<"'), '$.item[4].enableWhen[0]'],
     ['`>=` on a yes or no', demo, demo.replace('"operator":"="', '"operator":">="'), '$.item[4].enableWhen[0]'],
     ['`<=` on a yes or no', demo, demo.replace('"operator":"="', '"operator":"<="'), '$.item[4].enableWhen[0]'],
     ['an `answerBoolean` that is no yes or no', demo, demo.replace('"answerBoolean":true', '"answerBoolean":"true"'), '$.item[4].enableWhen[0].answerBoolean'],
-    ['an `answerString` that is no text', intakeJson, intakeJson.replace('"answerString":"keine"', '"answerString":true'), '$.item[0].item[21].enableWhen[0].answerString'],
-    ['an `answerDate` that is no text', intakeJson, intakeJson.replace('"answerDate":"2008-10-17"', '"answerDate":20081017'), '$.item[0].item[23].enableWhen[0].answerDate'],
-    ['an `answerDecimal` that is no number', intakeJson, intakeJson.replace('"answerDecimal":150', '"answerDecimal":"150"'), '$.item[0].item[5].enableWhen[0].answerDecimal'],
+    [
+      'an `answerString` that is no text',
+      intakeJson,
+      intakeJson.replace('"answerString":"keine"', '"answerString":true'),
+      '$.item[0].item[21].enableWhen[0].answerString',
+    ],
+    [
+      'an `answerDate` that is no text',
+      intakeJson,
+      intakeJson.replace('"answerDate":"2008-10-17"', '"answerDate":20081017'),
+      '$.item[0].item[23].enableWhen[0].answerDate',
+    ],
+    [
+      'an `answerDecimal` that is no number',
+      intakeJson,
+      intakeJson.replace('"answerDecimal":150', '"answerDecimal":"150"'),
+      '$.item[0].item[5].enableWhen[0].answerDecimal',
+    ],
     ['a condition with two answers', demo, demo.replace('"answerBoolean":true', '"answerBoolean":true,"answerString":"x"'), '$.item[4].enableWhen[0]'],
     ['a condition with no answer', demo, demo.replace(',"answerBoolean":true', ''), '$.item[4].enableWhen[0]'],
     ['a way of joining conditions R4 does not have', intakeJson, intakeJson.replace('"enableBehavior":"all"', '"enableBehavior":"some"'), '$.item[0].item[10]'],
-    ['a way of joining one condition, which R4 gives only several (que-12)', demo, demo.replace('"answerBoolean":true}]', '"answerBoolean":true}],"enableBehavior":"all"'), '$.item[4]'],
+    [
+      'a way of joining one condition, which R4 gives only several (que-12)',
+      demo,
+      demo.replace('"answerBoolean":true}]', '"answerBoolean":true}],"enableBehavior":"all"'),
+      '$.item[4]',
+    ],
     ['a `required` that is no yes or no', demo, demo.replace('"required":true', '"required":"true"'), '$.item[0].required'],
     ['a `repeats` that is no yes or no', intakeJson, intakeJson.replace('"repeats":true', '"repeats":1'), '$.item[0].item[12].repeats'],
   ])('refuses %s, where it stops', (_name, source, bytes, at) => {
@@ -300,27 +358,82 @@ describe('what the read-out cannot read', () => {
   // words say, what of that it does not read; another maker's
   // Questionnaire stops it where it first meets the rest.
   test.each([
-    ['a member of the Questionnaire it does not know', demo, demo.replace('"status":"active",', '"status":"active","subjectType":["Patient"],'), '$.subjectType'],
-    ['an extension of the Questionnaire it does not know', demo, demo.replace('StructureDefinition/artifact-versionAlgorithm', 'StructureDefinition/artifact-copyrightLabel'), '$.extension[0]'],
-    ['answers from a value set', demo, demo.replace('"linkId":"specialty",', '"linkId":"specialty","answerValueSet":"https://example.invalid/ValueSet/specialty",'), '$.item[1].answerValueSet'],
+    [
+      'a member of the Questionnaire it does not know',
+      demo,
+      demo.replace('"status":"active",', '"status":"active","subjectType":["Patient"],'),
+      '$.subjectType',
+    ],
+    [
+      'an extension of the Questionnaire it does not know',
+      demo,
+      demo.replace('StructureDefinition/artifact-versionAlgorithm', 'StructureDefinition/artifact-copyrightLabel'),
+      '$.extension[0]',
+    ],
+    [
+      'answers from a value set',
+      demo,
+      demo.replace('"linkId":"specialty",', '"linkId":"specialty","answerValueSet":"https://example.invalid/ValueSet/specialty",'),
+      '$.item[1].answerValueSet',
+    ],
     ['an initial answer', demo, demo.replace('"maxLength":40', '"maxLength":40,"initial":[{"valueString":"x"}]'), '$.item[6].initial'],
-    ['a modifier extension', demo, demo.replace('"linkId":"question",', '"modifierExtension":[{"url":"https://example.invalid/StructureDefinition/x","valueBoolean":true}],"linkId":"question",'), '$.item[0].modifierExtension'],
+    [
+      'a modifier extension',
+      demo,
+      demo.replace(
+        '"linkId":"question",',
+        '"modifierExtension":[{"url":"https://example.invalid/StructureDefinition/x","valueBoolean":true}],"linkId":"question",',
+      ),
+      '$.item[0].modifierExtension',
+    ],
     [
       'an item’s extension it does not know, an expression that shows the item',
       demo,
-      demo.replace('"valueDate":"2026-01-01"}', '"valueDate":"2026-01-01"},{"url":"http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-enableWhenExpression","valueExpression":{"language":"text/fhirpath","expression":"false"}}'),
+      demo.replace(
+        '"valueDate":"2026-01-01"}',
+        '"valueDate":"2026-01-01"},{"url":"http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-enableWhenExpression","valueExpression":{"language":"text/fhirpath","expression":"false"}}',
+      ),
       '$.item[5].extension[1]',
     ],
-    ['a member of a condition it does not know', demo, demo.replace('"answerBoolean":true}', '"answerBoolean":true,"answerQuantity":{"value":1}}'), '$.item[4].enableWhen[0].answerQuantity'],
+    [
+      'a member of a condition it does not know',
+      demo,
+      demo.replace('"answerBoolean":true}', '"answerBoolean":true,"answerQuantity":{"value":1}}'),
+      '$.item[4].enableWhen[0].answerQuantity',
+    ],
     [
       'a member of an option it does not know',
       demo,
-      demo.replace('{"valueCoding":{"system":"https://forms.synthetic.invalid/Questionnaire/demo-referral/specialty","code":"dermatology"', '{"initialSelected":true,"valueCoding":{"system":"https://forms.synthetic.invalid/Questionnaire/demo-referral/specialty","code":"dermatology"'),
+      demo.replace(
+        '{"valueCoding":{"system":"https://forms.synthetic.invalid/Questionnaire/demo-referral/specialty","code":"dermatology"',
+        '{"initialSelected":true,"valueCoding":{"system":"https://forms.synthetic.invalid/Questionnaire/demo-referral/specialty","code":"dermatology"',
+      ),
       '$.item[1].answerOption[0].initialSelected',
     ],
-    ['a member of an option’s coding it does not know', demo, demo.replace('"code":"dermatology",', '"code":"dermatology","version":"1",'), '$.item[1].answerOption[0].valueCoding.version'],
-    ['an extension of a text other than a translation', demo, demo.replace('"_text":{"extension":[', '"_text":{"extension":[{"url":"http://hl7.org/fhir/StructureDefinition/rendering-xhtml","valueString":"<b>x</b>"},'), '$.item[0]._text.extension[0]'],
-    ['a part of a translation other than its language and its text', demo, demo.replace('{"url":"content","valueString":"Question au spécialiste"}', '{"url":"content","valueString":"Question au spécialiste"},{"url":"note","valueString":"x"}'), '$.item[0]._text.extension[0].extension[2]'],
+    [
+      'a member of an option’s coding it does not know',
+      demo,
+      demo.replace('"code":"dermatology",', '"code":"dermatology","version":"1",'),
+      '$.item[1].answerOption[0].valueCoding.version',
+    ],
+    [
+      'an extension of a text other than a translation',
+      demo,
+      demo.replace(
+        '"_text":{"extension":[',
+        '"_text":{"extension":[{"url":"http://hl7.org/fhir/StructureDefinition/rendering-xhtml","valueString":"<b>x</b>"},',
+      ),
+      '$.item[0]._text.extension[0]',
+    ],
+    [
+      'a part of a translation other than its language and its text',
+      demo,
+      demo.replace(
+        '{"url":"content","valueString":"Question au spécialiste"}',
+        '{"url":"content","valueString":"Question au spécialiste"},{"url":"note","valueString":"x"}',
+      ),
+      '$.item[0]._text.extension[0].extension[2]',
+    ],
     ['a translation of a text the item does not have', demo, demo.replace('"text":"Fragestellung an die Fachperson",', ''), '$.item[0]._text'],
   ])('refuses %s, where it stops', (_name, source, bytes, at) => {
     refused(source, bytes, at)
@@ -333,9 +446,27 @@ describe('what the read-out cannot read', () => {
   test.each([
     ['an item that is no object', demo, `${demo.slice(0, demo.indexOf('{"linkId":"contact_phone"'))}1]}`, '$.item[6]'],
     ['a translation with no text', demo, demo.replace(',{"url":"content","valueString":"Question au spécialiste"}', ''), '$.item[0]._text.extension[0]'],
-    ['a part of a translation with no url', demo, demo.replace('{"url":"lang","valueCode":"fr"}', '{"valueCode":"fr"}'), '$.item[0]._text.extension[0].extension[0]'],
-    ['a translation that names its language twice', demo, demo.replace('{"url":"lang","valueCode":"fr"},', '{"url":"lang","valueCode":"fr"},{"url":"lang","valueCode":"it"},'), '$.item[0]._text.extension[0].extension[1]'],
-    ['two translations into one language', demo, demo.replace('{"url":"lang","valueCode":"fr"},{"url":"content","valueString":"Question au spécialiste"}', '{"url":"lang","valueCode":"it"},{"url":"content","valueString":"Question au spécialiste"}'), '$.item[0]._text.extension[1]'],
+    [
+      'a part of a translation with no url',
+      demo,
+      demo.replace('{"url":"lang","valueCode":"fr"}', '{"valueCode":"fr"}'),
+      '$.item[0]._text.extension[0].extension[0]',
+    ],
+    [
+      'a translation that names its language twice',
+      demo,
+      demo.replace('{"url":"lang","valueCode":"fr"},', '{"url":"lang","valueCode":"fr"},{"url":"lang","valueCode":"it"},'),
+      '$.item[0]._text.extension[0].extension[1]',
+    ],
+    [
+      'two translations into one language',
+      demo,
+      demo.replace(
+        '{"url":"lang","valueCode":"fr"},{"url":"content","valueString":"Question au spécialiste"}',
+        '{"url":"lang","valueCode":"it"},{"url":"content","valueString":"Question au spécialiste"}',
+      ),
+      '$.item[0]._text.extension[1]',
+    ],
     ['an option with no code', demo, demo.replace('"code":"dermatology",', ''), '$.item[1].answerOption[0].valueCoding.code'],
   ])('refuses %s, where it stops', (_name, source, bytes, at) => {
     refused(source, bytes, at)
