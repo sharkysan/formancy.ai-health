@@ -38,8 +38,12 @@ Four things follow, and three of them have a guard:
   repository does (formancy.ai-report 0034). The demo wears
   formancy.ai's room as `@formancy/themes` releases it, `room.css`
   imported after the workbench at the exact version its manifest pins
-  (0012, 0015). A generic improvement goes upstream through that
-  repository's own contribution rules, not into a patched copy here.
+  (0012, 0015). The lint and format rules are a copy that runs the other
+  way: written here first, they are what formancy.ai will publish as
+  `@formancy/code-style`, and they go when this repository pins it
+  ([0017](docs/decisions/0017-every-typescript-and-javascript-file-is-linted-by-the-recommended-type-aware-rules-and-formatted-by-prettier.md)).
+  A generic improvement goes upstream through that repository's own
+  contribution rules, not into a patched copy here.
 - **Every package declares the source-available licence**, never Apache-2.0.
   `scripts/verify-licenses.mjs` refuses a manifest that says otherwise and a
   tarball without `LICENSE.md` and `NOTICE`. The realistic mistake is a
@@ -257,8 +261,12 @@ and the document says what. Three shapes, in order of preference:
    when the README's pictures are not what `scripts/pictures/scenes.json`
    and `docs/images/readme/captured.json` render, a picture is not the
    bytes its record names, or a caption quotes what its sections did not
-   say when it was taken (0016). The architecture's guard, the guide's and
-   the README's read Markdown through one module, `scripts/markdown.mjs`.
+   say when it was taken (0016); `scripts/lint.test.mjs` fails when a lint
+   rule the repository relies on stops running at error on the kind of
+   file it is for, a rule is set to warn, Prettier's options change, or its
+   check stops finding a file it would write otherwise (0017). The
+   architecture's guard, the guide's and the README's read Markdown
+   through one module, `scripts/markdown.mjs`.
    All of them run as `pnpm test:repo`, and CI runs that — **a guard that
    is not a gate is a comment.**
 3. **Measure it.** Below.
@@ -502,15 +510,21 @@ pnpm --filter @formancy/health-core exec vitest run src/<file>.test.ts     # one
 pnpm --filter @formancy/health-core exec vitest run -t "a test's name"     # one case
 ```
 
+Run `pnpm format` before committing, and `pnpm lint` after `pnpm build`,
+since the type-aware rules read the built declarations: `verify` fails a
+TypeScript or JavaScript file that Prettier would write otherwise or that
+breaks a lint rule (0017). A finding is fixed, not disabled; a disable
+comment is for a finding that is deliberate, and says why after `--`.
+
 ## Checks before pushing
 
 The gates are `.github/workflows/gates.yml`, which `ci.yml` calls on every
 pull request and `release.yml` calls before it publishes, so a release passes
 exactly what CI does:
 
-- **`verify`** runs `pnpm build`, `pnpm typecheck`, `pnpm check:pkg`,
-  `node scripts/verify-licenses.mjs`, `node scripts/dependency-licences.mjs`
-  and `pnpm test:repo` in one job.
+- **`verify`** runs `pnpm build`, `pnpm typecheck`, `pnpm lint`,
+  `pnpm format:check`, `pnpm check:pkg`, `node scripts/verify-licenses.mjs`,
+  `node scripts/dependency-licences.mjs` and `pnpm test:repo` in one job.
 - **`test`** runs each package's `test:coverage` in a job of its own.
   `scripts/ci-test-jobs.test.mjs` fails when that list and the workspace
   disagree.
@@ -562,6 +576,8 @@ and `security.yml` runs CodeQL and dependency review.
   them);
 - no `${{ }}` appears inside a script;
 - a release restores no cache;
+- `verify` runs `pnpm lint` and `pnpm format:check` after the typecheck and
+  before the guards;
 - every gates job collects and uploads under its own key, and the report
   waits for all of them;
 - `release.yml` checks the report before it pins, pins what its `check` job

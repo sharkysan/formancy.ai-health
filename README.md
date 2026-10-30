@@ -269,7 +269,13 @@ corepack enable pnpm
 pnpm install
 pnpm build
 pnpm test
+pnpm lint       # after pnpm build: the type-aware rules read the built declarations
+pnpm format     # Prettier, over every TypeScript and JavaScript file, before committing
 ```
+
+CI fails a TypeScript or JavaScript file that breaks a lint rule or that
+Prettier would write otherwise
+([0017](./docs/decisions/0017-every-typescript-and-javascript-file-is-linted-by-the-recommended-type-aware-rules-and-formatted-by-prettier.md)).
 
 The demo, `apps/demo`, is developed on Vite's dev server, which sends none
 of the deploy's headers. Its browser gate runs in Chromium, Firefox and

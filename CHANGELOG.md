@@ -10,6 +10,17 @@ later.
 
 ## Unreleased
 
+**CI fails a change that breaks the lint rules or the format** (0017).
+Style was held by habit, and a promise nobody awaits or an `any` from
+`JSON.parse` by nobody: `verify` now runs `pnpm lint`, typescript-eslint's
+type-aware recommended rules at error, and `pnpm format:check`, Prettier
+over every TypeScript and JavaScript file. The rules are the first copy of
+those formancy.ai will publish as `@formancy/code-style` for all four
+repositories, swapped for the package once it is released. Every file was
+formatted in one commit, which `.git-blame-ignore-revs` has blame skip,
+and every finding fixed; none was a defect. The packages' API is what it
+was.
+
 **The README shows the demo, in pictures a script takes and the gates
 hold to the text they show** (0016). The README said what the demo does
 and showed nothing of it, since a picture nothing checks shows a page that

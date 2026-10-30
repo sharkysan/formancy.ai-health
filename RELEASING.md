@@ -51,6 +51,7 @@ node scripts/bump.mjs 0.1.0
 
 # 3. Verify locally — the workflow runs these again, but finding out here is cheaper
 pnpm build && pnpm typecheck && pnpm test:coverage && pnpm check:pkg && pnpm test:repo
+pnpm lint && pnpm format:check
 node scripts/verify-licenses.mjs
 node scripts/dependency-licences.mjs
 pnpm test:e2e:install

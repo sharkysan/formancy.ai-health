@@ -29,7 +29,7 @@
       ]
     },
     "0002": {
-      "reviewed": "sha256:4cb33ad08368b0c23b093388862f7293ee9ac9dc592a1e9482a51c9ea030da3e",
+      "reviewed": "sha256:1d15ca5f8f54b3f12ac75d48095da9ce47d96339e4679125ad467d0730e2c3a9",
       "limitations": [
         {
           "area": "release",
@@ -524,6 +524,10 @@
           "heldBy": "scripts/pictures/record.test.mjs"
         }
       ]
+    },
+    "0017": {
+      "reviewed": "sha256:6e77cdef0d98f1fbc61ddfa83ec942b46ed49dd2f0671b279b6c1d6c1f89d7c6",
+      "none": "It decides how this repository's TypeScript and JavaScript are linted and formatted, which a contributor meets in every pull request -- a finding to fix, a file to format, a branch begun before the format conflicting with it, a commit blame skips; the gate runs in CI and the tools are root devDependencies no package declares, the packages' API is what it was and every suite passed as before the fixes, so a user, an integrator or an operator meets none of it."
     }
   }
 }
