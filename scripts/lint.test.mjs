@@ -28,7 +28,17 @@ const SOURCE = 'packages/health-core/src/numbers.ts'
 const TEST = 'packages/health-core/src/numbers.test.ts'
 const SCRIPT = 'scripts/purpose.mjs'
 
-describe('the linter', () => {
+// The first case to lint a file of a tsconfig builds that tsconfig's
+// program. Measured on 30 October 2026 on an Apple M2 with 8 cores, under
+// Node 22.23.3: 3.7 s for health-core's and 4.5 s for the demo's with this
+// file run alone, and 6.9 s for health-core's when `pnpm test:repo` ran
+// every guard beside it on a loaded machine -- past vitest's 5 s default,
+// so the case failed on its timeout and on nothing it checks. `verify`
+// runs this file beside the others, so the cases wait for the program:
+// 30 s is four times the slowest seen.
+const TYPED = { timeout: 30_000 }
+
+describe('the linter', TYPED, () => {
   // A promise nobody awaits loses its rejection: a PDF or a Bundle that
   // failed to build would be reported as success.
   test("a floating promise in a package's source fails", async () => {
