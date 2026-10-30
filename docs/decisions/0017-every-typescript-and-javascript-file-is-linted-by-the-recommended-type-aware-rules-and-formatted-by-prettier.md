@@ -69,7 +69,8 @@
   - **`scripts/workflows.test.mjs`**, its case `verify runs the linter and
     the formatter’s check after the typecheck` -- both steps in `verify`,
     after the build and the typecheck and before the guards. Failed before
-    `gates.yml` ran them, and with `pnpm lint` moved before the typecheck.
+    `gates.yml` ran them, with `pnpm lint` moved before the typecheck, and
+    with the build step renamed, which it had passed.
 
   **Measured** on 30 October 2026, once each, after `pnpm build`, on an
   Apple M2 with 8 cores and 16 GB under macOS 26.5.2, with Node 22.23.3
