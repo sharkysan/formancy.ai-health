@@ -7,6 +7,7 @@ import { isDeepStrictEqual } from 'node:util'
 import js from '@eslint/js'
 import { ESLint } from 'eslint'
 import * as prettier from 'prettier'
+import ts from 'typescript'
 import tseslint from 'typescript-eslint'
 import { describe, expect, test } from 'vitest'
 import { FILES, prettierConfig } from './code-style/code-style.mjs'
@@ -24,9 +25,12 @@ import { FILES, prettierConfig } from './code-style/code-style.mjs'
  * language Prettier infers for it, and from the two recommended sets as
  * ESLint itself computes them, never from a list of this file's own: a
  * file added, a rule a set adds, a relaxation or a warning anywhere is
- * seen without an edit here. Two cases lint a short text as though it
- * stood at a real path, so the typed rules run on a file one of this
- * repository's tsconfigs holds.
+ * seen without an edit here. The one case that lints hands ESLint a
+ * file's own content and never another text at its path: on Linux, ESLint
+ * linted the file on disk instead of the text given (CI run 41045406900,
+ * 30 October 2026), so a case that edits a repository file's text would
+ * pass there having checked nothing. What a rule does to a text is held in
+ * code-style.test.mjs, in a repository of real files it writes.
  *
  * What it cannot see: whether a rule's verdict is right. It holds that a
  * rule runs and fails the build, not that what it reports is a defect.
@@ -35,8 +39,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const eslint = new ESLint({ cwd: root })
 const scripts = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).scripts
 
-const lint = (code, path) => eslint.lintText(code, { filePath: join(root, path) }).then(([result]) => result.messages)
-const ruleIds = (messages) => messages.map((m) => m.ruleId)
+/** The messages for a file of the repository, linted with its own content, as `pnpm lint` reads it. */
+const lintOwn = (file) => eslint.lintText(readFileSync(file, 'utf8'), { filePath: file }).then(([result]) => result.messages)
 
 /** A package's source, which every rule holds, beside which the install fixtures are read. */
 const SOURCE = 'packages/health-core/src/numbers.ts'
@@ -55,6 +59,7 @@ const RELAXED_IN_TESTS = [
   '@typescript-eslint/no-unsafe-argument',
   '@typescript-eslint/no-unsafe-return',
   '@typescript-eslint/unbound-method',
+  '@typescript-eslint/require-await',
 ]
 
 const HOOKS = ['react-hooks/rules-of-hooks', 'react-hooks/exhaustive-deps']
@@ -123,7 +128,7 @@ describe('the linter', TYPED, () => {
   // error, its typed half off only in the install fixtures, which differ
   // from a package's source by that half and nothing else; JavaScript to
   // the sets' rules that need no types; a test to its source's rules but
-  // the six relaxations; and a file of a workspace that declares React to
+  // the seven relaxations; and a file of a workspace that declares React to
   // the hooks rules.
   test('every TypeScript and JavaScript file git holds is linted, by the rules its kind is held to', async () => {
     expect(scripts.lint).toBe('eslint .')
@@ -170,24 +175,13 @@ describe('the linter', TYPED, () => {
     for (const [kind, count] of Object.entries(seen)) expect(count, `files of the kind ${kind}`).toBeGreaterThan(0)
   })
 
-  // A tool config that falls outside every tsconfig is not linted with types,
-  // or not linted at all.
-  test('a vitest config is linted with types', async () => {
-    const messages = await lint('export async function f() {}\nf()\n', 'packages/health-core/vitest.config.ts')
-    expect(ruleIds(messages)).toContain('@typescript-eslint/no-floating-promises')
-  })
-
-  // A hook under a condition runs in a different order on another render.
-  test('the hooks rules hold in the demo', async () => {
-    const code = "import { useState } from 'react'\nexport function C({ on }: { on: boolean }) {\n  if (on) {\n    useState(0)\n  }\n  return null\n}\n"
-    expect(ruleIds(await lint(code, 'apps/demo/src/download.tsx'))).toContain('react-hooks/rules-of-hooks')
-  })
-
   // A new package or app must be linted with types without anyone editing
-  // the configuration. A tsconfig the parser cannot read is a fatal
-  // message, and a package ESLint ignores a warning that it was ignored, so
-  // a file of each that lint passes has no message at all.
-  test("every package's and app's tsconfig is one lint reads", async () => {
+  // the configuration, and a tool config -- a vitest, Vite or tsdown
+  // config -- is typed by tsconfig.tools.json, which `project` must name.
+  // A tsconfig the parser cannot read is a fatal message, a TypeScript file
+  // in no project one too, and a package ESLint ignores a warning that it
+  // was ignored, so a file of each that lint passes has no message at all.
+  test("every package's and app's tsconfig, and the tools', is one lint reads", async () => {
     const firstSource = (dir) => {
       for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
         const path = join(dir, entry.name)
@@ -204,11 +198,16 @@ describe('the linter', TYPED, () => {
         if (!existsSync(join(dir, 'tsconfig.json')) || !existsSync(join(dir, 'src'))) continue
         const file = firstSource(join(dir, 'src'))
         if (!file) continue
-        expect(await lint(readFileSync(file, 'utf8'), relative(root, file)), file).toEqual([])
+        expect(await lintOwn(file), file).toEqual([])
         checked += 1
       }
     }
     expect(checked).toBeGreaterThan(0)
+    const tools = join(root, 'tsconfig.tools.json')
+    const { fileNames, errors } = ts.parseJsonConfigFileContent(ts.readConfigFile(tools, ts.sys.readFile).config, ts.sys, root)
+    expect(errors).toEqual([])
+    expect(fileNames.length, 'files tsconfig.tools.json takes in').toBeGreaterThan(0)
+    for (const file of fileNames) expect(await lintOwn(file), relative(root, file)).toEqual([])
   })
 })
 

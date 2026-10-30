@@ -36,6 +36,7 @@ const NARROW_SPACE = ' '
 const PARSED = "export const v: { a: number } = JSON.parse('{}')\n"
 const ASSERTION = "import { expect } from 'vitest'\nexpect(1).toBeTruthy\n"
 const FLOATING = 'export async function f() {}\nf()\n'
+const ASYNC_DOUBLE = 'export const read = { readFile: async (_path: string) => 1 }\n'
 const HOOKS = [
   "import { useEffect, useState } from 'react'",
   'export function C({ on, n }: { on: boolean; n: number }) {',
@@ -98,6 +99,9 @@ const FILES = {
   'page/evaluate.mjs': 'export const title = () => document.title\n',
   'src/evaluate.mjs': 'export const title = () => document.title\n',
   'src/app/hooks.tsx': HOOKS,
+  'src/outside.tsx': HOOKS,
+  'src/double.ts': ASYNC_DOUBLE,
+  'src/double.test.ts': ASYNC_DOUBLE,
   'src/view.jsx': 'export const view = <p>{undefinedThing}</p>\n',
 }
 
@@ -149,6 +153,15 @@ describe('the rules', () => {
     const test = ruleIds(await lint('src/parsed.test.ts'))
     expect(test.filter((id) => id?.startsWith('@typescript-eslint/no-unsafe-'))).toEqual([])
     expect(test).toContain('@typescript-eslint/no-floating-promises')
+  })
+
+  // A test double that stands in for an async interface must stay async:
+  // without the keyword a rejection becomes a synchronous throw, and the
+  // code under test meets another failure than the one it will in
+  // production. Source that awaits nothing is still a finding.
+  test('an async function that awaits nothing is refused in source and allowed in a test', async () => {
+    expect(ruleIds(await lint('src/double.ts'))).toContain('@typescript-eslint/require-await')
+    expect(ruleIds(await lint('src/double.test.ts'))).not.toContain('@typescript-eslint/require-await')
   })
 
   // An assertion without its call asserts nothing, and the test that holds
@@ -227,11 +240,14 @@ describe('the paths a repository passes', () => {
   })
 
   // A hook under a condition runs in a different order on another render,
-  // and an effect that reads a value it does not depend on keeps the first.
-  test('the hooks rules hold where the repository writes React', async () => {
+  // and an effect that reads a value it does not depend on keeps the first;
+  // outside the React globs the same text is no component, and the plugin
+  // is not loaded.
+  test('the hooks rules hold where the repository writes React, and nowhere else', async () => {
     const ids = ruleIds(await lint('src/app/hooks.tsx'))
     expect(ids).toContain('react-hooks/rules-of-hooks')
     expect(ids).toContain('react-hooks/exhaustive-deps')
+    expect(ruleIds(await lint('src/outside.tsx')).filter((id) => id?.startsWith('react-hooks/'))).toEqual([])
   })
 
   // A .gitignore in a directory names paths from that directory, as git

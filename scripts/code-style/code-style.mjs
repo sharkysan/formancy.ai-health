@@ -61,9 +61,15 @@ const UNUSED_NAMES = {
 }
 
 /**
- * Off in a test alone: a test reads an untyped body on purpose, and vitest
- * is handed methods to `expect`. Nothing else is relaxed, and test support
- * -- a corpus, a package's test helpers -- is held to every rule.
+ * Off in a test alone: a test reads an untyped body on purpose, vitest is
+ * handed methods to `expect`, and a test double stands in for an async
+ * interface. Of the findings of `require-await` measured on formancy.ai-data
+ * on 30 October 2026, 201 of 220 were in tests, nearly all such doubles
+ * (`fetch: async () => new Response(...)`, `readFile: async (p) => ...`,
+ * `until(async () => cond)`); removing the `async` turns a rejection into a
+ * synchronous throw, which changes what the code under test meets. Nothing
+ * else is relaxed, and test support -- a corpus, a package's test helpers --
+ * is held to every rule.
  */
 const TEST_RELAXATIONS = {
   '@typescript-eslint/no-unsafe-assignment': 'off',
@@ -72,6 +78,7 @@ const TEST_RELAXATIONS = {
   '@typescript-eslint/no-unsafe-argument': 'off',
   '@typescript-eslint/no-unsafe-return': 'off',
   '@typescript-eslint/unbound-method': 'off',
+  '@typescript-eslint/require-await': 'off',
 }
 
 /**
