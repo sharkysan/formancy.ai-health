@@ -19,7 +19,10 @@
     undefined name in JavaScript; a typographic space in a template
     literal and nowhere else -- and each path a repository passes does what
     it says: every extension Prettier formats one ESLint lints, `.jsx`
-    included; an untyped file linted without types; a page's globals where
+    included; a rejection with a forwarded `unknown` allowed and one with
+    a string literal refused; an explicit `any` refused in source and
+    allowed in a test (both failed first, before the rules changed, on
+    30 October 2026); an untyped file linted without types; a page's globals where
     a browser is driven and nowhere else; the hooks rules where React is
     written; a nested `.gitignore` read for its own directory; and a
     required path left out refused -- and Prettier's five options, and that a
@@ -43,7 +46,7 @@
     every rule of both sets at error, typed through a tsconfig, but the
     install fixtures, which differ from a package's source by the typed
     rules alone; JavaScript with the sets' rules that need no types; a test
-    with its source's rules but the seven relaxations; and a file of a
+    with its source's rules but the eight relaxations; and a file of a
     workspace whose manifest declares React with the hooks rules. Every
     such file resolves to the shared style, an `.editorconfig` read as
     Prettier's command line reads it; both format scripts hand Prettier the
@@ -59,7 +62,7 @@
     the demo, passed on macOS and failed on Linux. The hooks rules' behaviour is
     held in `code-style.test.mjs`'s repository of real files, and here only
     that they are at error in a workspace that declares React. Each case failed with what
-    it holds broken: a package ignored; a rule of the sets relaxed in tests beyond the seven; `./tsconfig.tools.json` dropped from
+    it holds broken: a package ignored; a rule of the sets relaxed in tests beyond the eight; `./tsconfig.tools.json` dropped from
     the tsconfigs lint reads, which made the vitest config a fatal
     message; a
     rule at `warn` in a directory no case read; `lint` narrowed to
@@ -184,10 +187,12 @@ install fixtures. With the configuration as first committed, before
     (`@eslint-community/eslint-comments`' `require-description`), and one
     that disables nothing, or an inline configuration that changes
     nothing, is an error.
-  - **In test files alone**, known by name (`*.test.*`, `*.spec.*`), seven
+  - **In test files alone**, known by name (`*.test.*`, `*.spec.*`), eight
     rules are off: the `no-unsafe-*` rules -- assignment, member access,
-    call, argument, return -- `unbound-method` and `require-await`. A test
-    reads an untyped body on purpose, and vitest is handed methods to
+    call, argument, return -- `unbound-method`, `require-await` and
+    `no-explicit-any`. A test reads an untyped body on purpose, which it
+    types `any` (seven disables in formancy.ai-data's lint fixes quoted
+    that reason word for word), and vitest is handed methods to
     `expect`; and a test double stands in for an async interface, so that
     removing its `async` would turn a rejection into a synchronous throw
     and change what the code under test meets -- of the 220 findings of
@@ -197,6 +202,16 @@ install fixtures. With the configuration as first committed, before
     cond)`). Test support --
     health-corpus, each package's `test-support.ts` -- is held to every
     rule.
+  - **Everywhere**, `prefer-promise-reject-errors` allows a rejection with
+    a value typed `any` or `unknown`, as `only-throw-error` allows
+    throwing one by default: rejecting with the same forwarded value is the
+    same act, and two rules that disagreed made every such forward a
+    disable comment (`reject(signal.reason)`, a driver's rejection passed
+    on; nine in formancy.ai-data). A rejection with a known non-Error
+    value, a string or an object literal, is still refused.
+  - These two came from formancy.ai-data's lint fixes, which made each
+    line by line as disable comments; a review on 30 October 2026 ruled
+    that each belongs in the shared rules instead.
 - **The style:** `semi: false`, `singleQuote: true`, `trailingComma:
   'all'`, `printWidth: 160`, `embeddedLanguageFormatting: 'off'`, and
   Prettier's defaults otherwise; TypeScript and JavaScript alone, never

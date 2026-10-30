@@ -270,7 +270,7 @@ and the document says what. Three shapes, in order of preference:
    file it is for, a path a repository passes stops doing what it says, or
    Prettier's options change, and `scripts/lint.test.mjs` when a
    TypeScript or JavaScript file git holds is not linted, has a rule at
-   warn or one of the recommended sets' rules off beyond a test's seven
+   warn or one of the recommended sets' rules off beyond a test's eight
    relaxations and the untyped files' typed rules, or resolves to another
    style, `pnpm lint` stops being `eslint .`, or the format check stops
    naming a misformatted file of an extension git holds (0017). The

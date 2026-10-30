@@ -22,8 +22,13 @@ repositories, which this repository calls with its own paths and swaps
 for the package once it is released. Every file was
 formatted in one commit, which `.git-blame-ignore-revs` has blame skip,
 and every finding fixed; none was a defect. A test alone is relaxed in
-seven rules, `require-await` among them, because a test double that
-stands in for an async interface must stay async. Prettier leaves code
+eight rules, `require-await` and `no-explicit-any` among them, because a
+test double that stands in for an async interface must stay async and a
+test types the untyped body it reads as `any`. A rejection with a
+forwarded `any` or `unknown` is allowed everywhere, as throwing one
+already was; a string or object literal is still refused. Both decisions
+came from formancy.ai-data's lint fixes, which made each line by line as
+disable comments, and a review ruled that they belong in the shared rules. Prettier leaves code
 embedded in a string as it is (`embeddedLanguageFormatting: 'off'`),
 because formancy.ai's format reflowed Angular templates, whose whitespace
 renders, and failed tests; the format commit is identical with it off. The
