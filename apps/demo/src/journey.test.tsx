@@ -30,6 +30,9 @@ import { LANGUAGES, WORDS, type Language } from './words/index.js'
 const pdf = fromBase64Binary(letter, 'letter')
 const first = byFile(firstOf(sample, pdf))
 const en = WORDS.en
+/** formancy's submit button, which the page words as plain text. */
+const SUBMIT = en.formancy['form.submit']
+if (typeof SUBMIT !== 'string') throw new Error('the page does not word the submit button as plain text')
 
 afterEach(() => {
   cleanup()
@@ -179,7 +182,7 @@ describe('a visitor changing the answers', () => {
   test('submitting complete answers takes the keyboard to the response', async () => {
     const user = userEvent.setup()
     open()
-    await user.click(screen.getByRole('button', { name: String(en.formancy['form.submit']) }))
+    await user.click(screen.getByRole('button', { name: SUBMIT }))
     expect(document.activeElement).toBe(screen.getByRole('heading', { name: en.response.heading }))
   })
 
@@ -191,7 +194,7 @@ describe('a visitor changing the answers', () => {
     open()
     const question = screen.getByRole('textbox', { name: 'Question for the specialist' })
     await user.clear(question)
-    await user.click(screen.getByRole('button', { name: String(en.formancy['form.submit']) }))
+    await user.click(screen.getByRole('button', { name: SUBMIT }))
     expect(document.activeElement).toBe(question)
   })
 })
@@ -206,7 +209,7 @@ describe('the page in Italian', () => {
     const english = [...Object.values(FORM_WORDS), ...Object.values(en.formancy)].flatMap((word): string[] =>
       typeof word === 'string' && !word.includes('{') ? [word] : [],
     )
-    expect(english).toContain(String(en.formancy['form.submit']))
+    expect(english).toContain(SUBMIT)
     // Each text the form draws, on its own: the form's whole textContent
     // runs a label into the next, and a word at the seam has no boundary.
     const drawn: string[] = []

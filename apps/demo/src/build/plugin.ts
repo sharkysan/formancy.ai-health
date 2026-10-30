@@ -142,8 +142,15 @@ export function corpusFiles(first: ReadonlyMap<string, Outcome>, entries: readon
   return [...first.keys()]
 }
 
+/** One package the implementation guides' register lists. */
+interface Registered {
+  readonly id: string
+  readonly version: string
+  readonly loadedAs: string
+}
+
 /** The one register entry of `id`, of `loadedAs` where a package is loaded twice, at the version it pins. */
-export function pinned(packages: readonly { id: string; version: string; loadedAs: string }[], id: string, loadedAs?: string): string {
+export function pinned(packages: readonly Registered[], id: string, loadedAs?: string): string {
   const found = packages.filter((entry) => entry.id === id && (loadedAs === undefined || entry.loadedAs === loadedAs))
   const [only, ...more] = found
   if (only === undefined || more.length > 0)
@@ -158,12 +165,12 @@ export async function factsOf(): Promise<Facts> {
   const pdf = await letterOf()
   const entries = corpus({ core, questionnaire, documents, pdf, ch }) as readonly CorpusEntry[]
   const files = corpusFiles(byFile(firstOf(sampleOf(), pdf)), entries)
-  const packages = JSON.parse(readOutside(IG_PACKAGES)).packages
-  const manifest = JSON.parse(readFileSync(join(app, 'package.json'), 'utf8'))
-  const registered = JSON.parse(readOutside(LETTER))
+  const { packages } = JSON.parse(readOutside(IG_PACKAGES)) as { readonly packages: readonly Registered[] }
+  const manifest = JSON.parse(readFileSync(join(app, 'package.json'), 'utf8')) as { readonly dependencies: { readonly '@formancy/react': string } }
+  const registered = JSON.parse(readOutside(LETTER)) as { readonly renderedBy: { readonly '@formancy/report-render-pdf': string } }
   return {
     versions: {
-      validator: JSON.parse(readOutside(VALIDATOR_PIN)).version,
+      validator: (JSON.parse(readOutside(VALIDATOR_PIN)) as { readonly version: string }).version,
       r4: pinned(packages, 'hl7.fhir.r4.core', 'core'),
       sdc: pinned(packages, 'hl7.fhir.uv.sdc', 'ig'),
       chOrf: pinned(packages, 'ch.fhir.ig.ch-orf'),

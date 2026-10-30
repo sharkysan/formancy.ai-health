@@ -53,8 +53,9 @@ function linkAt(holder: FhirJsonObject, name: string, text: string, path: string
 /** Every link in `resource`, in the order the resource holds them; paths start at `path`, where the resource stands. */
 export function linksOf(resource: FhirJsonObject, path: string): Link[] {
   const found: Link[] = []
+  const resourceType = resource['resourceType']
   const stack: { readonly value: FhirJson; readonly path: string; readonly element: string }[] = [
-    { value: resource, path, element: String(resource['resourceType']) },
+    { value: resource, path, element: typeof resourceType === 'string' ? resourceType : '' },
   ]
   for (let next = stack.pop(); next !== undefined; next = stack.pop()) {
     const { value, element } = next

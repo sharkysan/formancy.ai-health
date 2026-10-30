@@ -116,6 +116,9 @@ describe('writeJson', () => {
     const hidden = Object.defineProperty({ a: 'x' }, 'value', { value: 'y', enumerable: false })
     const symbol = { a: 'x', [Symbol('s')]: 'y' }
     const named = Object.assign(['x'], { extra: 'y' })
+    const holey = new Array<string>(3)
+    holey[0] = 'x'
+    holey[2] = 'y'
     const throwing = new Proxy(
       {},
       {
@@ -138,7 +141,7 @@ describe('writeJson', () => {
       [named, '$.value'],
       [throwing, '$.value'],
       [revoked.proxy, '$.value'],
-      [['x', , 'y'], '$.value[1]'],
+      [holey, '$.value[1]'],
       [lengthOf('many'), '$.value'],
       [lengthOf(1.5), '$.value'],
       [lengthOf(-1), '$.value'],

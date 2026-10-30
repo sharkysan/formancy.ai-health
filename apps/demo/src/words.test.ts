@@ -32,7 +32,7 @@ const html = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'i
  */
 function unnegatedOpenSource(text: string): string[] {
   const negation = /(?:^|[\s(’'])(?:not|nicht|kein\w*|pas|non|né)\s[^.]{0,20}$/i
-  return [...text.matchAll(/open[\s ‑-]*source/gi)].filter((found) => !negation.test(text.slice(0, found.index))).map((found) => found[0])
+  return [...text.matchAll(/open[\s\u00a0\u2011-]*source/gi)].filter((found) => !negation.test(text.slice(0, found.index))).map((found) => found[0])
 }
 
 /**

@@ -4,6 +4,13 @@ import { toDocumentBundle, type DocumentContext } from './bundle.js'
 import { toDocumentReference } from './document-reference.js'
 import { bytesOf, CLINICAL_DOCUMENT, CONSULTATION, minimalPdf, NAMES, patient, practitioner, refusedAs } from './test-support.js'
 
+/** The Binary's base64 with a space cut into it: not base64Binary's one spelling. */
+function spacedData(binary: FhirJsonObject): string {
+  const data = binary['data']
+  if (typeof data !== 'string') throw new Error('the Binary holds no data')
+  return `${data.slice(0, 8)} ${data.slice(8)}`
+}
+
 /** The DocumentReference and the Binary of a PDF of `bytes`, the smallest by default, as the host makes them first. */
 function attached(bytes = minimalPdf()) {
   const result = toDocumentReference(
@@ -63,7 +70,7 @@ function bundled(context: DocumentContext = document()) {
 /** `context` with its composition changed. */
 const withComposition = (change: Record<string, unknown>, context = document()): DocumentContext => ({
   ...context,
-  composition: { ...context.composition, ...change } as DocumentContext['composition'],
+  composition: { ...context.composition, ...change },
 })
 
 /** `context` with the entry at `index` replaced, or removed when `entry` is undefined. */
@@ -631,7 +638,7 @@ describe("what a document's attachments say of their bytes", () => {
   // Binary's data.
   test('refuses bytes it cannot read, whose size and hash it cannot check', () => {
     const { binary } = attached()
-    const spaced = `${String(binary['data']).slice(0, 8)} ${String(binary['data']).slice(8)}`
+    const spaced = spacedData(binary)
     expect(refusedAs(toDocumentBundle(withEntry(3, { fullUrl: NAMES.binary, resource: { ...binary, data: spaced } })))).toEqual([
       'grammar context.entries[3].resource.data',
     ])
@@ -647,7 +654,7 @@ describe("what a document's attachments say of their bytes", () => {
     })
     expect(bundled(context).entry).toHaveLength(5)
     const { binary } = attached()
-    const spaced = `${String(binary['data']).slice(0, 8)} ${String(binary['data']).slice(8)}`
+    const spaced = spacedData(binary)
     expect(bundled(withEntry(3, { fullUrl: NAMES.binary, resource: { ...binary, data: spaced } }, context)).entry).toHaveLength(5)
   })
 

@@ -175,7 +175,7 @@ function itemOf(pair: Pair, holder: Holder | undefined, at: string, walk: Walk):
 function responseOf(questionnaire: Questionnaire, elements: ResponseElements, items: readonly QuestionnaireResponseItem[]): QuestionnaireResponse {
   const { status, authored, subject, author, source } = elements
   const versioned = questionnaire.version !== undefined
-  const canonical = versioned ? uri(`${questionnaire.url}|${questionnaire.version as string}`, 'QuestionnaireResponse.questionnaire') : questionnaire.url
+  const canonical = versioned ? uri(`${questionnaire.url}|${questionnaire.version}`, 'QuestionnaireResponse.questionnaire') : questionnaire.url
   const sdc: readonly string[] = subject !== undefined && versioned ? [SDC_QUESTIONNAIRE_RESPONSE] : []
   const profile = [...sdc, ...elements.profiles.filter((claim) => !sdc.includes(claim))]
   return {

@@ -49,6 +49,7 @@ import {
 // a declaration emitted as `= "4.0.1"` rather than `: "4.0.1"` is a literal
 // that widens to `string` there, and assigned straight to the literal type
 // it would pass.
+// eslint-disable-next-line prefer-const -- the `let` is the test: it widens a literal, and a `const` would keep it narrow
 let held = FHIR_VERSION
 const version: '4.0.1' = held
 if (version !== '4.0.1') throw new Error(`FHIR_VERSION is ${String(version)}, not 4.0.1`)

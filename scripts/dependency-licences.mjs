@@ -383,7 +383,7 @@ export function problems(entries, exceptions = EXCEPTIONS) {
 function workspacePackages(repoRoot) {
   const found = []
   for (const group of ['packages', 'apps']) {
-    let names = []
+    let names
     try {
       names = readdirSync(join(repoRoot, group)).sort()
     } catch {

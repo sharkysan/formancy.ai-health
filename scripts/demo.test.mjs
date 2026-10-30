@@ -315,8 +315,9 @@ describe('the headers every file of the demo is served with (0012)', () => {
     ['a Trusted Types policy allowed', 'trusted-types default', "trusted-types is not 'none'"],
   ])('refuses %s', (_name, change, says) => {
     const name = change.split(' ')[0]
-    const policy = headersFor(PAGE)
-      ['Content-Security-Policy'].split('; ')
+    const header = headersFor(PAGE)['Content-Security-Policy']
+    const policy = header
+      .split('; ')
       .filter((each) => !each.startsWith(`${name} `))
       .concat(change === name ? [] : change)
       .join('; ')

@@ -371,7 +371,8 @@ describe('release.yml', () => {
   test('signs the report and attaches it, the SBOM and their signatures to the GitHub release', () => {
     const publish = release.jobs.publish
     const sign = publish.steps.find((entry) => entry.id === 'sign-report')
-    for (const kind of ['md', 'json']) expect(sign.run).toContain(`release-report/release-report.\${kind}`)
+    // The workflow loops over both kinds in the shell, so its text names the variable once.
+    expect(sign.run).toContain('release-report/release-report.${kind}')
     expect(sign.run).toContain('cosign sign-blob --yes')
     const step = publish.steps.find((entry) => entry.id === 'github-release')
     expect(

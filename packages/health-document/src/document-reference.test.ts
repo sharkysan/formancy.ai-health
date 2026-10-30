@@ -113,7 +113,7 @@ describe('what the host says of a PDF beyond what is written', () => {
     ['the subject', { ...context, subject: { reference: NAMES.patient, display: 'Synthetica Beispiel' } }, pdf, 'unmapped context.subject', 'display'],
     ['the PDF', context, { ...pdf, filename: 'zuweisung.pdf' }, 'unmapped pdf', 'filename'],
   ])('refuses a member %s does not name', (_, given, attached, refused, name) => {
-    const result = toDocumentReference(attached as never, given as DocumentReferenceContext)
+    const result = toDocumentReference(attached, given)
     expect(refusedAs(result)).toEqual([refused])
     expect(result.ok ? '' : result.refusals[0]?.message).not.toContain(name)
   })

@@ -269,7 +269,9 @@ async function launch(name, options) {
     return await playwright[name].launch(options)
   } catch (error) {
     const first = (error instanceof Error ? error.message : String(error)).split('\n')[0]
-    throw new Error(`${browserName(name)} did not launch (${first}); \`${installCommand(name)}\` downloads the build Playwright ${PLAYWRIGHT} pins for it`)
+    throw new Error(`${browserName(name)} did not launch (${first}); \`${installCommand(name)}\` downloads the build Playwright ${PLAYWRIGHT} pins for it`, {
+      cause: error,
+    })
   }
 }
 

@@ -14,7 +14,7 @@ function documented(context: ChOrfContext = referral()) {
 /** `referral()` with its composition changed. */
 const withComposition = (change: Record<string, unknown>): ChOrfContext => ({
   ...referral(),
-  composition: { ...composition(), ...change } as ChOrfContext['composition'],
+  composition: { ...composition(), ...change },
 })
 
 /** The narrative of `referral()`'s Composition as writeJson writes the div: its title and its section's. */
@@ -230,9 +230,7 @@ describe('what a CH ORF document refuses of its context', () => {
     ])
     // A decimal the host wrote keeps its digits through the document.
     const decimals = { ...answers(), item: [{ linkId: 'reason', answer: [{ valueDecimal: decimal('70.50', 'probe') }] }] }
-    expect(writeJson(documented({ ...referral(), response: { fullUrl: NAMES.response, questionnaireResponse: decimals as never } }))).toContain(
-      '"valueDecimal":70.50',
-    )
+    expect(writeJson(documented({ ...referral(), response: { fullUrl: NAMES.response, questionnaireResponse: decimals } }))).toContain('"valueDecimal":70.50')
   })
 
   // The cost of one decision in one place: health-document is asked only
