@@ -39,9 +39,13 @@ Four things follow, and three of them have a guard:
   formancy.ai's room as `@formancy/themes` releases it, `room.css`
   imported after the workbench at the exact version its manifest pins
   (0012, 0015). The lint and format rules are a copy that runs the other
-  way: written here first, they are what formancy.ai will publish as
-  `@formancy/code-style`, and they go when this repository pins it
+  way: written here first, `scripts/code-style/` is what formancy.ai will
+  publish as `@formancy/code-style`, copied byte for byte into the other
+  three repositories, each calling it with its own paths as
+  `eslint.config.mjs` does here, and it goes when this repository pins it
   ([0017](docs/decisions/0017-every-typescript-and-javascript-file-is-linted-by-the-recommended-type-aware-rules-and-formatted-by-prettier.md)).
+  A path or a reason of this repository's alone goes in that call, never
+  into the copy.
   A generic improvement goes upstream through that repository's own
   contribution rules, not into a patched copy here.
 - **Every package declares the source-available licence**, never Apache-2.0.
@@ -261,10 +265,13 @@ and the document says what. Three shapes, in order of preference:
    when the README's pictures are not what `scripts/pictures/scenes.json`
    and `docs/images/readme/captured.json` render, a picture is not the
    bytes its record names, or a caption quotes what its sections did not
-   say when it was taken (0016); `scripts/lint.test.mjs` fails when a lint
-   rule the repository relies on stops running at error on the kind of
-   file it is for, a rule is set to warn, Prettier's options change, or its
-   check stops finding a file it would write otherwise (0017). The
+   say when it was taken (0016); `scripts/code-style/code-style.test.mjs`
+   fails when a shared lint rule stops running at error on the kind of
+   file it is for, a path a repository passes stops doing what it says, or
+   Prettier's options change, and `scripts/lint.test.mjs` when a rule is
+   set to warn on the files it samples, this repository's tsconfigs stop
+   reaching its packages, or Prettier's check stops finding a file it
+   would write otherwise (0017). The
    architecture's guard, the guide's and the README's read Markdown
    through one module, `scripts/markdown.mjs`.
    All of them run as `pnpm test:repo`, and CI runs that — **a guard that

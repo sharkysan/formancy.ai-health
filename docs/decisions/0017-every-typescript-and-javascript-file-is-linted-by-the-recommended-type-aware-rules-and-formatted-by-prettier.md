@@ -6,19 +6,28 @@
 - **Verified by:** the repository's guards and `verify`'s two steps, on 30
   October 2026. Each was watched failing first, and every file a fault was
   planted in was put back:
-  - **`scripts/lint.test.mjs`** (`pnpm test:repo`) -- each rule the
-    repository relies on runs, at error, on the kind of file it is for: a
-    floating promise in a package's source; an `any` from `JSON.parse`,
-    refused in source and allowed in a test; a name unused unless it
-    begins with `_`; a disable comment that gives no reason, and one that
-    disables nothing; an undefined name in a script; French typography in
-    a template literal and nowhere else; a vitest config, linted with
-    types; the hooks rules in the demo; every package's and app's tsconfig
-    among those lint reads; no rule at `warn`; Prettier's four options;
-    and the formatter's check finding a file it would write otherwise.
-    The file failed whole before the tools were installed; its
-    disable-comment case with `require-description` dropped, and its case
-    of no rule at `warn` with a rule set to `warn`.
+  - **`scripts/code-style/code-style.test.mjs`** (`pnpm test:repo`) --
+    the shared rules, on a repository of its own that it writes under the
+    system's temporary directory: each runs, at error, on the kind of file
+    it is for -- a floating promise; an `any` from `JSON.parse`, refused in
+    source and allowed in a test, which is held to the rest; a name unused
+    unless it begins with `_`; a disable comment that gives no reason, and
+    one that disables nothing; an undefined name in JavaScript; a
+    typographic space in a template literal and nowhere else -- and each
+    path a repository passes does what it says: an untyped file linted
+    without types, a page's globals where a browser is driven and nowhere
+    else, the hooks rules where React is written, a nested `.gitignore`
+    read for its own directory, and a required path left out refused --
+    and Prettier's four options. Each case of a path failed with the block
+    it holds removed, or read otherwise.
+  - **`scripts/lint.test.mjs`** (`pnpm test:repo`) -- this repository's
+    wiring: a vitest config, linted with types; the hooks rules in the
+    demo; every package's and app's tsconfig among those lint reads; no
+    rule at `warn`; Prettier finding the shared style; and the formatter's
+    check finding a file it would write otherwise. Its rule cases failed
+    whole before the tools were installed; its disable-comment case, now
+    the shared test's, with `require-description` dropped, and its case of
+    no rule at `warn` with a rule set to `warn`.
   - **`verify`'s `pnpm lint` and `pnpm format:check`**, run by CI on every
     pull request and by a release before it publishes. With
     `Promise.resolve()` planted as a statement at the end of
@@ -83,10 +92,12 @@ reported 46, in 21 of 275 files, and none was a defect.
 - **ESLint 10 and Prettier 3**, at exact versions as root
   devDependencies, run from the root by `pnpm lint` (`eslint .`),
   `pnpm format` and `pnpm format:check`, over every TypeScript and
-  JavaScript file git does not ignore -- `.gitignore` read by ESLint
-  through `@eslint/compat` and by Prettier itself -- and never `dist/`,
-  coverage or test results. The rules are `eslint.config.mjs`, the style
-  `.prettierrc.json`.
+  JavaScript file git does not ignore -- `.gitignore` read by ESLint's
+  own `includeIgnoreFile`, each for its own directory, and by Prettier
+  itself -- and never `dist/`, coverage or test results. The rules and
+  the style are one module, `scripts/code-style/code-style.mjs`, which
+  `eslint.config.mjs` calls with this repository's paths and
+  `prettier.config.mjs` takes the style from.
 - **The rules:** `@eslint/js`'s recommended set, then typescript-eslint's
   `recommendedTypeChecked`, every rule `error` or `off` and none `warn`.
   - **Typed** through exactly the tsconfigs `pnpm typecheck` runs, named by
@@ -135,13 +146,22 @@ reported 46, in 21 of 275 files, and none was a defect.
   no name the packages compile against, where formancy.ai 0115 found no
   gate to run `no-console`; and `no-eval` is not added. The linter makes each
   possible, and each would be a record of its own.
-- **A copy until formancy.ai releases.** `eslint.config.mjs` and
-  `.prettierrc.json` are the first copy of what formancy.ai will publish as
-  `@formancy/code-style`. The swap is a pull request of its own: the
-  package pinned exactly as a root devDependency, the copy deleted, and
-  `scripts/upstream-deps.mjs` extended to the root manifest, which holds no
-  `@formancy/*` dependency until then. Until the swap, a rule changed here
-  is changed in formancy.ai's package too.
+- **A copy until formancy.ai releases.** `scripts/code-style/` -- the
+  module and its test -- is the first copy of what formancy.ai will
+  publish as `@formancy/code-style`, shaped as its API: `eslintConfig`,
+  called with a repository's `root`, `project`, `ignoreFiles`, `tests`,
+  `untyped`, `browser` and `react`, the first four required;
+  `prettierConfig`; and `EXTENSIONS` and `FILES`, the files Prettier
+  formats. It names no path of this repository's, and a reason that holds
+  here alone, French typography in `apps/demo/src/words/fr.ts`, is
+  written where `eslint.config.mjs` calls it; so each of the other three
+  copies the directory byte for byte and writes its own call. The swap is
+  a pull request of its own: the package pinned exactly as a root
+  devDependency, the directory deleted, the two config files importing
+  the package instead, and `scripts/upstream-deps.mjs` extended to the
+  root manifest, which holds no `@formancy/*` dependency until then.
+  Until the swap, a rule changed here is changed in formancy.ai's package
+  too.
 - **One format commit, merged as it is.** The format is one commit of
   Prettier's output and nothing else, `d570b37`, which
   `.git-blame-ignore-revs` names by its SHA. **The pull request that
@@ -171,6 +191,12 @@ four.
 - **A copy that can drift.** Until the swap, a rule changed in
   formancy.ai's package does not reach this repository, nor one changed
   here the package, and nothing compares the two.
+- **Prettier loads the lint rules with the style.** `prettier.config.mjs`
+  imports the module, and with it ESLint's plugins and TypeScript: 0.32 to
+  0.34 s of each Prettier run, and of an editor's when it loads the
+  config, measured three times on 30 October 2026 on the Mac above. The
+  style in a module of its own would spare it, and would be a second file
+  to copy.
 - **Typed lint's time**, inside `verify`'s 15 minutes: 6.3 s on the Mac
   above, and no runner measured.
 - **The test relaxations hide an `any` in a test.** A test may read a
@@ -226,6 +252,12 @@ that renders.
 service can lint a file no tsconfig holds against a default program.
 Rejected: the configs would be linted with types and type-checked by
 nothing; `tsconfig.tools.json` brings them into `pnpm typecheck`.
+
+**`@eslint/compat`'s `includeIgnoreFile`.** What the first copy read
+`.gitignore` with. Rejected: it is deprecated for ESLint's own, which
+reads each file for its own directory; compat's reads a nested
+`.gitignore`, as formancy.ai has, as though it stood at the root, and the
+shared test's case of a nested one fails when it is read that way.
 
 **Waiting for `@formancy/code-style`.** What 0002 asks of anything an
 upstream does not yet offer. Rejected: the maintainer said on 30 October

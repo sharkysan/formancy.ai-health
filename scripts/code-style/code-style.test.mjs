@@ -1,0 +1,222 @@
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
+import { ESLint } from 'eslint'
+import * as prettier from 'prettier'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+import { eslintConfig, prettierConfig } from './code-style.mjs'
+
+/**
+ * The shared rules, as the package formancy.ai will publish holds them:
+ * that each rule runs, at error, on the kind of file it is for, and that
+ * each path a repository passes does what it says.
+ *
+ * Copied byte for byte with code-style.mjs, so it names no path of any
+ * repository. It lints a repository of its own instead, written under the
+ * system's temporary directory and removed after: a tsconfig that types
+ * `src/`, a .gitignore at its root and one in a directory, and the files
+ * below, each a short text at a path of the kind a rule is for. All are
+ * written before the first lint, which builds the program the typed rules
+ * read. Each repository's own guard, beside its eslint.config.mjs, holds
+ * what it passes here and that every file it holds is linted.
+ *
+ * What it cannot see: whether a rule's verdict is right. It holds that a
+ * rule runs and fails the build, not that what it reports is a defect.
+ */
+const PATHS = {
+  project: ['./tsconfig.json'],
+  ignoreFiles: ['.gitignore', 'nested/.gitignore'],
+  tests: ['**/*.test.{ts,mjs}'],
+  untyped: ['untyped/**'],
+  browser: ['page/**'],
+  react: ['src/app/**'],
+}
+
+const NARROW_SPACE = ' '
+const PARSED = "export const v: { a: number } = JSON.parse('{}')\n"
+const FLOATING = 'export async function f() {}\nf()\n'
+const HOOKS = [
+  "import { useEffect, useState } from 'react'",
+  'export function C({ on, n }: { on: boolean; n: number }) {',
+  '  if (on) {',
+  '    useState(0)',
+  '  }',
+  '  useEffect(() => {',
+  '    void n',
+  '  }, [])',
+  '  return null',
+  '}',
+  '',
+].join('\n')
+
+const FILES = {
+  'tsconfig.json': JSON.stringify({
+    compilerOptions: { strict: true, target: 'es2022', module: 'esnext', moduleResolution: 'bundler', jsx: 'preserve', types: [], noEmit: true },
+    include: ['src'],
+  }),
+  '.gitignore': 'build/\n',
+  'nested/.gitignore': 'local.ts\n',
+  'src/floating.ts': FLOATING,
+  'src/parsed.ts': PARSED,
+  'src/parsed.test.ts': PARSED + 'export async function g() {}\ng()\n',
+  'src/unused.ts': 'export function f(_a: number, b: number): number {\n  return 1\n}\n',
+  'src/unused.mjs': 'export function f(_a, b) {\n  return 1\n}\n',
+  'src/bare-disable.ts': 'export async function f() {}\n// eslint-disable-next-line @typescript-eslint/no-floating-promises\nf()\n',
+  'src/stale-disable.ts': '// eslint-disable-next-line no-console -- not needed\nexport const x = 1\n',
+  'src/undefined.mjs': 'undefinedThing()\n',
+  'src/node.mjs': 'process.exitCode = 0\n',
+  'src/typography.ts': `export const t = \`a${NARROW_SPACE}:\`\n`,
+  'src/whitespace.ts': `export const x =${NARROW_SPACE}1\n`,
+  'untyped/consume.ts': FLOATING + 'const unused = 1\n',
+  'page/evaluate.mjs': 'export const title = () => document.title\n',
+  'src/evaluate.mjs': 'export const title = () => document.title\n',
+  'src/app/hooks.tsx': HOOKS,
+}
+
+let root
+let eslint
+
+beforeAll(() => {
+  root = realpathSync(mkdtempSync(join(tmpdir(), 'code-style-')))
+  for (const [path, text] of Object.entries(FILES)) {
+    mkdirSync(dirname(join(root, path)), { recursive: true })
+    writeFileSync(join(root, path), text)
+  }
+  eslint = new ESLint({ cwd: root, overrideConfigFile: true, overrideConfig: eslintConfig({ root, ...PATHS }) })
+})
+
+afterAll(() => rmSync(root, { recursive: true, force: true }))
+
+/**
+ * The messages for one of the files above. A fatal one -- a file the
+ * parser could not read, or TypeScript that no program holds -- fails the
+ * case, so that none passes on a file nothing linted.
+ */
+async function lint(path) {
+  const [result] = await eslint.lintFiles([join(root, path)])
+  expect(
+    result.messages.filter((m) => m.fatal),
+    path,
+  ).toEqual([])
+  return result.messages
+}
+
+const ruleIds = (messages) => messages.map((m) => m.ruleId)
+
+// The first case to lint a typed file builds the program, of the files
+// above alone: 0.35 to 0.41 s with this file run by itself, three times,
+// and 0.92 s under `pnpm test:repo` beside every other guard, measured on
+// 30 October 2026 on an Apple M2 with 8 cores under Node 22.23.3 -- inside
+// vitest's 5 s default, which the cases keep.
+describe('the rules', () => {
+  // A promise nobody awaits loses its rejection: a file that failed to be
+  // written would be reported as written.
+  test('a floating promise fails', async () => {
+    expect(ruleIds(await lint('src/floating.ts'))).toContain('@typescript-eslint/no-floating-promises')
+  })
+
+  // An any from JSON.parse flowing into a typed name is a claim nothing
+  // checked; a test may poke at a value it just built, source may not, and
+  // a test is relaxed for that alone: its floating promise still fails.
+  test('an any from JSON.parse is refused in source and allowed in a test, which is held to the rest', async () => {
+    expect(ruleIds(await lint('src/parsed.ts'))).toContain('@typescript-eslint/no-unsafe-assignment')
+    const test = ruleIds(await lint('src/parsed.test.ts'))
+    expect(test.filter((id) => id?.startsWith('@typescript-eslint/no-unsafe-'))).toEqual([])
+    expect(test).toContain('@typescript-eslint/no-floating-promises')
+  })
+
+  // Two rules name unused variables; if both ran, one mistake would be two
+  // findings, and if neither honoured the underscore a deliberate ignore
+  // could not be written.
+  test('a name beginning with _ may go unused, any other may not, in TypeScript and JavaScript alike', async () => {
+    for (const path of ['src/unused.ts', 'src/unused.mjs']) {
+      const unused = (await lint(path)).filter((m) => /unused-vars/.test(m.ruleId ?? ''))
+      expect(unused, path).toHaveLength(1)
+      expect(unused[0].message, path).toContain("'b'")
+    }
+  })
+
+  // A bare disable comment hides a finding without saying why, and a stale
+  // one keeps hiding whatever lands under it later.
+  test('a disable comment must say why, and an unused one fails', async () => {
+    expect(ruleIds(await lint('src/bare-disable.ts'))).toContain('@eslint-community/eslint-comments/require-description')
+    expect(await lint('src/stale-disable.ts')).toContainEqual(
+      expect.objectContaining({ severity: 2, message: expect.stringMatching(/Unused eslint-disable directive/) }),
+    )
+  })
+
+  // typescript-eslint turns no-undef off for TypeScript, whose compiler
+  // holds it; for JavaScript it is what is left to catch a misspelt name in
+  // a script before the one run that reaches it fails.
+  test("an undefined name in JavaScript fails, and Node's are known", async () => {
+    expect(ruleIds(await lint('src/undefined.mjs'))).toContain('no-undef')
+    expect(await lint('src/node.mjs')).toEqual([])
+  })
+
+  // The four products are written in several languages, whose typography
+  // puts narrow spaces in strings and templates; the same character between
+  // two tokens of code is an invisible bug.
+  test('a typographic space is allowed in a template, and refused between tokens', async () => {
+    expect(ruleIds(await lint('src/typography.ts'))).not.toContain('no-irregular-whitespace')
+    expect(ruleIds(await lint('src/whitespace.ts'))).toContain('no-irregular-whitespace')
+  })
+})
+
+describe('the paths a repository passes', () => {
+  // TypeScript that no tsconfig holds -- a fixture importing what only
+  // another project installs -- is linted without types rather than
+  // refused as in no project, or not linted at all.
+  test('a file the repository leaves untyped is linted without types', async () => {
+    const ids = ruleIds(await lint('untyped/consume.ts'))
+    expect(ids).toContain('@typescript-eslint/no-unused-vars')
+    expect(ids).not.toContain('@typescript-eslint/no-floating-promises')
+  })
+
+  // A browser gate's page.evaluate callbacks run in the page, where
+  // document is a name; anywhere else it is a misspelt one.
+  test("a file that drives a browser knows the page's globals, and no other does", async () => {
+    expect(await lint('page/evaluate.mjs')).toEqual([])
+    expect(ruleIds(await lint('src/evaluate.mjs'))).toContain('no-undef')
+  })
+
+  // A hook under a condition runs in a different order on another render,
+  // and an effect that reads a value it does not depend on keeps the first.
+  test('the hooks rules hold where the repository writes React', async () => {
+    const ids = ruleIds(await lint('src/app/hooks.tsx'))
+    expect(ids).toContain('react-hooks/rules-of-hooks')
+    expect(ids).toContain('react-hooks/exhaustive-deps')
+  })
+
+  // A .gitignore in a directory names paths from that directory, as git
+  // reads it; read as though it stood at the root, it would ignore a file
+  // of that name anywhere. Build output, coverage and test results are
+  // never linted, whether or not a .gitignore names them.
+  test('each .gitignore is read for its own directory, and build output is ignored besides', async () => {
+    expect(await eslint.isPathIgnored(join(root, 'nested/local.ts'))).toBe(true)
+    expect(await eslint.isPathIgnored(join(root, 'local.ts'))).toBe(false)
+    expect(await eslint.isPathIgnored(join(root, 'build/x.ts'))).toBe(true)
+    for (const directory of ['dist', 'coverage', 'test-results']) {
+      expect(await eslint.isPathIgnored(join(root, 'src', directory, 'x.ts')), directory).toBe(true)
+    }
+  })
+
+  // Without the test files every file would be relaxed, and without a
+  // tsconfig every TypeScript file refused as in no project: a path left
+  // out is refused where the configuration is made.
+  test('a path the configuration needs, left out, is refused', () => {
+    for (const name of ['project', 'ignoreFiles', 'tests']) {
+      expect(() => eslintConfig({ root, ...PATHS, [name]: undefined }), name).toThrow(name)
+      expect(() => eslintConfig({ root, ...PATHS, [name]: [] }), name).toThrow(name)
+    }
+    expect(() => eslintConfig({ ...PATHS, root: 'relative' })).toThrow('root')
+  })
+})
+
+describe('the format', () => {
+  // Two repositories formatted differently would reformat each other's
+  // files on every change; everything but these four is Prettier's default.
+  test('the style is the four options', async () => {
+    expect(prettierConfig).toEqual({ semi: false, singleQuote: true, trailingComma: 'all', printWidth: 160 })
+    expect(await prettier.format('const a = "x";\n', { ...prettierConfig, parser: 'typescript' })).toBe("const a = 'x'\n")
+  })
+})

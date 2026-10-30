@@ -75,12 +75,16 @@ is review's. This section names the larger costs without restating them.
   `docs/release/`**, where 0005 and 0006 expected health-corpus to hold them;
   the move is not clean, and 0008 says why it is not made.
 - **The lint and format rules are a copy** until this repository pins
-  `@formancy/code-style`: [`eslint.config.mjs`](../../eslint.config.mjs)
-  and [`.prettierrc.json`](../../.prettierrc.json) are the first copy of
-  what formancy.ai will publish for all four repositories, and nothing
-  compares them with the package, so a rule changed in one reaches the
-  other by hand alone. The swap pins the package exactly as a root
-  devDependency, deletes the copy and extends
+  `@formancy/code-style`:
+  [`code-style.mjs`](../../scripts/code-style/code-style.mjs) and
+  [`code-style.test.mjs`](../../scripts/code-style/code-style.test.mjs)
+  are the first copy of what formancy.ai will publish for all four
+  repositories, which [`eslint.config.mjs`](../../eslint.config.mjs) and
+  [`prettier.config.mjs`](../../prettier.config.mjs) call with this
+  repository's paths, and nothing compares them with the package, so a
+  rule changed in one reaches the other by hand alone. The swap pins the
+  package exactly as a root devDependency, deletes the copy, has the two
+  config files import the package, and extends
   [`upstream-deps.mjs`](../../scripts/upstream-deps.mjs) to the root
   manifest, which holds no `@formancy/*` dependency until then
   ([0017](../decisions/0017-every-typescript-and-javascript-file-is-linted-by-the-recommended-type-aware-rules-and-formatted-by-prettier.md)).

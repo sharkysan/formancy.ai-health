@@ -25,7 +25,6 @@
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
-    "@eslint/compat": "2.1.1",
     "@eslint/js": "10.0.1",
     "@types/node": "catalog:",
     "eslint": "10.13.0",

@@ -14,9 +14,11 @@ later.
 Style was held by habit, and a promise nobody awaits or an `any` from
 `JSON.parse` by nobody: `verify` now runs `pnpm lint`, typescript-eslint's
 type-aware recommended rules at error, and `pnpm format:check`, Prettier
-over every TypeScript and JavaScript file. The rules are the first copy of
-those formancy.ai will publish as `@formancy/code-style` for all four
-repositories, swapped for the package once it is released. Every file was
+over every TypeScript and JavaScript file. The rules and the style are one
+module, `scripts/code-style/code-style.mjs`, the first copy of what
+formancy.ai will publish as `@formancy/code-style` for all four
+repositories, which this repository calls with its own paths and swaps
+for the package once it is released. Every file was
 formatted in one commit, which `.git-blame-ignore-revs` has blame skip,
 and every finding fixed; none was a defect. The packages' API is what it
 was.

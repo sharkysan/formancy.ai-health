@@ -5,18 +5,21 @@ import { fileURLToPath } from 'node:url'
 import { ESLint } from 'eslint'
 import * as prettier from 'prettier'
 import { describe, expect, test } from 'vitest'
+import { prettierConfig } from './code-style/code-style.mjs'
 
 /**
- * The linter's and the formatter's rules, as a gate: that each rule this
- * repository relies on runs, at error, on the kind of file it is meant for.
+ * The linter's and the formatter's wiring, as a gate: that this
+ * repository's files are linted and formatted by the shared rules, with
+ * the paths eslint.config.mjs passes them and prettier.config.mjs's style.
  *
- * The configuration is the one formancy.ai will publish as a shared package
- * for all four repositories, so a rule quietly dropped here is dropped
- * everywhere it is copied. Each case lints a short text as though it stood at
- * a real path, so the typed rules run on a file a tsconfig holds.
+ * The rules themselves are scripts/code-style/code-style.mjs, the copy of
+ * what formancy.ai will publish as a shared package for all four
+ * repositories, and code-style.test.mjs beside it holds what each does.
+ * The cases here lint a short text as though it stood at a real path, so
+ * the typed rules run on a file one of this repository's tsconfigs holds.
  *
- * What it cannot see: whether a rule's verdict is right. It holds that a rule
- * runs and fails the build, not that what it reports is a defect.
+ * What it cannot see: whether a rule's verdict is right. It holds that a
+ * rule runs and fails the build, not that what it reports is a defect.
  */
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const eslint = new ESLint({ cwd: root })
@@ -39,60 +42,6 @@ const SCRIPT = 'scripts/purpose.mjs'
 const TYPED = { timeout: 30_000 }
 
 describe('the linter', TYPED, () => {
-  // A promise nobody awaits loses its rejection: a PDF or a Bundle that
-  // failed to build would be reported as success.
-  test("a floating promise in a package's source fails", async () => {
-    const messages = await lint('export async function f() {}\nvoid 0\nf()\n', SOURCE)
-    expect(messages).toContainEqual(expect.objectContaining({ ruleId: '@typescript-eslint/no-floating-promises', severity: 2 }))
-  })
-
-  // An any from JSON.parse flowing into a typed name is a claim nothing
-  // checked; a test may poke at a value it just built, source may not.
-  test('an any from JSON.parse is refused in source and allowed in a test', async () => {
-    const code = "export const v: { a: number } = JSON.parse('{}')"
-    expect(ruleIds(await lint(code, SOURCE))).toContain('@typescript-eslint/no-unsafe-assignment')
-    expect(ruleIds(await lint(code, TEST)).filter((id) => id?.startsWith('@typescript-eslint/no-unsafe-'))).toEqual([])
-  })
-
-  // Two rules name unused variables; if both ran, one mistake would be two
-  // findings, and if neither honoured the underscore a deliberate ignore
-  // could not be written.
-  test('a name beginning with _ may go unused, any other may not', async () => {
-    for (const [code, path] of [
-      ['export function f(_a: number, b: number): number { return 1 }', SOURCE],
-      ['export function f(_a, b) { return 1 }', SCRIPT],
-    ]) {
-      const unused = (await lint(code, path)).filter((m) => /unused-vars/.test(m.ruleId ?? ''))
-      expect(unused, path).toHaveLength(1)
-      expect(unused[0].message, path).toContain("'b'")
-    }
-  })
-
-  // A bare disable comment hides a finding without saying why, and a stale
-  // one keeps hiding whatever lands under it later.
-  test('a disable comment must say why, and an unused one fails', async () => {
-    const bare = await lint('export async function f() {}\n// eslint-disable-next-line @typescript-eslint/no-floating-promises\nf()\n', SOURCE)
-    expect(ruleIds(bare)).toContain('@eslint-community/eslint-comments/require-description')
-    const unused = await lint('// eslint-disable-next-line no-console -- not needed\nexport const x = 1\n', SOURCE)
-    expect(unused).toContainEqual(expect.objectContaining({ severity: 2, message: expect.stringMatching(/Unused eslint-disable directive/) }))
-  })
-
-  // Typed linting is off for JavaScript, and no-undef is what is left to
-  // catch a misspelt name in a script before it fails at the one run that
-  // reaches it.
-  test('an undefined name in a script fails', async () => {
-    expect(ruleIds(await lint('undefinedThing()\n', SCRIPT))).toContain('no-undef')
-    expect(await lint('process.exitCode = 0\n', SCRIPT)).toEqual([])
-  })
-
-  // The demo writes French typographic spaces inside template literals; the
-  // same character between two tokens of code is an invisible bug.
-  test('French typography in a template is allowed, elsewhere it is not', async () => {
-    const narrow = ' '
-    expect(ruleIds(await lint(`export const t = \`a${narrow}:\`\n`, SOURCE))).not.toContain('no-irregular-whitespace')
-    expect(ruleIds(await lint(`export const x =${narrow}1\n`, SOURCE))).toContain('no-irregular-whitespace')
-  })
-
   // A tool config that falls outside every tsconfig is not linted with types,
   // or not linted at all.
   test('a vitest config is linted with types', async () => {
@@ -147,13 +96,11 @@ describe('the linter', TYPED, () => {
 })
 
 describe('the formatter', () => {
-  const style = { semi: false, singleQuote: true, trailingComma: 'all', printWidth: 160 }
-
   // Two repositories formatted differently would reformat each other's
-  // files on every change.
-  test('the style is the four options', async () => {
-    expect(await prettier.resolveConfig(join(root, 'packages/health-core/src/numbers.ts'))).toEqual(style)
-    expect(await prettier.resolveConfig(join(root, 'scripts/purpose.mjs'))).toEqual(style)
+  // files on every change, so Prettier finds the shared style here.
+  test('the style is the shared one', async () => {
+    expect(await prettier.resolveConfig(join(root, 'packages/health-core/src/numbers.ts'))).toEqual(prettierConfig)
+    expect(await prettier.resolveConfig(join(root, 'scripts/purpose.mjs'))).toEqual(prettierConfig)
   })
 
   // A glob that matches nothing passes the check; so the check is shown to
