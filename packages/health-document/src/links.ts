@@ -53,6 +53,9 @@ function linkAt(holder: FhirJsonObject, name: string, text: string, path: string
 /** Every link in `resource`, in the order the resource holds them; paths start at `path`, where the resource stands. */
 export function linksOf(resource: FhirJsonObject, path: string): Link[] {
   const found: Link[] = []
+  // A resource whose resourceType is no string names no element of R4's,
+  // so its links have no element key and no target R4 allows to be held
+  // to; each is still resolved, and the type it declares still checked.
   const resourceType = resource['resourceType']
   const stack: { readonly value: FhirJson; readonly path: string; readonly element: string }[] = [
     { value: resource, path, element: typeof resourceType === 'string' ? resourceType : '' },
