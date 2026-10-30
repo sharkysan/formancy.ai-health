@@ -26,7 +26,7 @@
     rule cases came from the first guard, which failed whole before the
     tools were installed, and its disable-comment case with
     `require-description` dropped; here, the typed cases failed with the
-    untyped set in the type-aware one's place, the test's with a seventh
+    untyped set in the type-aware one's place, the test's with an eighth
     relaxation, the inline configuration's with its report off, and the
     unused names' with any one of the underscore's options removed but
     the destructured array's, whose element `varsIgnorePattern` excuses as
@@ -42,16 +42,25 @@
     every rule of both sets at error, typed through a tsconfig, but the
     install fixtures, which differ from a package's source by the typed
     rules alone; JavaScript with the sets' rules that need no types; a test
-    with its source's rules but the six relaxations; and a file of a
+    with its source's rules but the seven relaxations; and a file of a
     workspace whose manifest declares React with the hooks rules. Every
     such file resolves to the shared style, an `.editorconfig` read as
     Prettier's command line reads it; both format scripts hand Prettier the
     shared list, and the check, as the script runs it, names a misformatted
     file of every extension git holds, written under the system's
-    temporary directory. Beside them, a vitest config is linted with types,
-    the hooks rules run in the demo, and a source file of every package
-    and app is linted with no message at all. Each case failed with what
-    it holds broken: a package ignored; `require-await` off in tests; a
+    temporary directory. Beside them, a source file of every package and app,
+    and every file `tsconfig.tools.json` takes in -- the vitest, Vite and
+    tsdown configs -- is linted with its own content and with no message at
+    all, a file in no project being a fatal one. That case never hands
+    ESLint a text other than the file's: on Linux ESLint linted the file on
+    disk instead of the text given (CI run 41045406900, 30 October 2026),
+    so the two cases that did, a vitest config and a conditional hook in
+    the demo, passed on macOS and failed on Linux. The hooks rules' behaviour is
+    held in `code-style.test.mjs`'s repository of real files, and here only
+    that they are at error in a workspace that declares React. Each case failed with what
+    it holds broken: a package ignored; a rule of the sets relaxed in tests beyond the seven; `./tsconfig.tools.json` dropped from
+    the tsconfigs lint reads, which made the vitest config a fatal
+    message; a
     rule at `warn` in a directory no case read; `lint` narrowed to
     `eslint scripts`; the format glob narrowed; an `.editorconfig` -- the
     guard it replaced passed all six -- and `require-await` off
@@ -81,7 +90,13 @@
   shared module and JavaScript was held to typescript-eslint's rules:
   `pnpm lint` took 6.7 s over the 278 files git held then,
   `pnpm format:check` 2.5 s with its style imported from that module, and
-  `lint.test.mjs`'s derived case 0.18 s. No runner was measured.
+  `lint.test.mjs`'s derived case 0.18 s. On CI's runner, read from the
+  `verify` job's log of run 41045406900 (ubuntu-latest, Node 22.23.4, 30
+  October 2026) as the difference between the start times of consecutive
+  steps: `pnpm lint` began at 11:05:02.84 and `pnpm format:check` at
+  11:05:17.57, and `pnpm check:pkg` after it at 11:05:23.23, so `pnpm lint`
+  took about 14.7 s and `pnpm format:check` about 5.7 s, each as the step's
+  wall time including pnpm's start, once.
 
   **Not mechanically enforced:** how the pull request that brings this
   merges, which GitHub leaves to the person merging; that a disable
@@ -168,10 +183,17 @@ reported 46, in 21 of 275 files, and none was a defect.
     (`@eslint-community/eslint-comments`' `require-description`), and one
     that disables nothing, or an inline configuration that changes
     nothing, is an error.
-  - **In test files alone**, known by name (`*.test.*`, `*.spec.*`), the
-    `no-unsafe-*` rules -- assignment, member access, call, argument,
-    return -- and `unbound-method` are off: a test reads an untyped body
-    on purpose, and vitest is handed methods to `expect`. Test support --
+  - **In test files alone**, known by name (`*.test.*`, `*.spec.*`), seven
+    rules are off: the `no-unsafe-*` rules -- assignment, member access,
+    call, argument, return -- `unbound-method` and `require-await`. A test
+    reads an untyped body on purpose, and vitest is handed methods to
+    `expect`; and a test double stands in for an async interface, so that
+    removing its `async` would turn a rejection into a synchronous throw
+    and change what the code under test meets -- of the 220 findings of
+    `require-await` measured on formancy.ai-data on 30 October 2026, 201
+    were in tests, nearly all such doubles (`fetch: async () => new
+    Response(...)`, `readFile: async (p) => ...`, `until(async () =>
+    cond)`). Test support --
     health-corpus, each package's `test-support.ts` -- is held to every
     rule.
 - **The style:** `semi: false`, `singleQuote: true`, `trailingComma:
@@ -241,7 +263,8 @@ four.
   to copy.
 - **Typed lint's time**, inside `verify`'s 15 minutes: 6.3 s on the Mac
   above, 6.7 s once JavaScript was held to typescript-eslint's rules, and
-  no runner measured.
+  about 14.7 s on CI's runner (run 41045406900, 30 October 2026, the
+  step's wall time read from the job's log, once).
 - **The test relaxations hide an `any` in a test.** A test may read a
   member a value does not have and pass the linter; tsc's strictness holds
   what is typed, and nothing holds what is not.

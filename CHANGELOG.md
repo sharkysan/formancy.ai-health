@@ -21,7 +21,9 @@ formancy.ai will publish as `@formancy/code-style` for all four
 repositories, which this repository calls with its own paths and swaps
 for the package once it is released. Every file was
 formatted in one commit, which `.git-blame-ignore-revs` has blame skip,
-and every finding fixed; none was a defect. The packages' API is what it
+and every finding fixed; none was a defect. A test alone is relaxed in
+seven rules, `require-await` among them, because a test double that
+stands in for an async interface must stay async. The packages' API is what it
 was.
 
 **The README shows the demo, in pictures a script takes and the gates
