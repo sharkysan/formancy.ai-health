@@ -134,8 +134,8 @@ maintainer said the same day not to wait for formancy.ai's release.
 Measured on 30 October 2026 on the Mac above: at `72db2c8`, the two
 recommended sets with nothing beyond them reported 92 findings, 53 of them
 in tests, and found 15 files in no tsconfig, the tool configs and the
-install fixtures. With the configuration below, once committed, ESLint
-reported 46, in 21 of 275 files, and none was a defect.
+install fixtures. With the configuration as first committed, before
+`require-await` was relaxed in tests, ESLint reported 46, in 21 of 275 files, and none was a defect.
 
 ## Decision
 

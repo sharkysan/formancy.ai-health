@@ -99,7 +99,7 @@ const FILES = {
   'page/evaluate.mjs': 'export const title = () => document.title\n',
   'src/evaluate.mjs': 'export const title = () => document.title\n',
   'src/app/hooks.tsx': HOOKS,
-  'src/outside.tsx': HOOKS,
+  'src/outside.tsx': HOOKS + 'async function g() {}\ng()\n',
   'src/double.ts': ASYNC_DOUBLE,
   'src/double.test.ts': ASYNC_DOUBLE,
   'src/view.jsx': 'export const view = <p>{undefinedThing}</p>\n',
@@ -247,7 +247,10 @@ describe('the paths a repository passes', () => {
     const ids = ruleIds(await lint('src/app/hooks.tsx'))
     expect(ids).toContain('react-hooks/rules-of-hooks')
     expect(ids).toContain('react-hooks/exhaustive-deps')
-    expect(ruleIds(await lint('src/outside.tsx')).filter((id) => id?.startsWith('react-hooks/'))).toEqual([])
+    // The file is linted -- its floating promise is reported -- and has no hooks message.
+    const outside = ruleIds(await lint('src/outside.tsx'))
+    expect(outside).toContain('@typescript-eslint/no-floating-promises')
+    expect(outside.filter((id) => id?.startsWith('react-hooks/'))).toEqual([])
   })
 
   // A .gitignore in a directory names paths from that directory, as git
