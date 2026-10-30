@@ -30,7 +30,7 @@
     rule cases came from the first guard, which failed whole before the
     tools were installed, and its disable-comment case with
     `require-description` dropped; here, the typed cases failed with the
-    untyped set in the type-aware one's place, the test's with an eighth
+    untyped set in the type-aware one's place, the test's with an extra
     relaxation, the inline configuration's with its report off, and the
     unused names' with any one of the underscore's options removed but
     the destructured array's, whose element `varsIgnorePattern` excuses as
@@ -46,7 +46,8 @@
     every rule of both sets at error, typed through a tsconfig, but the
     install fixtures, which differ from a package's source by the typed
     rules alone; JavaScript with the sets' rules that need no types; a test
-    with its source's rules but the eight relaxations; and a file of a
+    with its source's rules but the seven relaxations, `require-await` off in
+    every file besides; and a file of a
     workspace whose manifest declares React with the hooks rules. Every
     such file resolves to the shared style, an `.editorconfig` read as
     Prettier's command line reads it; both format scripts hand Prettier the
@@ -62,7 +63,7 @@
     the demo, passed on macOS and failed on Linux. The hooks rules' behaviour is
     held in `code-style.test.mjs`'s repository of real files, and here only
     that they are at error in a workspace that declares React. Each case failed with what
-    it holds broken: a package ignored; a rule of the sets relaxed in tests beyond the eight; `./tsconfig.tools.json` dropped from
+    it holds broken: a package ignored; a rule of the sets relaxed in tests beyond the seven; `./tsconfig.tools.json` dropped from
     the tsconfigs lint reads, which made the vitest config a fatal
     message; a
     rule at `warn` in a directory no case read; `lint` narrowed to
@@ -139,7 +140,7 @@ Measured on 30 October 2026 on the Mac above: at `72db2c8`, the two
 recommended sets with nothing beyond them reported 92 findings, 53 of them
 in tests, and found 15 files in no tsconfig, the tool configs and the
 install fixtures. With the configuration as first committed, before
-`require-await` was relaxed in tests, ESLint reported 46, in 21 of 275 files, and none was a defect.
+`require-await` was relaxed in tests, ESLint reported 46, in 21 of 275 files, and none was a defect; `require-await` was then turned off everywhere (below).
 
 ## Decision
 
@@ -187,21 +188,36 @@ install fixtures. With the configuration as first committed, before
     (`@eslint-community/eslint-comments`' `require-description`), and one
     that disables nothing, or an inline configuration that changes
     nothing, is an error.
-  - **In test files alone**, known by name (`*.test.*`, `*.spec.*`), eight
+  - **In test files alone**, known by name (`*.test.*`, `*.spec.*`), seven
     rules are off: the `no-unsafe-*` rules -- assignment, member access,
-    call, argument, return -- `unbound-method`, `require-await` and
-    `no-explicit-any`. A test reads an untyped body on purpose, which it
-    types `any` (seven disables in formancy.ai-data's lint fixes quoted
-    that reason word for word), and vitest is handed methods to
-    `expect`; and a test double stands in for an async interface, so that
-    removing its `async` would turn a rejection into a synchronous throw
-    and change what the code under test meets -- of the 220 findings of
-    `require-await` measured on formancy.ai-data on 30 October 2026, 201
-    were in tests, nearly all such doubles (`fetch: async () => new
-    Response(...)`, `readFile: async (p) => ...`, `until(async () =>
-    cond)`). Test support --
+    call, argument, return -- `unbound-method` and `no-explicit-any`. A
+    test reads an untyped body on purpose, which it types `any` (seven
+    disables in formancy.ai-data's lint fixes quoted that reason word for
+    word), and vitest is handed methods to `expect`. Test support --
     health-corpus, each package's `test-support.ts` -- is held to every
     rule.
+  - **Everywhere**, `require-await` is off. An `async` function with no
+    `await` is how a synchronous implementation of an asynchronous
+    contract keeps its throws as rejections, and the rule cannot tell that
+    from an `async` left behind by a refactor; removing the `async` turns
+    a rejection into a synchronous throw and changes what the code under
+    test meets, and `Promise.resolve` would do the same. Every repository
+    met it where the contract is async and the body is not.
+    formancy.ai-data, measured on 30 October 2026: 220 findings, 201 of
+    them in tests, nearly all doubles (`fetch: async () => new
+    Response(...)`, `readFile: async (p) => ...`, `until(async () =>
+    cond)`), the other 19 Fastify handlers and hooks and test support.
+    formancy.ai, the same day: 68 findings left after every other rule
+    was fixed, all in test-support implementations of Promise-returning
+    ports that live outside test files --
+    `server-core/src/testing/memory-storage.ts` 45,
+    `conformance/src/testing/fake-driver.ts` 11, the React and Angular
+    conformance drivers 6 each -- each of which throws, and `async` turns
+    the throw into the rejection the real port gives. What still catches a
+    forgotten `await` is `no-floating-promises` and
+    `no-misused-promises`, which stay on. It was first relaxed in tests
+    alone; the decision of 30 October 2026 to turn it off everywhere
+    replaced that.
   - **Everywhere**, `prefer-promise-reject-errors` allows a rejection with
     a value typed `any` or `unknown`, as `only-throw-error` allows
     throwing one by default: rejecting with the same forwarded value is the
@@ -291,6 +307,10 @@ four.
   above, 6.7 s once JavaScript was held to typescript-eslint's rules, and
   about 14.7 s on CI's runner (run 41045406900, 30 October 2026, the
   step's wall time read from the job's log, once).
+- **A pointless `async` is no longer reported.** One a refactor leaves
+  behind, in source or in a test, passes the linter; review is what sees
+  it, and `no-floating-promises` and `no-misused-promises` still catch the
+  `await` that was forgotten, which is the defect the rule was for.
 - **The test relaxations hide an `any` in a test.** A test may read a
   member a value does not have and pass the linter; tsc's strictness holds
   what is typed, and nothing holds what is not.
