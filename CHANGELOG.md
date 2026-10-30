@@ -23,8 +23,11 @@ for the package once it is released. Every file was
 formatted in one commit, which `.git-blame-ignore-revs` has blame skip,
 and every finding fixed; none was a defect. A test alone is relaxed in
 seven rules, `require-await` among them, because a test double that
-stands in for an async interface must stay async. The packages' API is what it
-was.
+stands in for an async interface must stay async. Prettier leaves code
+embedded in a string as it is (`embeddedLanguageFormatting: 'off'`),
+because formancy.ai's format reflowed Angular templates, whose whitespace
+renders, and failed tests; the format commit is identical with it off. The
+packages' API is what it was.
 
 **The README shows the demo, in pictures a script takes and the gates
 hold to the text they show** (0016). The README said what the demo does

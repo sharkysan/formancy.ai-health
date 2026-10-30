@@ -22,7 +22,8 @@
     included; an untyped file linted without types; a page's globals where
     a browser is driven and nowhere else; the hooks rules where React is
     written; a nested `.gitignore` read for its own directory; and a
-    required path left out refused -- and Prettier's four options. The
+    required path left out refused -- and Prettier's five options, and that a
+    template embedded in a string comes back as it was. The
     rule cases came from the first guard, which failed whole before the
     tools were installed, and its disable-comment case with
     `require-description` dropped; here, the typed cases failed with the
@@ -197,8 +198,18 @@ install fixtures. With the configuration as first committed, before
     health-corpus, each package's `test-support.ts` -- is held to every
     rule.
 - **The style:** `semi: false`, `singleQuote: true`, `trailingComma:
-  'all'`, `printWidth: 160`, and Prettier's defaults otherwise; TypeScript
-  and JavaScript alone, never Markdown, JSON, YAML, CSS or HTML.
+  'all'`, `printWidth: 160`, `embeddedLanguageFormatting: 'off'`, and
+  Prettier's defaults otherwise; TypeScript and JavaScript alone, never
+  Markdown, JSON, YAML, CSS or HTML. Embedded formatting is off because
+  Prettier's default, `auto`, formats code inside a string: on 30 October
+  2026 formancy.ai's repository-wide format reflowed the inline templates
+  of its Angular components, where the whitespace inside an element
+  renders, and an option's text became " Deutsch " for "Deutsch", failing
+  five tests of `@formancy/angular`. That is a behaviour change made as
+  style, which the design forbids, and formatting HTML is a non-goal here
+  too. The format commit d570b37 was re-derived from its parent with
+  embedded formatting off and is byte-identical, so it stands as it is and
+  `.git-blame-ignore-revs` still names it.
 - **The gate:** `verify` runs `pnpm lint` and `pnpm format:check` after the
   build and the typecheck, and before the guards. In `verify` rather than
   a job of its own, which would need a collect step, an upload and a
