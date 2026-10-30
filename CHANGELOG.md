@@ -13,8 +13,9 @@ later.
 **CI fails a change that breaks the lint rules or the format** (0017).
 Style was held by habit, and a promise nobody awaits or an `any` from
 `JSON.parse` by nobody: `verify` now runs `pnpm lint`, typescript-eslint's
-type-aware recommended rules at error, and `pnpm format:check`, Prettier
-over every TypeScript and JavaScript file. The rules and the style are one
+type-aware recommended rules at error, JavaScript held to those that need
+no types, and `pnpm format:check`, Prettier over every TypeScript and
+JavaScript file. The rules and the style are one
 module, `scripts/code-style/code-style.mjs`, the first copy of what
 formancy.ai will publish as `@formancy/code-style` for all four
 repositories, which this repository calls with its own paths and swaps

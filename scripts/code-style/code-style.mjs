@@ -21,11 +21,19 @@ import tseslint from 'typescript-eslint'
  * passes, and that every file it holds is linted and formatted by them.
  */
 
-/** TypeScript's extensions, then JavaScript's: every file Prettier formats. */
-export const EXTENSIONS = ['ts', 'tsx', 'mts', 'cts', 'js', 'jsx', 'mjs', 'cjs']
+const TYPESCRIPT = ['ts', 'tsx', 'mts', 'cts']
+const JAVASCRIPT = ['js', 'jsx', 'mjs', 'cjs']
+const filesOf = (extensions) => `**/*.{${extensions.join(',')}}`
 
-/** The glob a repository's `format` and `format:check` scripts hand Prettier. */
-export const FILES = `**/*.{${EXTENSIONS.join(',')}}`
+/**
+ * TypeScript's extensions, then JavaScript's: every file ESLint lints and
+ * Prettier formats, one list, so that neither reads a file the other does
+ * not.
+ */
+export const EXTENSIONS = [...TYPESCRIPT, ...JAVASCRIPT]
+
+/** The same, as the glob a repository's `format` and `format:check` scripts hand Prettier. */
+export const FILES = filesOf(EXTENSIONS)
 
 /**
  * Prettier's options, and its defaults otherwise. Of the widths measured,
@@ -34,15 +42,13 @@ export const FILES = `**/*.{${EXTENSIONS.join(',')}}`
  */
 export const prettierConfig = { semi: false, singleQuote: true, trailingComma: 'all', printWidth: 160 }
 
-const TS = ['**/*.{ts,tsx,mts,cts}']
-const JS = ['**/*.{js,mjs,cjs}']
-
 /**
  * Unused names fail unless they begin with `_` -- arguments, variables,
  * caught errors, destructured array elements -- the convention the
  * repositories already had. Both base sets name an unused-variable rule;
- * the base one is off for TypeScript, which has its own that understands
- * types, so there is one report per finding.
+ * typescript-eslint's recommended set turns @eslint/js's off, in
+ * JavaScript as in TypeScript, so there is one rule and one report per
+ * finding.
  */
 const UNUSED_NAMES = {
   args: 'all',
@@ -103,23 +109,27 @@ export function eslintConfig({ root, project, ignoreFiles, tests, untyped = [], 
     {
       linterOptions: { reportUnusedDisableDirectives: 'error', reportUnusedInlineConfigs: 'error' },
     },
-    js.configs.recommended,
     {
-      files: TS,
-      extends: [tseslint.configs.recommendedTypeChecked],
+      // typescript-eslint's documented pairing: its type-aware set on every
+      // file, and its typed half turned off below where nothing types the
+      // file, so that JavaScript is held to its rules that need no types --
+      // an expression whose value is dropped, an assertion missing its call
+      // among them -- as TypeScript is. Its overrides of @eslint/js's rules
+      // that the compiler holds apply to TypeScript alone.
+      files: [FILES],
+      extends: [js.configs.recommended, tseslint.configs.recommendedTypeChecked],
       languageOptions: { parserOptions: { project, tsconfigRootDir: root } },
       rules: { '@typescript-eslint/no-unused-vars': ['error', UNUSED_NAMES] },
     },
     {
-      // JavaScript is linted without types, with Node's globals: no-undef
-      // stays on, and is what is left to catch a misspelt name in a script
-      // before the one run that reaches it fails.
-      files: JS,
+      // JavaScript, and TypeScript that no tsconfig holds, are linted without
+      // types, and run in Node: no-undef stays on for JavaScript, and is
+      // what is left to catch a misspelt name in a script before the one run
+      // that reaches it fails.
+      files: [filesOf(JAVASCRIPT), ...untyped],
       extends: [tseslint.configs.disableTypeChecked],
       languageOptions: { globals: globals.node },
-      rules: { 'no-unused-vars': ['error', UNUSED_NAMES], '@typescript-eslint/no-unused-vars': 'off' },
     },
-    ...(untyped.length === 0 ? [] : [{ files: untyped, extends: [tseslint.configs.disableTypeChecked], languageOptions: { globals: globals.node } }]),
     // A page.evaluate callback runs in the page.
     ...(browser.length === 0 ? [] : [{ files: browser, languageOptions: { globals: { ...globals.node, ...globals.browser } } }]),
     {

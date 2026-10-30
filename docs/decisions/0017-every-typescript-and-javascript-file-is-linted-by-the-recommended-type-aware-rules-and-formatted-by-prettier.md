@@ -10,16 +10,20 @@
     the shared rules, on a repository of its own that it writes under the
     system's temporary directory: each runs, at error, on the kind of file
     it is for -- a floating promise; an `any` from `JSON.parse`, refused in
-    source and allowed in a test, which is held to the rest; a name unused
-    unless it begins with `_`; a disable comment that gives no reason, and
-    one that disables nothing; an undefined name in JavaScript; a
-    typographic space in a template literal and nowhere else -- and each
-    path a repository passes does what it says: an untyped file linted
-    without types, a page's globals where a browser is driven and nowhere
-    else, the hooks rules where React is written, a nested `.gitignore`
-    read for its own directory, and a required path left out refused --
-    and Prettier's four options. Each case of a path failed with the block
-    it holds removed, or read otherwise.
+    source and allowed in a test, which is held to the rest; an assertion
+    missing its call, in TypeScript and JavaScript alike; a name unused
+    unless it begins with `_`, reported by one rule in both languages; a
+    disable comment that gives no reason, and one that disables nothing;
+    an undefined name in JavaScript; a typographic space in a template
+    literal and nowhere else -- and each path a repository passes does what
+    it says: every extension Prettier formats one ESLint lints, `.jsx`
+    included; an untyped file linted without types; a page's globals where
+    a browser is driven and nowhere else; the hooks rules where React is
+    written; a nested `.gitignore` read for its own directory; and a
+    required path left out refused -- and Prettier's four options. Each
+    case of a path failed with the block it holds removed, or read
+    otherwise, and the JavaScript and `.jsx` cases before JavaScript was
+    held to typescript-eslint's rules.
   - **`scripts/lint.test.mjs`** (`pnpm test:repo`) -- this repository's
     wiring: a vitest config, linted with types; the hooks rules in the
     demo; every package's and app's tsconfig among those lint reads; no
@@ -112,10 +116,17 @@ reported 46, in 21 of 275 files, and none was a defect.
     callbacks run in a page; and the install fixtures,
     `scripts/install-fixture/`, which import the packed tarballs the
     workspace does not resolve, and which the install gate type-checks
-    strictly in its consumer's project.
+    strictly in its consumer's project. Both sets reach JavaScript as
+    typescript-eslint pairs them with `disableTypeChecked`, so it is held
+    to typescript-eslint's rules that need no types -- an expression whose
+    value is dropped, an assertion missing its call among them -- as
+    TypeScript is; its overrides of `@eslint/js`'s rules that the compiler
+    holds reach TypeScript alone. They found nothing in the repository's
+    JavaScript on 30 October 2026.
   - **Unused names** fail unless they begin with `_` -- arguments,
     variables, caught errors, destructured array elements -- the
-    convention the code already had.
+    convention the code already had: typescript-eslint's rule, in
+    JavaScript and TypeScript alike, and `@eslint/js`'s off.
   - **Irregular whitespace** is refused in code and comments and allowed
     in strings, template literals and JSX text, where
     `apps/demo/src/words/fr.ts` writes French typographic spaces.
@@ -151,11 +162,12 @@ reported 46, in 21 of 275 files, and none was a defect.
   publish as `@formancy/code-style`, shaped as its API: `eslintConfig`,
   called with a repository's `root`, `project`, `ignoreFiles`, `tests`,
   `untyped`, `browser` and `react`, the first four required;
-  `prettierConfig`; and `EXTENSIONS` and `FILES`, the files Prettier
-  formats. It names no path of this repository's, and a reason that holds
-  here alone, French typography in `apps/demo/src/words/fr.ts`, is
-  written where `eslint.config.mjs` calls it; so each of the other three
-  copies the directory byte for byte and writes its own call. The swap is
+  `prettierConfig`; and `EXTENSIONS` and `FILES`, the files both tools
+  read, one list. It names no path of this repository's, and a reason
+  that holds here alone, French typography in
+  `apps/demo/src/words/fr.ts`, is written where `eslint.config.mjs` calls
+  it; so each of the other three copies the directory byte for byte and
+  writes its own call. The swap is
   a pull request of its own: the package pinned exactly as a root
   devDependency, the directory deleted, the two config files importing
   the package instead, and `scripts/upstream-deps.mjs` extended to the

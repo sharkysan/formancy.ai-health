@@ -526,7 +526,7 @@
       ]
     },
     "0017": {
-      "reviewed": "sha256:024aa1d55ca6c35c92de6ec1d9afe5dd17f4cb0262cc3b9db2acded4700f8a6c",
+      "reviewed": "sha256:3adc357b55b64add66d64a027d6fd8a760329aecd7951dd8448f7f034774aadc",
       "none": "It decides how this repository's TypeScript and JavaScript are linted and formatted, which a contributor meets in every pull request -- a finding to fix, a file to format, a branch begun before the format conflicting with it, a commit blame skips; the gate runs in CI and the tools are root devDependencies no package declares, the packages' API is what it was and every suite passed as before the fixes, so a user, an integrator or an operator meets none of it."
     }
   }

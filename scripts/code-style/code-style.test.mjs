@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path'
 import { ESLint } from 'eslint'
 import * as prettier from 'prettier'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
-import { eslintConfig, prettierConfig } from './code-style.mjs'
+import { EXTENSIONS, eslintConfig, prettierConfig } from './code-style.mjs'
 
 /**
  * The shared rules, as the package formancy.ai will publish holds them:
@@ -34,6 +34,7 @@ const PATHS = {
 
 const NARROW_SPACE = ' '
 const PARSED = "export const v: { a: number } = JSON.parse('{}')\n"
+const ASSERTION = "import { expect } from 'vitest'\nexpect(1).toBeTruthy\n"
 const FLOATING = 'export async function f() {}\nf()\n'
 const HOOKS = [
   "import { useEffect, useState } from 'react'",
@@ -61,6 +62,8 @@ const FILES = {
   'src/parsed.test.ts': PARSED + 'export async function g() {}\ng()\n',
   'src/unused.ts': 'export function f(_a: number, b: number): number {\n  return 1\n}\n',
   'src/unused.mjs': 'export function f(_a, b) {\n  return 1\n}\n',
+  'src/assertion.test.ts': ASSERTION,
+  'src/assertion.test.mjs': ASSERTION,
   'src/bare-disable.ts': 'export async function f() {}\n// eslint-disable-next-line @typescript-eslint/no-floating-promises\nf()\n',
   'src/stale-disable.ts': '// eslint-disable-next-line no-console -- not needed\nexport const x = 1\n',
   'src/undefined.mjs': 'undefinedThing()\n',
@@ -71,6 +74,7 @@ const FILES = {
   'page/evaluate.mjs': 'export const title = () => document.title\n',
   'src/evaluate.mjs': 'export const title = () => document.title\n',
   'src/app/hooks.tsx': HOOKS,
+  'src/view.jsx': 'export const view = <p>{undefinedThing}</p>\n',
 }
 
 let root
@@ -94,10 +98,8 @@ afterAll(() => rmSync(root, { recursive: true, force: true }))
  */
 async function lint(path) {
   const [result] = await eslint.lintFiles([join(root, path)])
-  expect(
-    result.messages.filter((m) => m.fatal),
-    path,
-  ).toEqual([])
+  const fatal = result.messages.filter((m) => m.fatal)
+  expect(fatal, path).toEqual([])
   return result.messages
 }
 
@@ -125,13 +127,24 @@ describe('the rules', () => {
     expect(test).toContain('@typescript-eslint/no-floating-promises')
   })
 
+  // An assertion without its call asserts nothing, and the test that holds
+  // it passes whatever the code does; a script's test is no less a test.
+  test('an assertion missing its call fails, in TypeScript and JavaScript alike', async () => {
+    for (const path of ['src/assertion.test.ts', 'src/assertion.test.mjs']) {
+      expect(ruleIds(await lint(path)), path).toContain('@typescript-eslint/no-unused-expressions')
+    }
+  })
+
   // Two rules name unused variables; if both ran, one mistake would be two
   // findings, and if neither honoured the underscore a deliberate ignore
-  // could not be written.
+  // could not be written. One rule, typescript-eslint's, in both languages.
   test('a name beginning with _ may go unused, any other may not, in TypeScript and JavaScript alike', async () => {
     for (const path of ['src/unused.ts', 'src/unused.mjs']) {
       const unused = (await lint(path)).filter((m) => /unused-vars/.test(m.ruleId ?? ''))
-      expect(unused, path).toHaveLength(1)
+      expect(
+        unused.map((m) => m.ruleId),
+        path,
+      ).toEqual(['@typescript-eslint/no-unused-vars'])
       expect(unused[0].message, path).toContain("'b'")
     }
   })
@@ -163,6 +176,15 @@ describe('the rules', () => {
 })
 
 describe('the paths a repository passes', () => {
+  // A file Prettier formats and ESLint never reads -- a .jsx -- is held to
+  // a style and to no rule.
+  test('every extension Prettier formats is one ESLint lints, JSX included', async () => {
+    for (const extension of EXTENSIONS) {
+      expect(await eslint.calculateConfigForFile(join(root, `src/any.${extension}`)), extension).toBeDefined()
+    }
+    expect(ruleIds(await lint('src/view.jsx'))).toContain('no-undef')
+  })
+
   // TypeScript that no tsconfig holds -- a fixture importing what only
   // another project installs -- is linted without types rather than
   // refused as in no project, or not linted at all.
