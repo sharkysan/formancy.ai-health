@@ -12,9 +12,11 @@
     it is for -- a floating promise; an `any` from `JSON.parse`, refused in
     source and allowed in a test, which is held to the rest; an assertion
     missing its call, in TypeScript and JavaScript alike; a name unused
-    unless it begins with `_`, reported by one rule in both languages; a
-    disable comment that gives no reason, and one that disables nothing;
-    an undefined name in JavaScript; a typographic space in a template
+    unless it begins with `_` -- an argument, a variable, an element of a
+    destructured array, a caught error -- reported by one rule in both
+    languages; a disable comment that gives no reason, one that disables
+    nothing, and an inline configuration that changes nothing; an
+    undefined name in JavaScript; a typographic space in a template
     literal and nowhere else -- and each path a repository passes does what
     it says: every extension Prettier formats one ESLint lints, `.jsx`
     included; an untyped file linted without types; a page's globals where
@@ -24,10 +26,14 @@
     rule cases came from the first guard, which failed whole before the
     tools were installed, and its disable-comment case with
     `require-description` dropped; here, the typed cases failed with the
-    untyped set in the type-aware one's place, and the test's with a
-    seventh relaxation. Each case of a path failed with the block it holds
-    removed, or read otherwise, and the JavaScript and `.jsx` cases before
-    JavaScript was held to typescript-eslint's rules.
+    untyped set in the type-aware one's place, the test's with a seventh
+    relaxation, the inline configuration's with its report off, and the
+    unused names' with any one of the underscore's options removed but
+    the destructured array's, whose element `varsIgnorePattern` excuses as
+    well, so that it fails only when both go. Each case of a path failed
+    with the block it holds removed, or read otherwise, and the JavaScript
+    and `.jsx` cases before JavaScript was held to typescript-eslint's
+    rules.
   - **`scripts/lint.test.mjs`** (`pnpm test:repo`) -- this repository's
     wiring, derived from the files git holds, each known by the language
     Prettier infers for it, and from the two recommended sets as ESLint

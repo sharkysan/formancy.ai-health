@@ -50,6 +50,29 @@ const HOOKS = [
   '',
 ].join('\n')
 
+/** Each kind of name the underscore excuses, unused once with it and once without: an argument, an element of a destructured array, a variable, a caught error. */
+const UNUSED = (type) =>
+  [
+    `export function f(_a${type}, b${type}) {`,
+    '  const [_first, second] = [1, 2]',
+    '  try {',
+    '    return 1',
+    '  } catch (_error) {',
+    '    return 2',
+    '  }',
+    '}',
+    'export function g() {',
+    '  const _kept = 1',
+    '  const dropped = 2',
+    '  try {',
+    '    return 1',
+    '  } catch (caught) {',
+    '    return 2',
+    '  }',
+    '}',
+    '',
+  ].join('\n')
+
 const FILES = {
   'tsconfig.json': JSON.stringify({
     compilerOptions: { strict: true, target: 'es2022', module: 'esnext', moduleResolution: 'bundler', jsx: 'preserve', types: [], noEmit: true },
@@ -60,12 +83,13 @@ const FILES = {
   'src/floating.ts': FLOATING,
   'src/parsed.ts': PARSED,
   'src/parsed.test.ts': PARSED + 'export async function g() {}\ng()\n',
-  'src/unused.ts': 'export function f(_a: number, b: number): number {\n  return 1\n}\n',
-  'src/unused.mjs': 'export function f(_a, b) {\n  return 1\n}\n',
+  'src/unused.ts': UNUSED(': number'),
+  'src/unused.mjs': UNUSED(''),
   'src/assertion.test.ts': ASSERTION,
   'src/assertion.test.mjs': ASSERTION,
   'src/bare-disable.ts': 'export async function f() {}\n// eslint-disable-next-line @typescript-eslint/no-floating-promises\nf()\n',
   'src/stale-disable.ts': '// eslint-disable-next-line no-console -- not needed\nexport const x = 1\n',
+  'src/stale-config.ts': '/* eslint no-debugger: "error" -- already on */\nexport const x = 1\n',
   'src/undefined.mjs': 'undefinedThing()\n',
   'src/node.mjs': 'process.exitCode = 0\n',
   'src/typography.ts': `export const t = \`a${NARROW_SPACE}:\`\n`,
@@ -137,25 +161,26 @@ describe('the rules', () => {
 
   // Two rules name unused variables; if both ran, one mistake would be two
   // findings, and if neither honoured the underscore a deliberate ignore
-  // could not be written. One rule, typescript-eslint's, in both languages.
+  // could not be written -- of an argument, an element of a destructured
+  // array or a caught error alike. One rule, typescript-eslint's, in both
+  // languages.
   test('a name beginning with _ may go unused, any other may not, in TypeScript and JavaScript alike', async () => {
     for (const path of ['src/unused.ts', 'src/unused.mjs']) {
       const unused = (await lint(path)).filter((m) => /unused-vars/.test(m.ruleId ?? ''))
-      expect(
-        unused.map((m) => m.ruleId),
-        path,
-      ).toEqual(['@typescript-eslint/no-unused-vars'])
-      expect(unused[0].message, path).toContain("'b'")
+      const named = unused.map((m) => `${m.ruleId} ${/'([^']+)'/.exec(m.message)?.[1]}`)
+      expect(named, path).toEqual(['b', 'second', 'dropped', 'caught'].map((name) => `@typescript-eslint/no-unused-vars ${name}`))
     }
   })
 
-  // A bare disable comment hides a finding without saying why, and a stale
-  // one keeps hiding whatever lands under it later.
-  test('a disable comment must say why, and an unused one fails', async () => {
+  // A bare disable comment hides a finding without saying why, a stale one
+  // keeps hiding whatever lands under it later, and an inline configuration
+  // that changes nothing says a rule was turned on that already was.
+  test('a disable comment must say why, and one that disables nothing, or a configuration that changes nothing, fails', async () => {
     expect(ruleIds(await lint('src/bare-disable.ts'))).toContain('@eslint-community/eslint-comments/require-description')
-    expect(await lint('src/stale-disable.ts')).toContainEqual(
-      expect.objectContaining({ severity: 2, message: expect.stringMatching(/Unused eslint-disable directive/) }),
-    )
+    const stale = (path, message) =>
+      expect(lint(path)).resolves.toContainEqual(expect.objectContaining({ severity: 2, message: expect.stringMatching(message) }))
+    await stale('src/stale-disable.ts', /Unused eslint-disable directive/)
+    await stale('src/stale-config.ts', /Unused inline config/)
   })
 
   // typescript-eslint turns no-undef off for TypeScript, whose compiler
