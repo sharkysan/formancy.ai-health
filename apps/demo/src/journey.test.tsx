@@ -125,7 +125,7 @@ describe('the page, as it opens', () => {
   // literals outside LINKS, which the browser gate's link check refused at
   // every width in every browser; dropped from the foot, or pointing
   // anywhere LINKS does not name, the page would fail it again.
-  test.each(LANGUAGES)('links formancy.ai\'s legal notice and privacy notice from its foot, by LINKS, in %s', (language) => {
+  test.each(LANGUAGES)("links formancy.ai's legal notice and privacy notice from its foot, by LINKS, in %s", (language) => {
     open(language)
     const foot = within(screen.getByRole('contentinfo'))
     expect(foot.getByRole('link', { name: WORDS[language].footer.legal }).getAttribute('href')).toBe(LINKS.legal)

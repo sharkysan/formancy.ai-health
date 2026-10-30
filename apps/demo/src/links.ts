@@ -1,9 +1,9 @@
 /**
  * Every address the page links to, and nothing else: the repository, its
- * licence, the register of warnings the validator gate accepts, and the
- * formancy.ai's legal notice and privacy notice, which the footer links, the
- * notices of what the page bundles, the one file of its own build it links
- * to, which scripts/third-party-notices.mjs writes beside index.html and
+ * licence, the register of warnings the validator gate accepts,
+ * formancy.ai's legal notice and privacy notice, which the footer links, and
+ * the notices of what the page bundles, the one file of its own build it
+ * links to, which scripts/third-party-notices.mjs writes beside index.html and
  * names NOTICES_FILE (src/build/plugin.test.ts holds the two the same). The
  * page fetches none of them; a visitor follows them.
  */
