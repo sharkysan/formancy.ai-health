@@ -268,10 +268,12 @@ and the document says what. Three shapes, in order of preference:
    say when it was taken (0016); `scripts/code-style/code-style.test.mjs`
    fails when a shared lint rule stops running at error on the kind of
    file it is for, a path a repository passes stops doing what it says, or
-   Prettier's options change, and `scripts/lint.test.mjs` when a rule is
-   set to warn on the files it samples, this repository's tsconfigs stop
-   reaching its packages, or Prettier's check stops finding a file it
-   would write otherwise (0017). The
+   Prettier's options change, and `scripts/lint.test.mjs` when a
+   TypeScript or JavaScript file git holds is not linted, has a rule at
+   warn or one of the recommended sets' rules off beyond a test's six
+   relaxations and the untyped files' typed rules, or resolves to another
+   style, `pnpm lint` stops being `eslint .`, or the format check stops
+   naming a misformatted file of an extension git holds (0017). The
    architecture's guard, the guide's and the README's read Markdown
    through one module, `scripts/markdown.mjs`.
    All of them run as `pnpm test:repo`, and CI runs that — **a guard that

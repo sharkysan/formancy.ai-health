@@ -1,35 +1,108 @@
-import { spawnSync } from 'node:child_process'
-import { mkdtempSync, readdirSync, readFileSync, existsSync, rmSync, writeFileSync } from 'node:fs'
-import { dirname, join, relative } from 'node:path'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, extname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { isDeepStrictEqual } from 'node:util'
+import js from '@eslint/js'
 import { ESLint } from 'eslint'
 import * as prettier from 'prettier'
+import tseslint from 'typescript-eslint'
 import { describe, expect, test } from 'vitest'
-import { prettierConfig } from './code-style/code-style.mjs'
+import { FILES, prettierConfig } from './code-style/code-style.mjs'
 
 /**
- * The linter's and the formatter's wiring, as a gate: that this
- * repository's files are linted and formatted by the shared rules, with
- * the paths eslint.config.mjs passes them and prettier.config.mjs's style.
+ * The linter's and the formatter's wiring, as a gate: that every
+ * TypeScript and JavaScript file git holds is linted by the shared rules,
+ * with the paths eslint.config.mjs passes them, and formatted in
+ * prettier.config.mjs's style.
  *
  * The rules themselves are scripts/code-style/code-style.mjs, the copy of
  * what formancy.ai will publish as a shared package for all four
  * repositories, and code-style.test.mjs beside it holds what each does.
- * The cases here lint a short text as though it stood at a real path, so
- * the typed rules run on a file one of this repository's tsconfigs holds.
+ * What is held here is derived from the files git holds, each known by the
+ * language Prettier infers for it, and from the two recommended sets as
+ * ESLint itself computes them, never from a list of this file's own: a
+ * file added, a rule a set adds, a relaxation or a warning anywhere is
+ * seen without an edit here. Two cases lint a short text as though it
+ * stood at a real path, so the typed rules run on a file one of this
+ * repository's tsconfigs holds.
  *
  * What it cannot see: whether a rule's verdict is right. It holds that a
  * rule runs and fails the build, not that what it reports is a defect.
  */
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const eslint = new ESLint({ cwd: root })
+const scripts = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).scripts
 
 const lint = (code, path) => eslint.lintText(code, { filePath: join(root, path) }).then(([result]) => result.messages)
 const ruleIds = (messages) => messages.map((m) => m.ruleId)
 
+/** A package's source, which every rule holds, beside which the install fixtures are read. */
 const SOURCE = 'packages/health-core/src/numbers.ts'
-const TEST = 'packages/health-core/src/numbers.test.ts'
-const SCRIPT = 'scripts/purpose.mjs'
+
+/** A test, by its name, as the size budget knows one; the capture is the name its source would have. */
+const TEST = /\.(test|spec)(\.[cm]?[jt]sx?)$/
+
+/** The install fixtures, which import the packed tarballs and are linted without types. */
+const UNTYPED = 'scripts/install-fixture/'
+
+/** What 0017 relaxes in a test, and nothing else. */
+const RELAXED_IN_TESTS = [
+  '@typescript-eslint/no-unsafe-assignment',
+  '@typescript-eslint/no-unsafe-member-access',
+  '@typescript-eslint/no-unsafe-call',
+  '@typescript-eslint/no-unsafe-argument',
+  '@typescript-eslint/no-unsafe-return',
+  '@typescript-eslint/unbound-method',
+]
+
+const HOOKS = ['react-hooks/rules-of-hooks', 'react-hooks/exhaustive-deps']
+
+/** typescript-eslint's rules that read types, as its rules say of themselves. */
+const TYPED_RULES = Object.entries(tseslint.plugin.rules)
+  .filter(([, rule]) => rule.meta.docs?.requiresTypeChecking)
+  .map(([name]) => `@typescript-eslint/${name}`)
+
+const severity = (entry) => {
+  const level = Array.isArray(entry) ? entry[0] : entry
+  return { off: 0, warn: 1, error: 2 }[level] ?? level ?? 0
+}
+const normal = (entry) => (entry === undefined ? [0] : [severity(entry), ...(Array.isArray(entry) ? entry.slice(1) : [])])
+const atError = (rules) => Object.keys(rules).filter((rule) => severity(rules[rule]) === 2)
+const differing = (a, b) => [...new Set([...Object.keys(a), ...Object.keys(b)])].filter((rule) => !isDeepStrictEqual(normal(a[rule]), normal(b[rule]))).sort()
+
+/** The rules a set of configurations sets for a file at `path`, as ESLint merges them, the sets' own overrides by language included. */
+async function rulesOf(configs, path) {
+  const reference = new ESLint({ cwd: root, overrideConfigFile: true, overrideConfig: configs })
+  return (await reference.calculateConfigForFile(join(root, path))).rules
+}
+
+/**
+ * Every file git holds that Prettier formats as JavaScript or TypeScript,
+ * by the parser it infers -- so a kind of file no list here names is found
+ * -- and whether that parser is TypeScript's.
+ */
+async function trackedSources() {
+  const parsers = (await prettier.getSupportInfo()).languages.find((language) => language.name === 'JavaScript').parsers
+  const tracked = execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean)
+  const inferred = await Promise.all(tracked.map((file) => prettier.getFileInfo(join(root, file)).then(({ inferredParser }) => inferredParser)))
+  return tracked.flatMap((file, i) => (parsers.includes(inferred[i]) ? [{ file, typescript: inferred[i] === 'typescript' }] : []))
+}
+
+/** The workspace directories whose manifest declares React, each ending in a slash. */
+function reactWorkspaces() {
+  return ['packages', 'apps'].flatMap((group) =>
+    readdirSync(join(root, group))
+      .filter((name) => {
+        const manifest = join(root, group, name, 'package.json')
+        if (!existsSync(manifest)) return false
+        const { dependencies, devDependencies, peerDependencies } = JSON.parse(readFileSync(manifest, 'utf8'))
+        return [dependencies, devDependencies, peerDependencies].some((declared) => declared?.react !== undefined)
+      })
+      .map((name) => `${group}/${name}/`),
+  )
+}
 
 // The first case to lint a file of a tsconfig builds that tsconfig's
 // program. Measured on 30 October 2026 on an Apple M2 with 8 cores, under
@@ -42,6 +115,61 @@ const SCRIPT = 'scripts/purpose.mjs'
 const TYPED = { timeout: 30_000 }
 
 describe('the linter', TYPED, () => {
+  // A file ESLint never reads, or reads at warn, or with a recommended rule
+  // quietly off, passes `pnpm lint` without anyone noticing: a narrowed
+  // command, a relaxation added for tests or for everything, a glob that
+  // types too little or relaxes too much. So each file git holds is held
+  // to what its kind is held to: TypeScript to both recommended sets at
+  // error, its typed half off only in the install fixtures, which differ
+  // from a package's source by that half and nothing else; JavaScript to
+  // the sets' rules that need no types; a test to its source's rules but
+  // the six relaxations; and a file of a workspace that declares React to
+  // the hooks rules.
+  test('every TypeScript and JavaScript file git holds is linted, by the rules its kind is held to', async () => {
+    expect(scripts.lint).toBe('eslint .')
+    const recommended = {
+      typescript: atError(await rulesOf([js.configs.recommended, ...tseslint.configs.recommendedTypeChecked], 'reference.ts')),
+      javascript: atError(await rulesOf([js.configs.recommended, ...tseslint.configs.recommended], 'reference.mjs')),
+    }
+    const react = reactWorkspaces()
+    const source = (await eslint.calculateConfigForFile(join(root, SOURCE))).rules
+    const problems = []
+    const seen = { source: 0, test: 0, javascript: 0, untyped: 0, react: 0 }
+    for (const { file, typescript } of await trackedSources()) {
+      if (await eslint.isPathIgnored(join(root, file))) {
+        problems.push(`${file}: not linted`)
+        continue
+      }
+      const { rules, languageOptions } = await eslint.calculateConfigForFile(join(root, file))
+      const test = TEST.test(file)
+      const untyped = file.startsWith(UNTYPED)
+      const typed = typescript && !untyped
+      const off = [...(test ? RELAXED_IN_TESTS : []), ...(typed ? [] : TYPED_RULES)]
+      for (const rule of Object.keys(rules).filter((rule) => severity(rules[rule]) === 1)) problems.push(`${file}: ${rule} warns`)
+      for (const rule of recommended[typescript ? 'typescript' : 'javascript']) {
+        if (!off.includes(rule) && severity(rules[rule]) !== 2) problems.push(`${file}: ${rule} is not at error`)
+      }
+      for (const rule of off) if (severity(rules[rule]) !== 0) problems.push(`${file}: ${rule} is on`)
+      if (Boolean(languageOptions.parserOptions?.project) !== typed) problems.push(`${file}: ${typed ? 'not ' : ''}linted with types`)
+      if (test) {
+        const its = (await eslint.calculateConfigForFile(join(root, file.replace(TEST, '$2')))).rules
+        const relaxed = RELAXED_IN_TESTS.filter((rule) => severity(its[rule]) !== 0).sort()
+        const differ = differing(rules, its)
+        if (!isDeepStrictEqual(differ, relaxed)) problems.push(`${file}: differs from its source by ${differ.join(', ') || 'nothing'}`)
+      }
+      if (untyped) {
+        const beyond = differing(rules, source).filter((rule) => !TYPED_RULES.includes(rule))
+        if (beyond.length > 0) problems.push(`${file}: differs from ${SOURCE} by ${beyond.join(', ')}`)
+      }
+      const inReact = typescript && react.some((workspace) => file.startsWith(workspace))
+      if (inReact) for (const rule of HOOKS) if (severity(rules[rule]) !== 2) problems.push(`${file}: ${rule} is not at error`)
+      seen[test ? 'test' : untyped ? 'untyped' : typescript ? 'source' : 'javascript'] += 1
+      if (inReact) seen.react += 1
+    }
+    expect(problems).toEqual([])
+    for (const [kind, count] of Object.entries(seen)) expect(count, `files of the kind ${kind}`).toBeGreaterThan(0)
+  })
+
   // A tool config that falls outside every tsconfig is not linted with types,
   // or not linted at all.
   test('a vitest config is linted with types', async () => {
@@ -56,7 +184,9 @@ describe('the linter', TYPED, () => {
   })
 
   // A new package or app must be linted with types without anyone editing
-  // the configuration; a tsconfig the parser cannot read is a fatal message.
+  // the configuration. A tsconfig the parser cannot read is a fatal
+  // message, and a package ESLint ignores a warning that it was ignored, so
+  // a file of each that lint passes has no message at all.
   test("every package's and app's tsconfig is one lint reads", async () => {
     const firstSource = (dir) => {
       for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
@@ -74,51 +204,46 @@ describe('the linter', TYPED, () => {
         if (!existsSync(join(dir, 'tsconfig.json')) || !existsSync(join(dir, 'src'))) continue
         const file = firstSource(join(dir, 'src'))
         if (!file) continue
-        const fatal = (await lint(readFileSync(file, 'utf8'), relative(root, file))).filter((m) => m.fatal)
-        expect(fatal, file).toEqual([])
+        expect(await lint(readFileSync(file, 'utf8'), relative(root, file)), file).toEqual([])
         checked += 1
       }
     }
     expect(checked).toBeGreaterThan(0)
   })
-
-  // A warning is a finding nobody has to fix: it accumulates until the count
-  // means nothing.
-  test('no rule warns', async () => {
-    for (const path of [SOURCE, TEST, SCRIPT, 'apps/demo/src/download.tsx']) {
-      const config = await eslint.calculateConfigForFile(join(root, path))
-      for (const [rule, entry] of Object.entries(config.rules)) {
-        const severity = Array.isArray(entry) ? entry[0] : entry
-        expect([0, 2, 'off', 'error'], `${rule} at ${path}`).toContain(severity)
-      }
-    }
-  })
 })
 
 describe('the formatter', () => {
   // Two repositories formatted differently would reformat each other's
-  // files on every change, so Prettier finds the shared style here.
-  test('the style is the shared one', async () => {
-    expect(await prettier.resolveConfig(join(root, 'packages/health-core/src/numbers.ts'))).toEqual(prettierConfig)
-    expect(await prettier.resolveConfig(join(root, 'scripts/purpose.mjs'))).toEqual(prettierConfig)
+  // files on every change. A .prettierrc in a directory, or an
+  // .editorconfig, which Prettier's command line reads, would change the
+  // style for the files beneath it.
+  test('every TypeScript and JavaScript file git holds is formatted in the shared style', async () => {
+    const differ = []
+    for (const { file } of await trackedSources()) {
+      const options = await prettier.resolveConfig(join(root, file), { editorconfig: true })
+      if (!isDeepStrictEqual(options, prettierConfig)) differ.push(`${file}: ${JSON.stringify(options)}`)
+    }
+    expect(differ).toEqual([])
   })
 
-  // A glob that matches nothing passes the check; so the check is shown to
-  // fail on a file it should find, with the glob the script itself carries.
-  test("the formatter's check finds a misformatted file", () => {
-    const script = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).scripts['format:check']
-    const glob = /'([^']+)'/.exec(script)?.[1]
-    expect(glob, 'format:check names a glob').toBeTruthy()
-    const dir = mkdtempSync(join(root, 'scripts', 'lint-sample-'))
+  // A glob that matches nothing fails the check, but a narrowed one passes
+  // on the files it still names. So both scripts hand Prettier the shared
+  // list, and the check, as the script runs it, is run on a misformatted
+  // file of every extension git holds, outside the repository, where a run
+  // that is killed leaves nothing behind, and must name each.
+  test('the format scripts check a misformatted file of every extension git holds', async () => {
+    for (const name of ['format', 'format:check']) expect(scripts[name], name).toContain(`'${FILES}'`)
+    const extensions = [...new Set((await trackedSources()).map(({ file }) => extname(file)))]
+    const [command, ...args] = scripts['format:check'].split(' ').map((word) => word.replace(/^'(.*)'$/, '$1'))
+    expect(command).toBe('prettier')
+    const prettierRoot = dirname(fileURLToPath(import.meta.resolve('prettier')))
+    const bin = join(prettierRoot, JSON.parse(readFileSync(join(prettierRoot, 'package.json'), 'utf8')).bin)
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), 'format-sample-')))
     try {
-      writeFileSync(join(dir, 'sample.ts'), 'const a = "x";\n')
-      const prettierBin = join(dirname(fileURLToPath(import.meta.resolve('prettier'))), 'bin', 'prettier.cjs')
-      const run = spawnSync(process.execPath, [prettierBin, '--check', '--log-level', 'warn', `${relative(root, dir)}/${glob}`], {
-        cwd: root,
-        encoding: 'utf8',
-      })
-      expect(run.status).not.toBe(0)
-      expect(run.stdout + run.stderr).toContain('sample.ts')
+      for (const extension of extensions) writeFileSync(join(dir, `sample${extension}`), 'const a = "x";\n')
+      const run = spawnSync(process.execPath, [bin, ...args, '--config', join(root, 'prettier.config.mjs')], { cwd: dir, encoding: 'utf8' })
+      expect(run.status, run.stderr).toBe(1)
+      for (const extension of extensions) expect(run.stdout + run.stderr).toContain(`sample${extension}`)
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }

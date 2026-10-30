@@ -20,18 +20,38 @@
     included; an untyped file linted without types; a page's globals where
     a browser is driven and nowhere else; the hooks rules where React is
     written; a nested `.gitignore` read for its own directory; and a
-    required path left out refused -- and Prettier's four options. Each
-    case of a path failed with the block it holds removed, or read
-    otherwise, and the JavaScript and `.jsx` cases before JavaScript was
-    held to typescript-eslint's rules.
+    required path left out refused -- and Prettier's four options. The
+    rule cases came from the first guard, which failed whole before the
+    tools were installed, and its disable-comment case with
+    `require-description` dropped; here, the typed cases failed with the
+    untyped set in the type-aware one's place, and the test's with a
+    seventh relaxation. Each case of a path failed with the block it holds
+    removed, or read otherwise, and the JavaScript and `.jsx` cases before
+    JavaScript was held to typescript-eslint's rules.
   - **`scripts/lint.test.mjs`** (`pnpm test:repo`) -- this repository's
-    wiring: a vitest config, linted with types; the hooks rules in the
-    demo; every package's and app's tsconfig among those lint reads; no
-    rule at `warn`; Prettier finding the shared style; and the formatter's
-    check finding a file it would write otherwise. Its rule cases failed
-    whole before the tools were installed; its disable-comment case, now
-    the shared test's, with `require-description` dropped, and its case of
-    no rule at `warn` with a rule set to `warn`.
+    wiring, derived from the files git holds, each known by the language
+    Prettier infers for it, and from the two recommended sets as ESLint
+    computes them. Every TypeScript and JavaScript file is linted, by
+    `pnpm lint` as `eslint .`, with no rule at `warn`: TypeScript with
+    every rule of both sets at error, typed through a tsconfig, but the
+    install fixtures, which differ from a package's source by the typed
+    rules alone; JavaScript with the sets' rules that need no types; a test
+    with its source's rules but the six relaxations; and a file of a
+    workspace whose manifest declares React with the hooks rules. Every
+    such file resolves to the shared style, an `.editorconfig` read as
+    Prettier's command line reads it; both format scripts hand Prettier the
+    shared list, and the check, as the script runs it, names a misformatted
+    file of every extension git holds, written under the system's
+    temporary directory. Beside them, a vitest config is linted with types,
+    the hooks rules run in the demo, and a source file of every package
+    and app is linted with no message at all. Each case failed with what
+    it holds broken: a package ignored; `require-await` off in tests; a
+    rule at `warn` in a directory no case read; `lint` narrowed to
+    `eslint scripts`; the format glob narrowed; an `.editorconfig` -- the
+    guard it replaced passed all six -- and `require-await` off
+    everywhere; a package's `.prettierrc`; the demo not passed as React; a
+    rule of the sets relaxed for the fixtures; the untyped glob reaching a
+    package; and `.mts` dropped from the shared list.
   - **`verify`'s `pnpm lint` and `pnpm format:check`**, run by CI on every
     pull request and by a release before it publishes. With
     `Promise.resolve()` planted as a statement at the end of
