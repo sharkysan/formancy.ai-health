@@ -76,8 +76,12 @@
   Apple M2 with 8 cores and 16 GB under macOS 26.5.2, with Node 22.23.3
   and pnpm 12.4.2, while other work ran (a load average of 12):
   `pnpm lint` took 6.3 s of wall time over the 275 TypeScript and
-  JavaScript files git held, and `pnpm format:check` 2.8 s. No runner was
-  measured.
+  JavaScript files git held, and `pnpm format:check` 2.8 s. Measured again
+  once each the same day, at a load average of 7, once the rules were one
+  shared module and JavaScript was held to typescript-eslint's rules:
+  `pnpm lint` took 6.7 s over the 278 files git held then,
+  `pnpm format:check` 2.5 s with its style imported from that module, and
+  `lint.test.mjs`'s derived case 0.18 s. No runner was measured.
 
   **Not mechanically enforced:** how the pull request that brings this
   merges, which GitHub leaves to the person merging; that a disable
@@ -194,13 +198,12 @@ reported 46, in 21 of 275 files, and none was a defect.
   that holds here alone, French typography in
   `apps/demo/src/words/fr.ts`, is written where `eslint.config.mjs` calls
   it; so each of the other three copies the directory byte for byte and
-  writes its own call. The swap is
-  a pull request of its own: the package pinned exactly as a root
-  devDependency, the directory deleted, the two config files importing
-  the package instead, and `scripts/upstream-deps.mjs` extended to the
-  root manifest, which holds no `@formancy/*` dependency until then.
-  Until the swap, a rule changed here is changed in formancy.ai's package
-  too.
+  writes its own call. The swap is a pull request of its own: the package
+  pinned exactly as a root devDependency, the directory deleted, the two
+  config files importing the package instead, and
+  `scripts/upstream-deps.mjs` extended to the root manifest, which holds
+  no `@formancy/*` dependency until then. Until the swap, a rule changed
+  here is changed in formancy.ai's package too.
 - **One format commit, merged as it is.** The format is one commit of
   Prettier's output and nothing else, `d570b37`, which
   `.git-blame-ignore-revs` names by its SHA. **The pull request that
@@ -237,7 +240,8 @@ four.
   style in a module of its own would spare it, and would be a second file
   to copy.
 - **Typed lint's time**, inside `verify`'s 15 minutes: 6.3 s on the Mac
-  above, and no runner measured.
+  above, 6.7 s once JavaScript was held to typescript-eslint's rules, and
+  no runner measured.
 - **The test relaxations hide an `any` in a test.** A test may read a
   member a value does not have and pass the linter; tsc's strictness holds
   what is typed, and nothing holds what is not.
@@ -276,9 +280,14 @@ would have to hash the root's rules to know they had changed.
 **Warnings.** Rejected: a warning is a finding nobody has to fix, and a
 guard that is not a gate is a comment.
 
-**120 columns.** Rejected: of the widths measured on 30 October 2026 --
-100, 120 and 160 -- 160 rewrote the fewest lines here, and one width
-across the four repositories is the point.
+**120 columns.** Rejected: 160 rewrote the fewest lines of the widths
+measured, and one width across the four repositories is the point.
+Measured on 30 October 2026 with Prettier 3.9.10 and the other three
+options, over the 273 TypeScript and JavaScript files git held at
+`72db2c8`, by `git diff --shortstat` after each run: 100 columns
+rewrote 236 files, adding 19,213 lines and removing 4,233; 120 columns
+225 files, adding 12,791 and removing 2,927; and 160 columns 177 files,
+adding 5,443 and removing 1,302.
 
 **Every kind of file formatted.** Rejected: Markdown is wrapped by hand to
 each file's width, and a decision record rewrapped is one the limitations
