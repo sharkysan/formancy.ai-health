@@ -26,10 +26,13 @@ import { FILES, prettierConfig } from './code-style/code-style.mjs'
  * ESLint itself computes them, never from a list of this file's own: a
  * file added, a rule a set adds, a relaxation or a warning anywhere is
  * seen without an edit here. The one case that lints hands ESLint a
- * file's own content and never another text at its path: on Linux, ESLint
- * linted the file on disk instead of the text given (CI run 41045406900,
- * 30 October 2026), so a case that edits a repository file's text would
- * pass there having checked nothing. What a rule does to a text is held in
+ * file's own content and never another text at its path, and lints each
+ * file once: on CI, where CI=true, typescript-eslint infers a single run,
+ * so a text for a path on disk is typed as the file on disk (CI run
+ * 41045406900, 30 October 2026) and a file linted twice gives no findings
+ * the second time (the run of 4f151a2, 41083791693). A case that edits a
+ * repository file's text, or lints one twice, would pass there having
+ * checked nothing. What a rule does to a text is held in
  * code-style.test.mjs, in a repository of real files it writes.
  *
  * What it cannot see: whether a rule's verdict is right. It holds that a
@@ -40,7 +43,13 @@ const eslint = new ESLint({ cwd: root })
 const scripts = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).scripts
 
 /** The messages for a file of the repository, linted with its own content, as `pnpm lint` reads it. */
-const lintOwn = (file) => eslint.lintText(readFileSync(file, 'utf8'), { filePath: file }).then(([result]) => result.messages)
+const linted = new Set()
+const lintOwn = (file) => {
+  // A second lint of a file gives no findings in a single run, which would pass vacuously.
+  if (linted.has(file)) throw new Error(`${file} is linted twice`)
+  linted.add(file)
+  return eslint.lintText(readFileSync(file, 'utf8'), { filePath: file }).then(([result]) => result.messages)
+}
 
 /** A package's source, which every rule holds, beside which the install fixtures are read. */
 const SOURCE = 'packages/health-core/src/numbers.ts'

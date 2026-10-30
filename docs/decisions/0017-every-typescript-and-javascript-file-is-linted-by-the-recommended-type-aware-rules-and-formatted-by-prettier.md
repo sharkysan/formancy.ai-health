@@ -57,10 +57,16 @@
     and every file `tsconfig.tools.json` takes in -- the vitest, Vite and
     tsdown configs -- is linted with its own content and with no message at
     all, a file in no project being a fatal one. That case never hands
-    ESLint a text other than the file's: on Linux ESLint linted the file on
-    disk instead of the text given (CI run 41045406900, 30 October 2026),
-    so the two cases that did, a vitest config and a conditional hook in
-    the demo, passed on macOS and failed on Linux. The hooks rules' behaviour is
+    ESLint a text other than the file's, and lints each file once: on CI,
+    where `CI=true`, typescript-eslint infers a single run, so a text for a
+    path on disk is typed as the file on disk (CI run 41045406900, 30
+    October 2026) -- the two cases that handed one, a vitest config and a
+    conditional hook in the demo, passed locally and failed there -- and a
+    file linted twice gives no findings the second time (the run of
+    4f151a2, 41083791693, where a case asserted on `src/floating.ts` after
+    another had linted it). `code-style.test.mjs` therefore runs every case
+    as a single run, setting `TSESTREE_SINGLE_RUN`, and lints each file
+    once, so the local run meets what CI meets. The hooks rules' behaviour is
     held in `code-style.test.mjs`'s repository of real files, and here only
     that they are at error in a workspace that declares React. Each case failed with what
     it holds broken: a package ignored; a rule of the sets relaxed in tests beyond the seven; `./tsconfig.tools.json` dropped from
