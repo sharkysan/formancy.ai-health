@@ -1,4 +1,7 @@
-import { describe, expect, test } from 'vitest'
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, describe, expect, test } from 'vitest'
 import { lockedPackages, releaseAgeExemptionProblems, releaseAgeExemptions, upstreamDependencyProblems, workspaceManifests } from './upstream-deps.mjs'
 
 describe('upstreamDependencyProblems', () => {
@@ -36,6 +39,46 @@ describe('upstreamDependencyProblems', () => {
   // A pre-release is still a release somebody chose.
   test('accepts an exact pre-release', () => {
     expect(upstreamDependencyProblems([{ name: 'x', dependencies: { '@formancy/core': '0.6.0-rc.1' } }])).toEqual([])
+  })
+})
+
+describe('workspaceManifests', () => {
+  const made = []
+  afterEach(() => {
+    for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true })
+  })
+
+  /** A repository of its own under the system's temporary directory, with the manifests it is handed. */
+  function repository(rootManifest, packages = {}) {
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), 'upstream-deps-')))
+    made.push(dir)
+    writeFileSync(join(dir, 'package.json'), JSON.stringify(rootManifest))
+    for (const [name, manifest] of Object.entries(packages)) {
+      mkdirSync(join(dir, 'packages', name), { recursive: true })
+      writeFileSync(join(dir, 'packages', name, 'package.json'), JSON.stringify(manifest))
+    }
+    return dir
+  }
+
+  // 0017 pins @formancy/code-style as a root devDependency, which is where
+  // the lint and format rules come from: a guard that read only packages/ and
+  // apps/ would let ^0.12.0 move the rules under this repository with no
+  // commit saying so, and a link: would take them from whatever checkout
+  // happened to be on one machine.
+  test('reads the root manifest, so a range or a link on the shared lint rules is refused', () => {
+    for (const spec of ['^0.12.0', 'workspace:*', 'link:../formancy.ai/packages/code-style']) {
+      const dir = repository({ name: 'formancy-health', devDependencies: { '@formancy/code-style': spec } }, { core: { name: '@formancy/health-core' } })
+      const manifests = workspaceManifests(dir)
+      expect(manifests.map((manifest) => manifest.name)).toEqual(['formancy-health', '@formancy/health-core'])
+      expect(upstreamDependencyProblems(manifests)).toEqual([`formancy-health: devDependencies @formancy/code-style@${spec} is not an exact released version`])
+    }
+  })
+
+  // The pin 0017 makes, and the other half of the case above: reading the
+  // root must not refuse what the repository does right.
+  test('accepts the shared lint rules pinned exactly at the root', () => {
+    const dir = repository({ name: 'formancy-health', devDependencies: { '@formancy/code-style': '0.12.0' } })
+    expect(upstreamDependencyProblems(workspaceManifests(dir))).toEqual([])
   })
 })
 
@@ -82,6 +125,8 @@ describe('this workspace', () => {
     // health-core today: a walk that found nothing has lost a directory, and
     // would pass by checking nothing.
     expect(manifests.map((manifest) => manifest.name)).toContain('@formancy/health-core')
+    // The root manifest, where the lint rules' package is pinned (0017).
+    expect(manifests.map((manifest) => manifest.name)).toContain('formancy-health')
     expect(upstreamDependencyProblems(manifests)).toEqual([])
   })
 
