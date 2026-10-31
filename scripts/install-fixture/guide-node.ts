@@ -51,4 +51,6 @@ for (const file of WRITES) {
   }
 }
 
-console.log(`ok: the guide's program ran, wrote ${WRITES.join(' and ')}, each a document Bundle, and printed the ${String(said.length)} lines the guide shows it printing`)
+console.log(
+  `ok: the guide's program ran, wrote ${WRITES.join(' and ')}, each a document Bundle, and printed the ${String(said.length)} lines the guide shows it printing`,
+)

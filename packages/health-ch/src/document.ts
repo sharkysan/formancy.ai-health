@@ -143,7 +143,15 @@ function partsOf(context: unknown, refusals: Refusals): Parts | undefined {
   const author = authorOf(valueAt(context, 'author'), refusals)
   const orders = serviceRequestsOf(context, { patient: patient?.fullUrl, requester: author?.role.fullUrl }, refusals)
   const response = responseOf(context, namesOf(context), refusals)
-  if (refusals.count > 0 || identifier === undefined || composition?.fullUrl === undefined || patient === undefined || author === undefined || orders === undefined) return undefined
+  if (
+    refusals.count > 0 ||
+    identifier === undefined ||
+    composition?.fullUrl === undefined ||
+    patient === undefined ||
+    author === undefined ||
+    orders === undefined
+  )
+    return undefined
   const parts: Parts = { identifier, composition: { fullUrl: composition.fullUrl, given: composition.given }, patient, author, orders, response }
   checkNames(parts, refusals)
   return refusals.count > 0 ? undefined : parts
@@ -165,10 +173,17 @@ const PLACES: readonly (readonly [RegExp, string])[] = [
  * it a bug: thrown, not given to the host as its mistake.
  */
 export function reRooted(refusal: Refusal, responseAt: number | undefined): Refusal {
-  const places = responseAt === undefined ? PLACES : [...PLACES, [new RegExp(String.raw`^context\.entries\[${String(responseAt)}\]\.resource(?=$|[.[])`), 'context.response.questionnaireResponse'] as const]
+  const places =
+    responseAt === undefined
+      ? PLACES
+      : [...PLACES, [new RegExp(String.raw`^context\.entries\[${String(responseAt)}\]\.resource(?=$|[.[])`), 'context.response.questionnaireResponse'] as const]
   const place = places.find(([from]) => from.test(refusal.path))
   if (place === undefined) throw new Error(`health-document refused ${refusal.path}, a value health-ch wrote: ${refusal.rule}`)
-  const context = { ...(refusal.type === undefined ? {} : { type: refusal.type }), ...(refusal.offset === undefined ? {} : { offset: refusal.offset }), ...(refusal.language === undefined ? {} : { language: refusal.language }) }
+  const context = {
+    ...(refusal.type === undefined ? {} : { type: refusal.type }),
+    ...(refusal.offset === undefined ? {} : { offset: refusal.offset }),
+    ...(refusal.language === undefined ? {} : { language: refusal.language }),
+  }
   return new Refusal(refusal.rule, refusal.path.replace(place[0], place[1]), context)
 }
 
@@ -182,9 +197,16 @@ const named = ({ fullUrl }: Written<unknown>) => ({ reference: fullUrl })
  * host's, handed on unchecked for health-document to check; the rest is
  * health-ch's. The entries stand in CH ORF's example's order.
  */
-function documentOf(context: object, { identifier, composition, patient, author, orders, response }: Parts): { readonly document: DocumentContext; readonly responseAt: number | undefined } {
+function documentOf(
+  context: object,
+  { identifier, composition, patient, author, orders, response }: Parts,
+): { readonly document: DocumentContext; readonly responseAt: number | undefined } {
   const given = (name: string) => valueAt(composition.given, name)
-  const section = { title: given('sectionTitle') as string, code: ORDER_REFERRAL_SECTION, entry: [...(response === undefined ? [] : [named(response)]), ...orders.map(named)] }
+  const section = {
+    title: given('sectionTitle') as string,
+    code: ORDER_REFERRAL_SECTION,
+    entry: [...(response === undefined ? [] : [named(response)]), ...orders.map(named)],
+  }
   const referral: CompositionContext = {
     fullUrl: composition.fullUrl,
     profile: PROFILES.composition,

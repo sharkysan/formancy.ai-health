@@ -106,7 +106,16 @@ export function chOrfContext(questionnairePackage, ch) {
       practitioner: { fullUrl: CH_ORF_NAMES.practitioner, ...CH_ORF_PEOPLE.practitioner },
       organization: { fullUrl: CH_ORF_NAMES.organization, ...CH_ORF_PEOPLE.organization },
     },
-    serviceRequests: [{ fullUrl: CH_ORF_NAMES.serviceRequest, placer: { system: 'urn:ietf:rfc:3986', value: CH_ORF_NAMES.order }, status: 'active', intent: 'order', priority: 'urgent', authoredOn: '2026-10-17T10:00:00+02:00' }],
+    serviceRequests: [
+      {
+        fullUrl: CH_ORF_NAMES.serviceRequest,
+        placer: { system: 'urn:ietf:rfc:3986', value: CH_ORF_NAMES.order },
+        status: 'active',
+        intent: 'order',
+        priority: 'urgent',
+        authoredOn: '2026-10-17T10:00:00+02:00',
+      },
+    ],
     response: { fullUrl: CH_ORF_NAMES.response, questionnaireResponse: chOrfResponse(questionnairePackage.toQuestionnaireResponse, ch) },
   }
 }
@@ -171,10 +180,8 @@ export function chOrfOutput(core, questionnairePackage, ch, copy) {
     },
     {
       file: 'bundle-ch-orf-identifier-system-other.json',
-      why: "a document identifier under another system than urn:ietf:rfc:3986, which ch-orf-document fixes and health-ch always writes",
-      expect: [
-        { severity: 'error', id: '_DT_Fixed_Wrong', expression: 'Bundle.identifier.system' },
-      ],
+      why: 'a document identifier under another system than urn:ietf:rfc:3986, which ch-orf-document fixes and health-ch always writes',
+      expect: [{ severity: 'error', id: '_DT_Fixed_Wrong', expression: 'Bundle.identifier.system' }],
       resource: broken((bundle) => {
         bundle.identifier.system = core.uri('urn:oid:2.999.756.2', 'corpus')
       }),
@@ -227,7 +234,11 @@ export function chOrfOutput(core, questionnairePackage, ch, copy) {
       // requester and the role's practitioner, and the slices of the
       // section and of the Bundle (measured).
       expect: [
-        { severity: 'error', id: 'http://fhir.ch/ig/ch-core/StructureDefinition/ch-core-practitioner#ch-pract-1', expression: 'Bundle.entry[5].resource/*Practitioner/null*/' },
+        {
+          severity: 'error',
+          id: 'http://fhir.ch/ig/ch-core/StructureDefinition/ch-core-practitioner#ch-pract-1',
+          expression: 'Bundle.entry[5].resource/*Practitioner/null*/',
+        },
         { severity: 'error', id: 'Reference_REF_CantMatchChoice', expression: 'Bundle.entry[0].resource/*Composition/null*/.author[0]' },
         { severity: 'error', id: 'Reference_REF_CantMatchChoice', expression: 'Bundle.entry[2].resource.author' },
         { severity: 'error', id: 'Reference_REF_CantMatchChoice', expression: 'Bundle.entry[3].resource.requester' },
@@ -241,10 +252,8 @@ export function chOrfOutput(core, questionnairePackage, ch, copy) {
     },
     {
       file: 'bundle-ch-orf-response-subject-practitioner.json',
-      why: "answers whose subject is the Practitioner, where ch-orf-questionnaireresponse admits a ch-core-patient alone, which health-ch refuses",
-      expect: [
-        { severity: 'error', id: 'Reference_REF_BadTargetType', expression: 'Bundle.entry[2].resource.subject' },
-      ],
+      why: 'answers whose subject is the Practitioner, where ch-orf-questionnaireresponse admits a ch-core-patient alone, which health-ch refuses',
+      expect: [{ severity: 'error', id: 'Reference_REF_BadTargetType', expression: 'Bundle.entry[2].resource.subject' }],
       resource: broken((bundle) => {
         resourceOf(bundle, CH_ORF_NAMES.response).subject.reference = CH_ORF_NAMES.practitioner
       }),
@@ -253,7 +262,11 @@ export function chOrfOutput(core, questionnairePackage, ch, copy) {
       file: 'bundle-ch-orf-gln-check-digit-wrong.json',
       why: "a GLN whose check digit is not GS1's, which health-ch refuses and CH Core's gln-modulus-10 only warns of: unregistered, the warning refuses it here",
       expect: [
-        { severity: 'warning', id: 'http://fhir.ch/ig/ch-core/StructureDefinition/ch-core-gln-identifier#gln-modulus-10', expression: 'Bundle.entry[5].resource/*Practitioner/null*/.identifier[0].value' },
+        {
+          severity: 'warning',
+          id: 'http://fhir.ch/ig/ch-core/StructureDefinition/ch-core-gln-identifier#gln-modulus-10',
+          expression: 'Bundle.entry[5].resource/*Practitioner/null*/.identifier[0].value',
+        },
       ],
       resource: broken((bundle) => {
         resourceOf(bundle, CH_ORF_NAMES.practitioner).identifier[0].value = '9520000000012'
@@ -263,7 +276,11 @@ export function chOrfOutput(core, questionnairePackage, ch, copy) {
       file: 'bundle-ch-orf-ahvn13-check-digit-wrong.json',
       why: "an AHV number whose check digit is not GS1's, which health-ch refuses and CH Core's ahvn13-digit-check only warns of: unregistered, the warning refuses it here. 7561234567890 has the wrong check digit, which makes it no AHVN13 and nobody's",
       expect: [
-        { severity: 'warning', id: 'http://fhir.ch/ig/ch-core/StructureDefinition/ch-core-ahvn13-identifier#ahvn13-digit-check', expression: 'Bundle.entry[1].resource/*Patient/null*/.identifier[0].value' },
+        {
+          severity: 'warning',
+          id: 'http://fhir.ch/ig/ch-core/StructureDefinition/ch-core-ahvn13-identifier#ahvn13-digit-check',
+          expression: 'Bundle.entry[1].resource/*Patient/null*/.identifier[0].value',
+        },
       ],
       resource: broken((bundle) => {
         resourceOf(bundle, CH_ORF_NAMES.patient).identifier.unshift({ system: core.uri('urn:oid:2.16.756.5.32', 'corpus'), value: '7561234567890' })

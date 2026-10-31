@@ -48,8 +48,12 @@ describe('the compatibility record', () => {
   test('lists no upstream package only the demo depends on', () => {
     const manifest = (path) => JSON.parse(readFileSync(join(repo, path), 'utf8'))
     const of = (pkg) => Object.keys({ ...pkg.dependencies, ...pkg.devDependencies })
-    const packages = readdirSync(join(repo, 'packages')).flatMap((name) => (existsSync(join(repo, 'packages', name, 'package.json')) ? of(manifest(`packages/${name}/package.json`)) : []))
-    const demoOnly = of(manifest('apps/demo/package.json')).filter((name) => name.startsWith('@formancy/') && !name.startsWith('@formancy/health-') && !packages.includes(name))
+    const packages = readdirSync(join(repo, 'packages')).flatMap((name) =>
+      existsSync(join(repo, 'packages', name, 'package.json')) ? of(manifest(`packages/${name}/package.json`)) : [],
+    )
+    const demoOnly = of(manifest('apps/demo/package.json')).filter(
+      (name) => name.startsWith('@formancy/') && !name.startsWith('@formancy/health-') && !packages.includes(name),
+    )
     expect(demoOnly).toContain('@formancy/react')
     expect(facts(repo).upstream.filter(({ name }) => demoOnly.includes(name))).toEqual([])
   })

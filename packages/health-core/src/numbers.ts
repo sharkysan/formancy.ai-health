@@ -79,7 +79,8 @@ class FhirNumber<T extends NumberType = NumberType> {
     if (typeof value === 'number') throw new Refusal('javascript-number', path, { type })
     const text = typeof value === 'bigint' ? value.toString() : value
     if (typeof text !== 'string' || !FORM[type].test(text)) throw new Refusal('grammar', path, { type })
-    if (type !== 'decimal' && !within(text, RANGE[type as Exclude<NumberType, 'decimal'>])) throw new Refusal('range', path, { type })
+    const kind: NumberType = type
+    if (kind !== 'decimal' && !within(text, RANGE[kind])) throw new Refusal('range', path, { type })
     this.type = type
     this.#text = text
     Object.freeze(this)
@@ -114,7 +115,7 @@ export type FhirUnsignedInt = FhirNumber<'unsignedInt'>
  * Whether `value` is a FHIR number made here. An object with a `type` and
  * a `text` is not one: a Questionnaire item has both.
  */
-export const isFhirNumber: (value: unknown) => value is FhirNumber = FhirNumber.is
+export const isFhirNumber: (value: unknown) => value is FhirNumber = (value) => FhirNumber.is(value)
 
 /**
  * A FHIR decimal from its text, or from a bigint's digits. `path` is where
@@ -186,7 +187,8 @@ function compareMagnitudes(a: Value, b: Value): -1 | 0 | 1 {
  * keeps its text.
  */
 export function compareNumbers(a: FhirNumber, b: FhirNumber): -1 | 0 | 1 {
-  if (!isFhirNumber(a) || !isFhirNumber(b)) throw new TypeError('compareNumbers compares FHIR numbers made by decimal(), integer(), positiveInt() or unsignedInt()')
+  if (!isFhirNumber(a) || !isFhirNumber(b))
+    throw new TypeError('compareNumbers compares FHIR numbers made by decimal(), integer(), positiveInt() or unsignedInt()')
   const [left, right] = [valueOf(a.text), valueOf(b.text)]
   if (left.negative !== right.negative) return left.negative ? -1 : 1
   const order = compareMagnitudes(left, right)

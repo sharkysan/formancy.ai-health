@@ -52,8 +52,18 @@ export const ASSETS = 'assets/'
  */
 export function headersFor(page) {
   const url = URL.canParse(page) ? new URL(page) : undefined
-  if (url === undefined || !['http:', 'https:'].includes(url.protocol) || url.href !== page || !url.pathname.endsWith('/') || url.search !== '' || url.hash !== '' || url.username !== '') {
-    throw new Error(`the demo's headers are for the address of the directory its page is served from, written as a browser writes it and ending in /, not ${JSON.stringify(page)}`)
+  if (
+    url === undefined ||
+    !['http:', 'https:'].includes(url.protocol) ||
+    url.href !== page ||
+    !url.pathname.endsWith('/') ||
+    url.search !== '' ||
+    url.hash !== '' ||
+    url.username !== ''
+  ) {
+    throw new Error(
+      `the demo's headers are for the address of the directory its page is served from, written as a browser writes it and ending in /, not ${JSON.stringify(page)}`,
+    )
   }
   const assets = `${page}${ASSETS}`
   return Object.freeze({

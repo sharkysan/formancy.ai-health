@@ -69,7 +69,9 @@ function upstream(root) {
     existsSync(join(root, group))
       ? readdirSync(join(root, group))
           .sort()
-          .flatMap((name) => (existsSync(join(root, group, name, 'package.json')) ? [JSON.parse(readFileSync(join(root, group, name, 'package.json'), 'utf8'))] : []))
+          .flatMap((name) =>
+            existsSync(join(root, group, name, 'package.json')) ? [JSON.parse(readFileSync(join(root, group, name, 'package.json'), 'utf8'))] : [],
+          )
       : []
   const manifests = read('packages')
   // An app is no upstream dependency of anything, but it is of this
@@ -79,7 +81,12 @@ function upstream(root) {
   for (const manifest of manifests) {
     for (const field of ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies']) {
       for (const [name, version] of Object.entries(manifest[field] ?? {})) {
-        if (name.startsWith('@formancy/') && !local.has(name)) found.set(`${name}@${String(version)}`, { name, version: String(version), by: [...(found.get(`${name}@${String(version)}`)?.by ?? []), manifest.name] })
+        if (name.startsWith('@formancy/') && !local.has(name))
+          found.set(`${name}@${String(version)}`, {
+            name,
+            version: String(version),
+            by: [...(found.get(`${name}@${String(version)}`)?.by ?? []), manifest.name],
+          })
       }
     }
   }
@@ -115,7 +122,11 @@ export function render(facts) {
     ...core.map((entry) => [`${code(entry.id)}, FHIR itself, for the validator`, entry.version, code(IG_PACKAGES)]),
     ...guides.map((entry) => [`${code(entry.id)}, a guide the corpus is judged against`, entry.version, code(IG_PACKAGES)]),
     ['What the validator loads with them', loadedWith.join(', '), code(IG_PACKAGES)],
-    ['The HL7 FHIR validator', `${facts.validator.version}, released ${facts.validator.released}, SHA-256 ${code(facts.validator.sha256.slice(0, 12))}…`, code(VALIDATOR_PIN)],
+    [
+      'The HL7 FHIR validator',
+      `${facts.validator.version}, released ${facts.validator.released}, SHA-256 ${code(facts.validator.sha256.slice(0, 12))}…`,
+      code(VALIDATOR_PIN),
+    ],
     ['Java, for the validator', `${String(facts.validator.java)} or later`, code(VALIDATOR_PIN)],
     ...(facts.upstream.length === 0
       ? [['`@formancy/*` upstream', 'none yet: no package depends on formancy, Formancy Report or Formancy Data', 'the workspace manifests']]

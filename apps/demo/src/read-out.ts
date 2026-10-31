@@ -107,7 +107,21 @@ const ANSWERS = {
  */
 const MEMBERS: Readonly<Record<'questionnaire' | 'item' | 'condition' | 'option' | 'coding' | 'text' | 'translation', readonly string[]>> = {
   questionnaire: ['resourceType', 'meta', 'language', 'extension', 'url', 'version', 'title', 'status', 'item'],
-  item: ['extension', 'linkId', 'text', '_text', 'type', 'enableWhen', 'enableBehavior', 'required', 'repeats', 'readOnly', 'maxLength', 'answerOption', 'item'],
+  item: [
+    'extension',
+    'linkId',
+    'text',
+    '_text',
+    'type',
+    'enableWhen',
+    'enableBehavior',
+    'required',
+    'repeats',
+    'readOnly',
+    'maxLength',
+    'answerOption',
+    'item',
+  ],
   condition: ['question', 'operator', ...Object.keys(ANSWERS)],
   option: ['valueCoding'],
   coding: ['system', 'code', 'display', '_display'],
@@ -146,7 +160,8 @@ class Unread extends Error {
   }
 }
 
-const isObject = (value: FhirJson | undefined): value is FhirJsonObject => typeof value === 'object' && value !== null && !Array.isArray(value) && !isFhirNumber(value)
+const isObject = (value: FhirJson | undefined): value is FhirJsonObject =>
+  typeof value === 'object' && value !== null && !Array.isArray(value) && !isFhirNumber(value)
 
 function objectAt(value: FhirJson | undefined, at: string): FhirJsonObject {
   if (!isObject(value)) throw new Unread(at)
@@ -313,7 +328,7 @@ function itemOf(each: FhirJson, at: string, scope: Scope): ReadItem {
   const conditions = listAt(holder, 'enableWhen', at).map((when, index) => conditionOf(when, item(member(at, 'enableWhen'), index), scope))
   const behaviour = optional(holder, 'enableBehavior', at, isString)
   // R4's que-12: more than one condition says how they join, and only then.
-  if ((conditions.length > 1) !== (behaviour !== undefined) || (behaviour !== undefined && behaviour !== 'all' && behaviour !== 'any')) throw new Unread(at)
+  if (conditions.length > 1 !== (behaviour !== undefined) || (behaviour !== undefined && behaviour !== 'all' && behaviour !== 'any')) throw new Unread(at)
   return {
     linkId: needed(holder, 'linkId', at),
     text: wordingOf(holder, 'text', at, scope),
@@ -327,7 +342,8 @@ function itemOf(each: FhirJson, at: string, scope: Scope): ReadItem {
   }
 }
 
-const itemsOf = (holder: FhirJsonObject, at: string, scope: Scope): ReadItem[] => listAt(holder, 'item', at).map((each, index) => itemOf(each, item(member(at, 'item'), index), scope))
+const itemsOf = (holder: FhirJsonObject, at: string, scope: Scope): ReadItem[] =>
+  listAt(holder, 'item', at).map((each, index) => itemOf(each, item(member(at, 'item'), index), scope))
 
 /** Every item of `holder`, nested or not, by its linkId, which R4 holds unique (que-2): a second of one names no item a condition could mean. */
 function linkIds(holder: FhirJsonObject, at: string, found = new Map<string, Asked>()): Map<string, Asked> {

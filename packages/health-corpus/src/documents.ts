@@ -65,7 +65,8 @@ export function referralContext(placement: Placement): DocumentReferenceContext 
 }
 
 /** The letter's PDF as a DocumentReference, declared a plain PDF, and its Binary where `placement` puts the bytes in one. */
-export const referralDocumentReference = (pdf: Uint8Array, placement: Placement): DocumentReferenceExport => toDocumentReference({ bytes: pdf, profile: 'PDF' }, referralContext(placement))
+export const referralDocumentReference = (pdf: Uint8Array, placement: Placement): DocumentReferenceExport =>
+  toDocumentReference({ bytes: pdf, profile: 'PDF' }, referralContext(placement))
 
 /** What a document of the letter holds besides its PDF. */
 export interface ReferralDocument {

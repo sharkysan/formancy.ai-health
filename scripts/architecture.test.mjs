@@ -130,7 +130,10 @@ function workspacePackages() {
 }
 
 /** Every decision record's path, from the directory listing. */
-const decisionRecords = () => listing(DECISIONS).filter((entry) => entry.isFile() && RECORD.test(entry.name)).map((entry) => `${DECISIONS}/${entry.name}`)
+const decisionRecords = () =>
+  listing(DECISIONS)
+    .filter((entry) => entry.isFile() && RECORD.test(entry.name))
+    .map((entry) => `${DECISIONS}/${entry.name}`)
 
 /** Whether `text` names `name` whole: not as a part of a longer name. No name is named by any text. */
 function names(text, name) {
@@ -170,7 +173,8 @@ const EXTENSIONS = new Set(['.css', '.html', '.json', '.md', '.mjs', '.mts', '.t
 const isPath = (text) => /^(?:\.\.?\/)*[\w.*-]+(?:\/[\w.*-]+)*\/?$/.test(text) && (text.includes('/') || EXTENSIONS.has(posix.extname(text)))
 
 // A path as a regular expression's source: `**/` any directories, `**` anything, `*` anything within one segment.
-const globSource = (path) => path.replace(/\/$/, '').replace(/\*\*\/|\*\*|\*|[.+?^${}()|[\]\\]/g, (token) => ({ '**/': '(?:[^/]+/)*', '**': '.*', '*': '[^/]*' })[token] ?? `\\${token}`)
+const globSource = (path) =>
+  path.replace(/\/$/, '').replace(/\*\*\/|\*\*|\*|[.+?^${}()|[\]\\]/g, (token) => ({ '**/': '(?:[^/]+/)*', '**': '.*', '*': '[^/]*' })[token] ?? `\\${token}`)
 
 /**
  * What is wrong with each path `file` writes as code, one sentence each: a
@@ -192,7 +196,12 @@ function pathProblems(file, markdown, files) {
 }
 
 /** The entry and every Markdown file in docs/architecture/, by path. */
-const documents = () => [ENTRY, ...listing(ARCHITECTURE).filter((entry) => entry.isFile() && entry.name.endsWith('.md')).map((entry) => `${ARCHITECTURE}/${entry.name}`)]
+const documents = () => [
+  ENTRY,
+  ...listing(ARCHITECTURE)
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
+    .map((entry) => `${ARCHITECTURE}/${entry.name}`),
+]
 
 describe('the architecture', () => {
   // A reader told the architecture is arc42 looks for a section by its
@@ -202,9 +211,18 @@ describe('the architecture', () => {
   test("is the entry and formancy.ai's sections of arc42, each linked from the entry, and nothing else", () => {
     const missing = [ENTRY, ...SECTIONS.map((name) => `${ARCHITECTURE}/${name}`)].filter((file) => textOf(file) === undefined)
     expect(missing, 'write these; formancy.ai docs/architecture/ has the shape').toEqual([])
-    const linked = new Set(linksIn(textOf(ENTRY)).filter(isRelative).map((href) => resolveLink(ENTRY, href).target))
-    expect(SECTIONS.filter((name) => !linked.has(`${ARCHITECTURE}/${name}`)), `${ENTRY} does not link these`).toEqual([])
-    const extra = listing(ARCHITECTURE).map((entry) => entry.name).filter((name) => !SECTIONS.includes(name))
+    const linked = new Set(
+      linksIn(textOf(ENTRY))
+        .filter(isRelative)
+        .map((href) => resolveLink(ENTRY, href).target),
+    )
+    expect(
+      SECTIONS.filter((name) => !linked.has(`${ARCHITECTURE}/${name}`)),
+      `${ENTRY} does not link these`,
+    ).toEqual([])
+    const extra = listing(ARCHITECTURE)
+      .map((entry) => entry.name)
+      .filter((name) => !SECTIONS.includes(name))
     expect(extra, 'not one of the sections: fold it into the section it belongs to').toEqual([])
   })
 
@@ -224,9 +242,16 @@ describe('the architecture', () => {
     const cited = new Set(
       documents()
         .filter((file) => file !== ENTRY)
-        .flatMap((file) => linksIn(textOf(file) ?? '').filter(isRelative).map((href) => resolveLink(file, href).target)),
+        .flatMap((file) =>
+          linksIn(textOf(file) ?? '')
+            .filter(isRelative)
+            .map((href) => resolveLink(file, href).target),
+        ),
     )
-    expect(decisionRecords().filter((record) => !cited.has(record)), 'place each in the section it changes, by a link to its file').toEqual([])
+    expect(
+      decisionRecords().filter((record) => !cited.has(record)),
+      'place each in the section it changes, by a link to its file',
+    ).toEqual([])
   })
 
   // A link to a file that moved, to one git ignores -- the plan, a build --
@@ -253,7 +278,10 @@ describe('the architecture', () => {
   // its name read as a path, and refused.
   test('reads a bare name of every kind of file git would commit as a path', () => {
     const kinds = new Set([...committable(repo)].map((file) => posix.extname(file)).filter((extension) => extension !== ''))
-    expect([...kinds].filter((extension) => !EXTENSIONS.has(extension)), 'add each to EXTENSIONS').toEqual([])
+    expect(
+      [...kinds].filter((extension) => !EXTENSIONS.has(extension)),
+      'add each to EXTENSIONS',
+    ).toEqual([])
   })
 
   // A guard on the guard: each check above is about absence, so a walk that
@@ -262,7 +290,9 @@ describe('the architecture', () => {
   // hold today.
   test('reads the workspace, the records, the links and the paths at all', () => {
     const packages = workspacePackages().map(({ name }) => name)
-    expect(packages).toEqual(expect.arrayContaining(['@formancy/health-core', '@formancy/health-questionnaire', '@formancy/health-document', '@formancy/health-corpus']))
+    expect(packages).toEqual(
+      expect.arrayContaining(['@formancy/health-core', '@formancy/health-questionnaire', '@formancy/health-document', '@formancy/health-corpus']),
+    )
     expect(packages).not.toContain('formancy-health')
     expect(decisionRecords()).toContain(`${DECISIONS}/0001-a-paid-module-in-its-own-repository.md`)
     expect(decisionRecords()).not.toContain(`${DECISIONS}/README.md`)
@@ -273,13 +303,22 @@ describe('the architecture', () => {
         .filter((link) => link.outside !== true),
     )
     const targets = links.map((link) => link.target)
-    expect(links.filter((link) => link.target.endsWith('.md') && (link.fragment ?? '') !== ''), 'no anchor into Markdown was checked').not.toEqual([])
+    expect(
+      links.filter((link) => link.target.endsWith('.md') && (link.fragment ?? '') !== ''),
+      'no anchor into Markdown was checked',
+    ).not.toEqual([])
     expect(targets.filter((target) => target.startsWith(`${DECISIONS}/`))).not.toEqual([])
     expect(targets.filter((target) => target.startsWith('packages/health-core/src/'))).not.toEqual([])
     expect(targets.filter((target) => target.startsWith('scripts/'))).not.toEqual([])
     const paths = documents().flatMap((file) => spansIn(textOf(file) ?? '').filter(isPath))
-    expect(paths.filter((path) => !path.includes('/')), 'no bare file name was read as a path').not.toEqual([])
-    expect(paths.filter((path) => path.startsWith('scripts/')), 'no path into scripts/ was read').not.toEqual([])
+    expect(
+      paths.filter((path) => !path.includes('/')),
+      'no bare file name was read as a path',
+    ).not.toEqual([])
+    expect(
+      paths.filter((path) => path.startsWith('scripts/')),
+      'no path into scripts/ was read',
+    ).not.toEqual([])
   })
 })
 
@@ -307,7 +346,17 @@ describe('the Markdown reader', () => {
   // shapes the sections' headings take: a number, code, a link, a dash, a
   // heading given twice, and a `#` inside a fence, which is no heading.
   test("gives a heading GitHub's anchor", () => {
-    const markdown = ['# 5. Building blocks', '## `@formancy/health-core`', '### [0005](x.md) and the gate', '## What it costs — and why ##', '## Notes', '## Notes', '```', '# not a heading', '```'].join('\n')
+    const markdown = [
+      '# 5. Building blocks',
+      '## `@formancy/health-core`',
+      '### [0005](x.md) and the gate',
+      '## What it costs — and why ##',
+      '## Notes',
+      '## Notes',
+      '```',
+      '# not a heading',
+      '```',
+    ].join('\n')
     expect([...anchorsOf(markdown)]).toEqual(['5-building-blocks', 'formancyhealth-core', '0005-and-the-gate', 'what-it-costs--and-why', 'notes', 'notes-1'])
   })
 
@@ -317,7 +366,8 @@ describe('the Markdown reader', () => {
   test('refuses each link that leads nowhere, and only those', () => {
     const files = new Set(['docs/architecture/01-a.md', 'docs/decisions/README.md', 'packages/x/src/y.ts'])
     const read = (file) => (file === 'docs/decisions/README.md' ? '# Index\n' : '## Here\n')
-    const markdown = '[ok](../decisions/README.md#index) [self](#here) [code](../../packages/x/src/y.ts) [up](../../../elsewhere.md) [dir](../decisions/) [plan](../plan.md) [line](../../packages/x/src/y.ts#L3) [gone](../decisions/README.md#nothing)'
+    const markdown =
+      '[ok](../decisions/README.md#index) [self](#here) [code](../../packages/x/src/y.ts) [up](../../../elsewhere.md) [dir](../decisions/) [plan](../plan.md) [line](../../packages/x/src/y.ts#L3) [gone](../decisions/README.md#nothing)'
     expect(linkProblems('docs/architecture/01-a.md', markdown, files, read)).toEqual([
       'docs/architecture/01-a.md: ../../../elsewhere.md leads out of the repository',
       'docs/architecture/01-a.md: ../decisions/ names docs/decisions, a directory: link its README.md',
@@ -334,8 +384,36 @@ describe('the Markdown reader', () => {
   // extension and no slash, `NOTICE` or `.npmrc`, is a word to this
   // reading, and an extension alone is no file.
   test('reads as a path what names one, and nothing else', () => {
-    const paths = ['health-core/src/json-read.ts', 'json-read.ts', 'scripts/', '.github/workflows/gates.yml', '../decisions/', 'scripts/**/*.test.mjs', 'json-*.ts', 'docs/release', 'pnpm-workspace.yaml', 'vitest.repo.config.mts', 'n/a']
-    const others = ['@formancy/health-*', '@types/node', 'pnpm test:repo', '/Questionnaire/', '.mjs', '.npmrc', 'NOTICE', 'JSON.parse', 'context.entries[2].resource.subject', '0.010', '7.0.2', 'SEE LICENSE IN LICENSE.md', 'urn:uuid:', 'v*', '-tx n/a']
+    const paths = [
+      'health-core/src/json-read.ts',
+      'json-read.ts',
+      'scripts/',
+      '.github/workflows/gates.yml',
+      '../decisions/',
+      'scripts/**/*.test.mjs',
+      'json-*.ts',
+      'docs/release',
+      'pnpm-workspace.yaml',
+      'vitest.repo.config.mts',
+      'n/a',
+    ]
+    const others = [
+      '@formancy/health-*',
+      '@types/node',
+      'pnpm test:repo',
+      '/Questionnaire/',
+      '.mjs',
+      '.npmrc',
+      'NOTICE',
+      'JSON.parse',
+      'context.entries[2].resource.subject',
+      '0.010',
+      '7.0.2',
+      'SEE LICENSE IN LICENSE.md',
+      'urn:uuid:',
+      'v*',
+      '-tx n/a',
+    ]
     expect(paths.filter((text) => !isPath(text))).toEqual([])
     expect(others.filter(isPath)).toEqual([])
   })
@@ -347,10 +425,24 @@ describe('the Markdown reader', () => {
   // A span in a code block or an HTML comment is an example and is not
   // read.
   test('finds a path where it ends, and refuses one that names nothing', () => {
-    const files = new Set(['packages/health-core/src/json-read.ts', 'packages/health-core/src/json-read.test.ts', 'scripts/validator/corpus.test.mjs', 'docs/release/validator.json', 'docs/architecture/06-b.md'])
-    const good = '`packages/health-core/src/json-read.ts` `json-read.ts` `src/json-read.test.ts` `scripts/validator/` `docs/release` `json-*.ts` `scripts/**/*.test.mjs` `../release/validator.json` `./06-b.md` `` json-read.ts ``'
+    const files = new Set([
+      'packages/health-core/src/json-read.ts',
+      'packages/health-core/src/json-read.test.ts',
+      'scripts/validator/corpus.test.mjs',
+      'docs/release/validator.json',
+      'docs/architecture/06-b.md',
+    ])
+    const good =
+      '`packages/health-core/src/json-read.ts` `json-read.ts` `src/json-read.test.ts` `scripts/validator/` `docs/release` `json-*.ts` `scripts/**/*.test.mjs` `../release/validator.json` `./06-b.md` `` json-read.ts ``'
     expect(pathProblems('docs/architecture/05-a.md', good, files)).toEqual([])
-    const bad = ['`json-reader.ts` `son-read.ts` `json-read.ts/` `dist/` `check-*.ts`', '`../../../outside.md` `../README.md`', '```text', '`fenced.ts`', '```', '<!-- `commented.ts` -->'].join('\n')
+    const bad = [
+      '`json-reader.ts` `son-read.ts` `json-read.ts/` `dist/` `check-*.ts`',
+      '`../../../outside.md` `../README.md`',
+      '```text',
+      '`fenced.ts`',
+      '```',
+      '<!-- `commented.ts` -->',
+    ].join('\n')
     expect(pathProblems('docs/architecture/05-a.md', bad, files)).toEqual([
       'docs/architecture/05-a.md: `json-reader.ts` names no file or directory git would commit',
       'docs/architecture/05-a.md: `son-read.ts` names no file or directory git would commit',
@@ -397,7 +489,10 @@ describe('the Markdown reader', () => {
       '<!-- never closed',
       '## Unseen',
     ].join('\n')
-    const packages = ['@formancy/health-core', '@formancy/health-ch', '@formancy/health-de', '@formancy/health-at', ''].map((name, at) => ({ file: `p${String(at)}`, name }))
+    const packages = ['@formancy/health-core', '@formancy/health-ch', '@formancy/health-de', '@formancy/health-at', ''].map((name, at) => ({
+      file: `p${String(at)}`,
+      name,
+    }))
     expect(unnamed(markdown, packages)).toEqual(['@formancy/health-ch (p1)', '@formancy/health-de (p2)', 'a package with no name (p4)'])
     expect([...anchorsOf(markdown)]).toEqual(['seen'])
     expect(linksIn(markdown)).toEqual([])

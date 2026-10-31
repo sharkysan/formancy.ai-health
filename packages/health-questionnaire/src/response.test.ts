@@ -26,7 +26,7 @@ describe('toQuestionnaireResponse', () => {
 
   // The canonical is the Questionnaire's, so a response can never name
   // another than the one toQuestionnaire wrote for the same context.
-  test("names the canonical the Questionnaire has, and only the url for a form never published", () => {
+  test('names the canonical the Questionnaire has, and only the url for a form never published', () => {
     const unpublished = { base: HOST.base, status: 'draft' as const }
     const response = answered(form([reason]), { reason: 'x' }, { ...RESPONDING, questionnaire: unpublished })
     expect(response.questionnaire).toBe(exported(form([reason]), unpublished).url)
@@ -55,12 +55,17 @@ describe('toQuestionnaireResponse', () => {
     const CH_ORF = 'http://fhir.ch/ig/ch-orf/StructureDefinition/ch-orf-questionnaireresponse|3.0.2'
     const OTHER = 'https://profiles.synthetic.invalid/StructureDefinition/response|1'
     const response = answered(form([reason]), { reason: 'x' }, { ...RESPONDING, profiles: [CH_ORF, OTHER, CH_ORF] })
-    expect(writeJson(response)).toContain(`"meta":{"profile":["http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaireresponse|4.0.0","${CH_ORF}","${OTHER}"]},"questionnaire"`)
+    expect(writeJson(response)).toContain(
+      `"meta":{"profile":["http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaireresponse|4.0.0","${CH_ORF}","${OTHER}"]},"questionnaire"`,
+    )
     // Where SDC's claim is not made, the host's are made alone.
     const { subject: _, ...anonymous } = RESPONDING
     expect(answered(form([reason]), { reason: 'x' }, { ...anonymous, profiles: [CH_ORF] }).meta).toEqual({ profile: [CH_ORF] })
     // Naming SDC's own claim claims it once.
-    expect(answered(form([reason]), { reason: 'x' }, { ...RESPONDING, profiles: ['http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaireresponse|4.0.0'] }).meta).toEqual({
+    expect(
+      answered(form([reason]), { reason: 'x' }, { ...RESPONDING, profiles: ['http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaireresponse|4.0.0'] })
+        .meta,
+    ).toEqual({
       profile: ['http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaireresponse|4.0.0'],
     })
   })
@@ -70,7 +75,13 @@ describe('toQuestionnaireResponse', () => {
   test('refuses claims that are no list of canonicals', () => {
     expect(refusedAnswers(form([reason]), { reason: 'x' }, { ...RESPONDING, profiles: ['ch orf'] })).toEqual(['grammar context.profiles[0]'])
     expect(refusedAnswers(form([reason]), { reason: 'x' }, { ...RESPONDING, profiles: [] })).toEqual(['absent context.profiles'])
-    expect(refusedAnswers(form([reason]), { reason: 'x' }, { ...RESPONDING, profiles: 'http://fhir.ch/ig/ch-orf/StructureDefinition/ch-orf-questionnaireresponse' as never })).toEqual(['absent context.profiles'])
+    expect(
+      refusedAnswers(
+        form([reason]),
+        { reason: 'x' },
+        { ...RESPONDING, profiles: 'http://fhir.ch/ig/ch-orf/StructureDefinition/ch-orf-questionnaireresponse' as never },
+      ),
+    ).toEqual(['absent context.profiles'])
   })
 
   // A host's array may have a hole, which JSON never has; walked past, a
@@ -87,8 +98,14 @@ describe('toQuestionnaireResponse', () => {
   // The author and the source are the host's, by name, and written where
   // R4 puts them: after authored.
   test('writes the author and the source the host names', () => {
-    const response = answered(form([reason]), { reason: 'x' }, { ...RESPONDING, author: { reference: 'Practitioner/synthetic-2' }, source: { reference: 'Patient/synthetic-1' } })
-    expect(writeJson(response)).toContain('"authored":"2026-10-17T10:00:00+02:00","author":{"reference":"Practitioner/synthetic-2"},"source":{"reference":"Patient/synthetic-1"},"item"')
+    const response = answered(
+      form([reason]),
+      { reason: 'x' },
+      { ...RESPONDING, author: { reference: 'Practitioner/synthetic-2' }, source: { reference: 'Patient/synthetic-1' } },
+    )
+    expect(writeJson(response)).toContain(
+      '"authored":"2026-10-17T10:00:00+02:00","author":{"reference":"Practitioner/synthetic-2"},"source":{"reference":"Patient/synthetic-1"},"item"',
+    )
   })
 
   // The same form, answers and context are the same resource, byte for
@@ -165,7 +182,10 @@ describe('toQuestionnaireResponse', () => {
   // answers, an unanswered field would answer with a function, and be
   // refused for it. Only a submission's own names hold its answers.
   test('reads only what the submission itself holds under a key', () => {
-    const fields: FieldDef[] = [{ key: 'constructor', type: 'text' }, { key: 'toString', type: 'text' }]
+    const fields: FieldDef[] = [
+      { key: 'constructor', type: 'text' },
+      { key: 'toString', type: 'text' },
+    ]
     expect(answered(form(fields), {})).not.toHaveProperty('item')
     // A parser may give an object no prototype at all: it is plain data.
     const bare = Object.assign(Object.create(null) as Record<string, unknown>, { reason: 'x' })
@@ -174,8 +194,22 @@ describe('toQuestionnaireResponse', () => {
 })
 
 describe('the items of a response', () => {
-  const address: FieldDef = { key: 'address', type: 'group', fields: [{ key: 'city', type: 'text' }, { key: 'zip', type: 'text' }] }
-  const contacts: FieldDef = { key: 'contacts', type: 'repeater', fields: [{ key: 'name', type: 'text' }, { key: 'calls', type: 'number', step: 1 }] }
+  const address: FieldDef = {
+    key: 'address',
+    type: 'group',
+    fields: [
+      { key: 'city', type: 'text' },
+      { key: 'zip', type: 'text' },
+    ],
+  }
+  const contacts: FieldDef = {
+    key: 'contacts',
+    type: 'repeater',
+    fields: [
+      { key: 'name', type: 'text' },
+      { key: 'calls', type: 'number', step: 1 },
+    ],
+  }
   const page: FieldDef = { key: 'step', type: 'page', label: 'Step', fields: [reason, address] }
 
   // A group's answers are nested in its item, a page's too, though a page
@@ -183,14 +217,21 @@ describe('the items of a response', () => {
   // submission and under it in the response, as in the Questionnaire.
   test('nests a group and a page as the Questionnaire does', () => {
     const response = answered(form([page]), { reason: 'x', address: { city: 'Bern' } })
-    expect(writeJson(response.item as never)).toBe('[{"linkId":"step","item":[{"linkId":"reason","answer":[{"valueString":"x"}]},{"linkId":"address","item":[{"linkId":"city","answer":[{"valueString":"Bern"}]}]}]}]')
+    expect(writeJson(response.item as never)).toBe(
+      '[{"linkId":"step","item":[{"linkId":"reason","answer":[{"valueString":"x"}]},{"linkId":"address","item":[{"linkId":"city","answer":[{"valueString":"Bern"}]}]}]}]',
+    )
   })
 
   // A repeater's rows are one item each, of its linkId, as R4 writes a
   // repeating group; a row's _id is formancy's identity of it, not an
   // answer, and is not carried.
   test('writes each row of a repeater as an item of its own', () => {
-    const response = answered(form([contacts]), { contacts: [{ _id: 'r1', name: 'A' }, { _id: 'r2', name: 'B', calls: 2 }] })
+    const response = answered(form([contacts]), {
+      contacts: [
+        { _id: 'r1', name: 'A' },
+        { _id: 'r2', name: 'B', calls: 2 },
+      ],
+    })
     expect(writeJson(response.item as never)).toBe(
       '[{"linkId":"contacts","item":[{"linkId":"name","answer":[{"valueString":"A"}]}]},{"linkId":"contacts","item":[{"linkId":"name","answer":[{"valueString":"B"}]},{"linkId":"calls","answer":[{"valueInteger":2}]}]}]',
     )
@@ -212,7 +253,13 @@ describe('the items of a response', () => {
   // is not an item, so nothing in it is checked, as the validator checks
   // nothing in a group that is absent (measured).
   test("checks a row's required fields only in a row with an answer", () => {
-    const named: FieldDef = { ...contacts, fields: [{ key: 'name', type: 'text', required: true }, { key: 'calls', type: 'number', step: 1 }] }
+    const named: FieldDef = {
+      ...contacts,
+      fields: [
+        { key: 'name', type: 'text', required: true },
+        { key: 'calls', type: 'number', step: 1 },
+      ],
+    }
     expect(answered(form([named]), { contacts: [{ _id: 'r1' }, { _id: 'r2', name: 'B' }] }).item).toHaveLength(1)
     expect(refusedAnswers(form([named]), { contacts: [{ _id: 'r1', calls: 2 }] })).toEqual(['required answers.contacts[0].name'])
   })
@@ -221,7 +268,10 @@ describe('the items of a response', () => {
   // the submission's names come in: the validator refuses another
   // ("Structural Error: items are out of order", measured).
   test("writes the items in the Questionnaire's order", () => {
-    const fields: FieldDef[] = [{ key: 'first', type: 'text' }, { key: 'second', type: 'text' }]
+    const fields: FieldDef[] = [
+      { key: 'first', type: 'text' },
+      { key: 'second', type: 'text' },
+    ]
     expect(answered(form(fields), { second: 'b', first: 'a' }).item?.map((item) => item.linkId)).toEqual(['first', 'second'])
   })
 
@@ -261,7 +311,10 @@ describe('the items of a response', () => {
   // A group's value is an object, a repeater's a list of them; anything
   // else holds no answer the items could carry.
   test('refuses a group or a repeater that is not what it holds', () => {
-    expect(refusedAnswers(form([address, contacts]), { address: 'Bern', contacts: [{ name: 'A' }, 'B'] })).toEqual(['answer-type answers.address', 'answer-type answers.contacts[1]'])
+    expect(refusedAnswers(form([address, contacts]), { address: 'Bern', contacts: [{ name: 'A' }, 'B'] })).toEqual([
+      'answer-type answers.address',
+      'answer-type answers.contacts[1]',
+    ])
     expect(refusedAnswers(form([contacts]), { contacts: { name: 'A' } })).toEqual(['answer-type answers.contacts'])
   })
 
@@ -338,7 +391,8 @@ describe('missing, null and suppressed answers', () => {
   test('refuses a required item unanswered in a completed or amended response, and in no other', () => {
     expect(refusedAnswers(form([reason]), {})).toEqual(['required answers.reason'])
     expect(refusedAnswers(form([reason]), { reason: '  ' }, { ...RESPONDING, status: 'amended' })).toEqual(['required answers.reason'])
-    for (const status of ['in-progress', 'stopped', 'entered-in-error'] as const) expect(answered(form([reason]), {}, { ...RESPONDING, status })).not.toHaveProperty('item')
+    for (const status of ['in-progress', 'stopped', 'entered-in-error'] as const)
+      expect(answered(form([reason]), {}, { ...RESPONDING, status })).not.toHaveProperty('item')
     const disabled = ruled([urgency, { ...detail, required: true }], [{ target: 'detail', kind: 'visible', cel: "urgency == 'urgent'" }])
     expect(answered(disabled, { urgency: 'routine' }).item?.map((item) => item.linkId)).toEqual(['urgency'])
   })
@@ -371,12 +425,24 @@ describe('a refusal of answers', () => {
       { ...reason, key: 'required_reason' },
     ]
     const schema = ruled(fields, [{ target: 'detail', kind: 'visible', cel: "urgency == 'urgent'" }])
-    const answers = { name: 'Erika Muster', born: '1987-02-29', ahv: 7561234567890, weight: 314.15926, canton: 'Hans Meier', urgency: 'routine', detail: 'Erika', consent: 'Muster', 'Hans Meier': 'x' }
+    const answers = {
+      name: 'Erika Muster',
+      born: '1987-02-29',
+      ahv: 7561234567890,
+      weight: 314.15926,
+      canton: 'Hans Meier',
+      urgency: 'routine',
+      detail: 'Erika',
+      consent: 'Muster',
+      'Hans Meier': 'x',
+    }
     const result = toQuestionnaireResponse(schema, answers, { ...RESPONDING, subject: { reference: 'https://ehr.synthetic.invalid/Patient/756.1234.5678.90' } })
     expect(result.ok).toBe(false)
     if (result.ok) return
     expect(result.refusals.every((refusal) => refusal instanceof Refusal)).toBe(true)
-    expect(new Set(result.refusals.map((refusal) => refusal.rule))).toEqual(new Set(['bound', 'calendar', 'range', 'option', 'disabled', 'answer-type', 'required', 'unknown', 'reference']))
+    expect(new Set(result.refusals.map((refusal) => refusal.rule))).toEqual(
+      new Set(['bound', 'calendar', 'range', 'option', 'disabled', 'answer-type', 'required', 'unknown', 'reference']),
+    )
     const values = ['Erika', 'Muster', '1987-02-29', '7561234567890', '314.15926', 'Hans', 'Meier', '756.1234', 'synthetic.invalid/Patient']
     for (const refusal of result.refusals) for (const value of values) expect(`${refusal.message} ${refusal.path}`).not.toContain(value)
   })

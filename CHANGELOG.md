@@ -10,6 +10,34 @@ later.
 
 ## Unreleased
 
+**CI fails a change that breaks the lint rules or the format** (0017).
+Style was held by habit, and a promise nobody awaits or an `any` from
+`JSON.parse` by nobody: `verify` now runs `pnpm lint`, typescript-eslint's
+type-aware recommended rules at error, JavaScript held to those that need
+no types, and `pnpm format:check`, Prettier over every TypeScript and
+JavaScript file. The rules and the style are one
+module, `scripts/code-style/code-style.mjs`, the first copy of what
+formancy.ai will publish as `@formancy/code-style` for all four
+repositories, which this repository calls with its own paths and swaps
+for the package once it is released. Every file was
+formatted in one commit, which `.git-blame-ignore-revs` has blame skip,
+and every finding fixed; none was a defect. A test alone is relaxed in
+seven rules, `no-explicit-any` among them, because a test types the
+untyped body it reads as `any`. `require-await` is off everywhere, because
+an `async` function with no `await` is how a synchronous implementation of
+an async contract (a test double, a Fastify handler, a test-support port)
+keeps its throws as rejections, and the rule cannot tell that from an
+`async` a refactor left behind; `no-floating-promises` and
+`no-misused-promises` still catch a forgotten `await`. A rejection with a
+forwarded `any` or `unknown` is allowed everywhere, as throwing one
+already was; a string or object literal is still refused. Both decisions
+came from formancy.ai-data's lint fixes, which made each line by line as
+disable comments, and a review ruled that they belong in the shared rules. Prettier leaves code
+embedded in a string as it is (`embeddedLanguageFormatting: 'off'`),
+because formancy.ai's format reflowed Angular templates, whose whitespace
+renders, and failed tests; the format commit is identical with it off. The
+packages' API is what it was.
+
 **The demo's footer links formancy.ai's legal notice and privacy notice
 from `LINKS`, in the page's language.** #20 linked them as English
 literals outside `src/links.ts`, the list of every address the page may

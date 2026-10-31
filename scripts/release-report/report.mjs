@@ -90,14 +90,16 @@ function releaseOf(report, { release = '', version, changelog, run, repository }
  * kind of host whose part of the guide it builds, or null. The gate records
  * the same names (install-test.mjs), so the two are compared by them.
  */
-export const installPlanOf = (hosts) => Object.entries(hosts).map(([project, host]) => ({ project, steps: host.steps.map((step) => step.name), guide: host.guide?.kind ?? null }))
+export const installPlanOf = (hosts) =>
+  Object.entries(hosts).map(([project, host]) => ({ project, steps: host.steps.map((step) => step.name), guide: host.guide?.kind ?? null }))
 
 /**
  * The scene ids scripts/pictures/scenes.json (`scenes`) gives each of
  * `apps`, app paths, in its order: what each app's pictures' check must
  * walk (0016), read by the report rather than taken from the check.
  */
-export const scenesOf = (scenes, apps) => Object.fromEntries(apps.map((app) => [app, scenes.filter((scene) => `apps/${scene.app}` === app).map((scene) => scene.id)]))
+export const scenesOf = (scenes, apps) =>
+  Object.fromEntries(apps.map((app) => [app, scenes.filter((scene) => `apps/${scene.app}` === app).map((scene) => scene.id)]))
 
 /**
  * The report, from `inputs`. Locally (`mode` absent or `local`): `results`,
@@ -143,8 +145,19 @@ export function buildReport(inputs) {
   report.problems = [
     ...(ci ? needsProblems(inputs.needs, inputs.jobs) : []),
     ...(ci ? artefactProblems(inputs.artefacts, { expected: inputs.expected, commit, runId: inputs.run.id }) : localResultsProblems(results)),
-    ...contentProblems(report, { published: inputs.published, installPlan: inputs.installPlan, pin: inputs.pin, registered: inputs.registered, browserApps: inputs.browserApps, browsers: inputs.browsers, pictureApps: inputs.pictureApps, allowMissing }),
-    ...gatesProblems(inputs.gatesRegister, { covered: covered.map((entry) => entry.path), jobs: inputs.jobs, exists }).map((problem) => `docs/release/gates.json: ${problem}`),
+    ...contentProblems(report, {
+      published: inputs.published,
+      installPlan: inputs.installPlan,
+      pin: inputs.pin,
+      registered: inputs.registered,
+      browserApps: inputs.browserApps,
+      browsers: inputs.browsers,
+      pictureApps: inputs.pictureApps,
+      allowMissing,
+    }),
+    ...gatesProblems(inputs.gatesRegister, { covered: covered.map((entry) => entry.path), jobs: inputs.jobs, exists }).map(
+      (problem) => `docs/release/gates.json: ${problem}`,
+    ),
     ...releaseGateProblems(report.gates, allowMissing),
     ...releaseProblems,
   ]
@@ -170,7 +183,10 @@ export function readResults(dir) {
 }
 
 /** `git+https://github.com/x/y.git` as the URL a link opens. */
-const browsable = (url) => String(url).replace(/^git\+/, '').replace(/\.git$/, '')
+const browsable = (url) =>
+  String(url)
+    .replace(/^git\+/, '')
+    .replace(/\.git$/, '')
 
 /** A document's last change and how many commits it is behind HEAD: what "stated" evidence is shown with. */
 function documentHistory(root, path) {
@@ -223,7 +239,10 @@ export function loadInputs(root, resultsDir, { ci = false, allowMissing = [], en
     return { ...common, mode: 'local', results, commit, release: '', allowMissing }
   }
   for (const name of ['NEEDS', 'GITHUB_SHA', 'GITHUB_RUN_ID']) {
-    if (env[name] === undefined || env[name] === '') throw new Error(`report.mjs reads a gates run, and ${name} is not set: in the report job NEEDS is toJSON(needs); on a machine, run collect.mjs --local and report.mjs --local`)
+    if (env[name] === undefined || env[name] === '')
+      throw new Error(
+        `report.mjs reads a gates run, and ${name} is not set: in the report job NEEDS is toJSON(needs); on a machine, run collect.mjs --local and report.mjs --local`,
+      )
   }
   return {
     ...common,
@@ -258,7 +277,11 @@ if (process.argv[1]?.replaceAll('\\', '/').endsWith('scripts/release-report/repo
   const argv = process.argv.slice(2)
   const option = (name, fallback) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : fallback)
   const local = argv.includes('--local')
-  const allowMissing = local ? option('--allow-missing', '').split(',').filter((entry) => entry !== '') : []
+  const allowMissing = local
+    ? option('--allow-missing', '')
+        .split(',')
+        .filter((entry) => entry !== '')
+    : []
   const report = buildReport(loadInputs(repo, resolve(repo, option('--results', 'release-results')), { ci: !local, allowMissing }))
   const out = resolve(repo, option('--out', 'release-report'))
   const release = writeReport(report, out, { local, partial: allowMissing })

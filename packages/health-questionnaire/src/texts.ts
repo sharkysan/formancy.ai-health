@@ -78,7 +78,13 @@ export class Texts {
         this.#refusals.add('missing', path, { language })
         continue
       }
-      translations.push({ url: EXTENSION.translation, extension: [{ url: 'lang', valueCode: language as FhirCode }, { url: 'content', valueString: content }] })
+      translations.push({
+        url: EXTENSION.translation,
+        extension: [
+          { url: 'lang', valueCode: language as FhirCode },
+          { url: 'content', valueString: content },
+        ],
+      })
     }
     if (translations.length < this.#languages.length) return undefined
     return { text: base, translations: translations.length === 0 ? undefined : { extension: translations } }

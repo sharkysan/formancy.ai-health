@@ -79,7 +79,10 @@ const acts = {
     await field.fill(CHANGED)
     await field.press('Tab')
     // The caption: made again from the answers, no longer the corpus's entry.
-    await untilSnapshot(Response, /- paragraph: Made by @formancy\/health-questionnaire\.$/m, { within: WITHIN, what: 'the response made of the changed answers' })
+    await untilSnapshot(Response, /- paragraph: Made by @formancy\/health-questionnaire\.$/m, {
+      within: WITHIN,
+      what: 'the response made of the changed answers',
+    })
     // The document too, though not pictured: it is made of the same answers,
     // and a page still making it would be pictured in one moment of it.
     await untilSnapshot(Document, /- paragraph: Made by @formancy\/health-ch\.$/m, { within: WITHIN, what: 'the CH ORF document made of the changed answers' })
@@ -127,7 +130,8 @@ const acts = {
 function layoutOf(sheets) {
   const max = sheets.flatMap(({ css }) => breakpointsOf(css).max)
   const min = sheets.flatMap(({ css }) => breakpointsOf(css).min)
-  if (max.length === 0) throw new Error("found no max-width breakpoint in the page's stylesheets, so no width can be shown to be past them all, or below them all")
+  if (max.length === 0)
+    throw new Error("found no max-width breakpoint in the page's stylesheets, so no width can be shown to be past them all, or below them all")
   return { widest: Math.max(...max, ...min), narrowest: Math.min(...max) }
 }
 
@@ -143,7 +147,10 @@ try {
     // too.
     width: 1440,
     layout: layoutOf(sheets),
-    stylesheet: { css: sheets.map(({ path, css }) => `/* ${path} */\n${css}`).join('\n'), of: 'the stylesheets src/main.tsx imports, the themes as installed among them' },
+    stylesheet: {
+      css: sheets.map(({ path, css }) => `/* ${path} */\n${css}`).join('\n'),
+      of: 'the stylesheets src/main.tsx imports, the themes as installed among them',
+    },
     origin: ORIGIN,
     base,
     dist,

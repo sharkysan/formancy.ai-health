@@ -27,7 +27,14 @@
 import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, join, relative } from 'node:path'
-import { installedTarballProblems, notesProblems, reportFilesProblems, reportProblems, sbomInstallProblems, sbomReportProblems } from '../release-report/verify-publish.mjs'
+import {
+  installedTarballProblems,
+  notesProblems,
+  reportFilesProblems,
+  reportProblems,
+  sbomInstallProblems,
+  sbomReportProblems,
+} from '../release-report/verify-publish.mjs'
 import { LICENSE_FIELD, LICENSE_FILES } from '../verify-licenses.mjs'
 import { readTarball } from './tarball.mjs'
 
@@ -38,7 +45,14 @@ export const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex'
 export function describe({ path, bytes }) {
   const entries = readTarball(bytes)
   const manifest = JSON.parse(entries.get('package/package.json')?.toString('utf8') ?? '{}')
-  return { file: basename(path), sha256: sha256(bytes), name: manifest.name, version: manifest.version, license: manifest.license, carries: LICENSE_FILES.filter((file) => entries.has(`package/${file}`)) }
+  return {
+    file: basename(path),
+    sha256: sha256(bytes),
+    name: manifest.name,
+    version: manifest.version,
+    license: manifest.license,
+    carries: LICENSE_FILES.filter((file) => entries.has(`package/${file}`)),
+  }
 }
 
 /**
@@ -177,7 +191,8 @@ if (process.argv[1]?.replaceAll('\\', '/').endsWith('scripts/release/pins.mjs'))
     console.log(`checked=${JSON.stringify(pinsOf([{ path: relative(process.cwd(), file), bytes }]))}`)
   } else if (stage === 'downloads') {
     const [tarballDir, sbom] = positional
-    if (tarballDir === undefined || sbom === undefined) throw new Error('usage: pins.mjs downloads --release <r> --version <x.y.z> --report <dir> <tarball dir> <sbom file>')
+    if (tarballDir === undefined || sbom === undefined)
+      throw new Error('usage: pins.mjs downloads --release <r> --version <x.y.z> --report <dir> <tarball dir> <sbom file>')
     const reportDir = need('report')
     settle(
       [

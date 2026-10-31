@@ -84,6 +84,8 @@ describe("health-corpus's documents entry, as built", () => {
   // entry. The index reaches Report through its own imports, and the
   // documents entry through it.
   test("finds what the package's index reaches, Report's renderer among it", () => {
-    expect([...reached(resolved('@formancy/health-corpus'))]).toEqual(expect.arrayContaining(['@formancy/health-document', '@formancy/report-render-pdf', '@formancy/report-runtime']))
+    expect([...reached(resolved('@formancy/health-corpus'))]).toEqual(
+      expect.arrayContaining(['@formancy/health-document', '@formancy/report-render-pdf', '@formancy/report-runtime']),
+    )
   })
 })

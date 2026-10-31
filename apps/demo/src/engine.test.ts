@@ -109,11 +109,22 @@ describe("the way from the Questionnaire's read-out to a field", () => {
       { value: 'a', label: 'A' },
       { value: 'b', label: 'B' },
     ]
-    const cases = [...FIELD_TYPES.map((type) => ({ type, widget: undefined })), ...Object.entries(WIDGETS_BY_FIELD_TYPE).flatMap(([type, widgets]) => widgets.map((widget) => ({ type, widget })))]
+    const cases = [
+      ...FIELD_TYPES.map((type) => ({ type, widget: undefined })),
+      ...Object.entries(WIDGETS_BY_FIELD_TYPE).flatMap(([type, widgets]) => widgets.map((widget) => ({ type, widget }))),
+    ]
     const takes = cases.flatMap(({ type, widget }) => {
       const kind = widget === undefined ? type : `${type}/${widget}`
       const inner = { key: 'inner', type: 'text', label: 'Inner' }
-      const field = { key: 'field', type, label: kind, ...(widget === undefined ? {} : { widget }), options, rows: type === 'matrix' ? [{ value: 'r', label: 'R' }] : undefined, fields: ['group', 'page', 'repeater'].includes(type) ? [inner] : undefined }
+      const field = {
+        key: 'field',
+        type,
+        label: kind,
+        ...(widget === undefined ? {} : { widget }),
+        options,
+        rows: type === 'matrix' ? [{ value: 'r', label: 'R' }] : undefined,
+        fields: ['group', 'page', 'repeater'].includes(type) ? [inner] : undefined,
+      }
       const engine = engineFor({ specVersion: '4', id: 'every-type', model: { fields: [field] } } as unknown as FormSchema, 'en', {})
       const { unmount } = render(createElement(FormancyProvider, { engine }, createElement(FormancyForm)))
       const target = targetOf(engine, 'field')

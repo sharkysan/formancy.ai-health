@@ -66,7 +66,11 @@ export const REFERRAL_REPORT: ReportDefinition = {
     ],
     pageHeader: [{ id: 'page-header', kind: 'text', style: 'small', content: [words('Zuweisung - synthetisches Beispiel, ohne klinische Bedeutung')] }],
     body: [
-      { id: 'patient', kind: 'text', content: [words('Patientin: '), header('patient'), words(', geboren am '), { ...header('born'), format: { kind: 'date', style: 'medium' } }] },
+      {
+        id: 'patient',
+        kind: 'text',
+        content: [words('Patientin: '), header('patient'), words(', geboren am '), { ...header('born'), format: { kind: 'date', style: 'medium' } }],
+      },
       { id: 'question-heading', kind: 'text', style: 'heading', keepWithNext: true, content: [words('Fragestellung')] },
       { id: 'question', kind: 'text', content: [header('question')] },
       {
@@ -81,7 +85,9 @@ export const REFERRAL_REPORT: ReportDefinition = {
         repeatHeader: true,
       },
     ],
-    pageFooter: [{ id: 'page-footer', kind: 'text', style: 'small', content: [words('Seite '), { kind: 'pageNumber' }, words(' von '), { kind: 'pageCount' }] }],
+    pageFooter: [
+      { id: 'page-footer', kind: 'text', style: 'small', content: [words('Seite '), { kind: 'pageNumber' }, words(' von '), { kind: 'pageCount' }] },
+    ],
     summary: [{ id: 'closing', kind: 'text', content: [words('Freundliche Grüsse, '), header('referrer')] }],
   },
   provenance: { kind: 'blank' },

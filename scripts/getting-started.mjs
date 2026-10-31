@@ -96,12 +96,16 @@ function refuseHidden(source) {
   const text = outsideFences(source)
   const comment = lettered(text).indexOf('<!--')
   if (comment !== -1) {
-    throw new Error(`${GUIDE} line ${String(text.slice(0, comment).split('\n').length)}: an HTML comment, which GitHub does not show, so what it holds is in the source and not in the guide a reader follows; delete it`)
+    throw new Error(
+      `${GUIDE} line ${String(text.slice(0, comment).split('\n').length)}: an HTML comment, which GitHub does not show, so what it holds is in the source and not in the guide a reader follows; delete it`,
+    )
   }
   const lines = text.split('\n').map((line) => line.replace(QUOTES, ''))
   for (const [at, line] of lines.entries()) {
     if (/^(?: {4}|\t)/.test(line) && line.trim() !== '' && (at === 0 || lines[at - 1].trim() === '')) {
-      throw new Error(`${GUIDE} line ${String(at + 1)}: a line indented as code after a blank line, which GitHub draws as an indented code block with no info string to tag, unless it is a list's paragraph, which this reading does not tell apart; fence it, or indent it less`)
+      throw new Error(
+        `${GUIDE} line ${String(at + 1)}: a line indented as code after a blank line, which GitHub draws as an indented code block with no info string to tag, unless it is a list's paragraph, which this reading does not tell apart; fence it, or indent it less`,
+      )
     }
   }
 }
@@ -132,7 +136,10 @@ export function readGuide(markdown, hosts) {
     const tag = block.attributes.get('guide')
     if (tag === undefined) {
       if (CODE.has(language)) throw new Error(`${where}: a ${block.language} block with no guide= tag, which the install gate would never compile or run`)
-      if (!UNTAGGED.has(language)) throw new Error(`${where}: a ${block.language} block with no guide= tag; only ${[...UNTAGGED].join(', ')} may go untagged, so an install line or an output nothing checks cannot slip in`)
+      if (!UNTAGGED.has(language))
+        throw new Error(
+          `${where}: a ${block.language} block with no guide= tag; only ${[...UNTAGGED].join(', ')} may go untagged, so an install line or an output nothing checks cannot slip in`,
+        )
       continue
     }
     const kinds = tag.split(',')
@@ -158,7 +165,10 @@ export function readGuide(markdown, hosts) {
         entry.output = entry.output === null ? block.code : `${entry.output}\n${block.code}`
       }
     } else if (language === 'sh') {
-      for (const line of block.code.split('\n').map((text) => text.trim()).filter((text) => text !== '')) {
+      for (const line of block.code
+        .split('\n')
+        .map((text) => text.trim())
+        .filter((text) => text !== '')) {
         const setting = SETTING.exec(line)
         const installs = setting === null ? installLine(line, where) : []
         for (const kind of kinds) {
@@ -201,7 +211,9 @@ function installLine(line, where) {
  * imports are none.
  */
 export function importedPackages(code) {
-  const specifiers = [...code.matchAll(/\bfrom\s+['"]([^'"]+)['"]|\bimport\s+['"]([^'"]+)['"]|\bimport\(\s*['"]([^'"]+)['"]\s*\)/g)].map((match) => match[1] ?? match[2] ?? match[3])
+  const specifiers = [...code.matchAll(/\bfrom\s+['"]([^'"]+)['"]|\bimport\s+['"]([^'"]+)['"]|\bimport\(\s*['"]([^'"]+)['"]\s*\)/g)].map(
+    (match) => match[1] ?? match[2] ?? match[3],
+  )
   const packages = specifiers
     .filter((specifier) => !specifier.startsWith('.'))
     .map((specifier) => {

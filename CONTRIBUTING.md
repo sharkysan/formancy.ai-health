@@ -56,6 +56,10 @@ updated in the same pull request as the code -- and every claim that an
 export conforms proved by the HL7 FHIR validator, against pinned guide
 packages and offline, on the JSON the packages produced
 ([0005](docs/decisions/0005-a-fhir-resource-is-proved-by-the-hl7-validator-against-pinned-guide-packages.md)).
+Run `pnpm format` before you commit and `pnpm lint` after `pnpm build`: CI
+fails a TypeScript or JavaScript file that breaks a lint rule or that
+Prettier would write otherwise
+([0017](docs/decisions/0017-every-typescript-and-javascript-file-is-linted-by-the-recommended-type-aware-rules-and-formatted-by-prettier.md)).
 
 **No real health data, anywhere.** Not in an issue, a pull request, a test
 fixture or a screenshot. A fixture is synthetic, and a name, an identifier or

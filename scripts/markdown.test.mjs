@@ -29,7 +29,9 @@ describe('fences', () => {
   // nowhere, and a quoted one would be prose to the architecture's link
   // check.
   test('reads a fence in a list item and in a quote, without their indentation or markers', () => {
-    expect(fences('- a step\n\n  ```ts\n  const listed = 1\n    nested()\n  ```\n')).toEqual([{ open: 2, close: 5, marker: '```', info: 'ts', code: 'const listed = 1\n  nested()' }])
+    expect(fences('- a step\n\n  ```ts\n  const listed = 1\n    nested()\n  ```\n')).toEqual([
+      { open: 2, close: 5, marker: '```', info: 'ts', code: 'const listed = 1\n  nested()' },
+    ])
     expect(fences('> ```ts\n> const quoted = 2\n> ```\n')).toEqual([{ open: 0, close: 2, marker: '```', info: 'ts', code: 'const quoted = 2' }])
   })
 

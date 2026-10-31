@@ -44,11 +44,15 @@ import { isEnabled } from './enablement.js'
 import { mapForm, type Pair } from './questionnaire.js'
 import type { Questionnaire, QuestionnaireItem } from './resource.js'
 import { checkResponseContext, type ResponseContext, type ResponseElements } from './response-context.js'
-import { SDC_QUESTIONNAIRE_RESPONSE, type QuestionnaireResponse, type QuestionnaireResponseAnswer, type QuestionnaireResponseItem } from './response-resource.js'
+import {
+  SDC_QUESTIONNAIRE_RESPONSE,
+  type QuestionnaireResponse,
+  type QuestionnaireResponseAnswer,
+  type QuestionnaireResponseItem,
+} from './response-resource.js'
 
 export type QuestionnaireResponseExport =
-  | { readonly ok: true; readonly questionnaireResponse: QuestionnaireResponse }
-  | { readonly ok: false; readonly refusals: readonly Refusal[] }
+  { readonly ok: true; readonly questionnaireResponse: QuestionnaireResponse } | { readonly ok: false; readonly refusals: readonly Refusal[] }
 
 /** The submission the host handed over, where every answer's path starts. */
 export const ANSWERS = 'answers'
@@ -92,7 +96,8 @@ function holdsAnswer(value: unknown): boolean {
 }
 
 /** The item of a group or a page around `children`; none when nothing inside is answered. */
-const around = (item: QuestionnaireItem, children: QuestionnaireResponseItem[]): QuestionnaireResponseItem[] => (children.length === 0 ? [] : [{ linkId: item.linkId, item: children }])
+const around = (item: QuestionnaireItem, children: QuestionnaireResponseItem[]): QuestionnaireResponseItem[] =>
+  children.length === 0 ? [] : [{ linkId: item.linkId, item: children }]
 
 /** The response items of `pairs`, whose answers stand in `holder` at `at`. */
 function itemsOf(pairs: readonly Pair[], holder: Holder | undefined, at: string, walk: Walk): QuestionnaireResponseItem[] {
@@ -170,7 +175,7 @@ function itemOf(pair: Pair, holder: Holder | undefined, at: string, walk: Walk):
 function responseOf(questionnaire: Questionnaire, elements: ResponseElements, items: readonly QuestionnaireResponseItem[]): QuestionnaireResponse {
   const { status, authored, subject, author, source } = elements
   const versioned = questionnaire.version !== undefined
-  const canonical = versioned ? uri(`${questionnaire.url}|${questionnaire.version as string}`, 'QuestionnaireResponse.questionnaire') : questionnaire.url
+  const canonical = versioned ? uri(`${questionnaire.url}|${questionnaire.version}`, 'QuestionnaireResponse.questionnaire') : questionnaire.url
   const sdc: readonly string[] = subject !== undefined && versioned ? [SDC_QUESTIONNAIRE_RESPONSE] : []
   const profile = [...sdc, ...elements.profiles.filter((claim) => !sdc.includes(claim))]
   return {

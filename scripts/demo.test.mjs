@@ -117,7 +117,17 @@ describe('the demo on formancy.ai (0012)', () => {
     ['code that runs at the edge', { ...base, main: 'worker.js' }, 'main'],
     ['a route on another zone', { ...base, routes: [{ pattern: 'formancy.ai/health/*', zone_name: 'example.com' }, base.routes[1]] }, 'zone'],
     ['no route for the path without its slash', { ...base, routes: [base.routes[0]] }, 'formancy.ai/health'],
-    ['a route for the whole site', { ...base, routes: [{ pattern: 'formancy.ai/*', zone_name: 'formancy.ai' }, { pattern: 'formancy.ai', zone_name: 'formancy.ai' }] }, 'path'],
+    [
+      'a route for the whole site',
+      {
+        ...base,
+        routes: [
+          { pattern: 'formancy.ai/*', zone_name: 'formancy.ai' },
+          { pattern: 'formancy.ai', zone_name: 'formancy.ai' },
+        ],
+      },
+      'path',
+    ],
     ['a custom domain', { ...base, routes: [...base.routes, { pattern: 'health.formancy.ai', custom_domain: true }] }, 'custom_domain'],
     ['assets staged elsewhere', { ...base, assets: { ...base.assets, directory: './dist' } }, '.cloudflare'],
     ['no redirect from /health to /health/', { ...base, assets: { ...base.assets, html_handling: 'none' } }, 'auto-trailing-slash'],
@@ -133,7 +143,9 @@ describe('the demo on formancy.ai (0012)', () => {
   // deployed (formancy.ai-report 0018). The deploy refuses it before
   // anything is uploaded.
   test('refuses a built page that asks for a file by an absolute path, and only that', () => {
-    expect(indexProblems('<script type="module" crossorigin src="./assets/index-a.js"></script><link rel="stylesheet" crossorigin href="./assets/index-b.css">')).toEqual([])
+    expect(
+      indexProblems('<script type="module" crossorigin src="./assets/index-a.js"></script><link rel="stylesheet" crossorigin href="./assets/index-b.css">'),
+    ).toEqual([])
     expect(indexProblems('<link rel="icon" href="data:," /><a href="https://github.com/sharkysan/formancy.ai-health">')).toEqual([])
     expect(indexProblems('<script type="module" crossorigin src="/assets/index-a.js"></script>')).toEqual(['src="/assets/index-a.js"'])
     expect(indexProblems('<link rel="modulepreload" crossorigin href="/health/assets/c.js">')).toEqual(['href="/health/assets/c.js"'])
@@ -253,7 +265,14 @@ describe('the headers every file of the demo is served with (0012)', () => {
   // A policy written for an address that is not a directory's would admit
   // files from where the page's relative files do not resolve, or from
   // a query nobody asked for: refused, rather than served.
-  test.each(['https://formancy.ai/health', '/health/', 'https://formancy.ai/health/?x=1', 'https://formancy.ai/health/#demo', 'javascript:alert(1)//', 'HTTPS://FORMANCY.AI/health/'])('are refused for %s, which is no directory a page is served from', (page) => {
+  test.each([
+    'https://formancy.ai/health',
+    '/health/',
+    'https://formancy.ai/health/?x=1',
+    'https://formancy.ai/health/#demo',
+    'javascript:alert(1)//',
+    'HTTPS://FORMANCY.AI/health/',
+  ])('are refused for %s, which is no directory a page is served from', (page) => {
     expect(() => headersFor(page)).toThrow('the address of the directory its page is served from')
   })
 
@@ -296,8 +315,9 @@ describe('the headers every file of the demo is served with (0012)', () => {
     ['a Trusted Types policy allowed', 'trusted-types default', "trusted-types is not 'none'"],
   ])('refuses %s', (_name, change, says) => {
     const name = change.split(' ')[0]
-    const policy = headersFor(PAGE)
-      ['Content-Security-Policy'].split('; ')
+    const header = headersFor(PAGE)['Content-Security-Policy']
+    const policy = header
+      .split('; ')
       .filter((each) => !each.startsWith(`${name} `))
       .concat(change === name ? [] : change)
       .join('; ')
@@ -373,7 +393,7 @@ describe('what the deploy stages (0012)', () => {
   // read at the root of the directory and nowhere else; under the path it
   // would be a file served to anyone and the page would go out under no
   // policy.
-  test('puts the build under the demo\'s path and the headers at the root of the directory Wrangler uploads', () => {
+  test("puts the build under the demo's path and the headers at the root of the directory Wrangler uploads", () => {
     const into = tree({})
     stageDemo(built(), into, PAGE)
     expect(listed(into)).toEqual(['_headers', 'health/assets/index-a.js', 'health/index.html'])
@@ -385,7 +405,9 @@ describe('what the deploy stages (0012)', () => {
   // Refused before anything is staged, naming the page and the path.
   test('refuses a page that asks for a file by an absolute path, naming it, and stages nothing', () => {
     const into = tree({})
-    expect(() => stageDemo(built({ 'index.html': '<script type="module" src="/assets/index-a.js"></script>' }), into, PAGE)).toThrow(/index\.html asks for a file by an absolute path: src="\/assets\/index-a\.js"/)
+    expect(() => stageDemo(built({ 'index.html': '<script type="module" src="/assets/index-a.js"></script>' }), into, PAGE)).toThrow(
+      /index\.html asks for a file by an absolute path: src="\/assets\/index-a\.js"/,
+    )
     expect(listed(into)).toEqual([])
   })
 

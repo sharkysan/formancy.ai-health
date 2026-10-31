@@ -65,9 +65,12 @@ describe('gln', () => {
 
   // gln-length: thirteen digits, no separators, nothing else; and text,
   // never a number, whose digits a double would not keep.
-  test.each([['952000000001'], ['95200000000111'], ['952 0000 0000 11'], ['952000000001A'], [''], [9520000000011 as never]])('refuses %j by its form', (value) => {
-    expect(refusalOf(() => gln(value, 'context.author.practitioner.gln'))).toMatchObject({ rule: 'identifier', path: 'context.author.practitioner.gln' })
-  })
+  test.each([['952000000001'], ['95200000000111'], ['952 0000 0000 11'], ['952000000001A'], [''], [9520000000011 as never]])(
+    'refuses %j by its form',
+    (value) => {
+      expect(refusalOf(() => gln(value, 'context.author.practitioner.gln'))).toMatchObject({ rule: 'identifier', path: 'context.author.practitioner.gln' })
+    },
+  )
 
   // A GLN that does not start 76 is a GLN: CH Core warns of one only "for
   // Swiss HCP" (gln-startswith76), and a referral's author may practise

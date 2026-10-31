@@ -74,8 +74,10 @@ const RULES = {
   identifier:
     'it is not of the form its identifier system gives it, or it stands under a system whose identifiers are taken here only by their own name and checked',
   'check-digit': 'its check digit is not the one its identifier system computes from its other digits',
-  profile: 'it is not the resource its place in the document asks for, of the type and claiming the profile the guide asks of it there, so nothing would hold it to that profile',
-  unversioned: 'it names a definition by its canonical without the version it was answered against, and a document that carries the definition by canonical names the one version it means',
+  profile:
+    'it is not the resource its place in the document asks for, of the type and claiming the profile the guide asks of it there, so nothing would hold it to that profile',
+  unversioned:
+    'it names a definition by its canonical without the version it was answered against, and a document that carries the definition by canonical names the one version it means',
 } as const
 
 /** What was wrong with a value. */

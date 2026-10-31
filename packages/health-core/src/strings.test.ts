@@ -36,7 +36,16 @@ describe('dateTime', () => {
   // Each precision R4 gives a dateTime, a leap second and both ends of the
   // zone's range are values of their own: a check that refused one would
   // make a host round a form's answer to a precision it did not have.
-  test.each(['2026', '2026-10', '2026-10-17', '2026-10-17T10:00:00+02:00', '2026-10-17T08:00:00.000Z', '2026-12-31T23:59:60Z', '2026-10-17T10:00:00-13:59', '2026-10-17T10:00:00+14:00'])('keeps %s', (text) => {
+  test.each([
+    '2026',
+    '2026-10',
+    '2026-10-17',
+    '2026-10-17T10:00:00+02:00',
+    '2026-10-17T08:00:00.000Z',
+    '2026-12-31T23:59:60Z',
+    '2026-10-17T10:00:00-13:59',
+    '2026-10-17T10:00:00+14:00',
+  ])('keeps %s', (text) => {
     expect(dateTime(text, 'Observation.effectiveDateTime')).toBe(text)
   })
 
@@ -50,9 +59,12 @@ describe('dateTime', () => {
 
   // Hours and minutes alone, 24:00, an offset past R4's +14:00 and a space
   // in place of the T are each outside R4's form.
-  test.each(['2026-10-17T10:00Z', '2026-10-17T24:00:00Z', '2026-10-17T10:00:00+15:00', '2026-10-17 10:00:00Z', '2026-10-17T10:00:00+0200'])('refuses %s by its form', (text) => {
-    expect(refusalOf(() => dateTime(text, 'Observation.effectiveDateTime'))).toMatchObject({ rule: 'grammar' })
-  })
+  test.each(['2026-10-17T10:00Z', '2026-10-17T24:00:00Z', '2026-10-17T10:00:00+15:00', '2026-10-17 10:00:00Z', '2026-10-17T10:00:00+0200'])(
+    'refuses %s by its form',
+    (text) => {
+      expect(refusalOf(() => dateTime(text, 'Observation.effectiveDateTime'))).toMatchObject({ rule: 'grammar' })
+    },
+  )
 
   // The calendar holds once a time follows the day too: a check that read
   // only a bare date's length would let 30 February through with a time.
@@ -103,7 +115,7 @@ describe('time', () => {
 describe('id, code, uri and uuid', () => {
   // A Resource.id is the host's, never made here, and held to R4's form:
   // letters, digits, '-' and '.', 64 at most.
-  test('id keeps a host\'s id and refuses what R4 does not admit', () => {
+  test("id keeps a host's id and refuses what R4 does not admit", () => {
     expect(id('patient-1.a', 'Patient.id')).toBe('patient-1.a')
     expect(id('a'.repeat(64), 'Patient.id')).toBe('a'.repeat(64))
     for (const text of ['a'.repeat(65), 'patient_1', 'patient 1', 'pätient', '']) {
@@ -134,14 +146,30 @@ describe('id, code, uri and uuid', () => {
     expect(language(text, 'Questionnaire.language')).toBe(text)
   })
 
-  test.each(['Deutsch', 'french', 'abcd', 'de_CH', 'de-ch', 'DE-CH', 'en-gb', 'zh-hant', 'en-US-u-ca-gregory', 'x-private', 'i-klingon', 'sgn-CH-DE', 'de-', 'd'])('language refuses %s as no language tag in its canonical case', (text) => {
+  test.each([
+    'Deutsch',
+    'french',
+    'abcd',
+    'de_CH',
+    'de-ch',
+    'DE-CH',
+    'en-gb',
+    'zh-hant',
+    'en-US-u-ca-gregory',
+    'x-private',
+    'i-klingon',
+    'sgn-CH-DE',
+    'de-',
+    'd',
+  ])('language refuses %s as no language tag in its canonical case', (text) => {
     expect(refusalOf(() => language(text, 'Questionnaire.language'))).toMatchObject({ rule: 'language-tag', path: 'Questionnaire.language' })
   })
 
   // A language is a code first: whitespace is refused as a code's, and
   // what is not text never reaches a regex.
   test('language refuses what is no code as a code', () => {
-    for (const text of ['de\tCH', ' fr', '', 4 as never]) expect(refusalOf(() => language(text, 'Questionnaire.language'))).toMatchObject({ rule: 'grammar', type: 'code' })
+    for (const text of ['de\tCH', ' fr', '', 4 as never])
+      expect(refusalOf(() => language(text, 'Questionnaire.language'))).toMatchObject({ rule: 'grammar', type: 'code' })
     expect(refusalOf(() => language('de CH', 'Questionnaire.language'))).toMatchObject({ rule: 'language-tag' })
   })
 
@@ -162,7 +190,13 @@ describe('id, code, uri and uuid', () => {
   test('uuid keeps a lowercase urn:uuid and refuses any other spelling', () => {
     const text = 'urn:uuid:c757873d-ec9a-4326-a141-556f43239520'
     expect(uuid(text, 'Bundle.entry[0].fullUrl')).toBe(text)
-    for (const other of [text.toUpperCase(), 'urn:uuid:C757873D-ec9a-4326-a141-556f43239520', 'c757873d-ec9a-4326-a141-556f43239520', 'urn:uuid:c757873d-ec9a-4326-a141-556f4323952', 'urn:uuid:c757873dec9a4326a141556f43239520']) {
+    for (const other of [
+      text.toUpperCase(),
+      'urn:uuid:C757873D-ec9a-4326-a141-556f43239520',
+      'c757873d-ec9a-4326-a141-556f43239520',
+      'urn:uuid:c757873d-ec9a-4326-a141-556f4323952',
+      'urn:uuid:c757873dec9a4326a141556f43239520',
+    ]) {
       expect(refusalOf(() => uuid(other, 'Bundle.entry[0].fullUrl'))).toMatchObject({ rule: 'grammar' })
     }
   })

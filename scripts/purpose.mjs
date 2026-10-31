@@ -32,7 +32,7 @@ export function sectionOf(markdown, title, file) {
 }
 
 /** The sentences of `text`, whitespace flattened: each ends at a full stop, a question or an exclamation mark before a space and a capital, a mark or a bracket. */
-const sentencesOf = (text) => flat(text).split(/(?<=[.!?])\s+(?=[A-Z*`"(\[])/)
+const sentencesOf = (text) => flat(text).split(/(?<=[.!?])\s+(?=[A-Z*`"([])/)
 
 /** CLAUDE.md's section that says what the product is and is not. */
 export const WHAT_IT_IS = 'What this is, and what it is not'
@@ -41,9 +41,13 @@ export const WHAT_IT_IS = 'What this is, and what it is not'
  * The sentence of CLAUDE.md's first section that names a medical device.
  * Throws when there is none or more than one: either way, which words the
  * README must hold would be a guess.
+ *
+ * @param {string} claude
+ * @returns {string}
  */
 export function intendedPurpose(claude) {
   const naming = sentencesOf(sectionOf(claude, WHAT_IT_IS, 'CLAUDE.md')).filter((sentence) => /medical device/i.test(sentence))
-  if (naming.length !== 1) throw new Error(`CLAUDE.md's "${WHAT_IT_IS}" names a medical device in ${String(naming.length)} sentences, and this guard reads exactly one`)
+  if (naming.length !== 1)
+    throw new Error(`CLAUDE.md's "${WHAT_IT_IS}" names a medical device in ${String(naming.length)} sentences, and this guard reads exactly one`)
   return naming[0]
 }

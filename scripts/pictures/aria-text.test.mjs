@@ -19,7 +19,9 @@ describe('decode', () => {
   // A plain value is the text as written: decoding it must not touch it.
   test('reads a plain value as written', () => {
     // The form's region.
-    expect(decode('  - textbox "Practice phone for questions": 000 000 00 00')).toEqual([{ depth: 1, role: 'textbox', name: 'Practice phone for questions', value: '000 000 00 00' }])
+    expect(decode('  - textbox "Practice phone for questions": 000 000 00 00')).toEqual([
+      { depth: 1, role: 'textbox', name: 'Practice phone for questions', value: '000 000 00 00' },
+    ])
   })
 
   // Playwright quotes a value that holds a colon before a space, a quotation
@@ -28,9 +30,13 @@ describe('decode', () => {
   // refusal unquotable, and a \x escape a line it cannot read.
   test('reads a double-quoted value, with an escaped quotation mark and a \\x escape', () => {
     // The response's region, its answers refused.
-    expect(decode('  - paragraph: "Refused by @formancy/health-questionnaire:"')).toEqual([{ depth: 1, role: 'paragraph', name: undefined, value: 'Refused by @formancy/health-questionnaire:' }])
+    expect(decode('  - paragraph: "Refused by @formancy/health-questionnaire:"')).toEqual([
+      { depth: 1, role: 'paragraph', name: undefined, value: 'Refused by @formancy/health-questionnaire:' },
+    ])
     // The response's JSON region: a value with quotation marks in it.
-    expect(decode('    - region "The answers as JSON": "{ \\"status\\": \\"completed\\" }"')).toEqual([{ depth: 2, role: 'region', name: 'The answers as JSON', value: '{ "status": "completed" }' }])
+    expect(decode('    - region "The answers as JSON": "{ \\"status\\": \\"completed\\" }"')).toEqual([
+      { depth: 2, role: 'region', name: 'The answers as JSON', value: '{ "status": "completed" }' },
+    ])
     // Made by hand: no pictured part has a DEL character. The escaped
     // backslash before "x41" keeps that "x41" text, not an escape.
     expect(decode('- text: "a\\x7fb \\\\x41"')).toEqual([{ depth: 0, role: 'text', name: undefined, value: 'a\u007fb \\x41' }])
@@ -40,9 +46,13 @@ describe('decode', () => {
   // without stripping them, the name would be lost to the YAML.
   test("reads a single-quoted key, with '' standing for '", () => {
     // The Questionnaire's region: an item's way to its field.
-    expect(decode(`          - 'button "To the field in the form: Specialty"': To the field in the form`)).toEqual([{ depth: 5, role: 'button', name: 'To the field in the form: Specialty', value: 'To the field in the form' }])
+    expect(decode(`          - 'button "To the field in the form: Specialty"': To the field in the form`)).toEqual([
+      { depth: 5, role: 'button', name: 'To the field in the form: Specialty', value: 'To the field in the form' },
+    ])
     // Made by hand: the same shape with an apostrophe in the name.
-    expect(decode(`- 'button "To the field in the form: The patient''s language"'`)).toEqual([{ depth: 0, role: 'button', name: "To the field in the form: The patient's language", value: undefined }])
+    expect(decode(`- 'button "To the field in the form: The patient''s language"'`)).toEqual([
+      { depth: 0, role: 'button', name: "To the field in the form: The patient's language", value: undefined },
+    ])
   })
 
   // A name is JSON.stringify's output, so an escaped quotation mark in it is
@@ -58,7 +68,9 @@ describe('decode', () => {
   // is read, under its own key, rather than refused.
   test('reads a property line', () => {
     // The response's region, as the camera records it.
-    expect(decode('    - /url: blob:http://demo.invalid/<uuid>')).toEqual([{ depth: 2, role: '/url', name: undefined, value: 'blob:http://demo.invalid/<uuid>' }])
+    expect(decode('    - /url: blob:http://demo.invalid/<uuid>')).toEqual([
+      { depth: 2, role: '/url', name: undefined, value: 'blob:http://demo.invalid/<uuid>' },
+    ])
   })
 
   // A line the format above does not describe would otherwise be skipped, and
@@ -108,7 +120,11 @@ describe('occursIn', () => {
 describe('strings', () => {
   // Every name and value, in order: what a reader of a part's text reads.
   test('lists every decoded name and value, in order', () => {
-    expect(strings('- textbox "Language to interpret": Französisch\n- button "To the resources"')).toEqual(['Language to interpret', 'Französisch', 'To the resources'])
+    expect(strings('- textbox "Language to interpret": Französisch\n- button "To the resources"')).toEqual([
+      'Language to interpret',
+      'Französisch',
+      'To the resources',
+    ])
   })
 })
 
@@ -124,14 +140,22 @@ describe('steadied', () => {
   // retake would change the record each time.
   test("says a link's object URL without the UUID drawn for it", () => {
     expect(steadied(printed('fd7f70cf-fa5b-4a86-9e6c-4b53d7f33342'))).toBe(steadied(printed('503cad91-bbe5-4be8-b4e2-d87300d88171')))
-    expect(steadied(printed('fd7f70cf-fa5b-4a86-9e6c-4b53d7f33342'))).toBe(['- link "Download questionnaireresponse-demo-referral.json":', '  - /url: blob:http://demo.invalid/<uuid>'].join('\n'))
+    expect(steadied(printed('fd7f70cf-fa5b-4a86-9e6c-4b53d7f33342'))).toBe(
+      ['- link "Download questionnaireresponse-demo-referral.json":', '  - /url: blob:http://demo.invalid/<uuid>'].join('\n'),
+    )
   })
 
   // Made by hand: anything else is what the page says, and a record that
   // smoothed it would hold a change nobody saw -- another address, or text
   // that only looks like an object URL.
   test('leaves every other address and every text as printed', () => {
-    const other = ['- link "Skip to the demo":', '  - /url: "#demo"', '- link "Download":', '  - /url: https://demo.invalid/fd7f70cf-fa5b-4a86-9e6c-4b53d7f33342', '- paragraph: blob:http://demo.invalid/fd7f70cf-fa5b-4a86-9e6c-4b53d7f33342'].join('\n')
+    const other = [
+      '- link "Skip to the demo":',
+      '  - /url: "#demo"',
+      '- link "Download":',
+      '  - /url: https://demo.invalid/fd7f70cf-fa5b-4a86-9e6c-4b53d7f33342',
+      '- paragraph: blob:http://demo.invalid/fd7f70cf-fa5b-4a86-9e6c-4b53d7f33342',
+    ].join('\n')
     expect(steadied(other)).toBe(other)
   })
 })

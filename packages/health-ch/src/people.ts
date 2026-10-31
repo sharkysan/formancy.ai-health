@@ -34,7 +34,23 @@
  * since CH Core's checks of them are warnings. Each resource claims its
  * profile with CH Core's version, and is written in R4's order.
  */
-import { codeOf, date, known, member, needed, objectAt, optional, readItems, text, uri, uuid, valueAt, type FhirReference, type FhirUuid, type Refusals } from '@formancy/health-core'
+import {
+  codeOf,
+  date,
+  known,
+  member,
+  needed,
+  objectAt,
+  optional,
+  readItems,
+  text,
+  uri,
+  uuid,
+  valueAt,
+  type FhirReference,
+  type FhirUuid,
+  type Refusals,
+} from '@formancy/health-core'
 import { CONTEXT, GENDERS } from './context.js'
 import { ahvn13, AHVN13_SYSTEM, gln, GLN_SYSTEM, localIdentifierAt } from './identifiers.js'
 import { MEDICAL_RECORD, PROFILES } from './profiles.js'
@@ -66,7 +82,8 @@ function textsAt(holder: object, name: string, path: string, refusals: Refusals)
 }
 
 /** The same, where the host may give none. */
-const optionalTextsAt = (holder: object, name: string, path: string, refusals: Refusals) => (valueAt(holder, name) === undefined ? undefined : textsAt(holder, name, path, refusals))
+const optionalTextsAt = (holder: object, name: string, path: string, refusals: Refusals) =>
+  valueAt(holder, name) === undefined ? undefined : textsAt(holder, name, path, refusals)
 
 /** The patient's name: a family and given names, both, as ch-pat-1 asks. */
 function patientNameAt(holder: object, path: string, refusals: Refusals): HumanName | undefined {
@@ -140,7 +157,10 @@ function practitionerOf(holder: object, refusals: Refusals): Written<Practitione
   const identifier = glnIdentifier(given, path, refusals)
   const name = practitionerNameAt(given, member(path, 'name'), refusals)
   if (refusals.count > before || fullUrl === undefined || name === undefined) return undefined
-  return { fullUrl, resource: { resourceType: 'Practitioner', meta: { profile: [PROFILES.practitioner] }, ...(identifier === undefined ? {} : { identifier }), name: [name] } }
+  return {
+    fullUrl,
+    resource: { resourceType: 'Practitioner', meta: { profile: [PROFILES.practitioner] }, ...(identifier === undefined ? {} : { identifier }), name: [name] },
+  }
 }
 
 function organizationOf(holder: object, refusals: Refusals): Written<Organization> | undefined {
@@ -152,7 +172,10 @@ function organizationOf(holder: object, refusals: Refusals): Written<Organizatio
   const identifier = glnIdentifier(given, path, refusals)
   const name = needed(given, 'name', member(path, 'name'), refusals, text)
   if (refusals.count > before || fullUrl === undefined || name === undefined) return undefined
-  return { fullUrl, resource: { resourceType: 'Organization', meta: { profile: [PROFILES.organization] }, ...(identifier === undefined ? {} : { identifier }), name } }
+  return {
+    fullUrl,
+    resource: { resourceType: 'Organization', meta: { profile: [PROFILES.organization] }, ...(identifier === undefined ? {} : { identifier }), name },
+  }
 }
 
 /**

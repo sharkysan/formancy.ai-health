@@ -57,8 +57,12 @@ describe('docs/release/gates.json', () => {
     // gate, whose job and whose registers' test both have to pass; the
     // trademark gate the guard 0003 names.
     expect(gate(gates, 'G1').evidence).toEqual(expect.arrayContaining([{ job: 'install' }, { file: 'scripts/upstream-deps.test.mjs' }]))
-    expect(gate(gates, 'G2').evidence).toEqual(expect.arrayContaining([{ job: 'validator' }, { file: 'scripts/validator/registers.test.mjs' }, { file: 'scripts/validator/judge.test.mjs' }]))
-    expect(gate(gates, 'G3').evidence).toEqual(expect.arrayContaining([{ file: 'packages/health-core/src/exactness.test.ts' }, { file: 'scripts/exact-and-reproducible.test.mjs' }]))
+    expect(gate(gates, 'G2').evidence).toEqual(
+      expect.arrayContaining([{ job: 'validator' }, { file: 'scripts/validator/registers.test.mjs' }, { file: 'scripts/validator/judge.test.mjs' }]),
+    )
+    expect(gate(gates, 'G3').evidence).toEqual(
+      expect.arrayContaining([{ file: 'packages/health-core/src/exactness.test.ts' }, { file: 'scripts/exact-and-reproducible.test.mjs' }]),
+    )
     expect(gate(gates, 'licences').evidence).toEqual(expect.arrayContaining([{ job: 'verify' }, { file: 'scripts/dependency-licences.test.mjs' }]))
     expect(gate(gates, 'trademark').evidence).toEqual([{ file: 'scripts/trademark.test.mjs' }])
   })
@@ -82,8 +86,13 @@ describe('docs/release/gates.json', () => {
   // A file renamed, or one outside a package with a suite and the guards,
   // would be evidence no run can ever pass -- or one that never runs at all.
   test('fails file evidence that is not a test a run reports on', () => {
-    const renamed = (gates) => (gate(gates, 'G3').evidence = gate(gates, 'G3').evidence.map((item) => (item.file === 'packages/health-core/src/exactness.test.ts' ? { file: 'packages/health-core/src/exactnes.test.ts' } : item)))
-    expect(problemsWith(renamed)).toEqual(["gate G3's evidence: packages/health-core/src/exactnes.test.ts is not a test file of a package with a suite or of the repository's guards"])
+    const renamed = (gates) =>
+      (gate(gates, 'G3').evidence = gate(gates, 'G3').evidence.map((item) =>
+        item.file === 'packages/health-core/src/exactness.test.ts' ? { file: 'packages/health-core/src/exactnes.test.ts' } : item,
+      ))
+    expect(problemsWith(renamed)).toEqual([
+      "gate G3's evidence: packages/health-core/src/exactnes.test.ts is not a test file of a package with a suite or of the repository's guards",
+    ])
     expect(problemsWith((gates) => gate(gates, 'G3').evidence.push({ file: 'packages/health-core/src/numbers.ts' }))).toEqual([
       "gate G3's evidence: packages/health-core/src/numbers.ts is not a test file of a package with a suite or of the repository's guards",
     ])
@@ -93,17 +102,25 @@ describe('docs/release/gates.json', () => {
   // the demo's browser gate is evidence about the demo, not about a
   // release gate, so it is no kind of evidence here.
   test('fails a job or a document that is not there, and an unknown kind', () => {
-    expect(problemsWith((gates) => gate(gates, 'G1').evidence.push({ job: 'report' }))).toEqual(["gate G1's evidence: report is not a job of .github/workflows/gates.yml that leaves results"])
-    expect(problemsWith((gates) => gate(gates, 'G2').evidence.push({ document: 'docs/release/figures.md' }))).toEqual(["gate G2's evidence: docs/release/figures.md is not a committed file"])
-    expect(problemsWith((gates) => gate(gates, 'G2').evidence.push({ browserGate: 'apps/viewer' }))).toEqual([`gate G2's evidence: {"browserGate":"apps/viewer"} is not exactly one of file, job, document`])
-    expect(problemsWith((gates) => gate(gates, 'G2').evidence.push({ file: 'a.test.ts', job: 'verify' }))).toEqual([`gate G2's evidence: {"file":"a.test.ts","job":"verify"} is not exactly one of file, job, document`])
+    expect(problemsWith((gates) => gate(gates, 'G1').evidence.push({ job: 'report' }))).toEqual([
+      "gate G1's evidence: report is not a job of .github/workflows/gates.yml that leaves results",
+    ])
+    expect(problemsWith((gates) => gate(gates, 'G2').evidence.push({ document: 'docs/release/figures.md' }))).toEqual([
+      "gate G2's evidence: docs/release/figures.md is not a committed file",
+    ])
+    expect(problemsWith((gates) => gate(gates, 'G2').evidence.push({ browserGate: 'apps/viewer' }))).toEqual([
+      `gate G2's evidence: {"browserGate":"apps/viewer"} is not exactly one of file, job, document`,
+    ])
+    expect(problemsWith((gates) => gate(gates, 'G2').evidence.push({ file: 'a.test.ts', job: 'verify' }))).toEqual([
+      `gate G2's evidence: {"file":"a.test.ts","job":"verify"} is not exactly one of file, job, document`,
+    ])
   })
 
   // The plan is a working document kept out of the repository; a gate's
   // wording copied into the register would publish it.
   test('carries no gate’s wording', () => {
     expect(problemsWith((gates) => (gate(gates, 'G1').says = 'Install gate over packed tarballs.'))).toEqual([
-      "gate G1 carries \"says\", and a gate carries only its id, its evidence and why it is open: the plan's wording stays out of the repository",
+      'gate G1 carries "says", and a gate carries only its id, its evidence and why it is open: the plan\'s wording stays out of the repository',
     ])
   })
 })
@@ -115,17 +132,33 @@ describe('evaluateGates', () => {
   // A document from another commit read as "passed in this run" would be a
   // claim the run never checked, reported as if it had.
   test('gives a gate whose only evidence is a document the state stated, never passed', () => {
-    const [stated] = evaluateGates({ gates: [{ gate: 'G2', evidence: [{ document: 'docs/release/README.md' }] }] }, run({ documents: { 'docs/release/README.md': history } }))
+    const [stated] = evaluateGates(
+      { gates: [{ gate: 'G2', evidence: [{ document: 'docs/release/README.md' }] }] },
+      run({ documents: { 'docs/release/README.md': history } }),
+    )
     expect(stated).toEqual({ gate: 'G2', state: 'stated', evidence: [{ kind: 'document', value: 'docs/release/README.md', outcome: 'stated', history }] })
   })
 
   // Evidence that ran and passed passes the gate; one item that did not
   // fails it, and a document beside them neither helps nor hurts.
   test('passes a gate only when every item that runs passed', () => {
-    const register = { gates: [{ gate: 'G1', evidence: [{ job: 'install' }, { document: 'docs/release/README.md' }] }, { gate: 'G2', evidence: [{ file: 'a.test.ts' }] }] }
+    const register = {
+      gates: [
+        { gate: 'G1', evidence: [{ job: 'install' }, { document: 'docs/release/README.md' }] },
+        { gate: 'G2', evidence: [{ file: 'a.test.ts' }] },
+      ],
+    }
     expect(evaluateGates(register, run()).map((entry) => entry.state)).toEqual(['passed', 'passed'])
-    expect(evaluateGates(register, run({ needs: { install: { result: 'failure' } } }))[0].evidence[0]).toEqual({ kind: 'job', value: 'install', outcome: 'failed', result: 'failure' })
-    expect(evaluateGates(register, run({ fileOutcome: () => 'absent' }))[1]).toMatchObject({ state: 'failed', evidence: [{ kind: 'file', value: 'a.test.ts', outcome: 'absent' }] })
+    expect(evaluateGates(register, run({ needs: { install: { result: 'failure' } } }))[0].evidence[0]).toEqual({
+      kind: 'job',
+      value: 'install',
+      outcome: 'failed',
+      result: 'failure',
+    })
+    expect(evaluateGates(register, run({ fileOutcome: () => 'absent' }))[1]).toMatchObject({
+      state: 'failed',
+      evidence: [{ kind: 'file', value: 'a.test.ts', outcome: 'absent' }],
+    })
   })
 
   // Locally there are no needs: a job's evidence did not run, which is not a pass.
@@ -140,7 +173,12 @@ describe('evaluateGates', () => {
   // has to pass, or a partly evidenced gate would hide a failure behind its
   // reason.
   test('keeps a gate with a reason open, and fails it when the evidence it has did not pass', () => {
-    const register = { gates: [{ gate: 'G5', evidence: [{ file: 'a.test.ts' }], open: 'Partly.' }, { gate: 'G4', open: 'Later.' }] }
+    const register = {
+      gates: [
+        { gate: 'G5', evidence: [{ file: 'a.test.ts' }], open: 'Partly.' },
+        { gate: 'G4', open: 'Later.' },
+      ],
+    }
     expect(evaluateGates(register, run())).toEqual([
       { gate: 'G5', state: 'open', open: 'Partly.', evidence: [{ kind: 'file', value: 'a.test.ts', outcome: 'passed' }] },
       { gate: 'G4', state: 'open', open: 'Later.', evidence: [] },

@@ -133,6 +133,8 @@ describe('a refusal', () => {
   test('names the language a text is missing in', () => {
     const refusal = new Refusal('missing', 'form.model.fields[1].label', { language: 'fr' })
     expect(refusal.language).toBe('fr')
-    expect(refusal.message).toBe('form.model.fields[1].label: a text the resource needs of it is absent, and nothing here supplies one or falls back to another language, in fr')
+    expect(refusal.message).toBe(
+      'form.model.fields[1].label: a text the resource needs of it is absent, and nothing here supplies one or falls back to another language, in fr',
+    )
   })
 })

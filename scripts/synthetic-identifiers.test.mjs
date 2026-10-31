@@ -68,7 +68,11 @@ function validAhvn13s(file, text) {
 
 /** Every file git holds, or would add: the repository as a pull request carries it. */
 function repositoryFiles() {
-  const listed = execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], { cwd: repo, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+  const listed = execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], {
+    cwd: repo,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  })
   return listed.split('\0').filter((file) => file !== '' && existsSync(join(repo, file)))
 }
 

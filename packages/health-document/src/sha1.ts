@@ -34,7 +34,10 @@ export function sha1(bytes: Uint8Array): Uint8Array {
   tail[rest] = 0x80
   const [high, low] = bitLength(bytes.length)
   const end = tail.length
-  for (const [offset, word] of [[end - 8, high], [end - 4, low]] as const) {
+  for (const [offset, word] of [
+    [end - 8, high],
+    [end - 4, low],
+  ] as const) {
     tail[offset] = word >>> 24
     tail[offset + 1] = (word >>> 16) & 0xff
     tail[offset + 2] = (word >>> 8) & 0xff
@@ -68,15 +71,25 @@ const rotate = (word: number, count: number) => (word << count) | (word >>> (32 
 function compress(state: number[], schedule: number[], block: Uint8Array, at: number): void {
   for (let index = 0; index < 16; index += 1) {
     const offset = at + index * 4
-    schedule[index] = ((block[offset] as number) << 24) | ((block[offset + 1] as number) << 16) | ((block[offset + 2] as number) << 8) | (block[offset + 3] as number)
+    schedule[index] =
+      ((block[offset] as number) << 24) | ((block[offset + 1] as number) << 16) | ((block[offset + 2] as number) << 8) | (block[offset + 3] as number)
   }
   for (let index = 16; index < 80; index += 1) {
-    schedule[index] = rotate((schedule[index - 3] as number) ^ (schedule[index - 8] as number) ^ (schedule[index - 14] as number) ^ (schedule[index - 16] as number), 1)
+    schedule[index] = rotate(
+      (schedule[index - 3] as number) ^ (schedule[index - 8] as number) ^ (schedule[index - 14] as number) ^ (schedule[index - 16] as number),
+      1,
+    )
   }
   let [a, b, c, d, e] = state as [number, number, number, number, number]
   for (let index = 0; index < 80; index += 1) {
     const [mixed, constant] =
-      index < 20 ? [(b & c) | (~b & d), 0x5a827999] : index < 40 ? [b ^ c ^ d, 0x6ed9eba1] : index < 60 ? [(b & c) | (b & d) | (c & d), 0x8f1bbcdc] : [b ^ c ^ d, 0xca62c1d6]
+      index < 20
+        ? [(b & c) | (~b & d), 0x5a827999]
+        : index < 40
+          ? [b ^ c ^ d, 0x6ed9eba1]
+          : index < 60
+            ? [(b & c) | (b & d) | (c & d), 0x8f1bbcdc]
+            : [b ^ c ^ d, 0xca62c1d6]
     const next = (rotate(a, 5) + mixed + e + constant + (schedule[index] as number)) | 0
     e = d
     d = c

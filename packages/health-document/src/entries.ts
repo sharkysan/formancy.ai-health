@@ -14,7 +14,23 @@
  * host's objects, so that a document once assembled does not change
  * (documents.html: "its content can never be changed").
  */
-import { id, known, member, needed, optional, readItems, readJson, Refusal, uuid, valueAt, writeJson, type FhirJson, type FhirJsonObject, type FhirUuid, type Refusals } from '@formancy/health-core'
+import {
+  id,
+  known,
+  member,
+  needed,
+  optional,
+  readItems,
+  readJson,
+  Refusal,
+  uuid,
+  valueAt,
+  writeJson,
+  type FhirJson,
+  type FhirJsonObject,
+  type FhirUuid,
+  type Refusals,
+} from '@formancy/health-core'
 import { CONTEXT } from './context.js'
 
 /** A resource the host hands over, under the name it gives it in the Bundle. */

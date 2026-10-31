@@ -19,7 +19,12 @@ describe('writeJson', () => {
       component: [{ valueInteger: integer('-2147483648', 'value') }, { valueInteger: unsignedInt('0', 'value') }],
       effectiveDateTime: dateTime('2026-10-17T10:00:00+02:00', 'value'),
       status: 'final',
-      _status: { extension: [{ url: 'http://example.org/note', valueBoolean: true }, { url: 'http://example.org/flag', valueBoolean: false }] },
+      _status: {
+        extension: [
+          { url: 'http://example.org/note', valueBoolean: true },
+          { url: 'http://example.org/flag', valueBoolean: false },
+        ],
+      },
     }
     expect(writeJson(observation)).toBe(
       '{"resourceType":"Observation","valueQuantity":{"value":70.50,"unit":"kg"},"component":[{"valueInteger":-2147483648},{"valueInteger":0}],' +
@@ -99,7 +104,7 @@ describe('writeJson', () => {
   // throw, a hidden or symbol-named property or a named property on an
   // array would be dropped without a word, and a proxy may describe an
   // array's length as anything, which the loop over its items would run to.
-  test('reads a host\'s objects as data, without running them', () => {
+  test("reads a host's objects as data, without running them", () => {
     let ran = false
     const getter = Object.defineProperty({}, 'value', {
       enumerable: true,
@@ -111,7 +116,17 @@ describe('writeJson', () => {
     const hidden = Object.defineProperty({ a: 'x' }, 'value', { value: 'y', enumerable: false })
     const symbol = { a: 'x', [Symbol('s')]: 'y' }
     const named = Object.assign(['x'], { extra: 'y' })
-    const throwing = new Proxy({}, { ownKeys: () => { throw new Error('trap') } })
+    const holey = new Array<string>(3)
+    holey[0] = 'x'
+    holey[2] = 'y'
+    const throwing = new Proxy(
+      {},
+      {
+        ownKeys: () => {
+          throw new Error('trap')
+        },
+      },
+    )
     const revoked = Proxy.revocable([], {})
     revoked.revoke()
     const lengthOf = (length: unknown) =>
@@ -126,7 +141,7 @@ describe('writeJson', () => {
       [named, '$.value'],
       [throwing, '$.value'],
       [revoked.proxy, '$.value'],
-      [['x', , 'y'], '$.value[1]'],
+      [holey, '$.value[1]'],
       [lengthOf('many'), '$.value'],
       [lengthOf(1.5), '$.value'],
       [lengthOf(-1), '$.value'],

@@ -49,6 +49,7 @@ import {
 // a declaration emitted as `= "4.0.1"` rather than `: "4.0.1"` is a literal
 // that widens to `string` there, and assigned straight to the literal type
 // it would pass.
+// eslint-disable-next-line prefer-const -- the `let` is the test: it widens a literal, and a `const` would keep it narrow
 let held = FHIR_VERSION
 const version: '4.0.1' = held
 if (version !== '4.0.1') throw new Error(`FHIR_VERSION is ${String(version)}, not 4.0.1`)
@@ -122,7 +123,8 @@ const made = toQuestionnaire(form, host)
 if (!made.ok) throw new Error(`toQuestionnaire refused a form it maps: ${made.refusals.map((refusal) => refusal.message).join('; ')}`)
 const questionnaire: Questionnaire = made.questionnaire
 const written_questionnaire = writeJson(questionnaire)
-const translated = '"_text":{"extension":[{"url":"http://hl7.org/fhir/StructureDefinition/translation","extension":[{"url":"lang","valueCode":"fr"},{"url":"content","valueString":"Poids"}]}]}'
+const translated =
+  '"_text":{"extension":[{"url":"http://hl7.org/fhir/StructureDefinition/translation","extension":[{"url":"lang","valueCode":"fr"},{"url":"content","valueString":"Poids"}]}]}'
 for (const part of [`"profile":["${SDC_QUESTIONNAIRE}"]`, '"code":"integer"', '"version":"1"', '"valueDecimal":0.5', translated]) {
   if (!written_questionnaire.includes(part)) throw new Error(`the Questionnaire lacks ${part}: ${written_questionnaire}`)
 }
@@ -132,19 +134,29 @@ for (const part of [`"profile":["${SDC_QUESTIONNAIRE}"]`, '"code":"integer"', '"
 // carried a second copy of health-core would fail the instanceof.
 const signed = toQuestionnaire({ ...form, model: { fields: [{ key: 'drawn', type: 'signature' }] } }, host)
 const [refusal] = signed.ok ? [] : signed.refusals
-if (!(refusal instanceof Refusal) || refusal.rule !== 'unmapped' || refusal.path !== 'form.model.fields[0].type') throw new Error('a signature field was not refused as unmapped, by a Refusal')
+if (!(refusal instanceof Refusal) || refusal.rule !== 'unmapped' || refusal.path !== 'form.model.fields[0].type')
+  throw new Error('a signature field was not refused as unmapped, by a Refusal')
 
 // The answers to that form become a QuestionnaireResponse through the
 // published entry, to the Questionnaire's url and version, and writeJson
 // writes it: a dist that wrote a number answer other than as its double's
 // shortest text, named another canonical, lost the profile, or declared a
 // response writeJson's types do not take, fails here.
-const answering: ResponseContext = { questionnaire: host, status: 'completed', authored: '2026-10-17T10:00:00+02:00', subject: { reference: 'Patient/synthetic-1' } }
+const answering: ResponseContext = {
+  questionnaire: host,
+  status: 'completed',
+  authored: '2026-10-17T10:00:00+02:00',
+  subject: { reference: 'Patient/synthetic-1' },
+}
 const replied = toQuestionnaireResponse(form, { weight: 70.5 }, answering)
 if (!replied.ok) throw new Error(`toQuestionnaireResponse refused answers it writes: ${replied.refusals.map((refusal) => refusal.message).join('; ')}`)
 const response: QuestionnaireResponse = replied.questionnaireResponse
 const written_response = writeJson(response)
-for (const part of [`"profile":["${SDC_QUESTIONNAIRE_RESPONSE}"]`, `"questionnaire":"${questionnaire.url}|1"`, '"item":[{"linkId":"weight","answer":[{"valueDecimal":70.5}]}]']) {
+for (const part of [
+  `"profile":["${SDC_QUESTIONNAIRE_RESPONSE}"]`,
+  `"questionnaire":"${questionnaire.url}|1"`,
+  '"item":[{"linkId":"weight","answer":[{"valueDecimal":70.5}]}]',
+]) {
   if (!written_response.includes(part)) throw new Error(`the QuestionnaireResponse lacks ${part}: ${written_response}`)
 }
 
@@ -153,7 +165,12 @@ for (const part of [`"profile":["${SDC_QUESTIONNAIRE_RESPONSE}"]`, `"questionnai
 const counted: Parameters<typeof toQuestionnaireResponse>[0] = { ...form, model: { fields: [{ key: 'children', type: 'number', step: 1 }] } }
 const stepped = toQuestionnaireResponse(counted, { children: 2.0000001 }, answering)
 const [stepRefusal] = stepped.ok ? [] : stepped.refusals
-if (!(stepRefusal instanceof Refusal) || stepRefusal.rule !== 'grammar' || stepRefusal.path !== 'answers.children' || stepRefusal.message.includes('2.0000001')) {
+if (
+  !(stepRefusal instanceof Refusal) ||
+  stepRefusal.rule !== 'grammar' ||
+  stepRefusal.path !== 'answers.children' ||
+  stepRefusal.message.includes('2.0000001')
+) {
   throw new Error('a fraction on an integer item was not refused by a Refusal at its path')
 }
 
@@ -163,16 +180,27 @@ if (!(stepRefusal instanceof Refusal) || stepRefusal.rule !== 'grammar' || stepR
 // but the bytes -- held here to Node's own base64 and SHA-1 -- fails here.
 // The PDF is the smallest one health-document attaches, and synthetic.
 const pdfBytes = new Uint8Array(Buffer.from('%PDF-1.4\n%synthetic\n%%EOF\n', 'latin1'))
-const names = { composition: 'urn:uuid:00000000-0000-4000-8000-000000000001', patient: 'urn:uuid:00000000-0000-4000-8000-000000000002', documentReference: 'urn:uuid:00000000-0000-4000-8000-000000000003' }
+const names = {
+  composition: 'urn:uuid:00000000-0000-4000-8000-000000000001',
+  patient: 'urn:uuid:00000000-0000-4000-8000-000000000002',
+  documentReference: 'urn:uuid:00000000-0000-4000-8000-000000000003',
+}
 const consultation = { system: 'http://terminology.hl7.org/CodeSystem/v2-0270', code: 'CN', display: 'Consultation' }
-const referenceContext: DocumentReferenceContext = { status: 'current', type: consultation, subject: { reference: names.patient }, date: '2026-10-17T10:00:00+02:00', title: 'Zuweisung' }
+const referenceContext: DocumentReferenceContext = {
+  status: 'current',
+  type: consultation,
+  subject: { reference: names.patient },
+  date: '2026-10-17T10:00:00+02:00',
+  title: 'Zuweisung',
+}
 const attached = toDocumentReference({ bytes: pdfBytes, profile: 'PDF' }, referenceContext)
 if (!attached.ok) throw new Error(`toDocumentReference refused a plain PDF: ${attached.refusals.map((refusal) => refusal.message).join('; ')}`)
 const written_reference = writeJson(attached.documentReference)
 const sha1 = createHash('sha1').update(pdfBytes).digest('base64')
 const attachment = `"attachment":{"contentType":"application/pdf","data":"${Buffer.from(pdfBytes).toString('base64')}","size":${String(pdfBytes.length)},"hash":"${sha1}","title":"Zuweisung"}`
 if (!written_reference.includes(attachment)) throw new Error(`the DocumentReference lacks ${attachment}: ${written_reference}`)
-if (!Buffer.from(fromBase64Binary(toBase64Binary(pdfBytes, 'data'), 'data')).equals(Buffer.from(pdfBytes))) throw new Error('health-core did not read back the bytes it encoded')
+if (!Buffer.from(fromBase64Binary(toBase64Binary(pdfBytes, 'data'), 'data')).equals(Buffer.from(pdfBytes)))
+  throw new Error('health-core did not read back the bytes it encoded')
 if (PROVED_PDF_PROFILES.join() !== 'PDF') throw new Error(`the published package attaches ${PROVED_PDF_PROFILES.join()}, not a plain PDF alone`)
 
 // The document Bundle through the published entry: the Composition first,
@@ -208,10 +236,12 @@ if (!written_bundle.startsWith(head) || !written_bundle.includes(attachment)) th
 // health-core would fail the instanceof.
 const declared = toDocumentReference({ bytes: pdfBytes, profile: 'PDF/A-2b' }, referenceContext)
 const [unproved] = declared.ok ? [] : declared.refusals
-if (!(unproved instanceof Refusal) || unproved.rule !== 'unproved' || unproved.path !== 'pdf.profile') throw new Error('a PDF/A declaration was not refused as unproved')
+if (!(unproved instanceof Refusal) || unproved.rule !== 'unproved' || unproved.path !== 'pdf.profile')
+  throw new Error('a PDF/A declaration was not refused as unproved')
 const dangling = toDocumentBundle({ ...document, entries: document.entries.slice(1) })
 const [unresolved] = dangling.ok ? [] : dangling.refusals
-if (!(unresolved instanceof Refusal) || unresolved.rule !== 'dangling' || unresolved.path !== 'context.composition.subject.reference') throw new Error('a dangling reference was not refused')
+if (!(unresolved instanceof Refusal) || unresolved.rule !== 'dangling' || unresolved.path !== 'context.composition.subject.reference')
+  throw new Error('a dangling reference was not refused')
 
 // The declarations hold a host to bytes and to the profiles named: a
 // string is not bytes, and a profile that is none does not compile.
@@ -241,15 +271,34 @@ const chNames = {
   role: 'urn:uuid:00000000-0000-4000-8000-0000000000c5',
   practitioner: 'urn:uuid:00000000-0000-4000-8000-0000000000c6',
 }
-const chAnswers = toQuestionnaireResponse(form, { weight: 70.5 }, { ...answering, subject: { reference: chNames.patient }, author: { reference: chNames.role }, profiles: [PROFILES.questionnaireResponse] })
+const chAnswers = toQuestionnaireResponse(
+  form,
+  { weight: 70.5 },
+  { ...answering, subject: { reference: chNames.patient }, author: { reference: chNames.role }, profiles: [PROFILES.questionnaireResponse] },
+)
 if (!chAnswers.ok) throw new Error(`toQuestionnaireResponse refused CH ORF's claim: ${chAnswers.refusals.map((refusal) => refusal.message).join('; ')}`)
 const referral: ChOrfContext = {
   identifier: chNames.document,
   timestamp: '2026-10-17T10:05:00+02:00',
-  composition: { fullUrl: chNames.composition, status: 'final', type: consultation, category: { system: 'http://terminology.hl7.org/CodeSystem/v3-ActClass', code: 'DOCCLIN' }, date: '2026-10-17T10:00:00+02:00', title: 'Zuweisung', sectionTitle: 'Auftrag' },
+  composition: {
+    fullUrl: chNames.composition,
+    status: 'final',
+    type: consultation,
+    category: { system: 'http://terminology.hl7.org/CodeSystem/v3-ActClass', code: 'DOCCLIN' },
+    date: '2026-10-17T10:00:00+02:00',
+    title: 'Zuweisung',
+    sectionTitle: 'Auftrag',
+  },
   patient: { fullUrl: chNames.patient, identifier: [{ system: 'urn:oid:2.999.756.1', value: 'P-0001' }], name: { family: 'Beispiel', given: ['Synthetica'] } },
   author: { fullUrl: chNames.role, practitioner: { fullUrl: chNames.practitioner, gln: '9520000000011', name: { family: 'Muster' } } },
-  serviceRequests: [{ fullUrl: chNames.order, placer: { system: 'urn:ietf:rfc:3986', value: 'urn:uuid:00000000-0000-4000-8000-0000000000c7' }, status: 'active', intent: 'order' }],
+  serviceRequests: [
+    {
+      fullUrl: chNames.order,
+      placer: { system: 'urn:ietf:rfc:3986', value: 'urn:uuid:00000000-0000-4000-8000-0000000000c7' },
+      status: 'active',
+      intent: 'order',
+    },
+  ],
   response: { fullUrl: chNames.response, questionnaireResponse: chAnswers.questionnaireResponse },
 }
 const chOrf = toChOrfDocument(referral)
@@ -257,11 +306,18 @@ if (!chOrf.ok) throw new Error(`toChOrfDocument refused a referral it writes: ${
 const chOrfBundle: Bundle = chOrf.bundle
 const written_ch_orf = writeJson(chOrfBundle)
 const chOrfHead = `{"resourceType":"Bundle","meta":{"lastUpdated":"2026-10-17T10:05:00+02:00","profile":["${CH_ORF_DOCUMENT}"]},"identifier":{"system":"urn:ietf:rfc:3986","value":"${chNames.document}"}`
-for (const part of [chOrfHead, `"meta":{"profile":["${PROFILES.composition}"]}`, '"code":{"coding":[{"system":"http://loinc.org","code":"93037-0","display":"Portable medical order form"}]}', `{"system":"${GLN_SYSTEM}","value":"9520000000011"}`, `"profile":["${PROFILES.patient}"]`]) {
+for (const part of [
+  chOrfHead,
+  `"meta":{"profile":["${PROFILES.composition}"]}`,
+  '"code":{"coding":[{"system":"http://loinc.org","code":"93037-0","display":"Portable medical order form"}]}',
+  `{"system":"${GLN_SYSTEM}","value":"9520000000011"}`,
+  `"profile":["${PROFILES.patient}"]`,
+]) {
   if (!written_ch_orf.includes(part)) throw new Error(`the CH ORF document lacks ${part}: ${written_ch_orf.slice(0, 400)}`)
 }
 const chOrfTypes = chOrf.bundle.entry.map((entry) => entry.resource['resourceType']).join()
-if (chOrfTypes !== 'Composition,Patient,QuestionnaireResponse,ServiceRequest,PractitionerRole,Practitioner') throw new Error(`the CH ORF document's entries are ${chOrfTypes}`)
+if (chOrfTypes !== 'Composition,Patient,QuestionnaireResponse,ServiceRequest,PractitionerRole,Practitioner')
+  throw new Error(`the CH ORF document's entries are ${chOrfTypes}`)
 
 // A GLN whose check digit is not GS1's, and an AHV number in its printed
 // form, are refused by health-core's Refusal at their paths, naming no
@@ -281,7 +337,8 @@ try {
 }
 const unchecked = toChOrfDocument({ ...referral, author: { ...referral.author, practitioner: { ...referral.author.practitioner, gln: '9520000000012' } } })
 const [digit] = unchecked.ok ? [] : unchecked.refusals
-if (!(digit instanceof Refusal) || digit.rule !== 'check-digit' || digit.path !== 'context.author.practitioner.gln') throw new Error('a wrong GLN was not refused in the document')
+if (!(digit instanceof Refusal) || digit.rule !== 'check-digit' || digit.path !== 'context.author.practitioner.gln')
+  throw new Error('a wrong GLN was not refused in the document')
 
 // The declarations hold a host to what CH Core uses: gender unknown,
 // which CH Core says Switzerland does not use, does not compile.
@@ -292,6 +349,12 @@ export function refusedByTheChTypes(): void {
 
 console.log(`ok: @formancy/health-core emits FHIR ${FHIR_VERSION}, and wrote ${written}`)
 console.log(`ok: @formancy/health-questionnaire wrote a Questionnaire of ${String(written_questionnaire.length)} characters and refused a signature`)
-console.log(`ok: @formancy/health-questionnaire wrote a QuestionnaireResponse of ${String(written_response.length)} characters and refused a fraction on an integer item`)
-console.log(`ok: @formancy/health-document wrote a document Bundle of ${String(written_bundle.length)} characters carrying a PDF, and refused a PDF/A declaration and a dangling reference`)
-console.log(`ok: @formancy/health-ch wrote a CH ORF document of ${String(written_ch_orf.length)} characters, and refused a GLN's wrong check digit and a printed AHV number`)
+console.log(
+  `ok: @formancy/health-questionnaire wrote a QuestionnaireResponse of ${String(written_response.length)} characters and refused a fraction on an integer item`,
+)
+console.log(
+  `ok: @formancy/health-document wrote a document Bundle of ${String(written_bundle.length)} characters carrying a PDF, and refused a PDF/A declaration and a dangling reference`,
+)
+console.log(
+  `ok: @formancy/health-ch wrote a CH ORF document of ${String(written_ch_orf.length)} characters, and refused a GLN's wrong check digit and a printed AHV number`,
+)

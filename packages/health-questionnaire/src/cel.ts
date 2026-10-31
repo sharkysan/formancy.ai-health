@@ -79,8 +79,7 @@ function literalOf(token: Token): Literal | undefined {
 }
 
 /** A field key: a name that is no keyword. */
-const keyOf = (token: Token): string | undefined =>
-  token.kind === 'name' && !['true', 'false', 'null', 'in'].includes(token.text) ? token.text : undefined
+const keyOf = (token: Token): string | undefined => (token.kind === 'name' && !['true', 'false', 'null', 'in'].includes(token.text) ? token.text : undefined)
 
 /** The comparison of three tokens, or undefined. */
 function comparisonOf([first, middle, last]: readonly [Token, Token, Token]): Comparison | undefined {

@@ -106,7 +106,7 @@ function run(command, args, cwd) {
     // Said once: the command, then what it printed, which is where tsc and
     // the consumer say what is wrong.
     const said = `${error.stdout ?? ''}${error.stderr ?? ''}`.trim()
-    throw new Error(`${[command, ...args].join(' ')} failed${said === '' ? `: ${error.message}` : `:\n${said.slice(0, 6000)}`}`)
+    throw new Error(`${[command, ...args].join(' ')} failed${said === '' ? `: ${error.message}` : `:\n${said.slice(0, 6000)}`}`, { cause: error })
   }
 }
 
@@ -202,9 +202,14 @@ function check(name, host, entry, tarballs, guide) {
   entry.installed = Object.fromEntries(Object.keys(host.with).map((package_) => [package_, installed(dir, package_)?.version ?? null]))
   entry.tools = Object.fromEntries(Object.keys(host.tools).map((tool) => [tool, installed(dir, tool)?.version ?? null]))
 
-  const beside = Object.entries(entry.installed).map(([package_, version]) => `${package_} ${String(version)}`).join(', ')
+  const beside = Object.entries(entry.installed)
+    .map(([package_, version]) => `${package_} ${String(version)}`)
+    .join(', ')
   const lines = [`\n${name}: ${host.consumer}, ${beside === '' ? 'the tarballs alone' : `the tarballs beside ${beside}`}`]
-  if (entry.guide !== null) lines.push(`  the guide's ${entry.guide.kind} blocks, from lines ${entry.guide.blocks.join(', ')} of docs/getting-started.md, in guide/${entry.guide.files.join(', guide/')}`)
+  if (entry.guide !== null)
+    lines.push(
+      `  the guide's ${entry.guide.kind} blocks, from lines ${entry.guide.blocks.join(', ')} of docs/getting-started.md, in guide/${entry.guide.files.join(', guide/')}`,
+    )
   for (const [at, step] of host.steps.entries()) {
     const said = inProject(step.command, dir).trim()
     entry.steps[at].done = true
@@ -254,7 +259,16 @@ try {
   record.npm = run('npm', ['--version'], work).trim()
 
   const projects = Object.entries(HOSTS)
-  record.consumers = projects.map(([name, host]) => ({ project: name, consumer: host.consumer, npmInstalled: false, installed: {}, tools: {}, resolved: [], guide: null, steps: host.steps.map((step) => ({ step: step.name, done: false, said: null })) }))
+  record.consumers = projects.map(([name, host]) => ({
+    project: name,
+    consumer: host.consumer,
+    npmInstalled: false,
+    installed: {},
+    tools: {},
+    resolved: [],
+    guide: null,
+    steps: host.steps.map((step) => ({ step: step.name, done: false, said: null })),
+  }))
   console.log(`installing the tarballs into ${String(projects.length)} plain npm projects, each with what its host has, and checking each…`)
   // Each project's clean install resolved what its own entry records: the
   // report reads a consumer's apart from the guide's, which installs
@@ -270,7 +284,12 @@ try {
 } finally {
   rmSync(work, { recursive: true, force: true })
   mkdirSync(join(repo, 'test-results'), { recursive: true })
-  const result = { ...record, finishedAt: new Date().toISOString(), passed: failure === undefined, ...(failure === undefined ? {} : { error: String(failure?.message ?? failure) }) }
+  const result = {
+    ...record,
+    finishedAt: new Date().toISOString(),
+    passed: failure === undefined,
+    ...(failure === undefined ? {} : { error: String(failure?.message ?? failure) }),
+  }
   writeFileSync(join(repo, 'test-results', 'install.json'), json(result), 'utf8')
 }
 

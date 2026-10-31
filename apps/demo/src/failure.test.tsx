@@ -43,7 +43,16 @@ describe('a failure the page did not expect', () => {
 
   // Half a resource shown as made would be a resource nobody wrote.
   test('of a package that throws is said, and nothing of it is shown', () => {
-    render(<OutcomeView outcome={{ kind: 'failed' }} maker="@formancy/health-ch" file="bundle-ch-orf-demo-referral.json" name={en.document.heading} corpus={false} words={en} />)
+    render(
+      <OutcomeView
+        outcome={{ kind: 'failed' }}
+        maker="@formancy/health-ch"
+        file="bundle-ch-orf-demo-referral.json"
+        name={en.document.heading}
+        corpus={false}
+        words={en}
+      />,
+    )
     expect(screen.getByText(en.resources.failed)).toBeDefined()
     expect(screen.queryByRole('link')).toBeNull()
     expect(screen.queryByRole('region')).toBeNull()
@@ -70,7 +79,14 @@ describe('a failure the page did not expect', () => {
   // part of a form shown as the resource would be a form it does not say,
   // and the JSON below it still stands as written.
   test('of the read-out is said in place of it, and no part of a form is shown', () => {
-    render(<ReadOutView json={'{"resourceType":"Questionnaire","status":"active","item":[{"linkId":"a","type":"url"}]}'} language="en" words={en} targetOf={() => undefined} />)
+    render(
+      <ReadOutView
+        json={'{"resourceType":"Questionnaire","status":"active","item":[{"linkId":"a","type":"url"}]}'}
+        language="en"
+        words={en}
+        targetOf={() => undefined}
+      />,
+    )
     expect(screen.getByText(en.readOut.unread)).toBeDefined()
     expect(screen.queryByRole('list')).toBeNull()
     expect(screen.queryByRole('heading')).toBeNull()

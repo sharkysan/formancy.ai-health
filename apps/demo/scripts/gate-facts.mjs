@@ -32,7 +32,11 @@ const refusals = () => Object.entries(FACTS).filter(([, fact]) => fact.report !=
  * select stays on the element, and is the page's.
  */
 const isFacts = (fact, entry) =>
-  entry.directive === fact.report.directive && entry.blocked === fact.report.blocked && entry.target === fact.report.target && entry.ownStyle === false && (entry.sample === '' || entry.sample === fact.report.sample)
+  entry.directive === fact.report.directive &&
+  entry.blocked === fact.report.blocked &&
+  entry.target === fact.report.target &&
+  entry.ownStyle === false &&
+  (entry.sample === '' || entry.sample === fact.report.sample)
 
 /** Every address an error names: where the console says it came from, and each address in its text. */
 const addressesOf = (error) => [error.url, ...(error.text.match(/https?:\/\/[^\s"'<>]+/g) ?? [])].filter((address) => address !== '')
@@ -96,7 +100,19 @@ export function heldNextFile(gate, { browser, late, refused }) {
   const fonts = late.filter((address) => FONT_FILE.test(address))
   const its = fact.values[browser] === true
   const holds = its ? fonts.length > 0 && fonts.every((address) => refused.has(address)) : fonts.length === 0
-  gate.check(fact.heldBy.checks[0], holds ? null : `the table says ${String(its)}, and once the page had settled it asked for ${fonts.length === 0 ? 'no font file' : fonts.map((address) => `${address.split('/').pop()}${refused.has(address) ? '' : ' (not refused)'}`).slice(0, 4).join(', ')}`)
+  gate.check(
+    fact.heldBy.checks[0],
+    holds
+      ? null
+      : `the table says ${String(its)}, and once the page had settled it asked for ${
+          fonts.length === 0
+            ? 'no font file'
+            : fonts
+                .map((address) => `${address.split('/').pop()}${refused.has(address) ? '' : ' (not refused)'}`)
+                .slice(0, 4)
+                .join(', ')
+        }`,
+  )
 }
 
 /** The page's policy with 'report-sample' in its style-src, so that a report of a refused style says what it was. */
@@ -106,7 +122,8 @@ export function withSamples(policy) {
 }
 
 /** The page the row below is measured on: one <select>, no script, no style, the icon index.html names so that nothing else is asked for. */
-const SELECT_PAGE = '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>One select</title><link rel="icon" href="data:,"></head><body><select><option>one</option><option>two</option></select></body></html>'
+const SELECT_PAGE =
+  '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>One select</title><link rel="icon" href="data:,"></head><body><select><option>one</option><option>two</option></select></body></html>'
 
 /** Where the gate serves it: in the demo's directory, so that the policy written for the demo's address governs it as it governs the demo. */
 const SELECT_PATH = 'gate/one-select.html'
@@ -150,14 +167,30 @@ export async function heldSelectStyle(gate, { context, url, headers, browser }) 
     page.on('console', (message) => {
       if (message.type() === 'error') errors.push(message.text())
     })
-    await page.route(address, (route) => route.fulfill({ status: 200, headers: { ...headers, 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': withSamples(headers['Content-Security-Policy']) }, body: SELECT_PAGE }))
+    await page.route(address, (route) =>
+      route.fulfill({
+        status: 200,
+        headers: { ...headers, 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': withSamples(headers['Content-Security-Policy']) },
+        body: SELECT_PAGE,
+      }),
+    )
     await page.goto(address, { waitUntil: 'load' })
     const reported = (await page.evaluate(() => new Promise((resolve) => setTimeout(() => resolve(window.__gateViolations ?? null), 0)))) ?? null
     const expected = fact.values[browser] === true ? { reports: [{ ...fact.report, ownStyle: false }], errors: [fact.console] } : { reports: [], errors: [] }
     for (let wait = 0; errors.length < expected.errors.length && wait < LINE_WAITS; wait += 1) await page.waitForTimeout(LINE_WAIT)
-    const got = { reports: (reported ?? []).map(({ directive, blocked, target, sample, ownStyle }) => ({ directive, blocked, target, sample, ownStyle })), errors }
+    const got = {
+      reports: (reported ?? []).map(({ directive, blocked, target, sample, ownStyle }) => ({ directive, blocked, target, sample, ownStyle })),
+      errors,
+    }
     const same = reported !== null && isDeepStrictEqual(got, expected)
-    gate.check(fact.heldBy.checks[0], same ? null : reported === null ? 'no listener was installed before the page ran' : `the table says ${String(fact.values[browser])}, and the page of one select reported ${JSON.stringify(got.reports)} and logged ${JSON.stringify(got.errors)}`)
+    gate.check(
+      fact.heldBy.checks[0],
+      same
+        ? null
+        : reported === null
+          ? 'no listener was installed before the page ran'
+          : `the table says ${String(fact.values[browser])}, and the page of one select reported ${JSON.stringify(got.reports)} and logged ${JSON.stringify(got.errors)}`,
+    )
   } finally {
     await page.close()
   }
@@ -177,6 +210,10 @@ export async function selectsDrawTheSame(gate, page) {
   const other = overflows.filter((value) => value !== 'clip')
   gate.check(
     'no <select> of the page has a text-overflow but clip, so the text-overflow:inherit 0014’s table names changes nothing it draws where it is refused',
-    overflows.length > 0 && other.length === 0 ? null : overflows.length === 0 ? 'the page holds no select, so the row measures nothing of it' : `selects with ${other.join(', ')}`,
+    overflows.length > 0 && other.length === 0
+      ? null
+      : overflows.length === 0
+        ? 'the page holds no select, so the row measures nothing of it'
+        : `selects with ${other.join(', ')}`,
   )
 }

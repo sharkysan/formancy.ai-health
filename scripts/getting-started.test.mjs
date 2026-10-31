@@ -49,7 +49,10 @@ const hostOf = (kind) => Object.entries(HOSTS).find(([, host]) => host.guide?.ki
 const read = () => readGuide(guide, GUIDE_HOSTS)
 
 /** The relative modules a fixture runner imports, statically or with import(), by specifier. */
-const runnerImports = (runner) => [...readFileSync(join(fixture, runner), 'utf8').matchAll(/^import\s[^'"]*['"](\.[^'"]+)['"]|\bimport\(\s*['"](\.[^'"]+)['"]\s*\)/gm)].map((match) => match[1] ?? match[2])
+const runnerImports = (runner) =>
+  [...readFileSync(join(fixture, runner), 'utf8').matchAll(/^import\s[^'"]*['"](\.[^'"]+)['"]|\bimport\(\s*['"](\.[^'"]+)['"]\s*\)/gm)].map(
+    (match) => match[1] ?? match[2],
+  )
 
 describe('docs/getting-started.md', () => {
   // A block of code nothing compiles reads as true and drifts from the
@@ -93,15 +96,24 @@ describe('docs/getting-started.md', () => {
       const gate = new Map([...[...packages].map(([package_, manifest]) => [package_, manifest.version]), ...Object.entries(host.with)])
       expect(application.map((install) => install.name).sort(), `${name} installs`).toEqual([...gate.keys()].sort())
       const pinned = application.filter((install) => install.version !== null)
-      expect(pinned.map((install) => `${install.name}@${install.version}`), name).toEqual(pinned.map((install) => `${install.name}@${gate.get(install.name)}`))
+      expect(
+        pinned.map((install) => `${install.name}@${install.version}`),
+        name,
+      ).toEqual(pinned.map((install) => `${install.name}@${gate.get(install.name)}`))
       // Beside a published package, what the gate installs is pinned,
       // as the gate pins it: an unpinned one is whatever npm finds.
-      expect(Object.keys(host.with).filter((package_) => !pinned.some((install) => install.name === package_)), `${name} pins`).toEqual([])
+      expect(
+        Object.keys(host.with).filter((package_) => !pinned.some((install) => install.name === package_)),
+        `${name} pins`,
+      ).toEqual([])
       // And saved as the gate saves it, exactly: npm saves `@formancy/spec@0.6.0`
       // as `^0.6.0`, and a reader's next install without the lockfile takes
       // 0.6.1 beside health-questionnaire's 0.6.0 -- two copies of the form's
       // types, the thing section 1 warns of.
-      expect(application.filter((install) => !install.exact).map((install) => install.name), `${name} saves exactly`).toEqual([])
+      expect(
+        application.filter((install) => !install.exact).map((install) => install.name),
+        `${name} saves exactly`,
+      ).toEqual([])
     }
   })
 
@@ -116,7 +128,10 @@ describe('docs/getting-started.md', () => {
       const tools = given.installs.filter((install) => install.dev)
       expect(Object.fromEntries(tools.map((install) => [install.name, install.version]))).toEqual(host.tools)
       const tsconfig = fencedBlocks(guide).filter((block) => block.language === 'json' && block.lead.includes('`tsconfig.json`'))
-      expect(tsconfig.map((block) => block.line), 'one tsconfig.json block').toHaveLength(1)
+      expect(
+        tsconfig.map((block) => block.line),
+        'one tsconfig.json block',
+      ).toHaveLength(1)
       expect(JSON.parse(tsconfig[0].code).compilerOptions).toEqual(host.tsconfig.compilerOptions)
     }
   })
@@ -129,7 +144,10 @@ describe('docs/getting-started.md', () => {
   test('links only to files git would commit, and to headings they have', () => {
     const links = linksIn(guide).filter((href) => !/^[a-z][a-z0-9+.-]*:/i.test(href))
     expect(links.length).toBeGreaterThan(5)
-    expect(links.filter((href) => /\.md#./.test(href)), 'no anchor into Markdown was checked').not.toEqual([])
+    expect(
+      links.filter((href) => /\.md#./.test(href)),
+      'no anchor into Markdown was checked',
+    ).not.toEqual([])
     expect(linkProblems(GUIDE, guide, committable(repo), textOf)).toEqual([])
   })
 
@@ -154,8 +172,14 @@ describe('docs/getting-started.md', () => {
       expect(host.tsconfig.include).toContain('guide')
       expect(host.tsconfig.include).toContain(runner)
       expect(runnerImports(runner)).toContain(`./guide/${entry.replace(/\.ts$/, '.js')}`)
-      expect(host.steps.some((step) => step.command.includes(runner)), `no step runs ${runner}`).toBe(true)
-      expect(host.steps.some((step) => step.command[0] === 'tsc'), 'no step type-checks the guide').toBe(true)
+      expect(
+        host.steps.some((step) => step.command.includes(runner)),
+        `no step runs ${runner}`,
+      ).toBe(true)
+      expect(
+        host.steps.some((step) => step.command[0] === 'tsc'),
+        'no step type-checks the guide',
+      ).toBe(true)
     }
   })
 
@@ -213,7 +237,14 @@ describe("the guide's reading", () => {
   // the tools it builds with, kept apart from what the program imports, so
   // the guard can hold each to what the gate's project is given.
   test('reads the project setting and the tools a reader installs to build with', () => {
-    const given = readGuide(guideOf(fence('sh guide=node', 'npm pkg set type=module\nnpm install --save-dev typescript@~6.0.3 tsx@^4.20.3'), fence('ts guide=node', 'const a = 1'), fence('ts guide=quiet', 'const q = 0')), HOSTS_FIXTURE)
+    const given = readGuide(
+      guideOf(
+        fence('sh guide=node', 'npm pkg set type=module\nnpm install --save-dev typescript@~6.0.3 tsx@^4.20.3'),
+        fence('ts guide=node', 'const a = 1'),
+        fence('ts guide=quiet', 'const q = 0'),
+      ),
+      HOSTS_FIXTURE,
+    )
     expect(given.get('node').settings).toEqual({ type: 'module' })
     expect(given.get('node').installs).toEqual([
       { name: 'typescript', version: '~6.0.3', dev: true, exact: false },
@@ -225,12 +256,28 @@ describe("the guide's reading", () => {
   // hold every application line to it; an install line without the flag
   // is read as saving a range, which is npm's default.
   test('reads whether an install line saves its packages exactly', () => {
-    const given = readGuide(guideOf(fence('sh guide=node', 'npm install @formancy/spec@0.5.0\nnpm install --save-exact @formancy/health-core'), fence('ts guide=node', 'const a = 1'), fence('ts guide=quiet', 'const q = 0')), HOSTS_FIXTURE)
+    const given = readGuide(
+      guideOf(
+        fence('sh guide=node', 'npm install @formancy/spec@0.5.0\nnpm install --save-exact @formancy/health-core'),
+        fence('ts guide=node', 'const a = 1'),
+        fence('ts guide=quiet', 'const q = 0'),
+      ),
+      HOSTS_FIXTURE,
+    )
     expect(given.get('node').installs).toEqual([
       { name: '@formancy/spec', version: '0.5.0', dev: false, exact: false },
       { name: '@formancy/health-core', version: null, dev: false, exact: true },
     ])
-    expect(() => readGuide(guideOf(fence('sh guide=node', 'npm install --save-exact --save-dev tsx'), fence('ts guide=node', 'const a = 1'), fence('ts guide=quiet', 'const q = 0')), HOSTS_FIXTURE)).toThrow(/is not an npm install line/)
+    expect(() =>
+      readGuide(
+        guideOf(
+          fence('sh guide=node', 'npm install --save-exact --save-dev tsx'),
+          fence('ts guide=node', 'const a = 1'),
+          fence('ts guide=quiet', 'const q = 0'),
+        ),
+        HOSTS_FIXTURE,
+      ),
+    ).toThrow(/is not an npm install line/)
   })
 
   // Each of these is a block the gate would write and never run, or not
@@ -243,7 +290,11 @@ describe("the guide's reading", () => {
     ['a TSX block, which no host here compiles', fence('tsx guide=node', 'const a = <p />'), /line 1: a tsx block; node compiles referral.ts/],
     ['a host the gate does not build', fence('ts guide=browser', 'const a = 1'), /guide=browser is no host the install gate builds; it builds node, quiet/],
     ['a host named twice', fence('ts guide=node,node', 'const a = 1'), /guide=node,node names a host twice/],
-    ['an attribute the reading does not know', fence('ts guide=node file=other.ts', 'const a = 1'), /file=other.ts is not something a block's info string says here; it says guide=/],
+    [
+      'an attribute the reading does not know',
+      fence('ts guide=node file=other.ts', 'const a = 1'),
+      /file=other.ts is not something a block's info string says here; it says guide=/,
+    ],
     ['output for a host whose run compares none', fence('text guide=quiet', 'ok'), /quiet's run compares no output/],
     ['an install block holding something else', fence('sh guide=node', 'npm i left-pad'), /is not an npm install line/],
     ['a tag on a block the gate neither compiles, compares nor installs', fence('json guide=node', '{}'), /guide= on a json block/],
@@ -264,7 +315,9 @@ describe("the guide's reading", () => {
   // A fence never closed runs to the end of the guide on GitHub, prose and
   // all; the gate would compile the prose, or a reader copy it.
   test('refuses a fence never closed', () => {
-    expect(() => readGuide(guideOf(fence('ts guide=quiet', 'const y = 0'), '```ts guide=node\nconst a = 1\n\nprose'), HOSTS_FIXTURE)).toThrow(/line 5: a fence never closed/)
+    expect(() => readGuide(guideOf(fence('ts guide=quiet', 'const y = 0'), '```ts guide=node\nconst a = 1\n\nprose'), HOSTS_FIXTURE)).toThrow(
+      /line 5: a fence never closed/,
+    )
   })
 
   // A host given nothing to run would pass its runner's import only by
@@ -277,7 +330,12 @@ describe("the guide's reading", () => {
   // quote, or with a tab before its tag is code on GitHub and is compiled.
   test('reads code where GitHub shows it', () => {
     const given = readGuide(
-      guideOf('- first\n\n  ```ts guide=node\n  const listed = 1\n  ```', '> ```ts guide=node\n> const quoted = 2\n> ```', '```ts\tguide=node\nconst tabbed = 3\n```', fence('ts guide=quiet', 'const y = 0')),
+      guideOf(
+        '- first\n\n  ```ts guide=node\n  const listed = 1\n  ```',
+        '> ```ts guide=node\n> const quoted = 2\n> ```',
+        '```ts\tguide=node\nconst tabbed = 3\n```',
+        fence('ts guide=quiet', 'const y = 0'),
+      ),
       HOSTS_FIXTURE,
     )
     expect(given.get('node').code).toBe('const listed = 1\n\nconst quoted = 2\n\nconst tabbed = 3')
@@ -288,7 +346,9 @@ describe("the guide's reading", () => {
   // and the prose a block follows is what the guard reads its file in.
   test('reads fences as CommonMark does, line ends and tildes alike, each with the prose before it', () => {
     const blocks = fencedBlocks('In `referral.ts`:\r\n~~~ts guide=node\r\nconst a = 1\r\n~~~\r\n')
-    expect(blocks.map(({ line, language, code, lead }) => ({ line, language, code, lead }))).toEqual([{ line: 2, language: 'ts', code: 'const a = 1', lead: 'In `referral.ts`:' }])
+    expect(blocks.map(({ line, language, code, lead }) => ({ line, language, code, lead }))).toEqual([
+      { line: 2, language: 'ts', code: 'const a = 1', lead: 'In `referral.ts`:' },
+    ])
   })
 })
 

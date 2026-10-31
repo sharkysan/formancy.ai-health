@@ -37,7 +37,10 @@ describe("the browser gate's plan", () => {
   // gate measures without anybody editing it: one past each max-width,
   // where the wider layout is narrowest, and at each min-width.
   test('measures one past each max-width and at each min-width of every stylesheet the page wears', () => {
-    const plan = passes(LANGUAGES, [{ path: 'a.css', css: '@media (max-width: 30rem) {} @media (min-width: 50rem) {}' }, { path: 'b.css', css: '@media (max-width: 480px) {}' }])
+    const plan = passes(LANGUAGES, [
+      { path: 'a.css', css: '@media (max-width: 30rem) {} @media (min-width: 50rem) {}' },
+      { path: 'b.css', css: '@media (max-width: 480px) {}' },
+    ])
     expect(plan.map((entry) => entry.width)).toEqual([320, 320, 360, 481, 800, 1440, 2400])
     expect(() => passes(LANGUAGES, [{ path: 'a.css', css: '@media (min-width: 50rem) {}' }])).toThrow(/no max-width breakpoint/)
     expect(() => breakpointsOf('@media (max-width: 40vw) {}')).toThrow(/a unit the gate does not measure/)
@@ -54,7 +57,10 @@ describe("the browser gate's plan", () => {
     expect(room.scheme).toBe('dark')
     expect(room.variables['--wb-signal']).toBe(room.variables['--client'])
     expect(room.variables['--wb-signal']).toMatch(/^#[\da-f]{6}$/i)
-    const workbench = readFileSync(createRequire(join(app, 'package.json')).resolve('@formancy/themes/workbench.css'), 'utf8').replaceAll(/\/\*[\s\S]*?\*\//g, '')
+    const workbench = readFileSync(createRequire(join(app, 'package.json')).resolve('@formancy/themes/workbench.css'), 'utf8').replaceAll(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    )
     const colours = [...workbench.matchAll(/(--wb-[\w-]+)\s*:\s*([^;]+);/g)].filter(([, , value = '']) => !value.includes("'")).map(([, name]) => name)
     expect(colours).toContain('--wb-bench')
     expect(colours.filter((name) => room.variables[name] === undefined)).toEqual([])

@@ -47,7 +47,8 @@ export function readOutcome(outcome) {
   const file = extension(outcome.extension, 'operationoutcome-file')
   if (file === undefined) throw new Error('an OperationOutcome names no file it judged')
   const issues = (outcome.issue ?? []).map((issue, index) => {
-    if (!['fatal', 'error', 'warning', 'information'].includes(issue?.severity)) throw new Error(`${basename(file)}: issue ${String(index)} has no severity the validator gives`)
+    if (!['fatal', 'error', 'warning', 'information'].includes(issue?.severity))
+      throw new Error(`${basename(file)}: issue ${String(index)} has no severity the validator gives`)
     return {
       severity: issue.severity === 'fatal' ? 'error' : issue.severity,
       code: issue.code,
@@ -85,7 +86,13 @@ export function readConsole(text) {
     version: bannerVersion(source),
     java: /^\s*Java:\s+(\S+)/m.exec(source)?.[1],
     times: times === null ? undefined : { loading: times[1], validation: times[2] },
-    packages: summary === null ? undefined : summary[1].split(',').map((entry) => entry.trim()).filter((entry) => entry !== ''),
+    packages:
+      summary === null
+        ? undefined
+        : summary[1]
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter((entry) => entry !== ''),
     refused: source.match(/Access to the internet is not allowed by local security policy/g)?.length ?? 0,
   }
 }

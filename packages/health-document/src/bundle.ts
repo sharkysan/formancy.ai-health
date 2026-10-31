@@ -106,7 +106,9 @@ function checkLinks(composed: Composed, entries: readonly Entry[], refusals: Ref
   const names = namesOf(composed, entries, refusals)
   const from = new Map<string, string[]>()
   const documented = [
-    ...(composed.composition === undefined ? [] : [{ fullUrl: composed.fullUrl, resource: composed.composition as FhirJsonObject, path: member(CONTEXT, 'composition') }]),
+    ...(composed.composition === undefined
+      ? []
+      : [{ fullUrl: composed.fullUrl, resource: composed.composition as FhirJsonObject, path: member(CONTEXT, 'composition') }]),
     ...entries.map((entry) => ({ fullUrl: entry.fullUrl, resource: entry.resource, path: member(entry.path, 'resource') })),
   ]
   for (const { fullUrl, resource, path } of documented) {
@@ -114,7 +116,12 @@ function checkLinks(composed: Composed, entries: readonly Entry[], refusals: Ref
     const targets = linksOf(resource, path).flatMap((link) => resolve(link, names, refusals) ?? [])
     if (fullUrl !== undefined) from.set(fullUrl, [...(from.get(fullUrl) ?? []), ...targets])
   }
-  if (composed.fullUrl === undefined || composed.composition === undefined || entries.some((entry) => entry.resource === undefined || entry.fullUrl === undefined)) return
+  if (
+    composed.fullUrl === undefined ||
+    composed.composition === undefined ||
+    entries.some((entry) => entry.resource === undefined || entry.fullUrl === undefined)
+  )
+    return
   const reached = new Set<string>([composed.fullUrl])
   const queue: string[] = [composed.fullUrl]
   for (let next = queue.shift(); next !== undefined; next = queue.shift()) {
@@ -149,7 +156,14 @@ export function toDocumentBundle(context: DocumentContext): DocumentBundleExport
     checkAttachments(entries, refusals)
   }
   const { fullUrl, composition } = composed
-  if (refusals.count > 0 || identifier === undefined || timestamp === undefined || fullUrl === undefined || composition === undefined || entries === undefined) {
+  if (
+    refusals.count > 0 ||
+    identifier === undefined ||
+    timestamp === undefined ||
+    fullUrl === undefined ||
+    composition === undefined ||
+    entries === undefined
+  ) {
     return { ok: false, refusals: refusals.list }
   }
   // Every entry was read when nothing was refused.

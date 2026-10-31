@@ -68,7 +68,9 @@ export async function registeredLetter(renderReferral, letter = readLetter()) {
   const pdf = await renderReferral()
   const problems = letterProblems(pdf, letter)
   if (problems.length > 0) {
-    throw new Error(`the letter health-corpus rendered here is not the one ${LETTER} registers, so it is neither judged nor served: ${problems.join('; ')}. A letter rendered otherwise is measured where the gate runs and registered in a commit of its own`)
+    throw new Error(
+      `the letter health-corpus rendered here is not the one ${LETTER} registers, so it is neither judged nor served: ${problems.join('; ')}. A letter rendered otherwise is measured where the gate runs and registered in a commit of its own`,
+    )
   }
   return pdf
 }

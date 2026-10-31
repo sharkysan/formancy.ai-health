@@ -75,7 +75,10 @@ describe('the letter register', () => {
     const register = registered(pdf)
     expect(letterProblems(pdf, register)).toEqual([])
     const longer = bytesOf('%PDF-1.3\n%%EOF\n\n')
-    expect(letterProblems(longer, register)).toEqual([`it is 16 bytes, where ${LETTER} registers 15`, `its SHA-256 is ${sha256(longer)}, where ${LETTER} registers ${register.sha256}`])
+    expect(letterProblems(longer, register)).toEqual([
+      `it is 16 bytes, where ${LETTER} registers 15`,
+      `its SHA-256 is ${sha256(longer)}, where ${LETTER} registers ${register.sha256}`,
+    ])
     const changed = bytesOf('%PDF-1.4\n%%EOF\n')
     expect(letterProblems(changed, register)).toEqual([`its SHA-256 is ${sha256(changed)}, where ${LETTER} registers ${register.sha256}`])
   })
@@ -101,7 +104,9 @@ describe('the letter register', () => {
     const pdf = bytesOf('%PDF-1.3\n%%EOF\n')
     await expect(registeredLetter(async () => pdf, registered(pdf))).resolves.toBe(pdf)
     const other = bytesOf('%PDF-1.4\n%%EOF\n')
-    await expect(registeredLetter(async () => other, registered(pdf))).rejects.toThrow(`the letter health-corpus rendered here is not the one ${LETTER} registers, so it is neither judged nor served: its SHA-256 is ${sha256(other)}`)
+    await expect(registeredLetter(async () => other, registered(pdf))).rejects.toThrow(
+      `the letter health-corpus rendered here is not the one ${LETTER} registers, so it is neither judged nor served: its SHA-256 is ${sha256(other)}`,
+    )
     let rendered = false
     const render = async () => {
       rendered = true

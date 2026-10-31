@@ -81,7 +81,8 @@ export function installedTarballProblems(report, tarballs) {
     }
     const gate = installed.get(tarball.name)
     if (gate === undefined) problems.push(`${tarball.file}: the install gate recorded no tarball of ${tarball.name}`)
-    else if (gate.sha256 !== tarball.sha256 || gate.file !== tarball.file) problems.push(`${tarball.file} has sha256 ${tarball.sha256}, not that of the ${gate.file} the install gate installed and ran, ${gate.sha256}`)
+    else if (gate.sha256 !== tarball.sha256 || gate.file !== tarball.file)
+      problems.push(`${tarball.file} has sha256 ${tarball.sha256}, not that of the ${gate.file} the install gate installed and ran, ${gate.sha256}`)
   }
   return problems
 }
@@ -101,7 +102,11 @@ function dependencyGraph(sbom) {
   const graph = new Map()
   for (const { ref, dependsOn } of sbom?.dependencies ?? []) {
     const from = npmPurl(ref)
-    if (from !== undefined) graph.set(`${from.name}@${from.version}`, (dependsOn ?? []).map(npmPurl).filter((to) => to !== undefined))
+    if (from !== undefined)
+      graph.set(
+        `${from.name}@${from.version}`,
+        (dependsOn ?? []).map(npmPurl).filter((to) => to !== undefined),
+      )
   }
   return graph
 }
@@ -128,7 +133,8 @@ export function sbomReportProblems(report, sbom) {
   }
   const version = report.subject?.version
   for (const { package: name } of report.results?.buildIdentity ?? []) {
-    if (!components.some((component) => component.name === name && component.version === version)) problems.push(`the SBOM names no ${name} ${String(version)}, which this release publishes`)
+    if (!components.some((component) => component.name === name && component.version === version))
+      problems.push(`the SBOM names no ${name} ${String(version)}, which this release publishes`)
   }
   // Each runtime dependency as the package that declares it is given it: a
   // consumer's tree can hold one name at two versions, the other a
@@ -139,12 +145,14 @@ export function sbomReportProblems(report, sbom) {
     if (given.length === 0) problems.push(`the SBOM records no dependency of ${entry.package} on ${entry.name}`)
     for (const to of given) {
       if (to.version !== entry.loaded) problems.push(`the SBOM gives ${entry.package} ${entry.name} ${to.version}, where its suites loaded ${entry.loaded}`)
-      else if (!components.some((component) => component.name === to.name && component.version === to.version)) problems.push(`the SBOM names no ${to.name} ${to.version}, which ${entry.package} depends on`)
+      else if (!components.some((component) => component.name === to.name && component.version === to.version))
+        problems.push(`the SBOM names no ${to.name} ${to.version}, which ${entry.package} depends on`)
     }
   }
   for (const component of components) {
     const versions = loaded.get(component.name)
-    if (versions !== undefined && !versions.has(component.version)) problems.push(`the SBOM names ${component.name} ${component.version}, where the suites loaded ${[...versions].join(', ')}`)
+    if (versions !== undefined && !versions.has(component.version))
+      problems.push(`the SBOM names ${component.name} ${component.version}, where the suites loaded ${[...versions].join(', ')}`)
   }
   return problems
 }
@@ -178,7 +186,9 @@ export function sbomInstallProblems(sbom, lockfile) {
   for (const component of sbom?.components ?? []) {
     const npm = npmPurl(component.purl)
     if (npm === undefined) {
-      problems.push(`the SBOM names ${String(component.name ?? component['bom-ref'] ?? 'a component')}, a component with no npm package URL, in an inventory of an npm install`)
+      problems.push(
+        `the SBOM names ${String(component.name ?? component['bom-ref'] ?? 'a component')}, a component with no npm package URL, in an inventory of an npm install`,
+      )
       continue
     }
     named.add(key(npm))

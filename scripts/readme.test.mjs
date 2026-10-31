@@ -46,7 +46,8 @@ function textOf(file) {
 const holdsPurpose = (readme, claude) => flat(sectionOf(readme, 'Intended purpose', 'README.md')).includes(intendedPurpose(claude))
 
 /** Fixtures: CLAUDE.md's first section and a README around a purpose. */
-const claudeOf = (sentence) => `# Working in this repository\n\n## ${WHAT_IT_IS}\n\nIt is a library. ${sentence} More follows.\n\n## Next\n\nA candidate medical device is another section's.\n`
+const claudeOf = (sentence) =>
+  `# Working in this repository\n\n## ${WHAT_IT_IS}\n\nIt is a library. ${sentence} More follows.\n\n## Next\n\nA candidate medical device is another section's.\n`
 const readmeOf = (purpose, status = '') => `# A product\n\n> **Status.** ${status}\n\n## Intended purpose\n\n${purpose}\n\n## Licence\n\nTerms.\n`
 const SENTENCE = 'It is not an EHR, a FHIR server or a terminology service, and it is not intended as a\nmedical device.'
 
@@ -55,14 +56,19 @@ describe("the README's intended purpose", () => {
   // otherwise in the README than in the rule every change is held to, it is
   // a second statement nobody compared with the first.
   test("holds CLAUDE.md's sentence naming a medical device, word for word, in its Intended purpose section", () => {
-    expect(holdsPurpose(textOf('README.md') ?? '', textOf('CLAUDE.md') ?? ''), `README.md's "Intended purpose" must hold, word for word: ${intendedPurpose(textOf('CLAUDE.md') ?? '')}`).toBe(true)
+    expect(
+      holdsPurpose(textOf('README.md') ?? '', textOf('CLAUDE.md') ?? ''),
+      `README.md's "Intended purpose" must hold, word for word: ${intendedPurpose(textOf('CLAUDE.md') ?? '')}`,
+    ).toBe(true)
   })
 
   // A guard on the guard: a reading that found the wrong sentence, or a
   // section cut at the wrong heading, would hold the README to nothing. The
   // sentence as CLAUDE.md says it today.
   test("is read from CLAUDE.md's first section, as it stands", () => {
-    expect(intendedPurpose(textOf('CLAUDE.md') ?? '')).toBe('It is not an EHR, a FHIR server or a terminology service, and it is not intended as a medical device.')
+    expect(intendedPurpose(textOf('CLAUDE.md') ?? '')).toBe(
+      'It is not an EHR, a FHIR server or a terminology service, and it is not intended as a medical device.',
+    )
   })
 
   // Word for word is the point, and wrapped prose is how both files hold
@@ -84,9 +90,13 @@ describe("the README's intended purpose", () => {
   test('refuses to guess: no sentence or two in CLAUDE.md, no section or two in the README', () => {
     expect(() => intendedPurpose(claudeOf('It is a format converter.'))).toThrow(/names a medical device in 0 sentences/)
     expect(() => intendedPurpose(claudeOf(`${SENTENCE} It is no medical device either.`))).toThrow(/names a medical device in 2 sentences/)
-    expect(() => intendedPurpose('# Working in this repository\n\n## Elsewhere\n\nIt is not intended as a medical device.\n')).toThrow(/has 0 headings "What this is, and what it is not"/)
+    expect(() => intendedPurpose('# Working in this repository\n\n## Elsewhere\n\nIt is not intended as a medical device.\n')).toThrow(
+      /has 0 headings "What this is, and what it is not"/,
+    )
     expect(() => holdsPurpose('# A product\n\nNo purpose.\n', claudeOf(SENTENCE))).toThrow(/README.md has 0 headings "Intended purpose"/)
-    expect(() => holdsPurpose(`${readmeOf(SENTENCE)}\n## Intended purpose\n\nAgain.\n`, claudeOf(SENTENCE))).toThrow(/README.md has 2 headings "Intended purpose"/)
+    expect(() => holdsPurpose(`${readmeOf(SENTENCE)}\n## Intended purpose\n\nAgain.\n`, claudeOf(SENTENCE))).toThrow(
+      /README.md has 2 headings "Intended purpose"/,
+    )
   })
 
   // A heading inside a fence is code, not a section, and a section runs to

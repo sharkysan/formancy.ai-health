@@ -50,7 +50,14 @@ describe('what the browser gate writes', () => {
       playwright: '1.64.1',
       planned: ['reflow, 320, de-CH', 'phone, 360, it'],
       passes: 1,
-      made: [{ label: 'reflow, 320, de-CH', width: 320, checks: ['the first Tab reaches the skip link', 'the page set no cookie'], failed: ['the page set no cookie'] }],
+      made: [
+        {
+          label: 'reflow, 320, de-CH',
+          width: 320,
+          checks: ['the first Tab reaches the skip link', 'the page set no cookie'],
+          failed: ['the page set no cookie'],
+        },
+      ],
       checks: { ok: 1, failed: ['reflow, 320, de-CH: the page set no cookie: cookies: planted'] },
       error: 'page.goto: net::ERR_CONNECTION_REFUSED',
     })
@@ -66,7 +73,9 @@ describe('what the browser gate writes', () => {
     // Playwright launches headless when the options do not say.
     expect(launchedAs(chromium, {})).toEqual({ name: 'chromium', version: '156.0.8078.4', headless: true })
     expect(launchedAs(chromium, LAUNCH_OPTIONS).headless).toBe(LAUNCH_OPTIONS.headless)
-    expect(() => gateRecorder('apps/demo', { browser: 'firefox', log: () => {} }).launched(chromium, {})).toThrow('apps/demo asked for firefox, and the launch gave chromium 156.0.8078.4')
+    expect(() => gateRecorder('apps/demo', { browser: 'firefox', log: () => {} }).launched(chromium, {})).toThrow(
+      'apps/demo asked for firefox, and the launch gave chromium 156.0.8078.4',
+    )
   })
 
   // A gate that never planned -- it failed before it knew its widths -- says

@@ -29,7 +29,19 @@
  * is refused at the path it was given.
  */
 import { TEMPORAL_SHAPES } from '@formancy/spec'
-import { Refusal, date, dateTime, decimal, integer, time, type FhirDate, type FhirDateTime, type FhirDecimal, type FhirInteger, type FhirTime } from '@formancy/health-core'
+import {
+  Refusal,
+  date,
+  dateTime,
+  decimal,
+  integer,
+  time,
+  type FhirDate,
+  type FhirDateTime,
+  type FhirDecimal,
+  type FhirInteger,
+  type FhirTime,
+} from '@formancy/health-core'
 
 /**
  * A formancy number, a bound or an answer, as a FHIR decimal: the

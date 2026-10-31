@@ -111,7 +111,10 @@ describe("the corpus's PDF, attached to a document", () => {
   // look inside a Binary an attachment names. health-document holds the
   // attachment to the Binary's bytes, and refuses.
   test("with another letter's Binary in place of its own, is refused for the size and the hash", async () => {
-    const other = await renderReferral({ ...REFERRAL_DATA, header: { ...REFERRAL_DATA.header, question: 'Eine andere synthetische Fragestellung, länger als die erste.' } })
+    const other = await renderReferral({
+      ...REFERRAL_DATA,
+      header: { ...REFERRAL_DATA.header, question: 'Eine andere synthetische Fragestellung, länger als die erste.' },
+    })
     const swapped = referralDocumentContext({ pdf: other, placement: 'binary' }).entries.find((each) => each.fullUrl === NAMES.binary)
     const context = referralDocumentContext({ pdf, placement: 'binary' })
     const entries = context.entries.map((each) => (each.fullUrl === NAMES.binary && swapped !== undefined ? swapped : each))
@@ -137,7 +140,12 @@ describe("the corpus's PDF, attached to a document", () => {
   // A QuestionnaireResponse the host made of a form beside the letter,
   // in a section of its own, its subject and author the document's.
   test('carries a QuestionnaireResponse beside the PDF, in a section of its own', () => {
-    const response = { resourceType: 'QuestionnaireResponse', status: 'completed', subject: { reference: NAMES.patient }, author: { reference: NAMES.practitioner } }
+    const response = {
+      resourceType: 'QuestionnaireResponse',
+      status: 'completed',
+      subject: { reference: NAMES.patient },
+      author: { reference: NAMES.practitioner },
+    }
     const bundle = readBack(bundled('data', response))
     expect(writeJson(entry(bundle, NAMES.response))).toBe(writeJson(response))
     const sections = entry(bundle, NAMES.composition)['section'] as readonly Read[]

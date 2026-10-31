@@ -28,7 +28,8 @@ function suiteProblems(row, name = row.package ?? 'the repository guards') {
   const problems = []
   if (row.tests === 0) problems.push(`${name}: its suite ran no tests`)
   if (!row.listsTestFiles) problems.push(`${name}: its results do not list the test files the checkout holds, so a file its suite did not run would go unseen`)
-  if (row.notRun.length > 0) problems.push(`${name}: ${String(row.notRun.length)} test file(s) the checkout holds did not run in its suite: ${list(row.notRun)}`)
+  if (row.notRun.length > 0)
+    problems.push(`${name}: ${String(row.notRun.length)} test file(s) the checkout holds did not run in its suite: ${list(row.notRun)}`)
   const failed = row.notPassed.filter((test) => test.status === 'failed')
   const skipped = row.notPassed.filter((test) => test.status !== 'failed')
   if (failed.length > 0) problems.push(`${name}: ${String(failed.length)} test(s) failed: ${list(failed.map((test) => `${test.file} › ${test.name}`))}`)
@@ -38,7 +39,11 @@ function suiteProblems(row, name = row.package ?? 'the repository guards') {
     )
   }
   for (const file of row.failedFiles) {
-    problems.push(file.testsPassed ? `${name}: ${file.file} failed though every test in it passed: a collection error, or a hook that threw` : `${name}: ${file.file} failed`)
+    problems.push(
+      file.testsPassed
+        ? `${name}: ${file.file} failed though every test in it passed: a collection error, or a hook that threw`
+        : `${name}: ${file.file} failed`,
+    )
   }
   if (!row.success) problems.push(`${name}: vitest reported the run unsuccessful`)
   if (row.numFailedTestSuites > 0) problems.push(`${name}: vitest counted ${String(row.numFailedTestSuites)} failed suite(s)`)
@@ -56,7 +61,9 @@ function suiteProblems(row, name = row.package ?? 'the repository guards') {
  */
 function projectProblems(projects, plan) {
   const recorded = projects.map((project) => project.project)
-  const problems = plan.filter((meant) => !recorded.includes(meant.project)).map((meant) => `the install gate has no record of its ${meant.project} project, which scripts/install-hosts.mjs plans`)
+  const problems = plan
+    .filter((meant) => !recorded.includes(meant.project))
+    .map((meant) => `the install gate has no record of its ${meant.project} project, which scripts/install-hosts.mjs plans`)
   const seen = new Set()
   for (const project of projects) {
     const meant = plan.find((entry) => entry.project === project.project)
@@ -65,17 +72,26 @@ function projectProblems(projects, plan) {
       continue
     }
     if (seen.has(project.project)) {
-      problems.push(`the install gate recorded its ${project.project} project ${String(recorded.filter((name) => name === project.project).length)} times, where it runs each once`)
+      problems.push(
+        `the install gate recorded its ${project.project} project ${String(recorded.filter((name) => name === project.project).length)} times, where it runs each once`,
+      )
       continue
     }
     seen.add(project.project)
-    if (project.steps.join('\n') !== meant.steps.join('\n')) problems.push(`the install gate’s ${project.project} project ran ${project.steps.join(', ') || 'no step'}, where scripts/install-hosts.mjs plans ${meant.steps.join(', ')}`)
+    if (project.steps.join('\n') !== meant.steps.join('\n'))
+      problems.push(
+        `the install gate’s ${project.project} project ran ${project.steps.join(', ') || 'no step'}, where scripts/install-hosts.mjs plans ${meant.steps.join(', ')}`,
+      )
     else if (project.unfinished.length > 0) problems.push(`the install gate’s ${project.project} project did not finish: ${project.unfinished.join(', ')}`)
     if (meant.guide !== null && (project.guide?.kind !== meant.guide || project.guide.blocks === 0)) {
-      problems.push(`the install gate gave its ${project.project} project none of docs/getting-started.md’s ${meant.guide} blocks, which scripts/install-hosts.mjs plans it to build`)
+      problems.push(
+        `the install gate gave its ${project.project} project none of docs/getting-started.md’s ${meant.guide} blocks, which scripts/install-hosts.mjs plans it to build`,
+      )
     }
     if (meant.guide === null && project.guide !== null) {
-      problems.push(`the install gate gave its ${project.project} project docs/getting-started.md’s ${String(project.guide.kind)} blocks, which scripts/install-hosts.mjs plans no project but the guide’s to build`)
+      problems.push(
+        `the install gate gave its ${project.project} project docs/getting-started.md’s ${String(project.guide.kind)} blocks, which scripts/install-hosts.mjs plans no project but the guide’s to build`,
+      )
     }
   }
   return problems
@@ -93,11 +109,17 @@ function installProblems(report, published, allowMissing, plan) {
   if (!install.passed) problems.push(`the install gate did not pass: ${install.error ?? 'no error was recorded'}`)
   problems.push(...projectProblems(install.projects, plan))
   const packed = install.tarballs.map((tarball) => tarball.name).sort()
-  if (packed.join() !== [...published].sort().join()) problems.push(`the install gate packed ${packed.join(', ') || 'nothing'}, where every published package needs exactly one tarball: ${[...published].sort().join(', ')}`)
+  if (packed.join() !== [...published].sort().join())
+    problems.push(
+      `the install gate packed ${packed.join(', ') || 'nothing'}, where every published package needs exactly one tarball: ${[...published].sort().join(', ')}`,
+    )
   // One number for every package, the root manifest's (bump.mjs), so a
   // tarball at another is found on the pull request rather than at the tag.
   for (const tarball of install.tarballs) {
-    if (tarball.version !== report.subject.version) problems.push(`the install gate packed ${tarball.name} ${String(tarball.version)}, where every published package is at the root manifest’s version, ${report.subject.version}`)
+    if (tarball.version !== report.subject.version)
+      problems.push(
+        `the install gate packed ${tarball.name} ${String(tarball.version)}, where every published package is at the root manifest’s version, ${report.subject.version}`,
+      )
   }
   return problems
 }
@@ -115,13 +137,22 @@ const mode = (headless) => (headless ? 'headless' : 'headed')
 function launchProblems(which, launched, ranPlaywright, { playwright, pins }, browsers) {
   const problems = []
   const pin = pins.find((entry) => entry.browser === launched.name)
-  if (pin === undefined) problems.push(`${which} launched ${launched.name} ${launched.version}, which no gate here runs: the gates run ${browsers.map(browserName).join(', ')}`)
+  if (pin === undefined)
+    problems.push(`${which} launched ${launched.name} ${launched.version}, which no gate here runs: the gates run ${browsers.map(browserName).join(', ')}`)
   else {
-    if (launched.version !== pin.browserVersion) problems.push(`${which} launched ${launched.name} ${launched.version}, not the ${pin.name} ${pin.browserVersion} Playwright ${playwright} pins`)
-    if (typeof launched.headless !== 'boolean') problems.push(`${which} did not record whether it launched ${launched.name} headless, so whether it ran the ${pin.name} Playwright ${playwright} pins is unknown`)
-    else if (launched.headless !== pin.headless) problems.push(`${which} launched ${launched.name} ${mode(launched.headless)}, where scripts/browsers.mjs launches it ${mode(pin.headless)}: another build than the ${pin.name} Playwright ${playwright} pins`)
+    if (launched.version !== pin.browserVersion)
+      problems.push(`${which} launched ${launched.name} ${launched.version}, not the ${pin.name} ${pin.browserVersion} Playwright ${playwright} pins`)
+    if (typeof launched.headless !== 'boolean')
+      problems.push(
+        `${which} did not record whether it launched ${launched.name} headless, so whether it ran the ${pin.name} Playwright ${playwright} pins is unknown`,
+      )
+    else if (launched.headless !== pin.headless)
+      problems.push(
+        `${which} launched ${launched.name} ${mode(launched.headless)}, where scripts/browsers.mjs launches it ${mode(pin.headless)}: another build than the ${pin.name} Playwright ${playwright} pins`,
+      )
   }
-  if (ranPlaywright !== null && ranPlaywright !== playwright) problems.push(`${which} ran Playwright ${ranPlaywright}, where the checkout installs ${playwright}`)
+  if (ranPlaywright !== null && ranPlaywright !== playwright)
+    problems.push(`${which} ran Playwright ${ranPlaywright}, where the checkout installs ${playwright}`)
   return problems
 }
 
@@ -148,7 +179,9 @@ function sameChecks(app, ran) {
     const [a, b] = [first, other].map((gate) => gate.made.map((entry) => entry.label))
     const [one, two] = [browserName(first.asked), browserName(other.asked)]
     if (a.join('\0') !== b.join('\0')) {
-      problems.push(`the browser gate of ${app} made its passes as ${a.map(passName).join(', ')} in ${one} and as ${b.map(passName).join(', ')} in ${two}: ${NOBODY_MEASURED}`)
+      problems.push(
+        `the browser gate of ${app} made its passes as ${a.map(passName).join(', ')} in ${one} and as ${b.map(passName).join(', ')} in ${two}: ${NOBODY_MEASURED}`,
+      )
       continue
     }
     for (const [at, entry] of first.made.entries()) {
@@ -157,7 +190,12 @@ function sameChecks(app, ran) {
         const [x, y] = [counts.get(name) ?? 0, theirs.get(name) ?? 0]
         if (x === y) continue
         const where = `"${name}" at ${passName(entry.label)}`
-        const said = y === 0 ? `${where} in ${one} and not in ${two}` : x === 0 ? `${where} in ${two} and not in ${one}` : `${where} ${times(x)} in ${one} and ${times(y)} in ${two}`
+        const said =
+          y === 0
+            ? `${where} in ${one} and not in ${two}`
+            : x === 0
+              ? `${where} in ${two} and not in ${one}`
+              : `${where} ${times(x)} in ${one} and ${times(y)} in ${two}`
         problems.push(`the browser gate of ${app} made ${said}: ${NOBODY_CHECKED}`)
       }
     }
@@ -179,7 +217,10 @@ function unheldFacts(app, ran) {
     for (const gate of ran) {
       const made = new Set(gate.made.flatMap((entry) => entry.checks))
       for (const name of fact.heldBy.checks) {
-        if (!made.has(name)) problems.push(`the browser gate of ${app} in ${browserName(gate.asked)} never made "${name}", which holds 0014’s ${id}: a row no check holds is a sentence nobody measured`)
+        if (!made.has(name))
+          problems.push(
+            `the browser gate of ${app} in ${browserName(gate.asked)} never made "${name}", which holds 0014’s ${id}: a row no check holds is a sentence nobody measured`,
+          )
       }
     }
   }
@@ -199,7 +240,8 @@ function gateProblems(report, { browserApps, browsers, allowMissing }) {
   const gates = report.results.browserGates
   for (const app of browserApps) {
     for (const browser of browsers) {
-      if (!allowMissing.includes('browser') && !gates.some((gate) => gate.gate === app && gate.asked === browser)) problems.push(`the browser gate of ${app} left no results in ${browserName(browser)}`)
+      if (!allowMissing.includes('browser') && !gates.some((gate) => gate.gate === app && gate.asked === browser))
+        problems.push(`the browser gate of ${app} left no results in ${browserName(browser)}`)
     }
   }
   for (const gate of gates) {
@@ -241,15 +283,21 @@ function picturesProblems(report, { pictureApps, browsers, allowMissing }) {
     const which = `the pictures’ check of ${check.app}`
     if (check.error !== null) problems.push(`${which} ended with an error: ${check.error}`)
     // Problems, not pictures: one stale picture gives its part's diff and its caption's misquote.
-    if (check.problems.length > 0) problems.push(`${which} found ${String(check.problems.length)} problem(s) with the README’s pictures: ${list(check.problems)}`)
+    if (check.problems.length > 0)
+      problems.push(`${which} found ${String(check.problems.length)} problem(s) with the README’s pictures: ${list(check.problems)}`)
     // One that ended in an error stopped where it stopped, for the reason it gives.
     const skipped = unwalked(check)
-    if (check.error === null && skipped.length > 0) problems.push(`${which} did not walk ${skipped.join(', ')}, which scripts/pictures/scenes.json pictures, so nothing held ${skipped.length === 1 ? 'that picture' : 'those pictures'}`)
+    if (check.error === null && skipped.length > 0)
+      problems.push(
+        `${which} did not walk ${skipped.join(', ')}, which scripts/pictures/scenes.json pictures, so nothing held ${skipped.length === 1 ? 'that picture' : 'those pictures'}`,
+      )
     const strays = check.walked.filter((id) => !check.planned.includes(id))
-    if (strays.length > 0) problems.push(`${which} walked ${strays.join(', ')}, which scripts/pictures/scenes.json does not give ${check.app}: it walked another checkout’s scenes`)
+    if (strays.length > 0)
+      problems.push(`${which} walked ${strays.join(', ')}, which scripts/pictures/scenes.json does not give ${check.app}: it walked another checkout’s scenes`)
     if (check.planned.length === 0) problems.push(`${which} had no scene to walk: scripts/pictures/scenes.json gives ${check.app} none`)
     if (check.browser === null) continue
-    if (check.browser.name !== PICTURES_BROWSER) problems.push(`${which} launched ${check.browser.name}, where the README’s pictures are taken in ${PICTURES_BROWSER} alone (scripts/browsers.mjs)`)
+    if (check.browser.name !== PICTURES_BROWSER)
+      problems.push(`${which} launched ${check.browser.name}, where the README’s pictures are taken in ${PICTURES_BROWSER} alone (scripts/browsers.mjs)`)
     else problems.push(...launchProblems(which, check.browser, check.playwright, report.testedOn.browser, browsers))
   }
   return problems
@@ -278,16 +326,25 @@ function validatorProblems(report, { pin, registered, allowMissing }) {
     // One that stopped stopped where it stopped, for the reasons it gives.
     problems.push(`the validator gate did not pass: ${gate.problems.length === 0 ? 'no problem was recorded' : list(gate.problems)}`)
   } else {
-    if (gate.problems.length > 0) problems.push(`the validator gate says it passed, and records ${String(gate.problems.length)} problem(s): ${list(gate.problems)}`)
+    if (gate.problems.length > 0)
+      problems.push(`the validator gate says it passed, and records ${String(gate.problems.length)} problem(s): ${list(gate.problems)}`)
     if (gate.resources === 0) problems.push('the validator gate judged no resource, so it passed with nothing to check')
-    if (gate.notAsExpected.length > 0) problems.push(`the validator gate judged ${String(gate.notAsExpected.length)} resource(s) otherwise than the corpus expects: ${list(gate.notAsExpected)}`)
-    if (gate.reported !== pin.version) problems.push(`the validator gate ran validator ${String(gate.reported)}, where docs/release/validator.json pins ${pin.version}`)
-    if (gate.sha256 !== pin.sha256) problems.push(`the validator gate ran a JAR it records as ${String(gate.sha256)}, not the ${pin.sha256} docs/release/validator.json registers`)
-    if (sorted(gate.registered) !== sorted(registered)) problems.push(`the validator gate ran against a register of ${sorted(gate.registered) || 'nothing'}, where docs/release/ig-packages.json registers ${sorted(registered)}`)
+    if (gate.notAsExpected.length > 0)
+      problems.push(`the validator gate judged ${String(gate.notAsExpected.length)} resource(s) otherwise than the corpus expects: ${list(gate.notAsExpected)}`)
+    if (gate.reported !== pin.version)
+      problems.push(`the validator gate ran validator ${String(gate.reported)}, where docs/release/validator.json pins ${pin.version}`)
+    if (gate.sha256 !== pin.sha256)
+      problems.push(`the validator gate ran a JAR it records as ${String(gate.sha256)}, not the ${pin.sha256} docs/release/validator.json registers`)
+    if (sorted(gate.registered) !== sorted(registered))
+      problems.push(
+        `the validator gate ran against a register of ${sorted(gate.registered) || 'nothing'}, where docs/release/ig-packages.json registers ${sorted(registered)}`,
+      )
     if (gate.loaded === null) problems.push('the validator gate recorded nothing the validator loaded, so whether it loaded the register cannot be told')
-    else if (sorted(gate.loaded) !== sorted(registered)) problems.push(`the validator loaded ${sorted(gate.loaded) || 'nothing'}, where docs/release/ig-packages.json registers ${sorted(registered)}`)
+    else if (sorted(gate.loaded) !== sorted(registered))
+      problems.push(`the validator loaded ${sorted(gate.loaded) || 'nothing'}, where docs/release/ig-packages.json registers ${sorted(registered)}`)
     const offline = gate.offline
-    if (offline?.tx !== 'n/a' || offline?.txCache !== 'n/a' || offline?.httpAccess !== false) problems.push(`the validator gate records no run without a terminology server and HTTP access: ${JSON.stringify(offline)}`)
+    if (offline?.tx !== 'n/a' || offline?.txCache !== 'n/a' || offline?.httpAccess !== false)
+      problems.push(`the validator gate records no run without a terminology server and HTTP access: ${JSON.stringify(offline)}`)
   }
   if (suite.present) problems.push(...suiteProblems(suite, 'the validator job’s run of the registers’ test'))
   return problems
@@ -299,7 +356,8 @@ function identityProblems(report) {
   for (const entry of report.results.buildIdentity) {
     // One hash among none is identical to itself: a tarball no job's build
     // is recorded beside is compared with nothing, and says nothing of it.
-    if (entry.tarball !== null && entry.builds.length === 0) problems.push(`${entry.package}: no job recorded its dist/, so the dist/ in its tarball is compared with nothing`)
+    if (entry.tarball !== null && entry.builds.length === 0)
+      problems.push(`${entry.package}: no job recorded its dist/, so the dist/ in its tarball is compared with nothing`)
     if (entry.identical) continue
     const byHash = new Map()
     for (const build of entry.builds) byHash.set(build.distHash, [...(byHash.get(build.distHash) ?? []), build.job])
@@ -307,7 +365,10 @@ function identityProblems(report) {
     if (tarball !== undefined && !byHash.has(tarball)) {
       problems.push(`${entry.package}: the dist/ in its tarball differs from the dist/ built in ${entry.builds.map((build) => build.job).join(', ')}`)
     }
-    if (byHash.size > 1) problems.push(`${entry.package}: two jobs built different dist/ bytes: ${[...byHash].map(([hash, jobs]) => `${jobs.join(', ')} built ${hash.slice(0, 19)}`).join('; ')}`)
+    if (byHash.size > 1)
+      problems.push(
+        `${entry.package}: two jobs built different dist/ bytes: ${[...byHash].map(([hash, jobs]) => `${jobs.join(', ')} built ${hash.slice(0, 19)}`).join('; ')}`,
+      )
   }
   return problems
 }
@@ -317,7 +378,8 @@ function limitationProblems(report) {
   const problems = report.limitations.registerProblems.map((problem) => `docs/release/limitations.json: ${problem}`)
   for (const group of report.limitations.stated) {
     for (const line of group.lines) {
-      if (line.heldBy !== undefined && line.held !== 'passed') problems.push(`${line.number}'s "${line.says}" is held by ${line.heldBy}, which ${line.held === 'absent' ? 'did not run' : 'did not pass'} in this run`)
+      if (line.heldBy !== undefined && line.held !== 'passed')
+        problems.push(`${line.number}'s "${line.says}" is held by ${line.heldBy}, which ${line.held === 'absent' ? 'did not run' : 'did not pass'} in this run`)
     }
   }
   return problems
@@ -338,10 +400,17 @@ export function localResultsProblems(results) {
   }
   const problems = []
   const commits = by((result) => String(result.commit))
-  if (commits.size > 1) problems.push(`the results are of ${String(commits.size)} commits, where a report is of one: ${[...commits].map(([commit, keys]) => `${commit} (${keys.join(', ')})`).join('; ')}`)
+  if (commits.size > 1)
+    problems.push(
+      `the results are of ${String(commits.size)} commits, where a report is of one: ${[...commits].map(([commit, keys]) => `${commit} (${keys.join(', ')})`).join('; ')}`,
+    )
   const runs = by((result) => result.run?.id ?? null)
-  if (runs.size > 1) problems.push(`the results are of ${String(runs.size)} runs, where a report is of one: ${[...runs].map(([id, keys]) => `${id === null ? 'a machine' : `run ${String(id)}`} (${keys.join(', ')})`).join('; ')}`)
-  for (const [key, keys] of by((result) => result.key)) if (keys.length > 1) problems.push(`the results hold ${key} ${String(keys.length)} times, where a run leaves each key once`)
+  if (runs.size > 1)
+    problems.push(
+      `the results are of ${String(runs.size)} runs, where a report is of one: ${[...runs].map(([id, keys]) => `${id === null ? 'a machine' : `run ${String(id)}`} (${keys.join(', ')})`).join('; ')}`,
+    )
+  for (const [key, keys] of by((result) => result.key))
+    if (keys.length > 1) problems.push(`the results hold ${key} ${String(keys.length)} times, where a run leaves each key once`)
   return problems
 }
 
@@ -395,7 +464,9 @@ export function contentProblems(report, { published, installPlan, pin, registere
     ...report.results.missing.map(({ job, what }) => `${job}: expected and not found: ${what}`),
     ...report.results.misplaced,
     // A published package with no test:coverage script has no row at all.
-    ...published.filter((name) => !report.results.packages.some((row) => row.package === name)).map((name) => `${name} is published and has no suite: it has no test:coverage script, so no job runs its tests`),
+    ...published
+      .filter((name) => !report.results.packages.some((row) => row.package === name))
+      .map((name) => `${name} is published and has no suite: it has no test:coverage script, so no job runs its tests`),
     ...report.results.packages.flatMap((row) => suiteProblems(row)),
     ...(report.results.repository.present || !allowMissing.includes('verify') ? suiteProblems(report.results.repository) : []),
     ...gateProblems(report, { browserApps, browsers, allowMissing }),

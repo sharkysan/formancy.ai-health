@@ -38,7 +38,11 @@ afterEach(cleanup)
 function facts(name: string): Record<string, string | null> {
   const item = screen.getByRole('listitem', { name })
   const definitions = within(item).getAllByRole('definition')
-  return Object.fromEntries(within(item).getAllByRole('term').map((term, index) => [term.textContent ?? '', definitions[index]?.textContent ?? null]))
+  return Object.fromEntries(
+    within(item)
+      .getAllByRole('term')
+      .map((term, index) => [term.textContent ?? '', definitions[index]?.textContent ?? null]),
+  )
 }
 
 /** The texts of the conditions that show the item named `name`. */
@@ -126,7 +130,9 @@ describe("the corpus's intake, drawn", () => {
   // read it in.
   test("marks the language of a condition's question and of the option it names", () => {
     render(<ReadOutView json={json(intake, intakeContext)} language="en" words={en} targetOf={() => undefined} />)
-    const [, canton] = within(within(screen.getByRole('listitem', { name: 'Einzelheiten' })).getByRole('list', { name: en.readOut.shownWhen })).getAllByRole('listitem')
+    const [, canton] = within(within(screen.getByRole('listitem', { name: 'Einzelheiten' })).getByRole('list', { name: en.readOut.shownWhen })).getAllByRole(
+      'listitem',
+    )
     expect([...(canton?.querySelectorAll('q [lang]') ?? [])].map((each) => [each.textContent, each.getAttribute('lang')])).toEqual([
       ['Kanton', 'de-CH'],
       ['Bern', 'de-CH'],
@@ -152,12 +158,14 @@ describe('what a Questionnaire may leave out, drawn', () => {
     render(<ReadOutView json={bytes} language="en" words={en} targetOf={() => undefined} />)
     expect(conditions('Einzelheiten zur Vorgeschichte')[0]).toBe(`(campaign) ${en.readOut.isNot} keine`)
     // The one quotation is the answer's.
-    const [campaign] = within(within(screen.getByRole('listitem', { name: 'Einzelheiten zur Vorgeschichte' })).getByRole('list', { name: en.readOut.shownWhen })).getAllByRole('listitem')
+    const [campaign] = within(
+      within(screen.getByRole('listitem', { name: 'Einzelheiten zur Vorgeschichte' })).getByRole('list', { name: en.readOut.shownWhen }),
+    ).getAllByRole('listitem')
     expect([...(campaign?.querySelectorAll('q') ?? [])].map((each) => each.textContent)).toEqual(['keine'])
   })
 })
 
-describe("a Questionnaire that names no language, drawn", () => {
+describe('a Questionnaire that names no language, drawn', () => {
   // Without `language` the resource says nothing of what its texts are in:
   // marked as of no known language, never as the page's.
   test('marks its texts as in a language it does not name, and says so', () => {

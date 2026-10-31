@@ -80,7 +80,9 @@ describe('a DocumentReference of a PDF, its bytes in a Binary', () => {
       `{"contentType":"application/pdf","url":"${NAMES.binary}","size":26,"hash":"/uM6h4nE1frFPR+t4N4HN8WfAfI=","title":"Zuweisung"}`,
     )
     expect(binary).toBeDefined()
-    expect(writeJson(binary as never)).toBe('{"resourceType":"Binary","id":"referral-letter-pdf","contentType":"application/pdf","data":"JVBERi0xLjcKJXN5bnRoZXRpYwolJUVPRgo="}')
+    expect(writeJson(binary as never)).toBe(
+      '{"resourceType":"Binary","id":"referral-letter-pdf","contentType":"application/pdf","data":"JVBERi0xLjcKJXN5bnRoZXRpYwolJUVPRgo="}',
+    )
   })
 
   // An address is where to fetch a person's record, which is the host's
@@ -111,7 +113,7 @@ describe('what the host says of a PDF beyond what is written', () => {
     ['the subject', { ...context, subject: { reference: NAMES.patient, display: 'Synthetica Beispiel' } }, pdf, 'unmapped context.subject', 'display'],
     ['the PDF', context, { ...pdf, filename: 'zuweisung.pdf' }, 'unmapped pdf', 'filename'],
   ])('refuses a member %s does not name', (_, given, attached, refused, name) => {
-    const result = toDocumentReference(attached as never, given as DocumentReferenceContext)
+    const result = toDocumentReference(attached, given)
     expect(refusedAs(result)).toEqual([refused])
     expect(result.ok ? '' : result.refusals[0]?.message).not.toContain(name)
   })
@@ -173,9 +175,16 @@ describe('what the host must say of a PDF', () => {
       { bytes: bytesOf('Synthetischer Befund'), profile: 'PDF/A-2b' },
       { ...context, status: 'final' as never, subject: { reference: 'https://records.synthetic.invalid/Patient/Synthetica' }, title: '' },
     )
-    expect(refusedAs(result)).toEqual(['unproved pdf.profile', 'not-pdf pdf.bytes', 'unmapped context.status', 'reference context.subject.reference', 'absent context.title'])
+    expect(refusedAs(result)).toEqual([
+      'unproved pdf.profile',
+      'not-pdf pdf.bytes',
+      'unmapped context.status',
+      'reference context.subject.reference',
+      'absent context.title',
+    ])
     const messages = result.ok ? [] : result.refusals.map((refusal) => refusal.message)
-    for (const value of ['Synthetischer Befund', 'Synthetica', 'records.synthetic.invalid']) for (const message of messages) expect(message).not.toContain(value)
+    for (const value of ['Synthetischer Befund', 'Synthetica', 'records.synthetic.invalid'])
+      for (const message of messages) expect(message).not.toContain(value)
     expect(result.ok ? undefined : result.refusals[0]).toBeInstanceOf(Refusal)
   })
 
@@ -190,7 +199,15 @@ describe('what the host must say of a PDF', () => {
   // same resource, byte for byte, its Binary included.
   test("gives the same bytes whatever order the context's names are in", () => {
     const reversed = (value: unknown): unknown =>
-      Array.isArray(value) ? value.map(reversed) : typeof value === 'object' && value !== null ? Object.fromEntries(Object.entries(value).reverse().map(([name, each]) => [name, reversed(each)])) : value
+      Array.isArray(value)
+        ? value.map(reversed)
+        : typeof value === 'object' && value !== null
+          ? Object.fromEntries(
+              Object.entries(value)
+                .reverse()
+                .map(([name, each]) => [name, reversed(each)]),
+            )
+          : value
     const given = { ...context, id: 'referral-letter-1', binary: { fullUrl: NAMES.binary, id: 'referral-letter-pdf' } }
     const [ordered, backwards] = [made(given), made(reversed(given) as DocumentReferenceContext, { profile: 'PDF', bytes: minimalPdf() })]
     expect(writeJson(backwards.documentReference)).toBe(writeJson(ordered.documentReference))

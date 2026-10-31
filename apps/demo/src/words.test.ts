@@ -32,7 +32,7 @@ const html = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'i
  */
 function unnegatedOpenSource(text: string): string[] {
   const negation = /(?:^|[\s(’'])(?:not|nicht|kein\w*|pas|non|né)\s[^.]{0,20}$/i
-  return [...text.matchAll(/open[\s ‑-]*source/gi)].filter((found) => !negation.test(text.slice(0, found.index))).map((found) => found[0])
+  return [...text.matchAll(/open[\s\u00a0\u2011-]*source/gi)].filter((found) => !negation.test(text.slice(0, found.index))).map((found) => found[0])
 }
 
 /**
@@ -40,13 +40,18 @@ function unnegatedOpenSource(text: string): string[] {
  * like in the page's languages: the words, and the stems of the words, a
  * translation of such a statement would use.
  */
-const TRACKING = /cookie|track|traceur|tra[cç]age|tracciament|suivi|verfolg|reichweit|datenerheb|pistage|mesure d.audience|misurazion|telemetr|analy[st]|analisi|statisti/i
+const TRACKING =
+  /cookie|track|traceur|tra[cç]age|tracciament|suivi|verfolg|reichweit|datenerheb|pistage|mesure d.audience|misurazion|telemetr|analy[st]|analisi|statisti/i
 
 describe("the page's words", () => {
   // An empty word renders as nothing: a button with no name, a heading
   // that says nothing, and TypeScript is satisfied by ''.
   test('are none of them empty, in any language', () => {
-    for (const language of LANGUAGES) expect(texts(WORDS[language]).filter((text) => text.trim() === ''), language).toEqual([])
+    for (const language of LANGUAGES)
+      expect(
+        texts(WORDS[language]).filter((text) => text.trim() === ''),
+        language,
+      ).toEqual([])
   })
 
   // HL7 asks a prominent first mention of its marks with ®; the lead is
@@ -58,7 +63,11 @@ describe("the page's words", () => {
   // "Never call it open source" (CLAUDE.md): the phrase may stand only
   // where the page says it is not, as NOTICE does.
   test('say "open source" only after a negation', () => {
-    for (const language of LANGUAGES) expect(texts(WORDS[language]).flatMap((text) => unnegatedOpenSource(text).map((found) => `${found}: ${text}`)), language).toEqual([])
+    for (const language of LANGUAGES)
+      expect(
+        texts(WORDS[language]).flatMap((text) => unnegatedOpenSource(text).map((found) => `${found}: ${text}`)),
+        language,
+      ).toEqual([])
   })
 
   // The reading itself, on the spellings a translation would use: German
@@ -82,7 +91,11 @@ describe("the page's words", () => {
   // statement about cookies, tracking or analytics, which rest on the
   // zone's settings and no gate of this repository's.
   test('say nothing of cookies, tracking or analytics, in any language or in index.html', () => {
-    for (const language of LANGUAGES) expect(texts(WORDS[language]).filter((text) => TRACKING.test(text)), language).toEqual([])
+    for (const language of LANGUAGES)
+      expect(
+        texts(WORDS[language]).filter((text) => TRACKING.test(text)),
+        language,
+      ).toEqual([])
     expect(html).not.toMatch(TRACKING)
   })
 
@@ -132,10 +145,46 @@ describe("the page's words", () => {
   // where it ends and LHC-Forms and their like begin (0013). A translation
   // that dropped one would claim more than the page does.
   const READ_OUT: Readonly<Record<Language, readonly string[]>> = {
-    'de-CH': ['aus dem JSON darunter', 'nicht aus dem Formular', 'Der Rest steht nur im JSON', 'schreibgeschützt', 'verborgen', 'kein FHIR-Renderer', 'validiert nichts', 'zeichnet keinen'],
-    fr: ['du JSON ci-dessous', 'non du formulaire', 'Le reste n’est que dans le JSON', 'lecture seule', 'caché', 'pas un moteur de rendu FHIR', 'ne valide rien', 'n’en dessine aucun'],
-    it: ['dal JSON qui sotto', 'non dal modulo', 'Il resto sta solo nel JSON', 'sola lettura', 'nascosto', 'non è un renderer FHIR', 'non valida nulla', 'non ne disegna nessuno'],
-    en: ['from the JSON below', 'not from the form', 'The rest is in the JSON alone', 'read-only', 'hidden', 'no FHIR renderer', 'validates nothing', 'draws none'],
+    'de-CH': [
+      'aus dem JSON darunter',
+      'nicht aus dem Formular',
+      'Der Rest steht nur im JSON',
+      'schreibgeschützt',
+      'verborgen',
+      'kein FHIR-Renderer',
+      'validiert nichts',
+      'zeichnet keinen',
+    ],
+    fr: [
+      'du JSON ci-dessous',
+      'non du formulaire',
+      'Le reste n’est que dans le JSON',
+      'lecture seule',
+      'caché',
+      'pas un moteur de rendu FHIR',
+      'ne valide rien',
+      'n’en dessine aucun',
+    ],
+    it: [
+      'dal JSON qui sotto',
+      'non dal modulo',
+      'Il resto sta solo nel JSON',
+      'sola lettura',
+      'nascosto',
+      'non è un renderer FHIR',
+      'non valida nulla',
+      'non ne disegna nessuno',
+    ],
+    en: [
+      'from the JSON below',
+      'not from the form',
+      'The rest is in the JSON alone',
+      'read-only',
+      'hidden',
+      'no FHIR renderer',
+      'validates nothing',
+      'draws none',
+    ],
   }
   test.each(LANGUAGES)("hold the read-out's statements of what it is and is not, in %s", (language) => {
     expect(READ_OUT[language].filter((part) => !WORDS[language].readOut.intro.includes(part))).toEqual([])
@@ -192,7 +241,7 @@ describe('the language the page opens in', () => {
   // A Swiss visitor's browser says de-CH, fr-CH or it-CH, an Austrian's
   // de-AT: each reads the page in its language, and anyone else in
   // English, never in the first language of the list.
-  test("is the first the browser prefers that the page has, by its language, and English otherwise", () => {
+  test('is the first the browser prefers that the page has, by its language, and English otherwise', () => {
     expect(firstLanguage(['de-AT', 'en'])).toBe('de-CH')
     expect(firstLanguage(['fr-CH'])).toBe('fr')
     expect(firstLanguage(['es-ES', 'IT'])).toBe('it')

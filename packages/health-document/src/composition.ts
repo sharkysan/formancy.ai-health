@@ -26,7 +26,25 @@
  * is the Bundle's to resolve (bundle.ts), and the types R4 allows an
  * author are checked there, against the entry it resolves to.
  */
-import { code, codeOf, dateTime, id, item, known, member, needed, optional, readItems, text, uri, uuid, valueAt, xhtmlText, type FhirUuid, type Refusals } from '@formancy/health-core'
+import {
+  code,
+  codeOf,
+  dateTime,
+  id,
+  item,
+  known,
+  member,
+  needed,
+  optional,
+  readItems,
+  text,
+  uri,
+  uuid,
+  valueAt,
+  xhtmlText,
+  type FhirUuid,
+  type Refusals,
+} from '@formancy/health-core'
 import { conceptAt, conceptsAt, CONTEXT, identifierAt, referenceAt, referencesAt, type ByName, type Coded } from './context.js'
 import type { Composition, CompositionSection } from './resource.js'
 import { targetsOf } from './targets.js'
@@ -96,7 +114,9 @@ const XHTML = 'http://www.w3.org/1999/xhtml'
  * fail here.
  */
 function narrativeOf(title: string, sections: readonly CompositionSection[]): Composition['text'] {
-  const headings = sections.map((section, index) => `<h2>${xhtmlText(section.title, member(item(member(COMPOSITION, 'section'), index), 'title'))}</h2>`).join('')
+  const headings = sections
+    .map((section, index) => `<h2>${xhtmlText(section.title, member(item(member(COMPOSITION, 'section'), index), 'title'))}</h2>`)
+    .join('')
   const div = `<div xmlns="${XHTML}"><h1>${xhtmlText(title, member(COMPOSITION, 'title'))}</h1>${headings}</div>`
   return { status: code('generated', 'Composition.text.status'), div }
 }
@@ -125,7 +145,16 @@ export function compositionOf(context: CompositionContext | undefined, refusals:
   const author = referencesAt(context, 'author', at('author'), refusals, targetsOf('Composition.author'))
   const title = needed(context, 'title', at('title'), refusals, text)
   const section = sectionsAt(context, refusals)
-  if (refusals.count > before || status === undefined || type === undefined || subject === undefined || date === undefined || author === undefined || title === undefined || section === undefined) {
+  if (
+    refusals.count > before ||
+    status === undefined ||
+    type === undefined ||
+    subject === undefined ||
+    date === undefined ||
+    author === undefined ||
+    title === undefined ||
+    section === undefined
+  ) {
     return { fullUrl, composition: undefined }
   }
   const composition: Composition = {

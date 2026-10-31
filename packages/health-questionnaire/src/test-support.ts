@@ -47,7 +47,12 @@ export function onlyItem(field: FieldDef, context: QuestionnaireContext = HOST):
 }
 
 /** A host's context for answers: the intake as HOST exports it, completed, of a synthetic patient. */
-export const RESPONDING: ResponseContext = { questionnaire: HOST, status: 'completed', authored: '2026-10-17T10:00:00+02:00', subject: { reference: 'Patient/synthetic-1' } }
+export const RESPONDING: ResponseContext = {
+  questionnaire: HOST,
+  status: 'completed',
+  authored: '2026-10-17T10:00:00+02:00',
+  subject: { reference: 'Patient/synthetic-1' },
+}
 
 /** The QuestionnaireResponse of `answers` to `schema`; fails, listing them, when it is refused. */
 export function answered(schema: unknown, answers: unknown, context: ResponseContext = RESPONDING): QuestionnaireResponse {

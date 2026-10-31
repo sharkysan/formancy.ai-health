@@ -17,7 +17,12 @@ const ext = (name, value, key = 'valueString') => ({ url: `http://hl7.org/fhir/S
 /** An issue as the validator writes one, with its message id unless `id` is null. */
 function issue(severity, id, expression, text = 'what the validator says', code = 'invariant') {
   return {
-    extension: [ext('operationoutcome-issue-line', 1, 'valueInteger'), ext('operationoutcome-issue-col', 249, 'valueInteger'), ext('operationoutcome-issue-source', 'InstanceValidator'), ...(id === null ? [] : [ext('operationoutcome-message-id', id, 'valueCode')])],
+    extension: [
+      ext('operationoutcome-issue-line', 1, 'valueInteger'),
+      ext('operationoutcome-issue-col', 249, 'valueInteger'),
+      ext('operationoutcome-issue-source', 'InstanceValidator'),
+      ...(id === null ? [] : [ext('operationoutcome-message-id', id, 'valueCode')]),
+    ],
     severity,
     code,
     details: { text },
@@ -53,8 +58,24 @@ describe('readOutcome', () => {
       ]),
     )
     expect(read.issues).toEqual([
-      { severity: 'warning', code: 'invariant', id: 'http://hl7.org/fhir/StructureDefinition/DomainResource#dom-6', expression: 'Questionnaire', line: 1, column: 249, text: 'what the validator says' },
-      { severity: 'error', code: 'invalid', id: undefined, expression: 'QuestionnaireResponse.item[1].answer[0].value[x]', line: 1, column: 249, text: 'Error parsing JSON: the primitive value must be a number' },
+      {
+        severity: 'warning',
+        code: 'invariant',
+        id: 'http://hl7.org/fhir/StructureDefinition/DomainResource#dom-6',
+        expression: 'Questionnaire',
+        line: 1,
+        column: 249,
+        text: 'what the validator says',
+      },
+      {
+        severity: 'error',
+        code: 'invalid',
+        id: undefined,
+        expression: 'QuestionnaireResponse.item[1].answer[0].value[x]',
+        line: 1,
+        column: 249,
+        text: 'Error parsing JSON: the primitive value must be a number',
+      },
     ])
   })
 
@@ -85,7 +106,11 @@ describe('readOutcomes', () => {
   // One file gives one OperationOutcome, several a Bundle of them; the gate
   // validates several, a person running the validator by hand often one.
   test('reads one OperationOutcome, or a Bundle of them, from text or parsed', () => {
-    const bundle = { resourceType: 'Bundle', type: 'collection', entry: [{ resource: outcome('a.json', []) }, { resource: outcome('b.json', [issue('error', 'X', 'Q')]) }] }
+    const bundle = {
+      resourceType: 'Bundle',
+      type: 'collection',
+      entry: [{ resource: outcome('a.json', []) }, { resource: outcome('b.json', [issue('error', 'X', 'Q')]) }],
+    }
     expect(readOutcomes(JSON.stringify(bundle)).map((read) => [read.file, read.issues.length])).toEqual([
       ['a.json', 0],
       ['b.json', 1],

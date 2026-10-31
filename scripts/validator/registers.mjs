@@ -43,7 +43,8 @@ export const packageKey = (entry) => `${entry.id}#${entry.version}`
 export const ADMITTED_LICENCES = new Map([['ihe.formatcode.fhir#1.4.0', 'CC-BY-4.0']])
 
 /** Whether a register entry's licence is one the policy allows, or the one a decision admits for that entry. */
-const licenceAdmitted = (entry) => typeof entry?.licence === 'string' && (spdxAllows(entry.licence) || ADMITTED_LICENCES.get(packageKey(entry)) === entry.licence)
+const licenceAdmitted = (entry) =>
+  typeof entry?.licence === 'string' && (spdxAllows(entry.licence) || ADMITTED_LICENCES.get(packageKey(entry)) === entry.licence)
 
 /** The three registers, parsed: `{ pin, packages, warnings }`. */
 export function readRegisters(root = repo) {
@@ -54,7 +55,8 @@ export function readRegisters(root = repo) {
 export function pinProblems(pin) {
   const problems = []
   if (typeof pin?.version !== 'string' || !EXACT.test(pin.version)) problems.push(`${VALIDATOR_PIN}: version is not an exact release`)
-  else if (pin.url !== `https://github.com/hapifhir/org.hl7.fhir.core/releases/download/${pin.version}/validator_cli.jar`) problems.push(`${VALIDATOR_PIN}: url is not the validator_cli.jar asset of release ${pin.version} of hapifhir/org.hl7.fhir.core`)
+  else if (pin.url !== `https://github.com/hapifhir/org.hl7.fhir.core/releases/download/${pin.version}/validator_cli.jar`)
+    problems.push(`${VALIDATOR_PIN}: url is not the validator_cli.jar asset of release ${pin.version} of hapifhir/org.hl7.fhir.core`)
   if (typeof pin?.released !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(pin.released)) problems.push(`${VALIDATOR_PIN}: released is not a date`)
   if (typeof pin?.sha256 !== 'string' || !SHA256.test(pin.sha256)) problems.push(`${VALIDATOR_PIN}: sha256 is not 64 lowercase hex digits`)
   if (!Number.isSafeInteger(pin?.bytes) || pin.bytes <= 0) problems.push(`${VALIDATOR_PIN}: bytes is not a size`)
@@ -85,7 +87,8 @@ export function packageProblems(packages) {
     keys.add(key)
     if (!LOADED_AS.includes(entry?.loadedAs)) say(`loadedAs is not one of ${LOADED_AS.join(', ')}`)
     if (!Array.isArray(entry?.declaredBy) || entry.declaredBy.some((by) => typeof by !== 'string')) say('declaredBy is not a list of id#version')
-    else if (entry.loadedAs === 'dependency' && entry.declaredBy.length === 0 && (typeof entry.note !== 'string' || entry.note === '')) say('no registered package declares it, and no note says why the validator loads it')
+    else if (entry.loadedAs === 'dependency' && entry.declaredBy.length === 0 && (typeof entry.note !== 'string' || entry.note === ''))
+      say('no registered package declares it, and no note says why the validator loads it')
     // A ballot, or any other prerelease, is never chosen: one is registered
     // only because a registered package declares it (docs/release/README.md).
     if (typeof entry?.version === 'string' && entry.version.includes('-')) {
@@ -100,7 +103,9 @@ export function packageProblems(packages) {
     if (typeof entry?.sha256 !== 'string' || !SHA256.test(entry.sha256)) say('sha256 is not 64 lowercase hex digits')
     if (!Number.isSafeInteger(entry?.bytes) || entry.bytes <= 0) say('bytes is not a size')
   }
-  for (const entry of packages) for (const by of Array.isArray(entry?.declaredBy) ? entry.declaredBy : []) if (!keys.has(by)) problems.push(`${IG_PACKAGES}: ${packageKey(entry)}: declaredBy names ${by}, which is not registered`)
+  for (const entry of packages)
+    for (const by of Array.isArray(entry?.declaredBy) ? entry.declaredBy : [])
+      if (!keys.has(by)) problems.push(`${IG_PACKAGES}: ${packageKey(entry)}: declaredBy names ${by}, which is not registered`)
   const cores = packages.filter((entry) => entry?.loadedAs === 'core')
   if (cores.length !== 1) problems.push(`${IG_PACKAGES}: ${String(cores.length)} packages are loadedAs core, where FHIR is one`)
   return problems

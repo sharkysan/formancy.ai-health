@@ -54,8 +54,12 @@ describe("the host's response", () => {
   test('is refused when it does not claim the profile, or is no QuestionnaireResponse', () => {
     const { meta: _, ...unclaimed } = answers()
     expect(reading({ fullUrl: NAMES.response, questionnaireResponse: unclaimed }).refused).toEqual([`profile ${AT}.meta.profile`])
-    expect(reading(changed({ meta: { profile: ['http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaireresponse|4.0.0'] } })).refused).toEqual([`profile ${AT}.meta.profile`])
-    expect(reading(changed({ meta: { profile: 'http://fhir.ch/ig/ch-orf/StructureDefinition/ch-orf-questionnaireresponse|3.0.2' } })).refused).toEqual([`profile ${AT}.meta.profile`])
+    expect(reading(changed({ meta: { profile: ['http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaireresponse|4.0.0'] } })).refused).toEqual([
+      `profile ${AT}.meta.profile`,
+    ])
+    expect(reading(changed({ meta: { profile: 'http://fhir.ch/ig/ch-orf/StructureDefinition/ch-orf-questionnaireresponse|3.0.2' } })).refused).toEqual([
+      `profile ${AT}.meta.profile`,
+    ])
     expect(reading(changed({ resourceType: 'Questionnaire' })).refused).toEqual([`profile ${AT}.resourceType`])
   })
 
@@ -76,7 +80,11 @@ describe("the host's response", () => {
   test.each([
     ['of nobody', { subject: undefined }, `absent ${AT}.subject`],
     ['of the practitioner', { subject: { reference: NAMES.practitioner } }, `reference ${AT}.subject.reference`],
-    ['of a patient the document does not hold', { subject: { reference: 'urn:uuid:5c3e9a10-7b2d-4f61-9e8a-0d1c2b3a4fff' } }, `dangling ${AT}.subject.reference`],
+    [
+      'of a patient the document does not hold',
+      { subject: { reference: 'urn:uuid:5c3e9a10-7b2d-4f61-9e8a-0d1c2b3a4fff' } },
+      `dangling ${AT}.subject.reference`,
+    ],
     ['of a patient on the receiver server', { subject: { reference: 'Patient/synthetic-1' } }, `dangling ${AT}.subject.reference`],
   ])('is refused when it is %s', (_, change, refusal) => {
     expect(reading(changed(change)).refused).toEqual([refusal])
@@ -87,7 +95,8 @@ describe("the host's response", () => {
   // organisation or the patient; a source the patient, the role or the
   // practitioner, never an organisation.
   test('takes an author and a source of the types CH ORF allows', () => {
-    for (const author of [NAMES.patient, NAMES.role, NAMES.practitioner, NAMES.organization]) expect(reading(changed({ author: { reference: author } })).refused).toEqual([])
+    for (const author of [NAMES.patient, NAMES.role, NAMES.practitioner, NAMES.organization])
+      expect(reading(changed({ author: { reference: author } })).refused).toEqual([])
     for (const source of [NAMES.patient, NAMES.role, NAMES.practitioner]) expect(reading(changed({ source: { reference: source } })).refused).toEqual([])
     expect(reading(changed({ author: undefined, source: undefined })).refused).toEqual([])
   })
@@ -147,7 +156,10 @@ describe("the host's response", () => {
     const given = answers()
     const twoFaced = new Proxy(given, {
       get: (target, name) => (name === 'subject' ? { reference: NAMES.patient } : Reflect.get(target, name)),
-      getOwnPropertyDescriptor: (target, name) => (name === 'subject' ? { value: { reference: NAMES.practitioner }, writable: true, enumerable: true, configurable: true } : Reflect.getOwnPropertyDescriptor(target, name)),
+      getOwnPropertyDescriptor: (target, name) =>
+        name === 'subject'
+          ? { value: { reference: NAMES.practitioner }, writable: true, enumerable: true, configurable: true }
+          : Reflect.getOwnPropertyDescriptor(target, name),
     })
     expect(reading({ fullUrl: NAMES.response, questionnaireResponse: twoFaced }).refused).toEqual([`reference ${AT}.subject.reference`])
     const { made } = reading({ fullUrl: NAMES.response, questionnaireResponse: given })
@@ -158,6 +170,8 @@ describe("the host's response", () => {
   // What FHIR JSON cannot carry is refused where it stands in the host's
   // answers, by health-core's writer.
   test('is refused where FHIR JSON cannot carry it, at its own path', () => {
-    expect(reading(changed({ item: [{ linkId: 'reason', answer: [{ valueInteger: 7 }] }] })).refused).toEqual([`javascript-number ${AT}.item[0].answer[0].valueInteger`])
+    expect(reading(changed({ item: [{ linkId: 'reason', answer: [{ valueInteger: 7 }] }] })).refused).toEqual([
+      `javascript-number ${AT}.item[0].answer[0].valueInteger`,
+    ])
   })
 })

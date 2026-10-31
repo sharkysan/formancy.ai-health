@@ -4,11 +4,25 @@ import { describe, expect, test } from 'vitest'
 import type { QuestionnaireItem } from './resource.js'
 import { URL, exported, refused, ruled } from './test-support.js'
 
-const country: FieldDef = { key: 'country', type: 'select', options: [{ value: 'CH', label: 'Switzerland' }, { value: 'DE', label: 'Germany' }] }
+const country: FieldDef = {
+  key: 'country',
+  type: 'select',
+  options: [
+    { value: 'CH', label: 'Switzerland' },
+    { value: 'DE', label: 'Germany' },
+  ],
+}
 const age: FieldDef = { key: 'age', type: 'number', step: 1 }
 const weight: FieldDef = { key: 'weight', type: 'number' }
 const consent: FieldDef = { key: 'consent', type: 'checkbox' }
-const topics: FieldDef = { key: 'topics', type: 'selectboxes', options: [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }] }
+const topics: FieldDef = {
+  key: 'topics',
+  type: 'selectboxes',
+  options: [
+    { value: 'a', label: 'A' },
+    { value: 'b', label: 'B' },
+  ],
+}
 const reason: FieldDef = { key: 'reason', type: 'text' }
 const history: FieldDef = { key: 'history', type: 'textarea' }
 const born: FieldDef = { key: 'born', type: 'date' }
@@ -65,7 +79,9 @@ describe('a visibility rule', () => {
     expect(shown("country == 'CH' || reason != 'x' || reason != 'y'")).toContain(
       `"enableWhen":[{"question":"country","operator":"=","answerCoding":${coding('country', 'CH')}},{"question":"reason","operator":"!=","answerString":"x"},{"question":"reason","operator":"!=","answerString":"y"},{"question":"reason","operator":"exists","answerBoolean":false}],"enableBehavior":"any"`,
     )
-    expect(refused(ruled([...QUESTIONS, target], [{ target: 'follow_up', kind: 'visible', cel: "consent == true && country != 'CH'" }]))).toEqual(['unmapped form.logic.rules[0].cel'])
+    expect(refused(ruled([...QUESTIONS, target], [{ target: 'follow_up', kind: 'visible', cel: "consent == true && country != 'CH'" }]))).toEqual([
+      'unmapped form.logic.rules[0].cel',
+    ])
   })
 
   // A list answer holding a value is R4's `=` on a repeating question:
@@ -92,7 +108,7 @@ describe('a visibility rule', () => {
 
   // A decimal literal keeps its digits: 2.50 is written as 2.50, from the
   // rule's text, and never through a double.
-  test('keeps a literal\'s digits', () => {
+  test("keeps a literal's digits", () => {
     expect(shown('weight == 2.50')).toContain('"answerDecimal":2.50')
     expect(shown('weight > 0.000123456789012345')).toContain('"answerDecimal":0.000123456789012345')
     expect(shown(`weight > -0.${'0'.repeat(306)}1`)).toContain(`"answerDecimal":-0.${'0'.repeat(306)}1`)
@@ -105,9 +121,12 @@ describe('a visibility rule', () => {
   // digits, and would hide it. Fifteen significant digits are as many as
   // every double keeps, so a literal of more, or one so small that a
   // double keeps fewer, may mean another number in each, and is refused.
-  test.each(['weight == 0.30000000000000001', 'weight >= 1234567890123456', `weight > 0.${'0'.repeat(307)}1`])('refuses %s, a literal a double does not hold', (cel) => {
-    expect(refused(ruled([weight, target], [{ target: 'follow_up', kind: 'visible', cel }]))).toEqual(['unmapped form.logic.rules[0].cel'])
-  })
+  test.each(['weight == 0.30000000000000001', 'weight >= 1234567890123456', `weight > 0.${'0'.repeat(307)}1`])(
+    'refuses %s, a literal a double does not hold',
+    (cel) => {
+      expect(refused(ruled([weight, target], [{ target: 'follow_up', kind: 'visible', cel }]))).toEqual(['unmapped form.logic.rules[0].cel'])
+    },
+  )
 
   // Equalities never error, so && is every one and || any one.
   test('a chain of equalities is all or any of them', () => {
@@ -120,9 +139,9 @@ describe('a visibility rule', () => {
   test.each([
     ['a negation', "!(country == 'CH')"],
     ['parentheses', "(country == 'CH')"],
-    ['a function', "size(reason) > 3"],
+    ['a function', 'size(reason) > 3'],
     ['a field in a group', "address.city == 'Bern'"],
-    ['an ordering in a chain', "age >= 18 && consent == true"],
+    ['an ordering in a chain', 'age >= 18 && consent == true'],
     ['two joins', "country == 'CH' && consent == true || age == 1"],
     ['an ordering of text', "reason > 'a'"],
     ['an ordering of a choice', "country > 'CH'"],
@@ -148,7 +167,10 @@ describe('a visibility rule', () => {
     ['a field version 1 refuses', "drawn == 'x'"],
     ['a field nobody defined', "nobody == 'x'"],
   ])('refuses %s', (_, cel) => {
-    const others: FieldDef[] = [{ key: 'address', type: 'group', fields: [{ key: 'city', type: 'text' }] }, { key: 'notice', type: 'static', label: 'Read.' }]
+    const others: FieldDef[] = [
+      { key: 'address', type: 'group', fields: [{ key: 'city', type: 'text' }] },
+      { key: 'notice', type: 'static', label: 'Read.' },
+    ]
     const refusals = refused(ruled([...QUESTIONS, ...others, { key: 'drawn', type: 'signature' }, target], [{ target: 'follow_up', kind: 'visible', cel }]))
     expect(refusals.filter((refusal) => refusal !== 'unmapped form.model.fields[12].type')).toEqual(['unmapped form.logic.rules[0].cel'])
   })
@@ -190,7 +212,14 @@ describe('a visibility rule', () => {
   // A rule inside a repeater runs once per row with the row in scope,
   // which no enableWhen has.
   test('refuses a visibility rule on a field inside a repeater', () => {
-    const rows: FieldDef = { key: 'rows', type: 'repeater', fields: [{ key: 'kind', type: 'text' }, { key: 'detail', type: 'text' }] }
+    const rows: FieldDef = {
+      key: 'rows',
+      type: 'repeater',
+      fields: [
+        { key: 'kind', type: 'text' },
+        { key: 'detail', type: 'text' },
+      ],
+    }
     expect(refused(ruled([rows], [{ target: 'rows[].detail', kind: 'visible', cel: "item.kind == 'x'" }]))).toEqual(['unmapped form.logic.rules[0].target'])
   })
 
@@ -210,12 +239,18 @@ describe('a visibility rule', () => {
   // formancy keeps the answer of a field hidden with clearOnHide off,
   // and R4 drops a disabled item's: the export could not say which.
   test('refuses clearOnHide off on a field a rule can hide, and not on one nothing hides', () => {
-    expect(refused(ruled([consent, { ...target, clearOnHide: false }], [{ target: 'follow_up', kind: 'visible', cel: 'consent == true' }]))).toEqual(['unmapped form.model.fields[1].clearOnHide'])
+    expect(refused(ruled([consent, { ...target, clearOnHide: false }], [{ target: 'follow_up', kind: 'visible', cel: 'consent == true' }]))).toEqual([
+      'unmapped form.model.fields[1].clearOnHide',
+    ])
     const group: FieldDef = { key: 'box', type: 'group', fields: [{ ...reason, clearOnHide: false }] }
-    expect(refused(ruled([consent, group], [{ target: 'box', kind: 'visible', cel: 'consent == true' }]))).toEqual(['unmapped form.model.fields[1].fields[0].clearOnHide'])
+    expect(refused(ruled([consent, group], [{ target: 'box', kind: 'visible', cel: 'consent == true' }]))).toEqual([
+      'unmapped form.model.fields[1].fields[0].clearOnHide',
+    ])
     expect(exported(ruled([{ ...reason, clearOnHide: false }], [])).item).toEqual([{ linkId: 'reason', type: 'string' }])
     // A page above it hides nothing unless a skip rule walks past it.
-    expect(exported(ruled([{ key: 'step', type: 'page', fields: [{ ...reason, clearOnHide: false }] }], [])).item?.[0]?.item).toEqual([{ linkId: 'reason', type: 'string' }])
+    expect(exported(ruled([{ key: 'step', type: 'page', fields: [{ ...reason, clearOnHide: false }] }], [])).item?.[0]?.item).toEqual([
+      { linkId: 'reason', type: 'string' },
+    ])
   })
 })
 
@@ -233,9 +268,13 @@ describe('a skip rule', () => {
     expect(enabled("country == 'CH' && consent == true")).toContain(
       `"enableWhen":[{"question":"country","operator":"!=","answerCoding":${coding('country', 'CH')}},{"question":"consent","operator":"!=","answerBoolean":true},{"question":"country","operator":"exists","answerBoolean":false},{"question":"consent","operator":"exists","answerBoolean":false}],"enableBehavior":"any"`,
     )
-    expect(enabled("country != 'CH' || consent != true")).toContain(`"enableWhen":[{"question":"country","operator":"=","answerCoding":${coding('country', 'CH')}},{"question":"consent","operator":"=","answerBoolean":true}],"enableBehavior":"all"`)
+    expect(enabled("country != 'CH' || consent != true")).toContain(
+      `"enableWhen":[{"question":"country","operator":"=","answerCoding":${coding('country', 'CH')}},{"question":"consent","operator":"=","answerBoolean":true}],"enableBehavior":"all"`,
+    )
     // A skip rule that errors does not skip: unanswered, the page shows.
-    expect(enabled('age > 65')).toContain('"enableWhen":[{"question":"age","operator":"<=","answerInteger":65},{"question":"age","operator":"exists","answerBoolean":false}],"enableBehavior":"any"')
+    expect(enabled('age > 65')).toContain(
+      '"enableWhen":[{"question":"age","operator":"<=","answerInteger":65},{"question":"age","operator":"exists","answerBoolean":false}],"enableBehavior":"any"',
+    )
   })
 
   // `||` negated is every `!=` at once, which enableWhen cannot say with

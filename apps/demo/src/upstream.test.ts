@@ -95,7 +95,9 @@ describe("formancy's packages, as the page is built from them", () => {
   // the demo's own.
   test("reach @formancy/spec through formancy's engine and renderer, and health-questionnaire", () => {
     const spec = [...brought(app).values()].filter((copy) => copy.name === '@formancy/spec')
-    expect(spec.flatMap((copy) => [...copy.by])).toEqual(expect.arrayContaining(['@formancy/core', '@formancy/react', '@formancy/health-questionnaire', '@formancy/health-demo']))
+    expect(spec.flatMap((copy) => [...copy.by])).toEqual(
+      expect.arrayContaining(['@formancy/core', '@formancy/react', '@formancy/health-questionnaire', '@formancy/health-demo']),
+    )
   })
 
   // A release adopted by the demo and not by the packages -- or the other

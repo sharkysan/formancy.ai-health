@@ -48,7 +48,9 @@ describe('what the answers make', () => {
   // response would carry answers health-questionnaire said it cannot write.
   test('a required answer cleared refuses the response for it, and no document is made', () => {
     const cleared = answeredOf(sample, { ...sample.answers, question: '' })
-    expect(cleared.response.kind === 'refused' ? cleared.response.refusals.map(({ rule, path }) => `${rule} at ${path}`) : cleared.response).toEqual(['required at answers.question'])
+    expect(cleared.response.kind === 'refused' ? cleared.response.refusals.map(({ rule, path }) => `${rule} at ${path}`) : cleared.response).toEqual([
+      'required at answers.question',
+    ])
     expect(cleared.document).toBeUndefined()
     expect(byFile({ ...firstOf(sample, pdf), answered: cleared }).has(FILES.document)).toBe(false)
   })
@@ -65,11 +67,17 @@ describe('a package that throws', () => {
   // be a resource nobody wrote; so would one writeJson refuses, such as a
   // number made outside health-core.
   test('is said to have failed, and nothing it made is shown', () => {
-    const thrown = attempt(() => {
-      throw new Error('a bug')
-    }, () => ({}))
+    const thrown = attempt(
+      () => {
+        throw new Error('a bug')
+      },
+      () => ({}),
+    )
     expect(thrown).toEqual({ outcome: { kind: 'failed' } })
-    const unwritable = attempt(() => ({ ok: true as const, resource: { resourceType: 'Basic', value: 0.1 } }), ({ resource }) => resource)
+    const unwritable = attempt(
+      () => ({ ok: true as const, resource: { resourceType: 'Basic', value: 0.1 } }),
+      ({ resource }) => resource,
+    )
     expect(unwritable).toEqual({ outcome: { kind: 'failed' } })
   })
 })

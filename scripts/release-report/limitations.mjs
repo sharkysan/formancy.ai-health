@@ -83,7 +83,8 @@ export function registerProblems(register, records, { covered, exists }) {
     const listed = Array.isArray(entry.limitations) && entry.limitations.length > 0
     const none = typeof entry.none === 'string' && entry.none.trim() !== ''
     if (listed === none) problems.push(`${record.number} has ${listed ? 'both limitations and none' : 'neither limitations nor none'}; it needs exactly one`)
-    if (/^(superseded by|reversed)/.test(record.status) && listed) problems.push(`${record.number} is ${record.status.split(';')[0]}, so its limitations are a later record's: give it none`)
+    if (/^(superseded by|reversed)/.test(record.status) && listed)
+      problems.push(`${record.number} is ${record.status.split(';')[0]}, so its limitations are a later record's: give it none`)
   }
   for (const number of Object.keys(entries)) if (!numbers.has(number)) problems.push(`${number} is in the register and no record has that number`)
 
@@ -131,7 +132,8 @@ export function statedLimitations({ register, records, outcome, repository, comm
 }
 
 /** The records whose entry was read before the record last changed. */
-export const changedRecords = (register, records) => records.filter((record) => register.records?.[record.number] !== undefined && register.records[record.number].reviewed !== record.hash)
+export const changedRecords = (register, records) =>
+  records.filter((record) => register.records?.[record.number] !== undefined && register.records[record.number].reviewed !== record.hash)
 
 /** The records with no entry at all. */
 export const missingRecords = (register, records) => records.filter((record) => register.records?.[record.number] === undefined)

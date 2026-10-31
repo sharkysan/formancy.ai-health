@@ -60,7 +60,8 @@ export function recordViolations() {
 }
 
 /** A report as a failure names it. */
-export const saidOf = (entry) => `${entry.directive} refused ${entry.blocked}${entry.target === null ? '' : ` at ${entry.target}`}${entry.sample ? ` (${entry.sample})` : ''}, ${entry.at}`
+export const saidOf = (entry) =>
+  `${entry.directive} refused ${entry.blocked}${entry.target === null ? '' : ` at ${entry.target}`}${entry.sample ? ` (${entry.sample})` : ''}, ${entry.at}`
 
 /**
  * Every error `page` logs to its console from now on, as its text and the
@@ -123,7 +124,12 @@ export function watch(page, url) {
 }
 
 /** The page's connection hints, as addresses. */
-const hintsOf = (page) => page.evaluate(() => [...document.querySelectorAll('link')].filter((link) => ['preconnect', 'dns-prefetch', 'prefetch', 'prerender'].some((rel) => link.relList.contains(rel))).map((link) => link.href))
+const hintsOf = (page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll('link')]
+      .filter((link) => ['preconnect', 'dns-prefetch', 'prefetch', 'prerender'].some((rel) => link.relList.contains(rel)))
+      .map((link) => link.href),
+  )
 
 const said = (list) => list.slice(0, 4).join(', ')
 
@@ -147,11 +153,19 @@ export async function privacyChecks(gate, { context, page, watcher, url, browser
   const addresses = settled.map((request) => request.address)
   const pages = refused === null ? addresses : lateOfItsOwn(browser, { late: addresses, refused }).page
   const late = settled.filter((request) => pages.includes(request.address)).map((request) => `${request.method} ${request.address.replace(url, '')}`)
-  check('once it had settled, the page asked for nothing more, whatever was typed into it, changed, shown or downloaded', late.length === 0 ? null : `it asked for ${said(late)}${late.length > 4 ? ` and ${String(late.length - 4)} more` : ''}`)
+  check(
+    'once it had settled, the page asked for nothing more, whatever was typed into it, changed, shown or downloaded',
+    late.length === 0 ? null : `it asked for ${said(late)}${late.length > 4 ? ` and ${String(late.length - 4)} more` : ''}`,
+  )
   if (refused !== null) heldNextFile(gate, { browser, late: addresses, refused })
   const sent = watcher.requests.filter((request) => request.method !== 'GET' || request.body).map((request) => `${request.method} ${request.address}`)
   check('and nothing it asked for carried a body or was other than a GET', sent.length === 0 ? null : said(sent))
-  check('the page set no cookie', (await context.cookies()).length === 0 && (await page.evaluate(() => document.cookie)) === '' ? null : `cookies: ${(await context.cookies()).map((cookie) => cookie.name).join(', ') || await page.evaluate(() => document.cookie)}`)
+  check(
+    'the page set no cookie',
+    (await context.cookies()).length === 0 && (await page.evaluate(() => document.cookie)) === ''
+      ? null
+      : `cookies: ${(await context.cookies()).map((cookie) => cookie.name).join(', ') || (await page.evaluate(() => document.cookie))}`,
+  )
   const stored = await page.evaluate(async () => {
     const found = []
     if (localStorage.length > 0) found.push(`${String(localStorage.length)} in localStorage`)
@@ -164,16 +178,26 @@ export async function privacyChecks(gate, { context, page, watcher, url, browser
     if (workers.length > 0) found.push(`${String(workers.length)} service worker(s)`)
     return found
   })
-  check('and stored nothing in the browser: no local or session storage, no IndexedDB database, no cache, no service worker', stored.length === 0 ? null : stored.join('; '))
+  check(
+    'and stored nothing in the browser: no local or session storage, no IndexedDB database, no cache, no service worker',
+    stored.length === 0 ? null : stored.join('; '),
+  )
   // The skip link's fragment is the one change the page makes to its
   // address, and it is no answer.
   const address = page.url()
-  check('and nothing typed reached its address: it is the page’s, with at most the skip link’s #demo', [url, `${url}#demo`].includes(address) ? null : `the address is ${address}`)
+  check(
+    'and nothing typed reached its address: it is the page’s, with at most the skip link’s #demo',
+    [url, `${url}#demo`].includes(address) ? null : `the address is ${address}`,
+  )
 }
 
 /** The headers a response carries other than `expected` says, or not at all. */
 function headerProblems(expected, headers) {
-  return Object.entries(expected).flatMap(([name, value]) => (headers[name.toLowerCase()] === value ? [] : [`${name}: ${headers[name.toLowerCase()] === undefined ? 'absent' : JSON.stringify(headers[name.toLowerCase()])}`]))
+  return Object.entries(expected).flatMap(([name, value]) =>
+    headers[name.toLowerCase()] === value
+      ? []
+      : [`${name}: ${headers[name.toLowerCase()] === undefined ? 'absent' : JSON.stringify(headers[name.toLowerCase()])}`],
+  )
 }
 
 /**
@@ -193,11 +217,16 @@ const CDN_CGI = '/cdn-cgi/scripts/gate/injected.js'
 async function injected(context, url) {
   const served = await context.newPage()
   try {
-    await served.route(new URL(CDN_CGI, url).href, (route) => route.fulfill({ contentType: 'text/javascript', body: 'window.__injected = [...(window.__injected ?? []), "cdn-cgi"]' }))
+    await served.route(new URL(CDN_CGI, url).href, (route) =>
+      route.fulfill({ contentType: 'text/javascript', body: 'window.__injected = [...(window.__injected ?? []), "cdn-cgi"]' }),
+    )
     await served.route(url, async (route) => {
       const response = await route.fetch()
       const html = await response.text()
-      await route.fulfill({ response, body: html.replace('</head>', `<script>window.__injected = [...(window.__injected ?? []), "inline"]</script><script src="${CDN_CGI}"></script></head>`) })
+      await route.fulfill({
+        response,
+        body: html.replace('</head>', `<script>window.__injected = [...(window.__injected ?? []), "inline"]</script><script src="${CDN_CGI}"></script></head>`),
+      })
     })
     await served.goto(url, { waitUntil: 'load' })
     await served.waitForTimeout(100)
@@ -227,12 +256,23 @@ const violations = (page) => page.evaluate(() => window.__gateViolations ?? null
  */
 export async function policyChecks(gate, { context, page, watcher, url, headers, errors, browser, refusedFonts }) {
   const { check } = gate
-  const unheaded = watcher.responses.filter((response) => response.status === 200).flatMap((response) => headerProblems(headers, response.headers).map((problem) => `${response.address}: ${problem}`))
-  check('every file of the build came with every header scripts/demo-headers.mjs decides for its address', watcher.responses.length > 0 && unheaded.length === 0 ? null : said(unheaded) || 'no response of the built demo was heard')
+  const unheaded = watcher.responses
+    .filter((response) => response.status === 200)
+    .flatMap((response) => headerProblems(headers, response.headers).map((problem) => `${response.address}: ${problem}`))
+  check(
+    'every file of the build came with every header scripts/demo-headers.mjs decides for its address',
+    watcher.responses.length > 0 && unheaded.length === 0 ? null : said(unheaded) || 'no response of the built demo was heard',
+  )
   const before = await violations(page)
   const pages = thePagesOwn(browser, { reports: before ?? [], errors, refused: refusedFonts })
-  check('the page did nothing its policy refused, but what 0014’s table says this browser refuses of its own', before !== null && pages.reports.length === 0 ? null : before === null ? 'no listener was installed before the page ran' : said(pages.reports.map(saidOf)))
-  check('and its console logged no error, the whole journey long, but that browser’s own and the font files this pass refused', pages.errors.length === 0 ? null : said(pages.errors.map((error) => error.text)))
+  check(
+    'the page did nothing its policy refused, but what 0014’s table says this browser refuses of its own',
+    before !== null && pages.reports.length === 0 ? null : before === null ? 'no listener was installed before the page ran' : said(pages.reports.map(saidOf)),
+  )
+  check(
+    'and its console logged no error, the whole journey long, but that browser’s own and the font files this pass refused',
+    pages.errors.length === 0 ? null : said(pages.errors.map((error) => error.text)),
+  )
   await selectsDrawTheSame(gate, page)
   await heldSelectStyle(gate, { context, url, headers, browser })
   const parsed = await page.evaluate(() => {
@@ -243,14 +283,49 @@ export async function policyChecks(gate, { context, page, watcher, url, headers,
       return false
     }
   })
-  const fetched = await page.evaluate((address) => fetch(address).then(() => 'fetched', () => 'refused'), new URL('index.html', page.url()).href)
+  const fetched = await page.evaluate(
+    (address) =>
+      fetch(address).then(
+        () => 'fetched',
+        () => 'refused',
+      ),
+    new URL('index.html', page.url()).href,
+  )
   await page.waitForTimeout(100)
   const after = ((await violations(page)) ?? []).slice(before?.length ?? 0).map((entry) => entry.directive)
-  check('its policy refused a string handed to innerHTML after the journey, and said so', !parsed && after.includes('require-trusted-types-for') ? null : parsed ? 'the string was parsed as markup' : `the browser reported ${after.join(', ') || 'nothing'}`)
-  check('and a fetch to its own origin, and said so', fetched === 'refused' && after.includes('connect-src') ? null : fetched === 'fetched' ? 'the fetch was answered' : `the browser reported ${after.join(', ') || 'nothing'}`)
+  check(
+    'its policy refused a string handed to innerHTML after the journey, and said so',
+    !parsed && after.includes('require-trusted-types-for')
+      ? null
+      : parsed
+        ? 'the string was parsed as markup'
+        : `the browser reported ${after.join(', ') || 'nothing'}`,
+  )
+  check(
+    'and a fetch to its own origin, and said so',
+    fetched === 'refused' && after.includes('connect-src')
+      ? null
+      : fetched === 'fetched'
+        ? 'the fetch was answered'
+        : `the browser reported ${after.join(', ') || 'nothing'}`,
+  )
   const { ran, reported } = await injected(context, url)
   const reports = said(reported.map((entry) => `${entry.directive} ${entry.blocked}`)) || 'nothing'
   const refused = (blocked) => reported.some((entry) => entry.directive === 'script-src-elem' && blocked(String(entry.blocked)))
-  check('served with an inline script injected into its HTML, the script did not run, and the policy said so', !ran.includes('inline') && refused((blocked) => blocked === 'inline') ? null : ran.includes('inline') ? 'the injected script ran' : `the browser reported ${reports}`)
-  check('nor did a script of its own origin from outside the build’s assets, under /cdn-cgi/, where Cloudflare serves the scripts it injects', !ran.includes('cdn-cgi') && refused((blocked) => blocked.includes(CDN_CGI)) ? null : ran.includes('cdn-cgi') ? 'the /cdn-cgi/ script ran' : `the browser reported ${reports}`)
+  check(
+    'served with an inline script injected into its HTML, the script did not run, and the policy said so',
+    !ran.includes('inline') && refused((blocked) => blocked === 'inline')
+      ? null
+      : ran.includes('inline')
+        ? 'the injected script ran'
+        : `the browser reported ${reports}`,
+  )
+  check(
+    'nor did a script of its own origin from outside the build’s assets, under /cdn-cgi/, where Cloudflare serves the scripts it injects',
+    !ran.includes('cdn-cgi') && refused((blocked) => blocked.includes(CDN_CGI))
+      ? null
+      : ran.includes('cdn-cgi')
+        ? 'the /cdn-cgi/ script ran'
+        : `the browser reported ${reports}`,
+  )
 }

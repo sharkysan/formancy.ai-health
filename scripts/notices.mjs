@@ -16,7 +16,8 @@ export const MARK = /fhir|hl7/i
  * (https://hl7.org/fhir/R4/license.html). The only notice this product
  * carries.
  */
-export const HL7_NOTICE = 'HL7, FHIR and the FHIR [FLAME DESIGN] are the registered trademarks of Health Level Seven International and their use does not constitute endorsement by HL7.'
+export const HL7_NOTICE =
+  'HL7, FHIR and the FHIR [FLAME DESIGN] are the registered trademarks of Health Level Seven International and their use does not constitute endorsement by HL7.'
 
 /**
  * LOINC's notice, verbatim from the licence's clause for "products and

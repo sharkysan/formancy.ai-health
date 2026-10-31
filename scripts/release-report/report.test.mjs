@@ -39,7 +39,9 @@ describe('a package’s suite', () => {
   // A package whose job left nothing would be a package nobody tested, in a
   // report that said nothing about it.
   test('with no results fails the run', () => {
-    expect(withDefect((inputs) => (inputs.results = inputs.results.filter((result) => result.key !== 'test-health-corpus')))).toEqual(['@formancy/health-corpus: no results from its suite'])
+    expect(withDefect((inputs) => (inputs.results = inputs.results.filter((result) => result.key !== 'test-health-corpus')))).toEqual([
+      '@formancy/health-corpus: no results from its suite',
+    ])
   })
 
   // CLAUDE.md: a suite that can be skipped is a suite that is skipped.
@@ -78,13 +80,19 @@ describe('a package’s suite', () => {
       withDefect((inputs) => {
         job(inputs, 'test-health-document').suites[0].files[0].status = 'failed'
       }),
-    ).toEqual(['@formancy/health-document: packages/health-document/src/bundle.test.ts failed though every test in it passed: a collection error, or a hook that threw'])
+    ).toEqual([
+      '@formancy/health-document: packages/health-document/src/bundle.test.ts failed though every test in it passed: a collection error, or a hook that threw',
+    ])
   })
 
   test('that vitest called unsuccessful, or that ran nothing, fails the run', () => {
-    expect(withDefect((inputs) => (job(inputs, 'test-health-document').suites[0].success = false))).toEqual(['@formancy/health-document: vitest reported the run unsuccessful'])
+    expect(withDefect((inputs) => (job(inputs, 'test-health-document').suites[0].success = false))).toEqual([
+      '@formancy/health-document: vitest reported the run unsuccessful',
+    ])
     // A package with no test file at all, whose suite passes empty.
-    expect(withDefect((inputs) => Object.assign(job(inputs, 'test-health-corpus').suites[0], { files: [], testFiles: [] }))).toEqual(['@formancy/health-corpus: its suite ran no tests'])
+    expect(withDefect((inputs) => Object.assign(job(inputs, 'test-health-corpus').suites[0], { files: [], testFiles: [] }))).toEqual([
+      '@formancy/health-corpus: its suite ran no tests',
+    ])
   })
 
   // A suite that ran part of its files passes every test it ran: a file
@@ -111,12 +119,14 @@ describe('a package’s suite', () => {
   // What collect expected and did not find, or found and could not use --
   // a turbo summary, a stale result in local mode -- is not results at all.
   test('whose job missed a file fails the run', () => {
-    expect(withDefect((inputs) => job(inputs, 'test-health-document').absent.push({ reader: 'test', file: 'packages/health-document/test-results/vitest.json' }))).toEqual([
-      'test-health-document: expected and not found: packages/health-document/test-results/vitest.json',
-    ])
-    expect(withDefect((inputs) => job(inputs, 'test-health-document').missing.push('a fresh run of @formancy/health-document#test:coverage: turbo replayed it from its cache'))).toEqual([
-      'test-health-document: expected and not found: a fresh run of @formancy/health-document#test:coverage: turbo replayed it from its cache',
-    ])
+    expect(
+      withDefect((inputs) => job(inputs, 'test-health-document').absent.push({ reader: 'test', file: 'packages/health-document/test-results/vitest.json' })),
+    ).toEqual(['test-health-document: expected and not found: packages/health-document/test-results/vitest.json'])
+    expect(
+      withDefect((inputs) =>
+        job(inputs, 'test-health-document').missing.push('a fresh run of @formancy/health-document#test:coverage: turbo replayed it from its cache'),
+      ),
+    ).toEqual(['test-health-document: expected and not found: a fresh run of @formancy/health-document#test:coverage: turbo replayed it from its cache'])
   })
 })
 
@@ -142,7 +152,9 @@ describe('the repository’s guards', () => {
     const without = (allowMissing) =>
       withDefect((inputs) => {
         Object.assign(job(inputs, 'verify'), { suites: [], absent: [{ reader: 'verify', file: 'test-results/vitest.json' }] })
-        inputs.gatesRegister.gates = inputs.gatesRegister.gates.map((entry) => (entry.evidence?.some((item) => item.file?.startsWith('scripts/')) ? { gate: entry.gate, open: 'Nothing.' } : entry))
+        inputs.gatesRegister.gates = inputs.gatesRegister.gates.map((entry) =>
+          entry.evidence?.some((item) => item.file?.startsWith('scripts/')) ? { gate: entry.gate, open: 'Nothing.' } : entry,
+        )
         inputs.allowMissing = allowMissing
       })
     expect(without([])).toEqual(['verify: expected and not found: test-results/vitest.json', 'the repository guards: no results from its suite'])
@@ -260,7 +272,9 @@ describe('the browser gate', () => {
   // A gate that stopped part way made only the checks before it stopped:
   // the rest were skipped, and skipped is not passed.
   test('fails the run when it ended in an error, or made fewer passes than it planned', () => {
-    expect(withDefect((inputs) => (gate(inputs).error = 'vite build wrote no apps/demo/dist/index.html'))).toEqual(['the browser gate of apps/demo in Chromium ended with an error: vite build wrote no apps/demo/dist/index.html'])
+    expect(withDefect((inputs) => (gate(inputs).error = 'vite build wrote no apps/demo/dist/index.html'))).toEqual([
+      'the browser gate of apps/demo in Chromium ended with an error: vite build wrote no apps/demo/dist/index.html',
+    ])
     expect(
       withDefect(
         everyGate((each) => {
@@ -277,7 +291,9 @@ describe('the browser gate', () => {
   // made before the first pass -- is a width measured by nobody, though
   // the gate made checks and every pass it planned.
   test('fails the run when a pass it made has no check in it', () => {
-    expect(withDefect(everyGate((each) => (each.made[1].checks = [])))).toEqual(NAMES.map((name) => `the browser gate of apps/demo in ${name} made no check in the pass "phone, 360, fr"`))
+    expect(withDefect(everyGate((each) => (each.made[1].checks = [])))).toEqual(
+      NAMES.map((name) => `the browser gate of apps/demo in ${name} made no check in the pass "phone, 360, fr"`),
+    )
     expect(
       withDefect(
         everyGate((each) => {
@@ -302,13 +318,20 @@ describe('the browser gate', () => {
   // file there but from before --since is refused, allowed or not: it is
   // another run's.
   test('fails the run when it left no results in a browser the gates run in, unless browser is allowed missing', () => {
-    const notRun = (inputs) => Object.assign(job(inputs, 'browser-chromium'), { browserGates: [], absent: [{ reader: 'browser', file: 'apps/demo/test-results/browser-chromium.json' }] })
+    const notRun = (inputs) =>
+      Object.assign(job(inputs, 'browser-chromium'), {
+        browserGates: [],
+        absent: [{ reader: 'browser', file: 'apps/demo/test-results/browser-chromium.json' }],
+      })
     const none = (allowMissing) =>
       withDefect((inputs) => {
         notRun(inputs)
         inputs.allowMissing = allowMissing
       })
-    expect(none([])).toEqual(['browser-chromium: expected and not found: apps/demo/test-results/browser-chromium.json', 'the browser gate of apps/demo left no results in Chromium'])
+    expect(none([])).toEqual([
+      'browser-chromium: expected and not found: apps/demo/test-results/browser-chromium.json',
+      'the browser gate of apps/demo left no results in Chromium',
+    ])
     expect(none(['browser'])).toEqual([])
     const stale = 'stale: apps/demo/test-results/browser-chromium.json started 2026-10-16T10:00:00.000Z, before --since'
     expect(
@@ -323,8 +346,12 @@ describe('the browser gate', () => {
   // What the page was measured in is the browser Playwright pins; another
   // version, or another Playwright, is a browser the report does not name.
   test('fails the run when it launched another browser than Playwright pins, or ran another Playwright', () => {
-    expect(withDefect((inputs) => (gate(inputs).browser.version = '155.0.7999.2'))).toEqual(['the browser gate of apps/demo in Chromium launched chromium 155.0.7999.2, not the chromium-headless-shell 156.0.8078.4 Playwright 1.64.1 pins'])
-    expect(withDefect((inputs) => (gate(inputs).playwright = '1.63.0'))).toEqual(['the browser gate of apps/demo in Chromium ran Playwright 1.63.0, where the checkout installs 1.64.1'])
+    expect(withDefect((inputs) => (gate(inputs).browser.version = '155.0.7999.2'))).toEqual([
+      'the browser gate of apps/demo in Chromium launched chromium 155.0.7999.2, not the chromium-headless-shell 156.0.8078.4 Playwright 1.64.1 pins',
+    ])
+    expect(withDefect((inputs) => (gate(inputs).playwright = '1.63.0'))).toEqual([
+      'the browser gate of apps/demo in Chromium ran Playwright 1.63.0, where the checkout installs 1.64.1',
+    ])
     expect(withDefect((inputs) => (gate(inputs).browser = null))).toEqual(['the browser gate of apps/demo in Chromium says no browser was launched'])
   })
 
@@ -382,9 +409,15 @@ describe('the browser gate', () => {
     const [name] = FACTS.refusesItsOwnSelectStyle.heldBy.checks
     expect(
       withDefect((inputs) => {
-        for (const leg of ['browser-chromium', 'browser-firefox', 'browser-webkit']) for (const entry of job(inputs, leg).browserGates[0].made) entry.checks = entry.checks.filter((check) => check !== name)
+        for (const leg of ['browser-chromium', 'browser-firefox', 'browser-webkit'])
+          for (const entry of job(inputs, leg).browserGates[0].made) entry.checks = entry.checks.filter((check) => check !== name)
       }),
-    ).toEqual(['Chromium', 'Firefox', 'WebKit'].map((browser) => `the browser gate of apps/demo in ${browser} never made "${name}", which holds 0014’s refusesItsOwnSelectStyle: a row no check holds is a sentence nobody measured`))
+    ).toEqual(
+      ['Chromium', 'Firefox', 'WebKit'].map(
+        (browser) =>
+          `the browser gate of apps/demo in ${browser} never made "${name}", which holds 0014’s refusesItsOwnSelectStyle: a row no check holds is a sentence nobody measured`,
+      ),
+    )
   })
 
   // The browser gates' files are read from the job that leaves them: one
@@ -396,7 +429,10 @@ describe('the browser gate', () => {
         ciJob(inputs, 'verify').browserGates = ciJob(inputs, 'browser-chromium').browserGates
         ciJob(inputs, 'browser-chromium').browserGates = []
       }),
-    ).toEqual(['verify: its results hold a browser gate’s results, which only the browser job leaves', 'the browser gate of apps/demo left no results in Chromium'])
+    ).toEqual([
+      'verify: its results hold a browser gate’s results, which only the browser job leaves',
+      'the browser gate of apps/demo left no results in Chromium',
+    ])
   })
 })
 
@@ -413,7 +449,10 @@ describe('the README pictures’ check', () => {
         Object.assign(job(inputs, 'browser-chromium'), { pictures: [], absent: [{ reader: 'browser', file: 'apps/demo/test-results/pictures.json' }] })
         inputs.allowMissing = allowMissing
       })
-    expect(none([])).toEqual(['browser-chromium: expected and not found: apps/demo/test-results/pictures.json', 'the pictures’ check of apps/demo left no results'])
+    expect(none([])).toEqual([
+      'browser-chromium: expected and not found: apps/demo/test-results/pictures.json',
+      'the pictures’ check of apps/demo left no results',
+    ])
     expect(none(['browser'])).toEqual([])
   })
 
@@ -422,7 +461,9 @@ describe('the README pictures’ check', () => {
   // caption nothing held in this run. Watched failing with the scene
   // dropped from the walk and problems.mjs reading the check's own list.
   test('fails the run when it did not walk a scene scenes.json gives its app', () => {
-    expect(withDefect((inputs) => check(inputs).walked.pop())).toEqual(['the pictures’ check of apps/demo did not walk demo-refused, which scripts/pictures/scenes.json pictures, so nothing held that picture'])
+    expect(withDefect((inputs) => check(inputs).walked.pop())).toEqual([
+      'the pictures’ check of apps/demo did not walk demo-refused, which scripts/pictures/scenes.json pictures, so nothing held that picture',
+    ])
     // One that stopped says why, rather than every scene after the one it stopped at.
     expect(
       withDefect((inputs) => {
@@ -439,15 +480,22 @@ describe('the README pictures’ check', () => {
   // pictures where one went stale.
   test('fails the run when it found a picture no longer showing the page, counting problems and not pictures', () => {
     const found = 'demo-refused, part Response: the page now says something else than its picture'
-    expect(withDefect((inputs) => (check(inputs).problems = [found]))).toEqual([`the pictures’ check of apps/demo found 1 problem(s) with the README’s pictures: ${found}`])
-    const misquote = 'demo-refused: “Not made” is not inside one name or value of what the part Document says, so the caption quotes what its picture does not show'
-    expect(withDefect((inputs) => (check(inputs).problems = [found, misquote]))).toEqual([`the pictures’ check of apps/demo found 2 problem(s) with the README’s pictures: ${found}; ${misquote}`])
+    expect(withDefect((inputs) => (check(inputs).problems = [found]))).toEqual([
+      `the pictures’ check of apps/demo found 1 problem(s) with the README’s pictures: ${found}`,
+    ])
+    const misquote =
+      'demo-refused: “Not made” is not inside one name or value of what the part Document says, so the caption quotes what its picture does not show'
+    expect(withDefect((inputs) => (check(inputs).problems = [found, misquote]))).toEqual([
+      `the pictures’ check of apps/demo found 2 problem(s) with the README’s pictures: ${found}; ${misquote}`,
+    ])
   })
 
   // A walk of scenes this scenes.json does not have is another checkout's
   // pictures; an app given no scene has a check that holds nothing.
   test('fails the run when it walked a scene scenes.json does not give its app, or the app has none', () => {
-    expect(withDefect((inputs) => check(inputs).walked.push('demo-gone'))).toEqual(['the pictures’ check of apps/demo walked demo-gone, which scripts/pictures/scenes.json does not give apps/demo: it walked another checkout’s scenes'])
+    expect(withDefect((inputs) => check(inputs).walked.push('demo-gone'))).toEqual([
+      'the pictures’ check of apps/demo walked demo-gone, which scripts/pictures/scenes.json does not give apps/demo: it walked another checkout’s scenes',
+    ])
     expect(
       withDefect((inputs) => {
         inputs.scenes = { 'apps/demo': [] }
@@ -460,8 +508,12 @@ describe('the README pictures’ check', () => {
   // Playwright pins for it: another browser, though pinned too, walked a
   // page in a browser no picture was taken in.
   test('fails the run when it launched another browser than the pictures are taken in, or another build than Playwright pins', () => {
-    expect(withDefect((inputs) => (check(inputs).browser.version = '155.0.7999.2'))).toEqual(['the pictures’ check of apps/demo launched chromium 155.0.7999.2, not the chromium-headless-shell 156.0.8078.4 Playwright 1.64.1 pins'])
-    expect(withDefect((inputs) => (check(inputs).browser = { name: 'firefox', version: '157.0', headless: true }))).toEqual(['the pictures’ check of apps/demo launched firefox, where the README’s pictures are taken in chromium alone (scripts/browsers.mjs)'])
+    expect(withDefect((inputs) => (check(inputs).browser.version = '155.0.7999.2'))).toEqual([
+      'the pictures’ check of apps/demo launched chromium 155.0.7999.2, not the chromium-headless-shell 156.0.8078.4 Playwright 1.64.1 pins',
+    ])
+    expect(withDefect((inputs) => (check(inputs).browser = { name: 'firefox', version: '157.0', headless: true }))).toEqual([
+      'the pictures’ check of apps/demo launched firefox, where the README’s pictures are taken in chromium alone (scripts/browsers.mjs)',
+    ])
   })
 
   // What the report holds the check to is read from this checkout, by the
@@ -505,11 +557,12 @@ describe('the install gate', () => {
   // The install gate is the only gate that runs the packed packages; a run
   // without its record has not shown that anything published works.
   test('fails the run when it left no results, or did not pass', () => {
-    expect(withDefect((inputs) => Object.assign(job(inputs, 'install'), { install: null, absent: [{ reader: 'install', file: 'test-results/install.json' }] }))).toEqual([
-      'install: expected and not found: test-results/install.json',
-      'the install gate left no results',
+    expect(
+      withDefect((inputs) => Object.assign(job(inputs, 'install'), { install: null, absent: [{ reader: 'install', file: 'test-results/install.json' }] })),
+    ).toEqual(['install: expected and not found: test-results/install.json', 'the install gate left no results'])
+    expect(withDefect((inputs) => Object.assign(job(inputs, 'install').install, { passed: false, error: 'tsc --noEmit -p tsconfig.json failed' }))).toEqual([
+      'the install gate did not pass: tsc --noEmit -p tsconfig.json failed',
     ])
-    expect(withDefect((inputs) => Object.assign(job(inputs, 'install').install, { passed: false, error: 'tsc --noEmit -p tsconfig.json failed' }))).toEqual(['the install gate did not pass: tsc --noEmit -p tsconfig.json failed'])
   })
 
   // A local report may say it did not run the install gate; it says so in
@@ -547,13 +600,19 @@ describe('the install gate', () => {
   // defect below stays true.
   test('fails the run when a project the plan names has no record, or one it does not name has', () => {
     const consumers = (inputs) => job(inputs, 'install').install.consumers
-    expect(withDefect((inputs) => consumers(inputs).pop())).toEqual(['the install gate has no record of its guide project, which scripts/install-hosts.mjs plans'])
+    expect(withDefect((inputs) => consumers(inputs).pop())).toEqual([
+      'the install gate has no record of its guide project, which scripts/install-hosts.mjs plans',
+    ])
     expect(withDefect((inputs) => (job(inputs, 'install').install.consumers = []))).toEqual([
       'the install gate has no record of its node project, which scripts/install-hosts.mjs plans',
       'the install gate has no record of its guide project, which scripts/install-hosts.mjs plans',
     ])
-    expect(withDefect((inputs) => consumers(inputs).push({ ...structuredClone(consumers(inputs)[0]), project: 'browser' }))).toEqual(['the install gate recorded a browser project, which scripts/install-hosts.mjs does not plan'])
-    expect(withDefect((inputs) => consumers(inputs).push(structuredClone(consumers(inputs)[0])))).toEqual(['the install gate recorded its node project 2 times, where it runs each once'])
+    expect(withDefect((inputs) => consumers(inputs).push({ ...structuredClone(consumers(inputs)[0]), project: 'browser' }))).toEqual([
+      'the install gate recorded a browser project, which scripts/install-hosts.mjs does not plan',
+    ])
+    expect(withDefect((inputs) => consumers(inputs).push(structuredClone(consumers(inputs)[0])))).toEqual([
+      'the install gate recorded its node project 2 times, where it runs each once',
+    ])
   })
 
   // A project that stopped before npm finished, or before a step, ran
@@ -563,7 +622,9 @@ describe('the install gate', () => {
     const guide = (inputs) => job(inputs, 'install').install.consumers[1]
     expect(withDefect((inputs) => (guide(inputs).npmInstalled = false))).toEqual(['the install gate’s guide project did not finish: npm install'])
     expect(withDefect((inputs) => (guide(inputs).steps[1].done = false))).toEqual(['the install gate’s guide project did not finish: guide: run'])
-    expect(withDefect((inputs) => (guide(inputs).steps = []))).toEqual(['the install gate’s guide project ran no step, where scripts/install-hosts.mjs plans type-check, guide: run'])
+    expect(withDefect((inputs) => (guide(inputs).steps = []))).toEqual([
+      'the install gate’s guide project ran no step, where scripts/install-hosts.mjs plans type-check, guide: run',
+    ])
   })
 
   // The guide is built by the project the plan gives it, and by no other: a
@@ -571,8 +632,12 @@ describe('the install gate', () => {
   // consumer handed the guide resolves what its section 1 installs.
   test('fails the run when the guide’s blocks are not where the plan puts them', () => {
     const consumers = (inputs) => job(inputs, 'install').install.consumers
-    expect(withDefect((inputs) => (consumers(inputs)[1].guide = null))).toEqual(['the install gate gave its guide project none of docs/getting-started.md’s node blocks, which scripts/install-hosts.mjs plans it to build'])
-    expect(withDefect((inputs) => (consumers(inputs)[1].guide.blocks = []))).toEqual(['the install gate gave its guide project none of docs/getting-started.md’s node blocks, which scripts/install-hosts.mjs plans it to build'])
+    expect(withDefect((inputs) => (consumers(inputs)[1].guide = null))).toEqual([
+      'the install gate gave its guide project none of docs/getting-started.md’s node blocks, which scripts/install-hosts.mjs plans it to build',
+    ])
+    expect(withDefect((inputs) => (consumers(inputs)[1].guide.blocks = []))).toEqual([
+      'the install gate gave its guide project none of docs/getting-started.md’s node blocks, which scripts/install-hosts.mjs plans it to build',
+    ])
     expect(withDefect((inputs) => (consumers(inputs)[0].guide = structuredClone(consumers(inputs)[1].guide)))).toEqual([
       'the install gate gave its node project docs/getting-started.md’s node blocks, which scripts/install-hosts.mjs plans no project but the guide’s to build',
     ])
@@ -592,7 +657,11 @@ describe('the validator gate', () => {
   // The gate is the only proof of conformance (0005); a run without its
   // file judged nothing the packages write.
   test('fails the run when it left no results', () => {
-    expect(withDefect((inputs) => Object.assign(job(inputs, 'validator'), { validator: null, absent: [{ reader: 'validator', file: 'test-results/validator.json' }] }))).toEqual([
+    expect(
+      withDefect((inputs) =>
+        Object.assign(job(inputs, 'validator'), { validator: null, absent: [{ reader: 'validator', file: 'test-results/validator.json' }] }),
+      ),
+    ).toEqual([
       'validator: expected and not found: test-results/validator.json',
       `the repository guards: 1 test(s) did not run (skipped), no run of the validator job passed them, and a suite that can be skipped is a suite that is skipped: ${registers} › ${VALIDATOR_ONLY}`,
       'the validator gate left no results',
@@ -603,10 +672,14 @@ describe('the validator gate', () => {
   // A gate that failed says why in its own problems, and stopped where it
   // stopped: what it then did not do is not said again.
   test('fails the run with its own problems when it did not pass', () => {
-    expect(withDefect((inputs) => Object.assign(gate(inputs), { passed: false, resources: [], problems: ['questionnaire-intake.json is refused: error sdc-2 at Questionnaire'] }))).toEqual([
-      'the validator gate did not pass: questionnaire-intake.json is refused: error sdc-2 at Questionnaire',
+    expect(
+      withDefect((inputs) =>
+        Object.assign(gate(inputs), { passed: false, resources: [], problems: ['questionnaire-intake.json is refused: error sdc-2 at Questionnaire'] }),
+      ),
+    ).toEqual(['the validator gate did not pass: questionnaire-intake.json is refused: error sdc-2 at Questionnaire'])
+    expect(withDefect((inputs) => Object.assign(gate(inputs), { passed: false, problems: [] }))).toEqual([
+      'the validator gate did not pass: no problem was recorded',
     ])
-    expect(withDefect((inputs) => Object.assign(gate(inputs), { passed: false, problems: [] }))).toEqual(['the validator gate did not pass: no problem was recorded'])
   })
 
   // Its `passed` is one flag its writer sets; the verdict is read again
@@ -648,8 +721,12 @@ describe('the validator gate', () => {
   // record of them: a verdict of another validator, another JAR, another
   // register or another load is a verdict about something else.
   test('fails the run when it ran another validator, JAR or register than the checkout pins, or loaded otherwise', () => {
-    expect(withDefect((inputs) => (gate(inputs).validator.reported = '7.0.1'))).toEqual(['the validator gate ran validator 7.0.1, where docs/release/validator.json pins 7.0.2'])
-    expect(withDefect((inputs) => (gate(inputs).validator.sha256 = 'f'.repeat(64)))).toEqual([`the validator gate ran a JAR it records as ${'f'.repeat(64)}, not the ${'e3'.repeat(32)} docs/release/validator.json registers`])
+    expect(withDefect((inputs) => (gate(inputs).validator.reported = '7.0.1'))).toEqual([
+      'the validator gate ran validator 7.0.1, where docs/release/validator.json pins 7.0.2',
+    ])
+    expect(withDefect((inputs) => (gate(inputs).validator.sha256 = 'f'.repeat(64)))).toEqual([
+      `the validator gate ran a JAR it records as ${'f'.repeat(64)}, not the ${'e3'.repeat(32)} docs/release/validator.json registers`,
+    ])
     expect(withDefect((inputs) => inputs.registered.push('ch.fhir.ig.ch-orf#3.0.2'))).toEqual([
       'the validator gate ran against a register of hl7.fhir.r4.core#4.0.1, hl7.fhir.uv.sdc#4.0.0, where docs/release/ig-packages.json registers ch.fhir.ig.ch-orf#3.0.2, hl7.fhir.r4.core#4.0.1, hl7.fhir.uv.sdc#4.0.0',
       'the validator loaded hl7.fhir.r4.core#4.0.1, hl7.fhir.uv.sdc#4.0.0, where docs/release/ig-packages.json registers ch.fhir.ig.ch-orf#3.0.2, hl7.fhir.r4.core#4.0.1, hl7.fhir.uv.sdc#4.0.0',
@@ -657,7 +734,9 @@ describe('the validator gate', () => {
     expect(withDefect((inputs) => gate(inputs).packages.loaded.push('hl7.terminology.r4#7.1.0'))).toEqual([
       'the validator loaded hl7.fhir.r4.core#4.0.1, hl7.fhir.uv.sdc#4.0.0, hl7.terminology.r4#7.1.0, where docs/release/ig-packages.json registers hl7.fhir.r4.core#4.0.1, hl7.fhir.uv.sdc#4.0.0',
     ])
-    expect(withDefect((inputs) => (gate(inputs).packages.loaded = null))).toEqual(['the validator gate recorded nothing the validator loaded, so whether it loaded the register cannot be told'])
+    expect(withDefect((inputs) => (gate(inputs).packages.loaded = null))).toEqual([
+      'the validator gate recorded nothing the validator loaded, so whether it loaded the register cannot be told',
+    ])
   })
 
   // A verdict reached online depends on what a registry and a terminology
@@ -666,7 +745,9 @@ describe('the validator gate', () => {
   // (validator.mjs's offlineOf), so a command line that lost
   // `-no-http-access` records HTTP access, and this fails.
   test('fails the run when it records no offline run', () => {
-    expect(withDefect((inputs) => (gate(inputs).offline.httpAccess = true))).toEqual(['the validator gate records no run without a terminology server and HTTP access: {"tx":"n/a","txCache":"n/a","httpAccess":true,"consoleRefusals":0}'])
+    expect(withDefect((inputs) => (gate(inputs).offline.httpAccess = true))).toEqual([
+      'the validator gate records no run without a terminology server and HTTP access: {"tx":"n/a","txCache":"n/a","httpAccess":true,"consoleRefusals":0}',
+    ])
   })
 
   // The registers' run is a suite like any other: a failure there is a
@@ -678,7 +759,11 @@ describe('the validator gate', () => {
         testOf(suite, registers, 'the validator pin › holds').status = 'failed'
         suite.files[0].status = 'failed'
       }),
-    ).toEqual([`the validator job’s run of the registers’ test: 1 test(s) failed: ${registers} › the validator pin › holds`, `the validator job’s run of the registers’ test: ${registers} failed`, `gate G2: its evidence did not pass in this run: ${registers} did not pass`])
+    ).toEqual([
+      `the validator job’s run of the registers’ test: 1 test(s) failed: ${registers} › the validator pin › holds`,
+      `the validator job’s run of the registers’ test: ${registers} failed`,
+      `gate G2: its evidence did not pass in this run: ${registers} did not pass`,
+    ])
   })
 })
 
@@ -772,7 +857,9 @@ describe('a local report', () => {
     expect(withDefect((inputs) => (job(inputs, 'install').run.id = null))).toEqual([
       'the results are of 2 runs, where a report is of one: run 42 (verify, test-health-core, test-health-questionnaire, test-health-document, test-health-corpus, browser-chromium, browser-firefox, browser-webkit, validator); a machine (install)',
     ])
-    expect(withDefect((inputs) => inputs.results.push(structuredClone(job(inputs, 'verify'))))).toEqual(['the results hold verify 2 times, where a run leaves each key once'])
+    expect(withDefect((inputs) => inputs.results.push(structuredClone(job(inputs, 'verify'))))).toEqual([
+      'the results hold verify 2 times, where a run leaves each key once',
+    ])
   })
 })
 
@@ -789,7 +876,18 @@ describe('a green CI run', () => {
     const report = buildReport(greenCiRun())
     expect(report.problems).toEqual([])
     expect(report.subject).toMatchObject({ version: '0.1.0', release: null, commit: 'c0ffee', run: { id: '42' } })
-    expect(report.subject.jobs.map((entry) => entry.key)).toEqual(['verify', 'test-health-core', 'test-health-questionnaire', 'test-health-document', 'test-health-corpus', 'browser-chromium', 'browser-firefox', 'browser-webkit', 'install', 'validator'])
+    expect(report.subject.jobs.map((entry) => entry.key)).toEqual([
+      'verify',
+      'test-health-core',
+      'test-health-questionnaire',
+      'test-health-document',
+      'test-health-corpus',
+      'browser-chromium',
+      'browser-firefox',
+      'browser-webkit',
+      'install',
+      'validator',
+    ])
   })
 })
 
@@ -829,13 +927,17 @@ describe('the run', () => {
   // An artefact uploaded twice under one name -- a job re-run that kept both
   // -- would be two answers for one job, one of them read.
   test('fails an artefact that appears twice', () => {
-    expect(ciDefect((inputs) => inputs.artefacts.push(structuredClone(inputs.artefacts.find((entry) => entry.name === 'release-results-verify'))))).toEqual(['release-results-verify appears 2 times, where one job leaves it once'])
+    expect(ciDefect((inputs) => inputs.artefacts.push(structuredClone(inputs.artefacts.find((entry) => entry.name === 'release-results-verify'))))).toEqual([
+      'release-results-verify appears 2 times, where one job leaves it once',
+    ])
   })
 
   // A name the workflow does not give is results the report would read as
   // nobody's, and the job it should have been is then missing.
   test('fails an artefact no job leaves, and names the job whose artefact is then missing', () => {
-    expect(ciDefect((inputs) => (inputs.artefacts.find((entry) => entry.name === 'release-results-test-health-corpus').name = 'release-results-test-health-corpse'))).toEqual([
+    expect(
+      ciDefect((inputs) => (inputs.artefacts.find((entry) => entry.name === 'release-results-test-health-corpus').name = 'release-results-test-health-corpse')),
+    ).toEqual([
       'test-health-corpus: its job left no artefact release-results-test-health-corpus',
       'release-results-test-health-corpse is no artefact a job of .github/workflows/gates.yml leaves',
     ])
@@ -852,8 +954,12 @@ describe('the run', () => {
   // Results from another run -- a re-run's leftovers, or another commit's --
   // describe a run that is not this one.
   test('fails results from another run or another commit', () => {
-    expect(ciDefect((inputs) => (ciJob(inputs, 'test-health-core').run.id = '41'))).toEqual(["release-results-test-health-core is from run 41, not this run's 42"])
-    expect(ciDefect((inputs) => (ciJob(inputs, 'validator').commit = 'decaf'))).toEqual(["release-results-validator is from commit decaf, not this run's c0ffee"])
+    expect(ciDefect((inputs) => (ciJob(inputs, 'test-health-core').run.id = '41'))).toEqual([
+      "release-results-test-health-core is from run 41, not this run's 42",
+    ])
+    expect(ciDefect((inputs) => (ciJob(inputs, 'validator').commit = 'decaf'))).toEqual([
+      "release-results-validator is from commit decaf, not this run's c0ffee",
+    ])
   })
 })
 
@@ -865,12 +971,18 @@ describe('the release gates', () => {
         const suite = ciJob(inputs, 'test-health-core').suites[0]
         suite.files = suite.files.filter((entry) => !entry.file.endsWith('exactness.test.ts'))
       }),
-    ).toEqual(['@formancy/health-core: 1 test file(s) the checkout holds did not run in its suite: packages/health-core/src/exactness.test.ts', 'gate G3: its evidence did not pass in this run: packages/health-core/src/exactness.test.ts did not run'])
+    ).toEqual([
+      '@formancy/health-core: 1 test file(s) the checkout holds did not run in its suite: packages/health-core/src/exactness.test.ts',
+      'gate G3: its evidence did not pass in this run: packages/health-core/src/exactness.test.ts did not run',
+    ])
   })
 
   // G2 rests on the validator job as well; a red job is a gate not passed.
   test('fail the run when a gate’s job did not succeed', () => {
-    expect(ciDefect((inputs) => (inputs.needs.validator.result = 'failure'))).toEqual(['the validator job ended failure', 'gate G2: its evidence did not pass in this run: the validator job ended failure'])
+    expect(ciDefect((inputs) => (inputs.needs.validator.result = 'failure'))).toEqual([
+      'the validator job ended failure',
+      'gate G2: its evidence did not pass in this run: the validator job ended failure',
+    ])
   })
 
   // Locally there is no `needs`, so a job's evidence did not run: a local

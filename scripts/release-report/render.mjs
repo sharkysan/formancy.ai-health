@@ -10,8 +10,12 @@ import { BROWSERS, browserName, FACTS, prose } from '../browsers.mjs'
 import { unwalked } from './results.mjs'
 
 const code = (text) => `\`${text}\``
-const cell = (text) => String(text ?? '').replaceAll('|', '\\|').replaceAll('\n', ' ')
-const table = (head, rows) => [`| ${head.join(' | ')} |`, `| ${head.map(() => '---').join(' | ')} |`, ...rows.map((row) => `| ${row.map(cell).join(' | ')} |`)].join('\n')
+const cell = (text) =>
+  String(text ?? '')
+    .replaceAll('|', '\\|')
+    .replaceAll('\n', ' ')
+const table = (head, rows) =>
+  [`| ${head.join(' | ')} |`, `| ${head.map(() => '---').join(' | ')} |`, ...rows.map((row) => `| ${row.map(cell).join(' | ')} |`)].join('\n')
 const seconds = (ms) => (ms === null || ms === undefined || Number.isNaN(ms) ? '' : `${(ms / 1000).toFixed(1)} s`)
 const distinct = (values) => [...new Set(values)]
 
@@ -23,13 +27,22 @@ export function derivedLimitations(report) {
   const { testedOn, results } = report
   const sentences = []
 
-  const declared = testedOn.node.declared.length === 0 ? 'no published package declares the Node versions it supports' : prose(testedOn.node.declared.map((entry) => `${code(entry.package)} declares Node ${code(entry.node)}`))
-  sentences.push(`The suites ran on Node ${prose(testedOn.node.ran) || 'that no job recorded'}${testedOn.node.install === null ? '' : `; the install gate ran on ${testedOn.node.install}`}; ${declared}.`)
+  const declared =
+    testedOn.node.declared.length === 0
+      ? 'no published package declares the Node versions it supports'
+      : prose(testedOn.node.declared.map((entry) => `${code(entry.package)} declares Node ${code(entry.node)}`))
+  sentences.push(
+    `The suites ran on Node ${prose(testedOn.node.ran) || 'that no job recorded'}${testedOn.node.install === null ? '' : `; the install gate ran on ${testedOn.node.install}`}; ${declared}.`,
+  )
 
   const ranged = testedOn.runtime.filter((entry) => !/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/.test(String(entry.range)))
-  if (testedOn.runtime.length === 0) sentences.push('No published package depends at run time on anything but its siblings and upstream `@formancy/*` packages, each at an exact version.')
+  if (testedOn.runtime.length === 0)
+    sentences.push('No published package depends at run time on anything but its siblings and upstream `@formancy/*` packages, each at an exact version.')
   else if (ranged.length === 0) sentences.push('Every runtime dependency is published at an exact version, the one the suites ran.')
-  else sentences.push(`${prose(ranged.map((entry) => code(entry.name)))} ${ranged.length === 1 ? 'is' : 'are'} published as a range; the suites ran the version${ranged.length === 1 ? '' : 's'} *Tested on* names, and an install may resolve another.`)
+  else
+    sentences.push(
+      `${prose(ranged.map((entry) => code(entry.name)))} ${ranged.length === 1 ? 'is' : 'are'} published as a range; the suites ran the version${ranged.length === 1 ? '' : 's'} *Tested on* names, and an install may resolve another.`,
+    )
   // Every version a clean install resolved that the suites did not load: a
   // consumer's, then the guide's project's, said as the guide's. The
   // suites may load one package at two versions -- the packages'
@@ -53,7 +66,10 @@ export function derivedLimitations(report) {
         .map((version) => `${code(name)} ${version}${where} (the suites ran ${prose(versions)})`),
     )
   }
-  const moved = [...past([...testedOn.runtime, ...testedOn.upstream], (entry) => entry.fresh, ''), ...past(testedOn.upstream, (entry) => entry.guide, ' in the guide’s project')]
+  const moved = [
+    ...past([...testedOn.runtime, ...testedOn.upstream], (entry) => entry.fresh, ''),
+    ...past(testedOn.upstream, (entry) => entry.guide, ' in the guide’s project'),
+  ]
   if (moved.length > 0) sentences.push(`A clean npm install on ${String(testedOn.installedAt).slice(0, 10)} resolved ${prose(moved)}, which no suite ran.`)
 
   // Where the packed packages ran: Node alone. The demo's browser gate ran
@@ -62,8 +78,13 @@ export function derivedLimitations(report) {
   // browser, from what the gate recorded, and without it, that none did.
   // The gates' launches alone: the README pictures' check walks the page
   // too, and is no gate that ran the packages (0016).
-  const launched = distinct(results.browserGates.filter((gate) => gate.browser !== null).map((gate) => `${browserName(gate.browser.name)} ${gate.browser.version}`))
-  const demo = launched.length === 0 ? 'no browser gate ran the demo, which bundles the packages as the workspace builds them' : `the browser gate ran the demo, which bundles the packages as the workspace builds them, in ${prose(launched)} alone`
+  const launched = distinct(
+    results.browserGates.filter((gate) => gate.browser !== null).map((gate) => `${browserName(gate.browser.name)} ${gate.browser.version}`),
+  )
+  const demo =
+    launched.length === 0
+      ? 'no browser gate ran the demo, which bundles the packages as the workspace builds them'
+      : `the browser gate ran the demo, which bundles the packages as the workspace builds them, in ${prose(launched)} alone`
   sentences.push(
     results.install === null
       ? `No install gate ran the packed packages in this run; ${demo}; no gate ran the packed packages in a browser.`
@@ -85,15 +106,23 @@ export function derivedLimitations(report) {
     // Only the jobs that built every published package are named: a test
     // job builds what its package depends on, not the rest, and the table
     // says which built what.
-    const everywhere = identity.map((entry) => new Set(entry.builds.map((build) => build.job))).reduce((all, jobs) => new Set([...all].filter((job) => jobs.has(job))))
+    const everywhere = identity
+      .map((entry) => new Set(entry.builds.map((build) => build.job)))
+      .reduce((all, jobs) => new Set([...all].filter((job) => jobs.has(job))))
     const named = [...everywhere].sort()
     sentences.push(
       `Each package's own suites ran its source; the published dist/ was run by the install gate, and each package's is byte-identical to ${named.length === 0 ? 'the dist/ every job that built it built' : `its dist/ built in ${prose(named)}, and in every other job that built it`} (*Build identity* names them).`,
     )
-  } else sentences.push("Each package's own suites ran its source; the published dist/ was run by the install gate, and is not shown byte-identical to every job's build (see *Build identity*).")
+  } else
+    sentences.push(
+      "Each package's own suites ran its source; the published dist/ was run by the install gate, and is not shown byte-identical to every job's build (see *Build identity*).",
+    )
 
   for (const entry of report.gates ?? []) {
-    if (entry.state === 'open') sentences.push(`Release gate ${code(entry.gate)} is open: ${entry.open}${entry.evidence.some((item) => item.kind !== 'document') ? ' The evidence it has passed in this run.' : ''}`)
+    if (entry.state === 'open')
+      sentences.push(
+        `Release gate ${code(entry.gate)} is open: ${entry.open}${entry.evidence.some((item) => item.kind !== 'document') ? ' The evidence it has passed in this run.' : ''}`,
+      )
     if (entry.state === 'stated') sentences.push(`Release gate ${code(entry.gate)} is ${prose(entry.evidence.map(stated))}; not exercised by this run.`)
   }
   return sentences
@@ -114,7 +143,12 @@ function evidenceCell(item) {
   return `${what}: ${item.outcome === 'absent' ? 'did not run' : item.kind === 'job' && item.outcome === 'failed' ? `ended ${String(item.result)}` : item.outcome}`
 }
 
-const GATE_STATE = { passed: 'evidence passed in this run', failed: 'evidence did not pass in this run', stated: 'stated, not exercised by this run', open: 'open' }
+const GATE_STATE = {
+  passed: 'evidence passed in this run',
+  failed: 'evidence did not pass in this run',
+  stated: 'stated, not exercised by this run',
+  open: 'open',
+}
 
 /** Each release gate, as this run leaves it; never "met". */
 function gatesSection({ gates }) {
@@ -123,24 +157,45 @@ function gatesSection({ gates }) {
     '',
     'The delivery plan’s gates by id (`docs/release/gates.json`). A document is stated evidence, never passed in a run; a gate with a reason is open, whatever its evidence; and no gate is called met.',
     '',
-    table(['Gate', 'State', 'Evidence', 'Open because'], (gates ?? []).map((entry) => [entry.gate, GATE_STATE[entry.state], entry.evidence.map(evidenceCell).join('; ') || 'none', entry.open ?? ''])),
+    table(
+      ['Gate', 'State', 'Evidence', 'Open because'],
+      (gates ?? []).map((entry) => [entry.gate, GATE_STATE[entry.state], entry.evidence.map(evidenceCell).join('; ') || 'none', entry.open ?? '']),
+    ),
   ].join('\n')
 }
 
 /** Where each section comes from, one line each. */
 const METHOD = [
-  ['Subject', 'the GitHub run’s environment (`GITHUB_SHA`, `GITHUB_RUN_ID`), the report job’s `needs`, the root `package.json`’s version, and each job’s results file'],
+  [
+    'Subject',
+    'the GitHub run’s environment (`GITHUB_SHA`, `GITHUB_RUN_ID`), the report job’s `needs`, the root `package.json`’s version, and each job’s results file',
+  ],
   [
     'Tested on',
     '`scripts/release-report/tested-on.mjs` over the checkout -- the published manifests, what is installed, `pnpm-workspace.yaml`’s catalog, every workflow’s `setup-node`, playwright-core’s `browsers.json` for the build Playwright pins, and the tuple `scripts/compatibility.mjs` reads for the README -- the install gate’s `test-results/install.json` for what each project’s clean install resolved, a consumer’s apart from the guide’s, each browser gate’s own record of the browser it launched, and the validator gate’s `test-results/validator.json` for the validator and the Java it ran',
   ],
-  ['Results', 'each package’s `test-results/vitest.json` and `coverage/coverage-summary.json`, turbo’s run summary (`--summarize`), the repository guards’ `test-results/vitest.json`, and the install gate’s `test-results/install.json`, held to the projects `scripts/install-hosts.mjs` plans'],
-  ['Browser', 'each app’s `test-results/browser-<browser>.json`, which its browser gate writes however it ends, for every browser of `scripts/browsers.mjs`; and each app’s `test-results/pictures.json`, which its README pictures’ check writes however it ends, in the browser the pictures are taken in, held to the scenes `scripts/pictures/scenes.json` gives the app'],
-  ['Validator', 'the gate’s `test-results/validator.json`, which `scripts/validator.mjs` writes however it ends, held to `docs/release/validator.json` and `docs/release/ig-packages.json`; and the validator job’s `test-results/vitest.json` of the registers’ test, whose passes account for the cases `verify` skips'],
+  [
+    'Results',
+    'each package’s `test-results/vitest.json` and `coverage/coverage-summary.json`, turbo’s run summary (`--summarize`), the repository guards’ `test-results/vitest.json`, and the install gate’s `test-results/install.json`, held to the projects `scripts/install-hosts.mjs` plans',
+  ],
+  [
+    'Browser',
+    'each app’s `test-results/browser-<browser>.json`, which its browser gate writes however it ends, for every browser of `scripts/browsers.mjs`; and each app’s `test-results/pictures.json`, which its README pictures’ check writes however it ends, in the browser the pictures are taken in, held to the scenes `scripts/pictures/scenes.json` gives the app',
+  ],
+  [
+    'Validator',
+    'the gate’s `test-results/validator.json`, which `scripts/validator.mjs` writes however it ends, held to `docs/release/validator.json` and `docs/release/ig-packages.json`; and the validator job’s `test-results/vitest.json` of the registers’ test, whose passes account for the cases `verify` skips',
+  ],
   ['Build identity', '`scripts/release/dist-hash.mjs` over every published package’s `dist/` in every job, and over each tarball’s built files'],
   ['Release gates', '`docs/release/gates.json`, the report job’s `needs`, and `git log` for a document’s last change'],
-  ['Known limitations', 'the fixed sentences of `scripts/release-report/render.mjs` with this run’s facts, then `docs/release/limitations.json`, held to the decision records by hash'],
-  ['Problems', '`scripts/release-report/problems.mjs`, `artefacts.mjs`, `gates.mjs` and `limitations.mjs`, and the release body from `scripts/release-notes.mjs`'],
+  [
+    'Known limitations',
+    'the fixed sentences of `scripts/release-report/render.mjs` with this run’s facts, then `docs/release/limitations.json`, held to the decision records by hash',
+  ],
+  [
+    'Problems',
+    '`scripts/release-report/problems.mjs`, `artefacts.mjs`, `gates.mjs` and `limitations.mjs`, and the release body from `scripts/release-notes.mjs`',
+  ],
 ]
 
 /** What the run was tested on: dependencies, upstream, Node, pnpm, the tools and the tuple. */
@@ -152,7 +207,16 @@ function testedOnSection({ testedOn }) {
     '',
     testedOn.runtime.length === 0
       ? 'No published package has a runtime dependency of somebody else’s.'
-      : table(['Dependency', 'Declared by', 'Published as', 'Loaded by the suites', 'A consumer’s clean install'], testedOn.runtime.map((entry) => [code(entry.name), entry.package, entry.range, entry.loaded, entry.fresh.length === 0 ? 'not reported' : freshCell(entry.fresh)])),
+      : table(
+          ['Dependency', 'Declared by', 'Published as', 'Loaded by the suites', 'A consumer’s clean install'],
+          testedOn.runtime.map((entry) => [
+            code(entry.name),
+            entry.package,
+            entry.range,
+            entry.loaded,
+            entry.fresh.length === 0 ? 'not reported' : freshCell(entry.fresh),
+          ]),
+        ),
     '',
     table(
       ['Upstream', 'Declared as', 'Loaded', 'Shipped', 'A consumer’s clean install', 'The guide’s project'],
@@ -179,12 +243,16 @@ function testedOnSection({ testedOn }) {
 /** Which browser builds Playwright pins for the gates, and which this run launched, each held to its pin. */
 function browsersLine({ browser, browsers, axe }) {
   const pins = prose(browser.pins.map((pin) => `${pin.name} ${pin.browserVersion} (revision ${pin.revision}) for ${browserName(pin.browser)}`))
-  const launched = browsers.map((entry) => `${browserName(entry.name)} ${entry.version}${entry.headless === false ? ' headed' : ''}${entry.pin === null ? ' (which no gate here runs)' : entry.version === entry.pin ? '' : ` (not the ${entry.pin} it pins)`}`)
+  const launched = browsers.map(
+    (entry) =>
+      `${browserName(entry.name)} ${entry.version}${entry.headless === false ? ' headed' : ''}${entry.pin === null ? ' (which no gate here runs)' : entry.version === entry.pin ? '' : ` (not the ${entry.pin} it pins)`}`,
+  )
   return `Browsers: Playwright ${browser.playwright} pins ${pins}; this run launched ${prose(launched) || 'none'}${axe.length === 0 ? '' : `, with axe-core ${prose(axe)} in the page`}.`
 }
 
 /** A launched browser as a cell: its name, version and how it was launched. */
-const launchedCell = (launched) => (launched === null ? 'none' : `${launched.name} ${launched.version}${launched.headless === undefined ? '' : launched.headless ? ', headless' : ', headed'}`)
+const launchedCell = (launched) =>
+  launched === null ? 'none' : `${launched.name} ${launched.version}${launched.headless === undefined ? '' : launched.headless ? ', headless' : ', headed'}`
 
 /** What jsdom cannot see, measured in a browser: each browser gate in each browser, with its checks and the passes it planned and made, and each app's README pictures' check. */
 function browserSection({ results }) {
@@ -231,7 +299,15 @@ function picturesTable(pictures) {
       ? 'No pictures’ check left results in this run.'
       : table(
           ['Pictures’ check', 'Launched', 'Playwright', 'Scenes walked of scenes.json’s', 'Not walked', 'Problems found', 'Wall time'],
-          pictures.map((check) => [check.app, launchedCell(check.browser), check.playwright ?? 'not recorded', `${String(check.walked.length)} of ${String(check.planned.length)}`, unwalked(check).join(', ') || 'none', check.problems.length, seconds(check.wallMs)]),
+          pictures.map((check) => [
+            check.app,
+            launchedCell(check.browser),
+            check.playwright ?? 'not recorded',
+            `${String(check.walked.length)} of ${String(check.planned.length)}`,
+            unwalked(check).join(', ') || 'none',
+            check.problems.length,
+            seconds(check.wallMs),
+          ]),
         ),
   ].join('\n')
 }
@@ -247,18 +323,30 @@ function factsTable() {
     '',
     table(
       ['Row', 'Says', ...BROWSERS.map(browserName), 'Held by'],
-      Object.entries(FACTS).map(([id, fact]) => [id, fact.says, ...BROWSERS.map((browser) => String(fact.values[browser])), `${fact.heldBy.gate}: ${fact.heldBy.checks.map((check) => `“${check}”`).join('; ')}`]),
+      Object.entries(FACTS).map(([id, fact]) => [
+        id,
+        fact.says,
+        ...BROWSERS.map((browser) => String(fact.values[browser])),
+        `${fact.heldBy.gate}: ${fact.heldBy.checks.map((check) => `“${check}”`).join('; ')}`,
+      ]),
     ),
   ].join('\n')
 }
 
-const pct = (coverage) => (coverage === null ? '' : ['lines', 'branches', 'functions', 'statements'].map((metric) => (coverage[metric] === null ? '-' : String(coverage[metric]))).join(' / '))
+const pct = (coverage) =>
+  coverage === null
+    ? ''
+    : ['lines', 'branches', 'functions', 'statements'].map((metric) => (coverage[metric] === null ? '-' : String(coverage[metric]))).join(' / ')
 const yesNo = (value) => (value ? 'yes' : 'no')
 /** A row's skips, with those the validator job's run passed and those a machine allowed. */
-const skippedCell = (row) => `${String(row.skipped + row.todo)}${row.ranInValidator === 0 ? '' : ` (${String(row.ranInValidator)} passed by the validator job)`}${row.allowed === 0 ? '' : ` (${String(row.allowed)} allowed, the validator missing)`}`
+const skippedCell = (row) =>
+  `${String(row.skipped + row.todo)}${row.ranInValidator === 0 ? '' : ` (${String(row.ranInValidator)} passed by the validator job)`}${row.allowed === 0 ? '' : ` (${String(row.allowed)} allowed, the validator missing)`}`
 
 /** What a project of the install gate installed beside the tarballs. */
-const besideCell = (installed) => Object.entries(installed).map(([name, version]) => `${name} ${String(version)}`).join(', ') || 'the tarballs alone'
+const besideCell = (installed) =>
+  Object.entries(installed)
+    .map(([name, version]) => `${name} ${String(version)}`)
+    .join(', ') || 'the tarballs alone'
 
 /** The install gate, and each of its projects, as install.json recorded them. */
 function installLines(install) {
@@ -270,7 +358,13 @@ function installLines(install) {
     '',
     table(
       ['Project', 'Checks', 'Installed beside the tarballs', 'The guide’s blocks', 'Every step passed'],
-      projects.map((project) => [project.project, `${code(String(project.consumer))}: ${project.steps.join(', ')}`, besideCell(project.installed), project.guide === null ? 'none' : `${String(project.guide.kind)}, ${String(project.guide.blocks)} blocks`, yesNo(project.passed)]),
+      projects.map((project) => [
+        project.project,
+        `${code(String(project.consumer))}: ${project.steps.join(', ')}`,
+        besideCell(project.installed),
+        project.guide === null ? 'none' : `${String(project.guide.kind)}, ${String(project.guide.blocks)} blocks`,
+        yesNo(project.passed),
+      ]),
     ),
     ...said.flatMap((project) => ['', `The last step of the ${code(String(project.project))} project, which builds the guide, said: ${String(project.said)}`]),
   ]
@@ -280,14 +374,41 @@ function installLines(install) {
 function resultsSection({ results }) {
   const rows = results.packages.map((row) =>
     row.present
-      ? [row.package, yesNo(row.published), row.files, row.tests, row.passed, row.failed, skippedCell(row), row.failedFiles.length, seconds(row.wallMs) || 'not measured', seconds(row.spanMs), pct(row.coverage) || 'not measured']
+      ? [
+          row.package,
+          yesNo(row.published),
+          row.files,
+          row.tests,
+          row.passed,
+          row.failed,
+          skippedCell(row),
+          row.failedFiles.length,
+          seconds(row.wallMs) || 'not measured',
+          seconds(row.spanMs),
+          pct(row.coverage) || 'not measured',
+        ]
       : [row.package, yesNo(row.published), 'no results', '', '', '', '', '', '', '', ''],
   )
   const { repository, install } = results
   return [
     '## Results',
     '',
-    table(['Package', 'Published', 'Files', 'Tests', 'Passed', 'Failed', 'Skipped or todo', 'Failed files', "Task's wall time (turbo)", 'First test start to last test end (vitest)', 'Coverage, lines / branches / functions / statements (reported, never gated)'], rows),
+    table(
+      [
+        'Package',
+        'Published',
+        'Files',
+        'Tests',
+        'Passed',
+        'Failed',
+        'Skipped or todo',
+        'Failed files',
+        "Task's wall time (turbo)",
+        'First test start to last test end (vitest)',
+        'Coverage, lines / branches / functions / statements (reported, never gated)',
+      ],
+      rows,
+    ),
     '',
     repository.present
       ? `The repository's guards (\`pnpm test:repo\`): ${String(repository.passed)} of ${String(repository.tests)} passed in ${String(repository.files)} files; skipped: ${skippedCell(repository)}.`
@@ -307,7 +428,19 @@ function validatorSection({ results }) {
     "The HL7 FHIR validator's verdict on the corpus (0005), from the gate's own file, held to the registers the checkout holds. A resource not judged as the corpus expects, another validator, another register, a package loaded that is not registered or a run that was not offline fails the run.",
     '',
     table(
-      ['Passed', 'Validator', 'Java', 'Packages registered / loaded', 'Resources', 'To accept', 'Broken to refuse', 'Not as expected', 'Errors / warnings / information', 'Warnings accepted by id', 'Validator time'],
+      [
+        'Passed',
+        'Validator',
+        'Java',
+        'Packages registered / loaded',
+        'Resources',
+        'To accept',
+        'Broken to refuse',
+        'Not as expected',
+        'Errors / warnings / information',
+        'Warnings accepted by id',
+        'Validator time',
+      ],
       [
         [
           yesNo(gate.passed),
@@ -338,7 +471,16 @@ function identitySection({ results }) {
     '',
     table(
       ['Package', 'Tarball', 'Tarball sha256', 'Its dist/', 'Jobs that built the same dist/'],
-      results.buildIdentity.map((entry) => [entry.package, entry.tarball?.file ?? 'none', entry.tarball?.sha256 ?? '', entry.tarball?.distHash ?? '', entry.builds.filter((build) => build.distHash === entry.tarball?.distHash).map((build) => build.job).join(', ')]),
+      results.buildIdentity.map((entry) => [
+        entry.package,
+        entry.tarball?.file ?? 'none',
+        entry.tarball?.sha256 ?? '',
+        entry.tarball?.distHash ?? '',
+        entry.builds
+          .filter((build) => build.distHash === entry.tarball?.distHash)
+          .map((build) => build.job)
+          .join(', '),
+      ]),
     ),
   ].join('\n')
 }
@@ -349,7 +491,10 @@ function closingSection(report) {
     '',
     `### ${group.area}`,
     '',
-    ...group.lines.map((line) => `- ${line.says} — stated by [${line.number} ${line.title}](${line.link}) (${line.status})${line.heldBy === undefined ? '' : `; held by ${code(line.heldBy)}, ${line.held === 'passed' ? 'passed in this run' : line.held === 'absent' ? 'which did not run' : 'which did not pass'}`}`),
+    ...group.lines.map(
+      (line) =>
+        `- ${line.says} — stated by [${line.number} ${line.title}](${line.link}) (${line.status})${line.heldBy === undefined ? '' : `; held by ${code(line.heldBy)}, ${line.held === 'passed' ? 'passed in this run' : line.held === 'absent' ? 'which did not run' : 'which did not pass'}`}`,
+    ),
   ])
   return [
     '## Known limitations',
@@ -373,7 +518,15 @@ function closingSection(report) {
 
 /** Every section after the subject. */
 export function renderContent(report) {
-  return [testedOnSection(report), resultsSection(report), validatorSection(report), browserSection(report), identitySection(report), gatesSection(report), closingSection(report)].join('\n\n')
+  return [
+    testedOnSection(report),
+    resultsSection(report),
+    validatorSection(report),
+    browserSection(report),
+    identitySection(report),
+    gatesSection(report),
+    closingSection(report),
+  ].join('\n\n')
 }
 
 /** What is being released, as the subject's first line says it. */
@@ -384,13 +537,22 @@ function releaseName(subject) {
 
 /** Which version, release, commit and run this is, and each job's machine. */
 function subjectSection({ subject }) {
-  const run = subject.run === null ? '' : ` Run [${String(subject.run.id)}](${subject.run.url}) of ${subject.run.workflow ?? 'the gates workflow'}, attempt ${String(subject.run.attempt ?? '?')}.`
+  const run =
+    subject.run === null
+      ? ''
+      : ` Run [${String(subject.run.id)}](${subject.run.url}) of ${subject.run.workflow ?? 'the gates workflow'}, attempt ${String(subject.run.attempt ?? '?')}.`
   return [
     `Formancy Health ${subject.version}, ${releaseName(subject)}. Commit ${code(subject.commit)}${subject.dirty === true ? ', with uncommitted changes' : ''}.${run} Generated ${subject.generatedAt}.`,
     '',
     table(
       ['Job', 'Attempt', 'Runner image', 'Node', 'Platform'],
-      subject.jobs.map((entry) => [entry.key, entry.attempt ?? '', [entry.runner?.image, entry.runner?.imageVersion].filter((value) => value != null).join(' '), entry.runner?.node ?? '', entry.runner ? `${entry.runner.platform} ${entry.runner.arch}` : '']),
+      subject.jobs.map((entry) => [
+        entry.key,
+        entry.attempt ?? '',
+        [entry.runner?.image, entry.runner?.imageVersion].filter((value) => value != null).join(' '),
+        entry.runner?.node ?? '',
+        entry.runner ? `${entry.runner.platform} ${entry.runner.arch}` : '',
+      ]),
     ),
   ].join('\n')
 }

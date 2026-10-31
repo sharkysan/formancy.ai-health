@@ -29,7 +29,11 @@ function put(root, path, value) {
 }
 
 /** A vitest JSON report of `tests` in `file` (one passing test by default), started at `start`. */
-const vitest = (root, file, { start = T0, tests = [{ fullName: 'reads a decimal', status: 'passed', duration: 1000, meta: { anything: 'a test chose' } }] } = {}) => ({
+const vitest = (
+  root,
+  file,
+  { start = T0, tests = [{ fullName: 'reads a decimal', status: 'passed', duration: 1000, meta: { anything: 'a test chose' } }] } = {},
+) => ({
   success: true,
   numTotalTests: tests.length,
   numPassedTests: tests.filter((entry) => entry.status === 'passed').length,
@@ -50,7 +54,18 @@ const gate = (start = at(40)) => ({
   validator: { version: '7.0.2', sha256: 'e3'.repeat(32), reported: '7.0.2', java: '17.0.4' },
   offline: { tx: 'n/a', txCache: 'n/a', httpAccess: false, consoleRefusals: 0 },
   packages: { registered: ['hl7.fhir.r4.core#4.0.1'], loaded: ['hl7.fhir.r4.core#4.0.1'] },
-  resources: [{ file: 'questionnaire-intake.json', expect: 'accepted', verdict: 'as expected', refusals: [], registeredWarnings: [], errors: 0, warnings: 0, information: 0 }],
+  resources: [
+    {
+      file: 'questionnaire-intake.json',
+      expect: 'accepted',
+      verdict: 'as expected',
+      refusals: [],
+      registeredWarnings: [],
+      errors: 0,
+      warnings: 0,
+      information: 0,
+    },
+  ],
   problems: [],
   passed: true,
 })
@@ -69,14 +84,24 @@ function workspace() {
   put(root, 'packages/health-corpus/dist/index.mjs', 'export {}\n')
   put(root, 'test-results/vitest.json', vitest(root, 'scripts/check-cla.test.mjs'))
   put(root, 'test-results/install.json', { startedAt: at(20), finishedAt: at(25), passed: true, node: 'v22.20.0', npm: '10.9.0', resolved: [], tarballs: [] })
-  put(root, '.turbo/runs/one.json', { execution: { startTime: T0 - 5000 }, tasks: [{ taskId: '@formancy/health-core#test:coverage', execution: { startTime: T0 - 4000, endTime: T0 + 9000 }, cache: { status: 'MISS' } }] })
+  put(root, '.turbo/runs/one.json', {
+    execution: { startTime: T0 - 5000 },
+    tasks: [{ taskId: '@formancy/health-core#test:coverage', execution: { startTime: T0 - 4000, endTime: T0 + 9000 }, cache: { status: 'MISS' } }],
+  })
   return root
 }
 
 /** The validator job's checkout: the gate's file, and the registers' run it made after it. */
 function validatorJob(root = workspace()) {
   put(root, 'test-results/validator.json', gate())
-  put(root, 'test-results/vitest.json', vitest(root, 'scripts/validator/registers.test.mjs', { start: T0 + 44 * 60_000, tests: [{ fullName: 'the package register › is every package in the cache, byte for byte', status: 'passed', duration: 9 }] }))
+  put(
+    root,
+    'test-results/vitest.json',
+    vitest(root, 'scripts/validator/registers.test.mjs', {
+      start: T0 + 44 * 60_000,
+      tests: [{ fullName: 'the package register › is every package in the cache, byte for byte', status: 'passed', duration: 9 }],
+    }),
+  )
   return root
 }
 
@@ -105,11 +130,27 @@ describe('a test job’s results', () => {
   // neither belongs in an artefact the report reads.
   test('keep the suite, its task and its coverage, and drop the coverage map and the meta', () => {
     const result = collect({ root: workspace(), job: 'test', pkg: '@formancy/health-core', ...machine })
-    expect(result).toMatchObject({ schema: 1, job: 'test', key: 'test-health-core', package: '@formancy/health-core', commit: 'abc123', run: { id: '42', attempt: '1' }, missing: [] })
+    expect(result).toMatchObject({
+      schema: 1,
+      job: 'test',
+      key: 'test-health-core',
+      package: '@formancy/health-core',
+      commit: 'abc123',
+      run: { id: '42', attempt: '1' },
+      missing: [],
+    })
     expect(result.runner).toMatchObject({ image: 'ubuntu24', imageVersion: '20261012.1' })
     const [suite] = result.suites
     expect(suite).not.toHaveProperty('coverageMap')
-    expect(suite.files).toEqual([{ file: 'packages/health-core/src/numbers.test.ts', status: 'passed', startTime: T0 + 1000, endTime: T0 + 2000, tests: [{ name: 'reads a decimal', status: 'passed', durationMs: 1000 }] }])
+    expect(suite.files).toEqual([
+      {
+        file: 'packages/health-core/src/numbers.test.ts',
+        status: 'passed',
+        startTime: T0 + 1000,
+        endTime: T0 + 2000,
+        tests: [{ name: 'reads a decimal', status: 'passed', durationMs: 1000 }],
+      },
+    ])
     expect(suite.task).toEqual({ startTime: T0 - 4000, endTime: T0 + 9000, cache: 'MISS' })
     expect(suite.coverage).toEqual({ lines: { pct: 100 } })
   })
@@ -129,10 +170,17 @@ describe('a test job’s results', () => {
   // one without a summary has no wall time.
   test('list a task turbo replayed, and a run summary that is not there', () => {
     const root = workspace()
-    put(root, '.turbo/runs/one.json', { execution: { startTime: T0 }, tasks: [{ taskId: '@formancy/health-core#test:coverage', execution: { startTime: T0, endTime: T0 + 10 }, cache: { status: 'HIT' } }] })
-    expect(collect({ root, job: 'test', pkg: '@formancy/health-core', ...machine }).missing).toEqual(['a fresh run of @formancy/health-core#test:coverage: turbo replayed it from its cache'])
+    put(root, '.turbo/runs/one.json', {
+      execution: { startTime: T0 },
+      tasks: [{ taskId: '@formancy/health-core#test:coverage', execution: { startTime: T0, endTime: T0 + 10 }, cache: { status: 'HIT' } }],
+    })
+    expect(collect({ root, job: 'test', pkg: '@formancy/health-core', ...machine }).missing).toEqual([
+      'a fresh run of @formancy/health-core#test:coverage: turbo replayed it from its cache',
+    ])
     rmSync(join(root, '.turbo'), { recursive: true })
-    expect(collect({ root, job: 'test', pkg: '@formancy/health-core', ...machine }).missing).toEqual(["turbo's run summary for @formancy/health-core#test:coverage (run it with --summarize)"])
+    expect(collect({ root, job: 'test', pkg: '@formancy/health-core', ...machine }).missing).toEqual([
+      "turbo's run summary for @formancy/health-core#test:coverage (run it with --summarize)",
+    ])
   })
 
   // The report can only say a file did not run if it knows the file is
@@ -155,8 +203,14 @@ describe('a test job’s results', () => {
     ]
     for (const file of files.filter((entry) => !entry.includes('deleted'))) put(root, file, '')
     const git = (args) => (args[0] === 'ls-files' ? `${files.join('\0')}\0` : 'abc123\n')
-    expect(collect({ root, job: 'test', pkg: '@formancy/health-core', ...machine, git }).suites[0].testFiles).toEqual(['packages/health-core/src/json.spec.ts', 'packages/health-core/src/numbers.test.ts'])
-    expect(collect({ root, job: 'verify', ...machine, git }).suites[0].testFiles).toEqual(['scripts/check-cla.test.mjs', 'scripts/validator/registers.test.mjs'])
+    expect(collect({ root, job: 'test', pkg: '@formancy/health-core', ...machine, git }).suites[0].testFiles).toEqual([
+      'packages/health-core/src/json.spec.ts',
+      'packages/health-core/src/numbers.test.ts',
+    ])
+    expect(collect({ root, job: 'verify', ...machine, git }).suites[0].testFiles).toEqual([
+      'scripts/check-cla.test.mjs',
+      'scripts/validator/registers.test.mjs',
+    ])
   })
 
   // In CI as on a machine, a suite's row is one run's: coverage written
@@ -166,7 +220,10 @@ describe('a test job’s results', () => {
   test('refuse a coverage summary or a turbo task from another run than its vitest.json', () => {
     const root = workspace()
     utimesSync(join(root, 'packages/health-core/coverage/coverage-summary.json'), new Date(T0 - 1000), new Date(T0 - 1000))
-    put(root, '.turbo/runs/one.json', { execution: { startTime: T0 + 500 }, tasks: [{ taskId: '@formancy/health-core#test:coverage', execution: { startTime: T0 + 500, endTime: T0 + 9000 }, cache: { status: 'MISS' } }] })
+    put(root, '.turbo/runs/one.json', {
+      execution: { startTime: T0 + 500 },
+      tasks: [{ taskId: '@formancy/health-core#test:coverage', execution: { startTime: T0 + 500, endTime: T0 + 9000 }, cache: { status: 'MISS' } }],
+    })
     const result = collect({ root, job: 'test', pkg: '@formancy/health-core', ...machine })
     expect(result.suites.map((suite) => [suite.task, suite.coverage])).toEqual([[null, null]])
     expect(result.missing).toEqual([
@@ -181,7 +238,11 @@ describe('a test job’s results', () => {
   test('list a suite that left no results', () => {
     const root = workspace()
     rmSync(join(root, 'packages/health-core/test-results'), { recursive: true })
-    expect(collect({ root, job: 'test', pkg: '@formancy/health-core', ...machine })).toMatchObject({ suites: [], absent: [{ reader: 'test', file: 'packages/health-core/test-results/vitest.json' }], missing: [] })
+    expect(collect({ root, job: 'test', pkg: '@formancy/health-core', ...machine })).toMatchObject({
+      suites: [],
+      absent: [{ reader: 'test', file: 'packages/health-core/test-results/vitest.json' }],
+      missing: [],
+    })
   })
 })
 
@@ -190,11 +251,25 @@ describe('the verify and install jobs’ results', () => {
   // install gate leaves its record and the tarballs it packed.
   test('keep the repository guards’ suite, and the install gate’s record', () => {
     const root = workspace()
-    expect(collect({ root, job: 'verify', ...machine }).suites.map((suite) => [suite.package, suite.path, suite.files[0].file])).toEqual([[null, '.', 'scripts/check-cla.test.mjs']])
+    expect(collect({ root, job: 'verify', ...machine }).suites.map((suite) => [suite.package, suite.path, suite.files[0].file])).toEqual([
+      [null, '.', 'scripts/check-cla.test.mjs'],
+    ])
     const install = collect({ root, job: 'install', ...machine })
-    expect(install).toMatchObject({ key: 'install', suites: [], install: { passed: true, npm: '10.9.0' }, validator: null, tarballs: [], absent: [], missing: [] })
+    expect(install).toMatchObject({
+      key: 'install',
+      suites: [],
+      install: { passed: true, npm: '10.9.0' },
+      validator: null,
+      tarballs: [],
+      absent: [],
+      missing: [],
+    })
     rmSync(join(root, 'test-results/install.json'))
-    expect(collect({ root, job: 'install', ...machine })).toMatchObject({ install: null, absent: [{ reader: 'install', file: 'test-results/install.json' }], missing: [] })
+    expect(collect({ root, job: 'install', ...machine })).toMatchObject({
+      install: null,
+      absent: [{ reader: 'install', file: 'test-results/install.json' }],
+      missing: [],
+    })
   })
 
   // A job gates.yml gains needs a reader here before it can say anything;
@@ -212,7 +287,18 @@ function withDemo(root, browsers = ['chromium']) {
   put(root, 'apps/demo/package.json', { name: '@formancy/health-demo', private: true, scripts: { 'test:browser': 'node scripts/browser-test.mjs' } })
   const versions = { chromium: '156.0.8078.4', firefox: '157.0', webkit: '27.2' }
   for (const browser of browsers) {
-    const gate = { gate: 'apps/demo', asked: browser, startedAt: at(30), finishedAt: at(33), browser: { name: browser, version: versions[browser], headless: true }, playwright: '1.64.1', planned: ['phone, 360, fr'], passes: 1, made: [], checks: { ok: 3, failed: [] } }
+    const gate = {
+      gate: 'apps/demo',
+      asked: browser,
+      startedAt: at(30),
+      finishedAt: at(33),
+      browser: { name: browser, version: versions[browser], headless: true },
+      playwright: '1.64.1',
+      planned: ['phone, 360, fr'],
+      passes: 1,
+      made: [],
+      checks: { ok: 3, failed: [] },
+    }
     put(root, `apps/demo/test-results/browser-${browser}.json`, gate)
   }
   return root
@@ -227,8 +313,19 @@ describe('the browser job’s results', () => {
   test('keep each app’s gate in the browser the leg ran, under that browser’s key', () => {
     const root = withDemo(workspace(), ['chromium', 'webkit'])
     const result = collect({ root, job: 'browser', variant: 'webkit', ...machine })
-    expect(result).toMatchObject({ key: 'browser-webkit', job: 'browser', variant: 'webkit', suites: [], install: null, validator: null, absent: [], missing: [] })
-    expect(result.browserGates.map((gate) => [gate.gate, gate.asked, gate.browser.version, gate.planned])).toEqual([['apps/demo', 'webkit', '27.2', ['phone, 360, fr']]])
+    expect(result).toMatchObject({
+      key: 'browser-webkit',
+      job: 'browser',
+      variant: 'webkit',
+      suites: [],
+      install: null,
+      validator: null,
+      absent: [],
+      missing: [],
+    })
+    expect(result.browserGates.map((gate) => [gate.gate, gate.asked, gate.browser.version, gate.planned])).toEqual([
+      ['apps/demo', 'webkit', '27.2', ['phone, 360, fr']],
+    ])
     // The job builds what the demo imports, so its dist/ is held to every other job's.
     expect(result.dist.map((entry) => entry.package)).toEqual(['@formancy/health-core'])
   })
@@ -237,8 +334,12 @@ describe('the browser job’s results', () => {
   // upload a key the report does not expect, or read another leg's file.
   test('refuse a browser job that names no browser, or one the gates do not run in', () => {
     const root = withDemo(workspace())
-    expect(() => collect({ root, job: 'browser', ...machine })).toThrow('--job browser needs --variant <browser>, the browser its leg ran: one of chromium, firefox, webkit')
-    expect(() => collect({ root, job: 'browser', variant: 'opera', ...machine })).toThrow('--job browser --variant opera: opera is no browser the gates run in (chromium, firefox, webkit)')
+    expect(() => collect({ root, job: 'browser', ...machine })).toThrow(
+      '--job browser needs --variant <browser>, the browser its leg ran: one of chromium, firefox, webkit',
+    )
+    expect(() => collect({ root, job: 'browser', variant: 'opera', ...machine })).toThrow(
+      '--job browser --variant opera: opera is no browser the gates run in (chromium, firefox, webkit)',
+    )
   })
 
   // A gate that left nothing -- the build failed before it wrote, or its
@@ -246,9 +347,15 @@ describe('the browser job’s results', () => {
   // report says what is missing rather than that the app has no gate.
   test('list a gate in a browser that left no results', () => {
     const root = withDemo(workspace())
-    expect(collect({ root, job: 'browser', variant: 'firefox', ...machine })).toMatchObject({ browserGates: [], absent: [{ reader: 'browser', file: 'apps/demo/test-results/browser-firefox.json' }] })
+    expect(collect({ root, job: 'browser', variant: 'firefox', ...machine })).toMatchObject({
+      browserGates: [],
+      absent: [{ reader: 'browser', file: 'apps/demo/test-results/browser-firefox.json' }],
+    })
     rmSync(join(root, 'apps/demo/test-results'), { recursive: true })
-    expect(collect({ root, job: 'browser', variant: 'chromium', ...machine })).toMatchObject({ browserGates: [], absent: [{ reader: 'browser', file: 'apps/demo/test-results/browser-chromium.json' }] })
+    expect(collect({ root, job: 'browser', variant: 'chromium', ...machine })).toMatchObject({
+      browserGates: [],
+      absent: [{ reader: 'browser', file: 'apps/demo/test-results/browser-chromium.json' }],
+    })
   })
 
   // A file filed under one browser and written by another browser's run, or
@@ -258,9 +365,15 @@ describe('the browser job’s results', () => {
     const root = withDemo(workspace())
     const file = 'apps/demo/test-results/browser-chromium.json'
     put(root, file, { gate: 'apps/demo', asked: 'firefox', startedAt: at(30), browser: null })
-    expect(collect({ root, job: 'browser', variant: 'chromium', ...machine })).toMatchObject({ browserGates: [], missing: [`apps/demo’s gate asked for firefox in its chromium file: ${file}`] })
+    expect(collect({ root, job: 'browser', variant: 'chromium', ...machine })).toMatchObject({
+      browserGates: [],
+      missing: [`apps/demo’s gate asked for firefox in its chromium file: ${file}`],
+    })
     put(root, file, { gate: 'apps/demo', asked: 'chromium', startedAt: at(30), browser: { name: 'webkit', version: '27.2' } })
-    expect(collect({ root, job: 'browser', variant: 'chromium', ...machine })).toMatchObject({ browserGates: [], missing: [`apps/demo’s gate launched webkit in its chromium file: ${file}`] })
+    expect(collect({ root, job: 'browser', variant: 'chromium', ...machine })).toMatchObject({
+      browserGates: [],
+      missing: [`apps/demo’s gate launched webkit in its chromium file: ${file}`],
+    })
   })
 
   // On a machine every browser of scripts/browsers.mjs is expected, whatever
@@ -286,7 +399,16 @@ describe('the browser job’s results', () => {
 function withPictures(root, { written = true } = {}) {
   put(root, 'apps/demo/scripts/pictures.mjs', '// the demo’s README pictures\n')
   if (written) {
-    put(root, 'apps/demo/test-results/pictures.json', { check: 'pictures', app: 'apps/demo', startedAt: at(34), finishedAt: at(35), playwright: '1.64.1', browser: { name: 'chromium', version: '156.0.8078.4', headless: true }, walked: ['demo-form'], problems: [] })
+    put(root, 'apps/demo/test-results/pictures.json', {
+      check: 'pictures',
+      app: 'apps/demo',
+      startedAt: at(34),
+      finishedAt: at(35),
+      playwright: '1.64.1',
+      browser: { name: 'chromium', version: '156.0.8078.4', headless: true },
+      walked: ['demo-form'],
+      problems: [],
+    })
   }
   return root
 }
@@ -309,8 +431,13 @@ describe('the pictures’ check', () => {
   // the pictures were held by nobody rather than that there are none.
   test('is listed when it left no results, in that leg and on a machine', () => {
     const root = withPictures(withDemo(workspace()), { written: false })
-    expect(collect({ root, job: 'browser', variant: 'chromium', ...machine })).toMatchObject({ pictures: [], absent: [{ reader: 'browser', file: 'apps/demo/test-results/pictures.json' }] })
-    expect(collect({ root, local: true, since: at(-1), ...machine, env: {} }).absent).toEqual(expect.arrayContaining([{ reader: 'browser', file: 'apps/demo/test-results/pictures.json' }]))
+    expect(collect({ root, job: 'browser', variant: 'chromium', ...machine })).toMatchObject({
+      pictures: [],
+      absent: [{ reader: 'browser', file: 'apps/demo/test-results/pictures.json' }],
+    })
+    expect(collect({ root, local: true, since: at(-1), ...machine, env: {} }).absent).toEqual(
+      expect.arrayContaining([{ reader: 'browser', file: 'apps/demo/test-results/pictures.json' }]),
+    )
   })
 
   // Yesterday's green check read as today's would hold the pictures to a
@@ -333,7 +460,9 @@ describe('the validator job’s results', () => {
     const result = collect({ root: validatorJob(), job: 'validator', ...machine })
     expect(result).toMatchObject({ key: 'validator', job: 'validator', suites: [], install: null, absent: [], missing: [] })
     expect(result.validator.gate).toMatchObject({ passed: true, validator: { reported: '7.0.2' }, packages: { loaded: ['hl7.fhir.r4.core#4.0.1'] } })
-    expect(result.validator.suite.files.map((file) => [file.file, file.tests.map((entry) => entry.status)])).toEqual([['scripts/validator/registers.test.mjs', ['passed']]])
+    expect(result.validator.suite.files.map((file) => [file.file, file.tests.map((entry) => entry.status)])).toEqual([
+      ['scripts/validator/registers.test.mjs', ['passed']],
+    ])
     expect(result.validator.suite).not.toHaveProperty('testFiles')
     // The job builds the packages the corpus is written by, so its dist/ is
     // held to every other job's.
@@ -372,7 +501,9 @@ describe('the validator job’s results', () => {
     const root = validatorJob()
     const { startedAt: _, ...unstarted } = gate()
     put(root, 'test-results/validator.json', unstarted)
-    expect(collect({ root, job: 'validator', ...machine })).toMatchObject({ missing: ['test-results/validator.json records no start, so which run wrote it is unknown'] })
+    expect(collect({ root, job: 'validator', ...machine })).toMatchObject({
+      missing: ['test-results/validator.json records no start, so which run wrote it is unknown'],
+    })
     expect(collect({ root, job: 'validator', ...machine }).validator.gate).toBeNull()
   })
 })
@@ -387,9 +518,19 @@ describe('local results', () => {
     expect(result.suites).toEqual([])
     expect(result.install).toMatchObject({ passed: true })
     expect(result.validator.gate).toMatchObject({ passed: true })
-    expect(result.missing).toEqual(expect.arrayContaining([`stale: packages/health-core/test-results/vitest.json started ${at(0)}, before --since`, `stale: test-results/vitest.json started ${at(0)}, before --since`]))
+    expect(result.missing).toEqual(
+      expect.arrayContaining([
+        `stale: packages/health-core/test-results/vitest.json started ${at(0)}, before --since`,
+        `stale: test-results/vitest.json started ${at(0)}, before --since`,
+      ]),
+    )
     const later = collect({ root, local: true, since: at(41), ...machine, env: {} })
-    expect(later.missing).toEqual(expect.arrayContaining([`stale: test-results/install.json started ${at(20)}, before --since`, `stale: test-results/validator.json started ${at(40)}, before --since`]))
+    expect(later.missing).toEqual(
+      expect.arrayContaining([
+        `stale: test-results/install.json started ${at(20)}, before --since`,
+        `stale: test-results/validator.json started ${at(40)}, before --since`,
+      ]),
+    )
     expect(later.validator).toBeNull()
   })
 
@@ -450,7 +591,10 @@ describe('local results', () => {
   test('refuse a turbo summary or a coverage summary from before --since, and say so', () => {
     const root = workspace()
     const yesterday = T0 - 86_400_000
-    put(root, '.turbo/runs/one.json', { execution: { startTime: yesterday }, tasks: [{ taskId: '@formancy/health-core#test:coverage', execution: { startTime: yesterday, endTime: yesterday + 600_000 }, cache: { status: 'MISS' } }] })
+    put(root, '.turbo/runs/one.json', {
+      execution: { startTime: yesterday },
+      tasks: [{ taskId: '@formancy/health-core#test:coverage', execution: { startTime: yesterday, endTime: yesterday + 600_000 }, cache: { status: 'MISS' } }],
+    })
     utimesSync(join(root, 'packages/health-core/coverage/coverage-summary.json'), new Date(yesterday), new Date(yesterday))
     const result = collect({ root, local: true, since: at(-1), ...machine, env: {} })
     expect(result.suites.filter((suite) => suite.path === 'packages/health-core').map((suite) => [suite.task, suite.coverage])).toEqual([[null, null]])
@@ -466,7 +610,10 @@ describe('local results', () => {
   // HEAD alone would name code that did not run.
   test('record whether the tree had uncommitted changes', () => {
     const git = (status) => (args) => (args[0] === 'status' ? status : 'abc123\n')
-    expect(collect({ root: workspace(), local: true, since: at(-1), ...machine, env: {}, git: git(' M README.md\n') })).toMatchObject({ commit: 'abc123', dirty: true })
+    expect(collect({ root: workspace(), local: true, since: at(-1), ...machine, env: {}, git: git(' M README.md\n') })).toMatchObject({
+      commit: 'abc123',
+      dirty: true,
+    })
     expect(collect({ root: workspace(), local: true, since: at(-1), ...machine, env: {}, git: git('') })).toMatchObject({ commit: 'abc123', dirty: false })
   })
 
@@ -488,7 +635,11 @@ describe('the command line', () => {
     roots.push(out)
     // A step's outputs are the workflow's; this run is not a step of one.
     const { GITHUB_OUTPUT: _, ...env } = process.env
-    const printed = execFileSync(process.execPath, [join(repo, 'scripts', 'release-report', 'collect.mjs'), '--job', 'install', '--out', out], { cwd: repo, encoding: 'utf8', env })
+    const printed = execFileSync(process.execPath, [join(repo, 'scripts', 'release-report', 'collect.mjs'), '--job', 'install', '--out', out], {
+      cwd: repo,
+      encoding: 'utf8',
+      env,
+    })
     expect(existsSync(join(out, 'install.json'))).toBe(true)
     expect(existsSync(join(repo, out))).toBe(false)
     expect(printed.startsWith(`${relative(repo, join(out, 'install.json')).replaceAll('\\', '/')}: `)).toBe(true)
