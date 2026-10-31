@@ -38,6 +38,16 @@ because formancy.ai's format reflowed Angular templates, whose whitespace
 renders, and failed tests; the format commit is identical with it off. The
 packages' API is what it was.
 
+**The demo's footer links formancy.ai's legal notice and privacy notice
+from `LINKS`, in the page's language.** #20 linked them as English
+literals outside `src/links.ts`, the list of every address the page may
+link to, so the browser gate's link check refused the page at every width
+in Chromium, Firefox and WebKit, and main has failed it since. `LINKS` now
+names both addresses; the footer words them in each of the page's four
+languages and, in German, French and Italian, says the pages they open are
+in English; and a case in the demo's suite refuses a footer that leaves
+either out.
+
 **The README shows the demo, in pictures a script takes and the gates
 hold to the text they show** (0016). The README said what the demo does
 and showed nothing of it, since a picture nothing checks shows a page that

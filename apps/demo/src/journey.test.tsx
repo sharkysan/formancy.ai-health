@@ -124,6 +124,18 @@ describe('the page, as it opens', () => {
     const link = within(screen.getByRole('contentinfo')).getByRole('link', { name: WORDS[language].footer.notices })
     expect(link.getAttribute('href')).toBe(LINKS.notices)
   })
+
+  // The foot links formancy.ai's legal notice and privacy notice, named by
+  // LINKS and worded in the page's language. They were once two English
+  // literals outside LINKS, which the browser gate's link check refused at
+  // every width in every browser; dropped from the foot, or pointing
+  // anywhere LINKS does not name, the page would fail it again.
+  test.each(LANGUAGES)("links formancy.ai's legal notice and privacy notice from its foot, by LINKS, in %s", (language) => {
+    open(language)
+    const foot = within(screen.getByRole('contentinfo'))
+    expect(foot.getByRole('link', { name: WORDS[language].footer.legal }).getAttribute('href')).toBe(LINKS.legal)
+    expect(foot.getByRole('link', { name: WORDS[language].footer.privacy }).getAttribute('href')).toBe(LINKS.privacy)
+  })
 })
 
 describe('a visitor changing the answers', () => {

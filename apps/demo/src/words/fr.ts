@@ -136,6 +136,12 @@ export const fr = {
       'CH Core et CH ORF sont des guides d’implémentation publiés par HL7 Switzerland. Formancy Health n’est ni affilié à HL7, à HL7 Switzerland ou à eHealth Suisse, ni approuvé ou certifié par eux.',
     licence: 'Formancy Health est source-available : libre à lire, à évaluer et pour développer, payant en production. Ce n’est pas de l’open source.',
   },
-  footer: { repository: 'Le dépôt', licence: 'La licence', notices: 'Licences et avis des tiers' },
+  footer: {
+    repository: 'Le dépôt',
+    licence: 'La licence',
+    notices: 'Licences et avis des tiers',
+    legal: 'Mentions légales (en anglais)',
+    privacy: 'Protection des données (en anglais)',
+  },
   broken: 'La démo s’est arrêtée sur une erreur, et plus rien n’est fait. Recharger la page la recommence.',
 } satisfies Words
