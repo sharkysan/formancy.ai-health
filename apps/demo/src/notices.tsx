@@ -50,8 +50,12 @@ export function Footer({ words, facts }: { readonly words: Words; readonly facts
         <li>
           <a href={LINKS.notices}>{words.footer.notices}</a>
         </li>
-        <li><a href="https://formancy.ai/legal/">Legal notice</a></li>
-        <li><a href="https://formancy.ai/privacy/">Privacy</a></li>
+        <li>
+          <a href={LINKS.legal}>{words.footer.legal}</a>
+        </li>
+        <li>
+          <a href={LINKS.privacy}>{words.footer.privacy}</a>
+        </li>
       </ul>
     </footer>
   )
