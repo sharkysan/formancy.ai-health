@@ -38,14 +38,14 @@ Four things follow, and three of them have a guard:
   repository does (formancy.ai-report 0034). The demo wears
   formancy.ai's room as `@formancy/themes` releases it, `room.css`
   imported after the workbench at the exact version its manifest pins
-  (0012, 0015). The lint and format rules are a copy that runs the other
-  way: written here first, `scripts/code-style/` is what formancy.ai will
-  publish as `@formancy/code-style`, copied byte for byte into the other
-  three repositories, each calling it with its own paths as
-  `eslint.config.mjs` does here, and it goes when this repository pins it
+  (0012, 0015). The lint and format rules are formancy.ai's
+  `@formancy/code-style`, pinned exactly as a root devDependency, shared by
+  the other three repositories, each calling it with its own paths as
+  `eslint.config.mjs` does here; they began as a copy written here first,
+  deleted when this repository pinned the package
   ([0017](docs/decisions/0017-every-typescript-and-javascript-file-is-linted-by-the-recommended-type-aware-rules-and-formatted-by-prettier.md)).
-  A path or a reason of this repository's alone goes in that call, never
-  into the copy.
+  A path or a reason of this repository's alone goes in that call, and a
+  rule is changed in formancy.ai's package, never here.
   A generic improvement goes upstream through that repository's own
   contribution rules, not into a patched copy here.
 - **Every package declares the source-available licence**, never Apache-2.0.
@@ -265,10 +265,8 @@ and the document says what. Three shapes, in order of preference:
    when the README's pictures are not what `scripts/pictures/scenes.json`
    and `docs/images/readme/captured.json` render, a picture is not the
    bytes its record names, or a caption quotes what its sections did not
-   say when it was taken (0016); `scripts/code-style/code-style.test.mjs`
-   fails when a shared lint rule stops running at error on the kind of
-   file it is for, a path a repository passes stops doing what it says, or
-   Prettier's options change, and `scripts/lint.test.mjs` when a
+   say when it was taken (0016); `scripts/lint.test.mjs` (the rules themselves
+   are held by the package's own suite in formancy.ai) fails when a
    TypeScript or JavaScript file git holds is not linted, has a rule at
    warn or one of the recommended sets' rules off beyond `require-await`, a test's seven
    relaxations and the untyped files' typed rules, or resolves to another

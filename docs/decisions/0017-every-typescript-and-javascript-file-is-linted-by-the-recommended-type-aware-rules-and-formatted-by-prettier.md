@@ -1,12 +1,12 @@
 # 0017 — Lint every TypeScript and JavaScript file by the recommended type-aware rules and format it with Prettier, both checked by CI's `verify`, the rules the first copy of those formancy.ai will publish; and merge the change with a merge commit, so that blame can skip the format
 
-- **Status:** accepted
+- **Status:** accepted; the copy of the rules ended on 31 October 2026, when this repository pinned formancy 0.12.0's `@formancy/code-style` exactly, so that 0002's narrowing for the lint and format rules has ended: the rules are depended on and no longer copied
 - **Date:** 2026-10-30
 - **Deciders:** Daniel Bacher
 - **Verified by:** the repository's guards and `verify`'s two steps, on 30
   October 2026. Each was watched failing first, and every file a fault was
   planted in was put back:
-  - **`scripts/code-style/code-style.test.mjs`** (`pnpm test:repo`) --
+  - **`code-style.test.mjs`** (formancy.ai's `packages/code-style/src/code-style.test.mjs`, run by that package's suite since 31 October 2026; it ran here as `scripts/code-style/code-style.test.mjs` in `pnpm test:repo` until the copy was deleted) --
     the shared rules, on a repository of its own that it writes under the
     system's temporary directory: each runs, at error, on the kind of file
     it is for -- a floating promise; an `any` from `JSON.parse`, refused in
@@ -274,6 +274,19 @@ install fixtures. With the configuration as first committed, before
   `scripts/upstream-deps.mjs` extended to the root manifest, which holds
   no `@formancy/*` dependency until then. Until the swap, a rule changed
   here is changed in formancy.ai's package too.
+
+  **Added 2026-10-31: the package pinned.** formancy 0.12.0 published
+  `@formancy/code-style`, and its module was byte-identical to this copy.
+  The repository pins it exactly as a root devDependency, and the copy and
+  its test are deleted; the test now runs in formancy.ai's package suite.
+  `eslint.config.mjs`, `prettier.config.mjs` and `scripts/lint.test.mjs`
+  import the package, and `scripts/upstream-deps.mjs` holds the root
+  manifest, so a range or a link on the package fails
+  `scripts/upstream-deps.test.mjs`. The root devDependencies only the copy
+  imported, the hooks plugin, the comments plugin and `globals`, went with
+  it, the package bringing them; `@eslint/js` and typescript-eslint stay,
+  since `lint.test.mjs` computes the recommended sets from them. No rule
+  changed.
 - **One format commit, merged as it is.** The format is one commit of
   Prettier's output and nothing else, `d570b37`, which
   `.git-blame-ignore-revs` names by its SHA. **The pull request that
@@ -302,7 +315,8 @@ four.
   resolves each conflict for its own change, and runs `pnpm format`.
 - **A copy that can drift.** Until the swap, a rule changed in
   formancy.ai's package does not reach this repository, nor one changed
-  here the package, and nothing compares the two.
+  here the package, and nothing compares the two. This ended on
+  31 October 2026 with the pin.
 - **Prettier loads the lint rules with the style.** `prettier.config.mjs`
   imports the module, and with it ESLint's plugins and TypeScript: 0.32 to
   0.34 s of each Prettier run, and of an editor's when it loads the
@@ -397,7 +411,7 @@ and `pnpm format` is there to run by hand.
 [0002](0002-depend-on-upstream-never-copy-it.md) is not superseded. It
 still has this repository depend on what formancy.ai releases, at an exact
 version, and copy none of it; this record narrows its wait for a release:
-the rules are written here first, and the copy goes when the package is
-pinned. It was read again and stamped
+the rules were written here first, and the copy went when the package was
+pinned on 31 October 2026. It was read again and stamped
 (`node scripts/release-report/limitations.mjs --stamp 0002`), its Status
 line naming this record.

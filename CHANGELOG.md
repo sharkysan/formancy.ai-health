@@ -10,6 +10,15 @@ later.
 
 ## Unreleased
 
+**The lint and format rules are `@formancy/code-style` 0.12.0**, pinned
+exactly as a root devDependency, instead of a copy (0017). formancy 0.12.0
+published the package, and its module was byte-identical to the copy
+`scripts/code-style/` held, so no rule changed; a rule is now changed in
+formancy.ai's package once for all four repositories, where the copy could
+drift from it with nothing to compare the two. A contributor installs it
+with the other devDependencies. `scripts/upstream-deps.mjs` reads the root
+manifest too, so a range or a link on the package fails `pnpm test:repo`.
+
 **CI fails a change that breaks the lint rules or the format** (0017).
 Style was held by habit, and a promise nobody awaits or an `any` from
 `JSON.parse` by nobody: `verify` now runs `pnpm lint`, typescript-eslint's

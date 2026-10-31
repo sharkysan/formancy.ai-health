@@ -1,10 +1,9 @@
-import { eslintConfig } from './scripts/code-style/code-style.mjs'
+import { eslintConfig } from '@formancy/code-style'
 
 /**
  * The repository's lint rules: the four formancy repositories' shared ones,
- * `scripts/code-style/code-style.mjs`, a copy of what formancy.ai will
- * publish as `@formancy/code-style` until this repository pins it (0017),
- * given Formancy Health's paths. `scripts/lint.test.mjs` holds what is
+ * `@formancy/code-style`, which formancy.ai publishes and this repository
+ * pins exactly (0017), given Formancy Health's paths. `scripts/lint.test.mjs` holds what is
  * passed here.
  *
  * The French typography `apps/demo/src/words/fr.ts` writes in template

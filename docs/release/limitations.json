@@ -29,7 +29,7 @@
       ]
     },
     "0002": {
-      "reviewed": "sha256:1d15ca5f8f54b3f12ac75d48095da9ce47d96339e4679125ad467d0730e2c3a9",
+      "reviewed": "sha256:f2aec949f928e2ddeb910552348a6734f029439e82abb54c27bf0fab1ebbf415",
       "limitations": [
         {
           "area": "release",
@@ -526,7 +526,7 @@
       ]
     },
     "0017": {
-      "reviewed": "sha256:1f3c15d0f4290f70004212ca4938d7fbd3091554394dd429f84e6160e70bb449",
+      "reviewed": "sha256:d3fac211daa55614f58d0514dab7648786e14acb7f3a7ce7fed2830bab3b787b",
       "none": "It decides how this repository's TypeScript and JavaScript are linted and formatted, which a contributor meets in every pull request -- a finding to fix, a file to format, a branch begun before the format conflicting with it, a commit blame skips; the gate runs in CI and the tools are root devDependencies no package declares, the packages' API is what it was and every suite passed as before the fixes, so a user, an integrator or an operator meets none of it."
     }
   }

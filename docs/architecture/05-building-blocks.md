@@ -38,8 +38,6 @@ L0  health-core                    primitives · FHIR JSON · Refusal ·
     scripts/release-report/                      the release report
     apps/demo/scripts/, scripts/browsers.mjs     the demo's browser gate
     scripts/pictures.mjs, scripts/pictures/      the README's pictures of the demo
-    scripts/code-style/                          the lint rules and the format,
-                                                 the four repositories' shared copy
 ```
 
 | Package | Published | May import | Record |
