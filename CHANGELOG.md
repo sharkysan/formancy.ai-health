@@ -10,6 +10,12 @@ later.
 
 ## Unreleased
 
+**The legal notice and the privacy review are answered, and are no longer drafts.** The operator
+has no commercial register entry or VAT number, and the privacy review says what was read from the
+live demonstration at `/health/` on 2026-11-04: no cookie, no browser storage, no analytics, and
+nothing sent anywhere. formancy.ai's legal and privacy notices, which these point at, were finished
+the same day (formancy.ai 0232).
+
 **The lint and format rules are `@formancy/code-style` 0.12.0**, pinned
 exactly as a root devDependency, instead of a copy (0017). formancy 0.12.0
 published the package, and its module was byte-identical to the copy
