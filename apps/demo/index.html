@@ -4,8 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Formancy Health – Demo</title>
-    <meta name="description" content="A synthetic referral filled in your browser, and the resources Formancy Health makes of it." />
-    <meta name="robots" content="noindex" />
+    <meta
+      name="description"
+      content="A synthetic Swiss referral filled in your browser, and the HL7® FHIR® R4 resources Formancy Health, a source-available library, makes of it: a Questionnaire, its QuestionnaireResponse and a CH ORF document."
+    />
+    <!-- The one address the demo is served at, its Worker's route (apps/demo/wrangler.json), which scripts/demo.test.mjs holds this to. -->
+    <link rel="canonical" href="https://formancy.ai/health/" />
+    <!-- No robots meta, and no X-Robots-Tag among the headers: the demo is meant to be found (0018). -->
     <!-- No icon, said rather than requested: otherwise every load is a 404. -->
     <link rel="icon" href="data:," />
     <!-- The faces are the build's own (src/styles/fonts.css): the page asks no other site for anything. -->

@@ -332,16 +332,22 @@ address serves, by hand; nothing else does:
 curl -sI https://formancy.ai/health | grep -i '^location:'      # /health/, the path with its slash
 curl -sI https://formancy.ai/health/ | grep -i -E '^(content-security-policy|permissions-policy|referrer-policy|x-content-type-options|x-robots-tag|cache-control):'
 curl -s https://formancy.ai/health/ | grep -o '<script[^>]*>'     # one line, the build's module: src="./assets/index-….js"
+curl -s https://formancy.ai/health/ | grep -i -o -E '<(meta name="robots"|link rel="canonical")[^>]*>'   # one line, the canonical: href="https://formancy.ai/health/"
 curl -s https://formancy.ai/health/THIRD-PARTY-NOTICES.txt | head -1   # Third-party notices
 ```
 
 The headers should be `scripts/demo-headers.mjs`'s for
-https://formancy.ai/health/, each once, and the page should hold the
-build's one script and no other: a second, from `/cdn-cgi/` or inline, is
-one Cloudflare added, which the policy refuses to run and `no-transform`
-asks it not to add. Then open the page, read the Questionnaire's read-out
-and press one item's way to its field, change an answer, download each
-file, open the PDF, and follow the footer's link to the notices.
+https://formancy.ai/health/, each once, and no `x-robots-tag` among them:
+the demo asks to be indexed
+([0018](docs/decisions/0018-the-demo-asks-to-be-indexed-and-names-formancy-ai-health-as-its-address.md)),
+so one there was added by Cloudflare's zone, and keeps the page out of
+every search. The page should name https://formancy.ai/health/ as its
+canonical address and hold no `robots` meta, and hold the build's one
+script and no other: a second, from `/cdn-cgi/` or inline, is one
+Cloudflare added, which the policy refuses to run and `no-transform` asks
+it not to add. Then open the page, read the Questionnaire's read-out and
+press one item's way to its field, change an answer, download each file,
+open the PDF, and follow the footer's link to the notices.
 
 By hand, from a clean checkout, with a Cloudflare login that can edit
 Workers on formancy.ai's zone:

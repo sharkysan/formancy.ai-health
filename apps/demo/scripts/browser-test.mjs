@@ -17,12 +17,13 @@
 //   - axe's default rules and its target-size rule find nothing, and
 //     contrast and target size were measured, in each state the journey
 //     reaches, in each of the page's languages;
-//   - the page opens in the browser's language, says noindex, names the
-//     product with no HL7 mark, says once what its data is and what it does
-//     with what is typed, carries HL7's and LOINC's notices word for word,
-//     first names the standard with its marks, links nowhere but where
-//     src/links.ts says, and the notices of what it bundles it links to are
-//     the file its build wrote;
+//   - the page opens in the browser's language, asks no search engine to
+//     leave it out, names its address on formancy.ai as its canonical
+//     one, names the product with no HL7 mark, says once what its data is
+//     and what it does with what is typed, carries HL7's and LOINC's
+//     notices word for word, first names the standard with its marks,
+//     links nowhere but where src/links.ts says, and the notices of what
+//     it bundles it links to are the file its build wrote;
 //   - the journey (gate-journey.mjs): the resources the browser makes of
 //     the sample are the validator gate's corpus entries, byte for byte;
 //     the Questionnaire is read out item by item in the page's language,
@@ -74,7 +75,7 @@ import * as playwright from 'playwright'
 import { build, preview, resolveConfig, runnerImport } from 'vite'
 import { browserName, FACTS, gateBrowsers, installCommand, LAUNCH_OPTIONS, prose, ranIn } from '../../../scripts/browsers.mjs'
 import { headersFor } from '../../../scripts/demo-headers.mjs'
-import { demoBase, readDemoConfig } from '../../../scripts/demo.mjs'
+import { demoBase, demoUrl, readDemoConfig } from '../../../scripts/demo.mjs'
 import { HL7_NOTICE, LOINC_NOTICE, MARK } from '../../../scripts/notices.mjs'
 import { NOTICES_FILE } from '../../../scripts/third-party-notices.mjs'
 import { corpusBytes, journey } from './gate-journey.mjs'
@@ -107,9 +108,13 @@ async function measured(gate, page, state) {
   })
 }
 
+/** The demo's address on formancy.ai, its Worker's route, which the page names as its canonical one (0018). */
+const ADDRESS = demoUrl(readDemoConfig())
+
 /**
  * What the page says of itself before anyone touches it: its language,
- * that search engines are to leave it out, its name without HL7's marks,
+ * that it asks no search engine to leave it out and names its address on
+ * formancy.ai as its canonical one (0018), its name without HL7's marks,
  * its banner once, the marks on its first naming of the standard, the two
  * notices word for word and in English, links to nowhere but
  * src/links.ts's addresses, the skip link's target and the downloads of
@@ -122,14 +127,23 @@ async function head(gate, page, { language, w, links }) {
   const said = await page.evaluate(() => ({
     lang: document.documentElement.lang,
     title: document.title,
-    robots: document.querySelector('meta[name="robots"]')?.getAttribute('content') ?? null,
+    robots: [...document.querySelectorAll('meta')]
+      .filter((meta) => meta.name.toLowerCase() === 'robots' || /\bno(?:index|follow)\b/i.test(meta.content))
+      .map((meta) => `${meta.name}="${meta.content}"`),
+    canonical: [...document.querySelectorAll('link')]
+      .filter((link) => link.rel.toLowerCase().split(/\s+/).includes('canonical'))
+      .map((link) => link.getAttribute('href')),
     text: document.body.innerText,
   }))
   check(
     'the page opens in the browser’s language: <html lang> and its title',
     said.lang === language && said.title === w.title ? null : `<html lang="${said.lang}">, "${said.title}"`,
   )
-  check('the page says noindex', said.robots === 'noindex' ? null : `its robots meta is ${JSON.stringify(said.robots)}`)
+  check('the page asks no search engine to leave it out', said.robots.length === 0 ? null : `its meta says ${said.robots.join(', ')}`)
+  check(
+    'the page names its address on formancy.ai as its canonical one, once',
+    said.canonical.length === 1 && said.canonical[0] === ADDRESS ? null : `its canonical links are ${JSON.stringify(said.canonical)}, not ${ADDRESS}`,
+  )
   const heading = await page.getByRole('heading', { level: 1 }).textContent()
   check('its title and its heading hold no HL7 mark', !MARK.test(said.title) && !MARK.test(heading ?? '') ? null : `"${said.title}", "${heading}"`)
   const banners = await page.getByText(w.banner, { exact: true }).count()

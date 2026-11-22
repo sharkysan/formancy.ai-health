@@ -61,13 +61,16 @@ describe("the page's words", () => {
   })
 
   // "Never call it open source" (CLAUDE.md): the phrase may stand only
-  // where the page says it is not, as NOTICE does.
-  test('say "open source" only after a negation', () => {
+  // where the page says it is not, as NOTICE does. index.html's
+  // description is what a search engine shows of the page (0018), so it
+  // is read too.
+  test('say "open source" only after a negation, in any language or in index.html', () => {
     for (const language of LANGUAGES)
       expect(
         texts(WORDS[language]).flatMap((text) => unnegatedOpenSource(text).map((found) => `${found}: ${text}`)),
         language,
       ).toEqual([])
+    expect(unnegatedOpenSource(html), 'index.html').toEqual([])
   })
 
   // The reading itself, on the spellings a translation would use: German

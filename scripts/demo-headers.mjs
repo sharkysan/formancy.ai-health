@@ -85,7 +85,8 @@ export function headersFor(page) {
     ].join('; '),
     'Referrer-Policy': 'no-referrer',
     'X-Content-Type-Options': 'nosniff',
-    'X-Robots-Tag': 'noindex',
+    // No X-Robots-Tag: the demo is meant to be found, and asks a search
+    // engine for nothing (0018).
     // The page asks for no device: @formancy/react ships a scanner widget,
     // which the demo's form does not use, and nothing else asks.
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
