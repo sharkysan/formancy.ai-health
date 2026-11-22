@@ -10,6 +10,16 @@ later.
 
 ## Unreleased
 
+**The demo at formancy.ai/health/ asks to be indexed** (0018). It said
+`noindex`, in an `X-Robots-Tag` on every file it served and in its page,
+so a search found the repository and never the one page that shows the
+packages at work. Neither is sent now, and every other header is as it
+was; the page names https://formancy.ai/health/, its Worker's route, as
+its canonical address, held to the route by `scripts/demo.test.mjs`, and
+its description says in a sentence what it shows. formancy.ai's sitemap
+is to list it, a change in that repository; nothing here checks that a
+search engine indexes it.
+
 **The legal notice and the privacy review are answered, and are no longer drafts.** The operator
 has no commercial register entry or VAT number, and the privacy review says what was read from the
 live demonstration at `/health/` on 2026-11-04: no cookie, no browser storage, no analytics, and

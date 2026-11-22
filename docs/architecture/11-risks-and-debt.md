@@ -182,6 +182,16 @@ having neither page on 18 October 2026; and whether `main` should
 require the gates' checks and a pull request, which would keep a red
 gate from being served, since Cloudflare deploys every push.
 
+Open for the demo since it asks to be indexed
+([0018](../decisions/0018-the-demo-asks-to-be-indexed-and-names-formancy-ai-health-as-its-address.md)):
+formancy.ai's sitemap listing https://formancy.ai/health/, a change in
+that repository, not made on 22 November 2026; and pages of Health's own,
+as Formancy Report has, which the record did not take and does not
+foreclose. A search engine reads the page in one language, English unless
+its renderer asks for another, and one that runs no script reads only its
+title and its English description: the page's other languages have no
+address of their own.
+
 Open, and the maintainer's to ask ([0009](../decisions/0009-a-ch-orf-document-is-the-hosts-referral-in-ch-core-and-ch-orf-the-questionnaire-by-canonical-and-swiss-identifiers-checked-here.md)):
 
 - **Numbers to test with.** Whether the ZAS names AHV numbers for software

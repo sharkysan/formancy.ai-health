@@ -168,4 +168,10 @@ What it does not cover:
   page's own source reads no clock or random source, which the
   exactness guard holds of the packages alone; that the built page holds
   no valid AHV number, which the identifiers guard holds of the files git
-  would commit and not of a build; and the French and Italian words.
+  would commit and not of a build; whether a search engine indexes the
+  page, and formancy.ai's sitemap, which is to list it, where
+  [`scripts/demo.test.mjs`](../../scripts/demo.test.mjs) and the browser
+  gate hold only that the page and its headers ask for nothing and that
+  it names its Worker's route as canonical
+  ([0018](../decisions/0018-the-demo-asks-to-be-indexed-and-names-formancy-ai-health-as-its-address.md));
+  and the French and Italian words.

@@ -133,6 +133,18 @@ of Cloudflare, a Worker of its own on formancy.ai's zone, with the build
 settings REPO-METADATA records and no token in GitHub; and of nothing
 else, since the page asks no other site for anything, its faces included.
 
+The demo is meant to be found
+([0018](../decisions/0018-the-demo-asks-to-be-indexed-and-names-formancy-ai-health-as-its-address.md)):
+the headers `scripts/demo-headers.mjs` decides carry no `X-Robots-Tag`,
+the page no `robots` meta, and the page names https://formancy.ai/health/,
+the Worker's route and the one address it is served at, as its canonical
+one; `pnpm demo`'s address and the gate's are local, and the page does
+not name them. formancy.ai's `robots.txt` allowed every path when read on
+22 November 2026, and its sitemap, formancy.ai's file, is to list the
+address. Nothing here reads either, or whether a search engine indexes
+the page
+([REPO-METADATA](../../.github/REPO-METADATA.md#search-engines)).
+
 ## Where the gates run
 
 | Gate | Where | What it needs |

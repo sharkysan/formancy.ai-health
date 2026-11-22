@@ -393,7 +393,7 @@
       ]
     },
     "0012": {
-      "reviewed": "sha256:96721cf73d807cdc082c44101cdd6e536b24a8a62e6683e564450b9bd03189a1",
+      "reviewed": "sha256:7cc7e0941f01fdbe60a6c3e225c3e287324893febad8a03fa132f61bfbcfff18",
       "limitations": [
         {
           "area": "demo",
@@ -528,6 +528,19 @@
     "0017": {
       "reviewed": "sha256:d3fac211daa55614f58d0514dab7648786e14acb7f3a7ce7fed2830bab3b787b",
       "none": "It decides how this repository's TypeScript and JavaScript are linted and formatted, which a contributor meets in every pull request -- a finding to fix, a file to format, a branch begun before the format conflicting with it, a commit blame skips; the gate runs in CI and the tools are root devDependencies no package declares, the packages' API is what it was and every suite passed as before the fixes, so a user, an integrator or an operator meets none of it."
+    },
+    "0018": {
+      "reviewed": "sha256:8617bfbe6d3c87b0348b8c5d3084070a67d61552538fdf79a4c7e563436676d8",
+      "limitations": [
+        {
+          "area": "demo",
+          "says": "The demo at formancy.ai/health/ is drawn by its script, so a search engine that runs none reads only its title and its English description, and one that runs it reads the page in one language, English unless its renderer asks for German, French or Italian, which have no address of their own."
+        },
+        {
+          "area": "demo",
+          "says": "Nothing in this repository checks that a search engine indexes the demo, what it shows of it, or that formancy.ai's sitemap lists it, and what Cloudflare's zone adds to the demo's headers is read by hand after a deploy."
+        }
+      ]
     }
   }
 }

@@ -15,6 +15,7 @@ import { BUILD, configProblems, demoBase, demoUrl, headersFile, indexProblems, r
  * every file is served with held to a policy that allows the page no
  * connection and nothing but its own assets, written by the one function
  * `vite preview`, the gate and the deploy read, for each one's address; what
+ * the page and its headers say to a search engine (0018); what
  * the deploy stages; and the records of what nothing here can
  * read -- the Worker's build settings in Cloudflare's dashboard, the
  * Wrangler a person logs in with -- held to the deploy they describe.
@@ -329,9 +330,8 @@ describe('the headers every file of the demo is served with (0012)', () => {
   // refuses each, and the gate watches it refuse one injected; `no-transform`
   // asks Cloudflare not to add them at all, and what the address serves is
   // checked by hand (RELEASING.md).
-  test('ask Cloudflare to transform nothing, and every search engine to index nothing', () => {
+  test('ask Cloudflare to transform nothing', () => {
     expect(headersFor(PAGE)['Cache-Control'].split(/,\s*/)).toContain('no-transform')
-    expect(headersFor(PAGE)['X-Robots-Tag']).toBe('noindex')
   })
 
   // `pnpm demo` serves the build under the headers the deploy writes, for
@@ -358,6 +358,49 @@ describe('the headers every file of the demo is served with (0012)', () => {
     expect(gate).toContain('const headers = headersFor(url)')
     expect(gate).toContain('server = await preview({ root: app, base, preview: { headers }')
     expect(demoBase(wrangler)).toBe('/health/')
+  })
+})
+
+describe('what the demo says to a search engine (0018)', () => {
+  const page = text('apps/demo/index.html')
+
+  /** Each `<name …>` element of the page, as its attributes, each attribute's name in lower case. */
+  const elements = (name) =>
+    [...page.matchAll(new RegExp(`<${name}\\b([^>]*)>`, 'gi'))].map((found) =>
+      Object.fromEntries([...found[1].matchAll(/([\w-]+)="([^"]*)"/g)].map(([, attribute, value]) => [attribute.toLowerCase(), value])),
+    )
+
+  // The demo is Health's one page meant to be found. An X-Robots-Tag on
+  // every file, as 0012 sent, keeps a search engine from indexing it
+  // whatever the page says, under any value and in any case.
+  test('ask none, in a header, to leave the page out', () => {
+    expect(Object.keys(headersFor(PAGE)).filter((name) => name.toLowerCase() === 'x-robots-tag')).toEqual([])
+  })
+
+  // A robots meta, or one naming a single crawler, saying noindex or
+  // nofollow, keeps the page out as the header did; the page asks for
+  // nothing, so it has neither.
+  test('ask none, in the page, to leave it out', () => {
+    const asking = elements('meta').filter((meta) => meta.name?.toLowerCase() === 'robots' || /\bno(?:index|follow)\b/i.test(meta.content ?? ''))
+    expect(asking).toEqual([])
+  })
+
+  // The page is served at one address, the Worker's route, and /health
+  // redirects there. A canonical of another address -- the route moved
+  // without it, or `pnpm demo`'s copied in -- would have a search engine
+  // index an address nothing serves the demo at, and a second canonical
+  // would leave it to choose.
+  test("name as the page's canonical address the one the demo's Worker is routed at, once", () => {
+    const canonical = elements('link').filter((link) => link.rel?.toLowerCase() === 'canonical')
+    expect(canonical.map((link) => link.href)).toEqual([demoUrl(wrangler)])
+  })
+
+  // A search engine shows a page's description beside its title; with
+  // none it shows a snippet of its own choosing, and with two either one.
+  // What the sentence says is review's (0018).
+  test('give the page one description, which says something', () => {
+    const descriptions = elements('meta').filter((meta) => meta.name?.toLowerCase() === 'description')
+    expect(descriptions.map((meta) => (meta.content ?? '').trim() !== '')).toEqual([true])
   })
 })
 

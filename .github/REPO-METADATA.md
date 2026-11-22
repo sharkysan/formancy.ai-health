@@ -96,9 +96,26 @@ first that can deploy it.
 
 ## Search engines
 
-None. The demo says `noindex`, in an `X-Robots-Tag` on every file it
-serves, which `scripts/demo.test.mjs` holds, and in its page's `robots`
-meta; Health has no page meant to be found ([0012](../docs/decisions/0012-a-demo-at-formancy-ai-health-fills-a-synthetic-referral-in-the-browser-served-by-a-worker-of-its-own.md)).
+The demo at https://formancy.ai/health/ is Health's one page meant to be
+found ([0018](../docs/decisions/0018-the-demo-asks-to-be-indexed-and-names-formancy-ai-health-as-its-address.md)).
+It asks a search engine for nothing -- no `X-Robots-Tag` among the
+headers it serves, and no `robots` meta in its page -- and names
+https://formancy.ai/health/, its Worker's route, as its canonical
+address, which `scripts/demo.test.mjs` and the demo's browser gate hold.
+
+The rest lives outside this repository, and nothing here can read or
+check it:
+
+- **formancy.ai's sitemap**, in that repository, is to list
+  https://formancy.ai/health/. Read on 22 November 2026, formancy.ai's
+  `robots.txt` allowed every path and named
+  `https://formancy.ai/sitemap.xml`, whose pages did not include
+  `/health/`.
+- **Whether a search engine has read the page or indexed it**, which only
+  the search engine's own tools for a site's owner show.
+- **A header Cloudflare's zone adds**, an `X-Robots-Tag` among them, which
+  [`RELEASING.md`](../RELEASING.md#the-demo-on-formancyai) reads by hand
+  after a deploy.
 
 ## Secrets the workflows expect
 
